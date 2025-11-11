@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Logger, LogLevel } from '@macro/logger';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
+import { ColDef } from 'ag-grid-community';
 
 @Component({
   selector: 'app-root',
@@ -11,6 +12,30 @@ import { MacroAngularGrid } from '@macro/macro-angular-grid';
 })
 export class App implements OnInit {
   private logger = Logger.getLogger('AngularApp');
+
+  // Example: Columns as JSON string
+  public columnsJson: string = JSON.stringify([
+    { field: 'id', headerName: 'ID', width: 100 },
+    { field: 'name', headerName: 'Name', width: 200 },
+    { field: 'age', headerName: 'Age', width: 100 },
+    { field: 'email', headerName: 'Email', width: 250 },
+  ]);
+
+  // Example: Columns as array (alternative approach)
+  public columnsArray: ColDef[] = [
+    { field: 'id', headerName: 'ID', width: 100 },
+    { field: 'name', headerName: 'Name', width: 200 },
+    { field: 'age', headerName: 'Age', width: 100 },
+    { field: 'email', headerName: 'Email', width: 250 },
+  ];
+
+  // Example: Row data
+  public rowData = [
+    { id: 1, name: 'John Doe', age: 30, email: 'john.doe@example.com' },
+    { id: 2, name: 'Jane Smith', age: 25, email: 'jane.smith@example.com' },
+    { id: 3, name: 'Bob Johnson', age: 35, email: 'bob.johnson@example.com' },
+    { id: 4, name: 'Alice Williams', age: 28, email: 'alice.williams@example.com' },
+  ];
 
   ngOnInit(): void {
     // Example: Set global log level

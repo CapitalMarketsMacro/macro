@@ -1,1 +1,11 @@
-<p>MacroAngularGrid works!</p>
+<div style="height: 100%; width: 100%;">
+  <ag-grid-angular
+    [columnDefs]="columnDefs"
+    [theme]="theme"
+    [rowData]="rowData"
+    [gridOptions]="mergedGridOptions"
+    (gridReady)="onGridReady($event)"
+    class="ag-theme-quartz"
+    style="height: 100%; width: 100%;">
+  </ag-grid-angular>
+</div>
