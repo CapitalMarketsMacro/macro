@@ -15,7 +15,8 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@macro/logger": ["libs/logger/src/index.ts"]
+      "@macro/logger": ["libs/logger/src/index.ts"],
+      "@macro/macro-angular-grid": ["libs/macro-angular-grid/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { Logger, LogLevel } from '@macro/logger';
+import { MacroAngularGrid } from '@macro/macro-angular-grid';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.css',
   standalone: true,
+  imports: [MacroAngularGrid],
 })
 export class App implements OnInit {
   private logger = Logger.getLogger('AngularApp');
