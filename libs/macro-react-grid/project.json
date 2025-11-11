@@ -1,0 +1,9 @@
+{
+  "name": "macro-react-grid",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/macro-react-grid/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project macro-react-grid --web",
+  "targets": {}
+}

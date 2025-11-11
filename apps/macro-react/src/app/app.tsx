@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Logger, LogLevel } from '@macro/logger';
+import { MacroReactGrid } from '@macro/macro-react-grid';
 
 const logger = Logger.getLogger('ReactApp');
 
@@ -68,7 +69,12 @@ export function App() {
     });
   }, []);
 
-  return <h1>Hello World</h1>;
+  return (
+    <>
+      <h1>Hello World</h1>
+      <MacroReactGrid />
+    </>
+  );
 }
 
 export default App;
