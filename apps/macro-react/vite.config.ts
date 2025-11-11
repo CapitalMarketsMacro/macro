@@ -7,7 +7,7 @@ import path from 'path';
 
 export default defineConfig(() => ({
   root: __dirname,
-  cacheDir: '../../node_modules/.vite/apps/react-app',
+  cacheDir: '../../node_modules/.vite/apps/macro-react',
   server: {
     port: 4200,
     host: 'localhost',
@@ -27,7 +27,7 @@ export default defineConfig(() => ({
   //  plugins: [ nxViteTsPaths() ],
   // },
   build: {
-    outDir: '../../dist/apps/react-app',
+    outDir: '../../dist/apps/macro-react',
     emptyOutDir: true,
     reportCompressedSize: true,
     commonjsOptions: {
@@ -35,14 +35,14 @@ export default defineConfig(() => ({
     },
   },
   test: {
-    name: 'react-app',
+    name: 'macro-react',
     watch: false,
     globals: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
-      reportsDirectory: '../../coverage/apps/react-app',
+      reportsDirectory: '../../coverage/apps/macro-react',
       provider: 'v8' as const,
     },
   },
