@@ -248,13 +248,22 @@ export class Logger {
   }
 
   /**
-   * Log a debug message with optional data object (pretty printed)
+   * Log a debug message with optional data (any JSON-serializable value, pretty printed)
    */
-  debug(message: string, data?: Record<string, unknown>): void {
+  debug(message: string, data?: unknown): void {
     // Check if DEBUG level is enabled (DEBUG = 20)
     if (this.logLevel <= LogLevel.DEBUG) {
-      if (data) {
-        this.pinoLogger.debug(data, message);
+      if (data !== undefined && data !== null) {
+        // If data is a string, append it to the message
+        if (typeof data === 'string') {
+          this.pinoLogger.debug(`${message} ${data}`);
+        } else if (typeof data === 'object') {
+          // Objects and arrays are passed directly
+          this.pinoLogger.debug(data, message);
+        } else {
+          // Primitives (number, boolean) are wrapped
+          this.pinoLogger.debug({ value: data }, message);
+        }
       } else {
         this.pinoLogger.debug(message);
       }
@@ -262,13 +271,22 @@ export class Logger {
   }
 
   /**
-   * Log an info message with optional data object (pretty printed)
+   * Log an info message with optional data (any JSON-serializable value, pretty printed)
    */
-  info(message: string, data?: Record<string, unknown>): void {
+  info(message: string, data?: unknown): void {
     // Check if INFO level is enabled (INFO = 30)
     if (this.logLevel <= LogLevel.INFO) {
-      if (data) {
-        this.pinoLogger.info(data, message);
+      if (data !== undefined && data !== null) {
+        // If data is a string, append it to the message
+        if (typeof data === 'string') {
+          this.pinoLogger.info(`${message} ${data}`);
+        } else if (typeof data === 'object') {
+          // Objects and arrays are passed directly
+          this.pinoLogger.info(data, message);
+        } else {
+          // Primitives (number, boolean) are wrapped
+          this.pinoLogger.info({ value: data }, message);
+        }
       } else {
         this.pinoLogger.info(message);
       }
@@ -276,13 +294,22 @@ export class Logger {
   }
 
   /**
-   * Log a warning message with optional data object (pretty printed)
+   * Log a warning message with optional data (any JSON-serializable value, pretty printed)
    */
-  warn(message: string, data?: Record<string, unknown>): void {
+  warn(message: string, data?: unknown): void {
     // Check if WARN level is enabled (WARN = 40)
     if (this.logLevel <= LogLevel.WARN) {
-      if (data) {
-        this.pinoLogger.warn(data, message);
+      if (data !== undefined && data !== null) {
+        // If data is a string, append it to the message
+        if (typeof data === 'string') {
+          this.pinoLogger.warn(`${message} ${data}`);
+        } else if (typeof data === 'object') {
+          // Objects and arrays are passed directly
+          this.pinoLogger.warn(data, message);
+        } else {
+          // Primitives (number, boolean) are wrapped
+          this.pinoLogger.warn({ value: data }, message);
+        }
       } else {
         this.pinoLogger.warn(message);
       }
@@ -290,13 +317,22 @@ export class Logger {
   }
 
   /**
-   * Log an error message with optional data object (pretty printed)
+   * Log an error message with optional data (any JSON-serializable value, pretty printed)
    */
-  error(message: string, data?: Record<string, unknown>): void {
+  error(message: string, data?: unknown): void {
     // Check if ERROR level is enabled (ERROR = 50)
     if (this.logLevel <= LogLevel.ERROR) {
-      if (data) {
-        this.pinoLogger.error(data, message);
+      if (data !== undefined && data !== null) {
+        // If data is a string, append it to the message
+        if (typeof data === 'string') {
+          this.pinoLogger.error(`${message} ${data}`);
+        } else if (typeof data === 'object') {
+          // Objects and arrays are passed directly
+          this.pinoLogger.error(data, message);
+        } else {
+          // Primitives (number, boolean) are wrapped
+          this.pinoLogger.error({ value: data }, message);
+        }
       } else {
         this.pinoLogger.error(message);
       }

@@ -19,6 +19,19 @@ export class App implements OnInit {
     this.logger.setLevel(LogLevel.DEBUG);
     console.log('Logger level:', this.logger.getLevel());
 
+    const testData = {
+      name: 'John Doe',
+      age: 30,
+      address: {
+        street: '123 Main St',
+        city: 'Anytown',
+        state: 'CA',
+        zip: '12345',
+      },
+    }
+
+    this.logger.info('Console ', 'Good Stuff');
+    this.logger.info('Test Data ', testData);
 
     // Debug log with complex nested structure
     this.logger.debug('Component DEBUG state', {
