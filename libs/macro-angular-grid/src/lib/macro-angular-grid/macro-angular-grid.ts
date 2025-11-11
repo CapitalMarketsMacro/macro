@@ -98,7 +98,12 @@ export class MacroAngularGrid implements OnInit, OnChanges {
     this.mergeGridOptions();
     this.theme = this.baseTheme;
     this.theme = this.theme.withPart(iconSetAlpine)
-    this.theme = this.theme.withPart(colorSchemeDark)
+    this.theme = this.theme.withPart(colorSchemeDarkBlue)
+    this.theme = this.theme.withParams({
+      fontFamily: 'Noto Sans',
+      headerFontFamily: 'Roboto',
+      cellFontFamily: 'Ubuntu',
+    })
   }
 
   ngOnChanges(changes: SimpleChanges): void {
