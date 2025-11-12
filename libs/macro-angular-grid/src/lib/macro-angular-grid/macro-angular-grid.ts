@@ -1,30 +1,22 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
+import { Subject, Subscription } from 'rxjs';
 import {
   ColDef,
   GridOptions,
   GridReadyEvent,
+  GridApi,
+  GetRowIdParams,
+  RowNodeTransaction,
   ModuleRegistry,
   AllCommunityModule,
   Theme,
 } from 'ag-grid-community';
 import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import {
-  colorSchemeDark,
   colorSchemeDarkBlue,
-  colorSchemeDarkWarm,
-  colorSchemeLight,
-  colorSchemeLightCold,
-  colorSchemeLightWarm,
-  colorSchemeVariable,
   iconSetAlpine,
-  iconSetMaterial,
-  iconSetQuartzBold,
-  iconSetQuartzLight,
-  iconSetQuartzRegular,
   themeAlpine,
-  themeBalham,
-  themeQuartz,
 } from "ag-grid-community";
 
 // Register all ag-Grid modules (Community and Enterprise)
@@ -44,7 +36,7 @@ ModuleRegistry.registerModules([
   templateUrl: './macro-angular-grid.html',
   styleUrl: './macro-angular-grid.css',
 })
-export class MacroAngularGrid implements OnInit, OnChanges {
+export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   /**
    * Column definitions in JSON format
    * Can be a JSON string or an array of column definition objects
@@ -62,9 +54,33 @@ export class MacroAngularGrid implements OnInit, OnChanges {
   @Input() gridOptions: GridOptions = {};
 
   /**
+   * Function to get row ID for each row
+   * This is useful for tracking rows when data changes
+   */
+  @Input() getRowId?: (params: GetRowIdParams) => string;
+
+  /**
    * Parsed column definitions
    */
   public columnDefs: ColDef[] = [];
+
+  /**
+   * Grid API reference for programmatic access
+   */
+  private gridApi?: GridApi;
+
+  /**
+   * RxJS Subjects for row operations
+   * Consumers can publish to these subjects to add/update/delete rows
+   */
+  public readonly addRows$ = new Subject<unknown[]>();
+  public readonly updateRows$ = new Subject<unknown[]>();
+  public readonly deleteRows$ = new Subject<unknown[]>();
+
+  /**
+   * Subscription management
+   */
+  private subscriptions = new Subscription();
 
   /**
    * Default grid options
@@ -104,13 +120,54 @@ export class MacroAngularGrid implements OnInit, OnChanges {
       headerFontFamily: 'Roboto',
       cellFontFamily: 'Ubuntu',
     })
+    
+    // Subscribe to row operation subjects
+    this.setupRowOperationSubscriptions();
+  }
+
+  /**
+   * Setup subscriptions for row operations
+   */
+  private setupRowOperationSubscriptions(): void {
+    // Subscribe to addRows$ subject
+    this.subscriptions.add(
+      this.addRows$.subscribe((rows) => {
+        if (rows && rows.length > 0) {
+          this.applyTransaction({
+            add: rows as any[],
+          } as RowNodeTransaction);
+        }
+      })
+    );
+
+    // Subscribe to updateRows$ subject
+    this.subscriptions.add(
+      this.updateRows$.subscribe((rows) => {
+        if (rows && rows.length > 0) {
+          this.applyTransaction({
+            update: rows as any[],
+          } as RowNodeTransaction);
+        }
+      })
+    );
+
+    // Subscribe to deleteRows$ subject
+    this.subscriptions.add(
+      this.deleteRows$.subscribe((rows) => {
+        if (rows && rows.length > 0) {
+          this.applyTransaction({
+            remove: rows as any[],
+          } as RowNodeTransaction);
+        }
+      })
+    );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['columns']) {
       this.parseColumns();
     }
-    if (changes['gridOptions']) {
+    if (changes['gridOptions'] || changes['getRowId']) {
       this.mergeGridOptions();
     }
   }
@@ -149,6 +206,8 @@ export class MacroAngularGrid implements OnInit, OnChanges {
       // Ensure columnDefs and rowData are not overridden by gridOptions
       columnDefs: this.columnDefs,
       rowData: this.rowData,
+      // Add getRowId if provided
+      ...(this.getRowId && { getRowId: this.getRowId }),
     };
   }
 
@@ -156,6 +215,63 @@ export class MacroAngularGrid implements OnInit, OnChanges {
    * Grid ready event handler
    */
   onGridReady(event: GridReadyEvent): void {
+    this.gridApi = event.api;
     console.log('AG Grid is ready', event);
+  }
+
+  /**
+   * Apply transaction to update grid data
+   * This method allows consumers to update grid data programmatically
+   * 
+   * @param transaction - Transaction object with add, update, and/or remove arrays
+   * 
+   * @example
+   * ```typescript
+   * // Add new rows
+   * gridComponent.applyTransaction({
+   *   add: [{ id: 5, name: 'New User', age: 25 }]
+   * });
+   * 
+   * // Update existing rows
+   * gridComponent.applyTransaction({
+   *   update: [{ id: 1, name: 'Updated Name', age: 31 }]
+   * });
+   * 
+   * // Remove rows
+   * gridComponent.applyTransaction({
+   *   remove: [{ id: 2 }]
+   * });
+   * 
+   * // Combined transaction
+   * gridComponent.applyTransaction({
+   *   add: [{ id: 6, name: 'New User 2', age: 30 }],
+   *   update: [{ id: 1, name: 'Updated Name', age: 31 }],
+   *   remove: [{ id: 2 }]
+   * });
+   * ```
+   */
+  public applyTransaction(transaction: RowNodeTransaction): void {
+    if (!this.gridApi) {
+      throw new Error('Grid API is not available. Ensure the grid is ready before calling applyTransaction.');
+    }
+    this.gridApi.applyTransactionAsync(transaction);
+  }
+
+  /**
+   * Get the grid API instance
+   * @returns GridApi instance or undefined if grid is not ready
+   */
+  public getGridApi(): GridApi | undefined {
+    return this.gridApi;
+  }
+
+  /**
+   * Cleanup subscriptions
+   */
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+    this.addRows$.complete();
+    this.updateRows$.complete();
+    this.deleteRows$.complete();
   }
 }
