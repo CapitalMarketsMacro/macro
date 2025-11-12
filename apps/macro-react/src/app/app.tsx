@@ -1,42 +1,12 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { Logger, LogLevel } from '@macro/logger';
 import TreasuryMarketDataComponent from './treasury-market-data/treasury-market-data.component';
+import CommoditiesDashboardComponent from './commodities-dashboard/commodities-dashboard.component';
 
 const logger = Logger.getLogger('ReactApp');
 
 export function App() {
-  // Theme state
-  const [isDark, setIsDark] = useState(() => {
-    // Check if user has a preference stored
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('theme');
-      if (stored) {
-        return stored === 'dark';
-      }
-      // Check system preference
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
-
-  // Apply theme to document
-  useEffect(() => {
-    const root = document.documentElement;
-    if (isDark) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDark]);
-
-  // Toggle theme function
-  const toggleTheme = () => {
-    setIsDark((prev) => !prev);
-  };
-
   useEffect(() => {
     // Example: Set global log level
     Logger.setGlobalLevel(LogLevel.DEBUG);
@@ -103,10 +73,68 @@ export function App() {
 
   return (
     <BrowserRouter>
-      <div className="flex flex-col h-screen">
-        <div className="flex items-center justify-between p-4 border-b border-border">
+      <AppContent />
+    </BrowserRouter>
+  );
+}
+
+function AppContent() {
+  const location = useLocation();
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('theme');
+      if (stored) {
+        return stored === 'dark';
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => {
+    setIsDark((prev) => !prev);
+  };
+
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center gap-6">
           <h1 className="text-2xl font-bold">Hello MACRO React</h1>
-          <button
+          <nav className="flex gap-4">
+            <Link
+              to="/treasury-market-data"
+              className={`px-4 py-2 rounded-md transition-colors ${
+                location.pathname === '/treasury-market-data'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Treasury Market Data
+            </Link>
+            <Link
+              to="/commodities-dashboard"
+              className={`px-4 py-2 rounded-md transition-colors ${
+                location.pathname === '/commodities-dashboard'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Commodities Dashboard
+            </Link>
+          </nav>
+        </div>
+        <button
             onClick={toggleTheme}
             className="px-4 py-2 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors flex items-center gap-2"
             aria-label="Toggle theme"
@@ -159,11 +187,11 @@ export function App() {
         <div className="flex-1 p-4 overflow-auto">
           <Routes>
             <Route path="/treasury-market-data" element={<TreasuryMarketDataComponent />} />
+            <Route path="/commodities-dashboard" element={<CommoditiesDashboardComponent />} />
             <Route path="/" element={<Navigate to="/treasury-market-data" replace />} />
           </Routes>
         </div>
       </div>
-    </BrowserRouter>
   );
 }
 
