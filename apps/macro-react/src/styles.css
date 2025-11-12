@@ -126,5 +126,6 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Noto Sans', sans-serif;
+    transition: background-color 2s, color 2s;
   }
 }
