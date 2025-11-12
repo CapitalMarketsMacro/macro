@@ -272,7 +272,7 @@ export function TreasuryMarketDataComponent() {
   // Note: Using array instead of JSON string to preserve function references (valueFormatter, cellStyle)
   const columns = useMemo(
     () => [
-      { field: 'cusip', headerName: 'CUSIP', width: 120, pinned: 'left' },
+      { field: 'cusip', headerName: 'CUSIP', width: 120, pinned: 'left' as const },
       { field: 'securityType', headerName: 'Type', width: 100 },
       { field: 'maturity', headerName: 'Maturity', width: 120 },
       { field: 'yearsToMaturity', headerName: 'YTM', width: 100, valueFormatter: (params: any) => params.value.toFixed(2) },

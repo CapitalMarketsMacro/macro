@@ -20,6 +20,8 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@macro/logger': path.resolve(__dirname, '../../libs/logger/src/index.ts'),
+      '@macro/macro-react-grid': path.resolve(__dirname, '../../libs/macro-react-grid/src/index.ts'),
     },
   },
   // Uncomment this if you are using workers.

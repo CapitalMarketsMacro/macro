@@ -4,7 +4,9 @@
     "outDir": "../../dist/out-tsc",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@macro/logger": ["../../libs/logger/src/index.ts"],
+      "@macro/macro-react-grid": ["../../libs/macro-react-grid/src/index.ts"]
     },
     "types": [
       "node",
