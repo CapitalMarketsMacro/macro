@@ -145,6 +145,7 @@ export class App implements OnInit, OnDestroy {
 
   /**
    * Apply theme to document root
+   * PrimeNG will automatically respond via darkModeSelector: '.dark'
    */
   private applyTheme(): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -159,6 +160,7 @@ export class App implements OnInit, OnDestroy {
       root.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
+    // PrimeNG components will automatically update via darkModeSelector configuration
   }
 
   /**
