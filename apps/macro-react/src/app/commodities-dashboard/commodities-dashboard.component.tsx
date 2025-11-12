@@ -13,6 +13,8 @@ import {
   Area,
 } from 'recharts';
 import { Logger } from '@macro/logger';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const logger = Logger.getLogger('CommoditiesDashboardComponent');
 
@@ -388,24 +390,24 @@ export default function CommoditiesDashboardComponent() {
         <div className="p-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Commodities Trading Dashboard</h1>
           <div className="flex items-center gap-4">
-            {/* Live indicator */}
-            <div className="flex items-center gap-2">
+            {/* Live indicator with Switch */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="live-mode"
+                  checked={isPlaying}
+                  onCheckedChange={setIsPlaying}
+                />
+                <Label htmlFor="live-mode" className="text-sm font-medium cursor-pointer">
+                  {isPlaying ? 'LIVE' : 'PAUSED'}
+                </Label>
+              </div>
               <div
                 className={`w-3 h-3 rounded-full ${
-                  isPlaying ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                  isPlaying ? 'bg-primary animate-pulse' : 'bg-muted-foreground'
                 }`}
               />
-              <span className="text-sm font-medium">
-                {isPlaying ? 'LIVE' : 'PAUSED'}
-              </span>
             </div>
-            {/* Play/Pause button */}
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            >
-              {isPlaying ? '⏸ Pause' : '▶ Play'}
-            </button>
             {/* Speed control */}
             <div className="flex items-center gap-2">
               <label className="text-sm">Speed:</label>

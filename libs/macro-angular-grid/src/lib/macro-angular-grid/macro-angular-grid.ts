@@ -1,6 +1,7 @@
-import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, PLATFORM_ID, inject } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import { Subject, Subscription } from 'rxjs';
+import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 import {
   ColDef,
   GridOptions,
@@ -18,6 +19,7 @@ import {
 } from 'ag-grid-enterprise';
 import {
   colorSchemeDarkBlue,
+  colorSchemeLight,
   iconSetAlpine,
   themeAlpine,
 } from "ag-grid-community";
@@ -89,6 +91,17 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   private subscriptions = new Subscription();
 
   /**
+   * Theme observer for detecting theme changes
+   */
+  private themeObserver?: MutationObserver;
+
+  /**
+   * Inject dependencies
+   */
+  private document = inject(DOCUMENT);
+  private platformId = inject(PLATFORM_ID);
+
+  /**
    * Default grid options
    */
   public defaultGridOptions: GridOptions = {
@@ -118,17 +131,64 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   ngOnInit(): void {
     this.parseColumns();
     this.mergeGridOptions();
+    this.initializeTheme();
+    this.setupThemeObserver();
+
+    // Subscribe to row operation subjects
+    this.setupRowOperationSubscriptions();
+  }
+
+  /**
+   * Initialize theme based on current dark mode state
+   */
+  private initializeTheme(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const root = this.document.documentElement;
+    const isDark = root.classList.contains('dark');
+    this.updateTheme(isDark);
+  }
+
+  /**
+   * Update theme based on dark mode
+   */
+  private updateTheme(isDark: boolean): void {
     this.theme = this.baseTheme;
-    this.theme = this.theme.withPart(iconSetAlpine)
-    this.theme = this.theme.withPart(colorSchemeDarkBlue)
+    this.theme = this.theme.withPart(iconSetAlpine);
+    this.theme = this.theme.withPart(isDark ? colorSchemeDarkBlue : colorSchemeLight);
     this.theme = this.theme.withParams({
       fontFamily: 'Noto Sans',
       headerFontFamily: 'Roboto',
       cellFontFamily: 'Ubuntu',
-    })
+    });
+  }
 
-    // Subscribe to row operation subjects
-    this.setupRowOperationSubscriptions();
+  /**
+   * Setup observer to watch for theme changes
+   */
+  private setupThemeObserver(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const root = this.document.documentElement;
+
+    // Watch for class changes on document root
+    this.themeObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          const isDark = root.classList.contains('dark');
+          this.updateTheme(isDark);
+        }
+      });
+    });
+
+    this.themeObserver.observe(root, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
   }
 
   /**
@@ -279,5 +339,8 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     this.addRows$.complete();
     this.updateRows$.complete();
     this.deleteRows$.complete();
+    if (this.themeObserver) {
+      this.themeObserver.disconnect();
+    }
   }
 }

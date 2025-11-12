@@ -11,21 +11,10 @@ import {
   ModuleRegistry,
   AllCommunityModule,
   Theme,
-  colorSchemeDark,
   colorSchemeDarkBlue,
-  colorSchemeDarkWarm,
   colorSchemeLight,
-  colorSchemeLightCold,
-  colorSchemeLightWarm,
-  colorSchemeVariable,
   iconSetAlpine,
-  iconSetMaterial,
-  iconSetQuartzBold,
-  iconSetQuartzLight,
-  iconSetQuartzRegular,
   themeAlpine,
-  themeBalham,
-  themeQuartz,
 } from 'ag-grid-community';
 import {
   AllEnterpriseModule,
@@ -168,19 +157,45 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
     deleteRows$,
   }), [gridApi, addRows$, updateRows$, deleteRows$]);
 
-  // Initialize theme
+  // Initialize and update theme based on dark mode
   useEffect(() => {
-    const baseTheme = themeAlpine;
-    let currentTheme: Theme = baseTheme;
-    currentTheme = currentTheme.withPart(iconSetAlpine);
-    currentTheme = currentTheme.withPart(colorSchemeDarkBlue);
-    currentTheme = currentTheme.withParams({
-      fontFamily: 'Noto Sans',
-      headerFontFamily: 'Roboto',
-      cellFontFamily: 'Ubuntu',
+    const updateTheme = () => {
+      const root = document.documentElement;
+      const isDark = root.classList.contains('dark');
+      
+      const baseTheme = themeAlpine;
+      let currentTheme: Theme = baseTheme;
+      currentTheme = currentTheme.withPart(iconSetAlpine);
+      currentTheme = currentTheme.withPart(isDark ? colorSchemeDarkBlue : colorSchemeLight);
+      currentTheme = currentTheme.withParams({
+        fontFamily: 'Noto Sans',
+        headerFontFamily: 'Roboto',
+        cellFontFamily: 'Ubuntu',
+      });
+      setTheme(currentTheme);
+    };
+
+    // Initialize theme
+    updateTheme();
+
+    // Watch for theme changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          updateTheme();
+        }
+      });
     });
-    console.log('Setting Theme : ', currentTheme);
-    setTheme(currentTheme);
+
+    const root = document.documentElement;
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   // Setup subscriptions for row operations
