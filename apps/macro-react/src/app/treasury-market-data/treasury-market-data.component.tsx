@@ -24,6 +24,26 @@ interface TreasurySecurity {
 
 const logger = Logger.getLogger('TreasuryMarketDataComponent');
 
+/**
+ * Format Treasury price in 32nd format (e.g., 99-16 means 99 and 16/32)
+ * Similar to Angular pipes for Treasury price formatting
+ * 
+ * @param price - Decimal price (e.g., 99.50)
+ * @returns Formatted string in 32nd format (e.g., "99-16")
+ */
+const formatTreasury32nd = (price: number): string => {
+  if (price == null || isNaN(price)) {
+    return '';
+  }
+
+  const wholeNumber = Math.floor(price);
+  const fractionalPart = price - wholeNumber;
+  const thirtySeconds = Math.round(fractionalPart * 32);
+
+  // Format with leading zero for single-digit thirty-seconds (e.g., 99-08 instead of 99-8)
+  return `${wholeNumber}-${thirtySeconds.toString().padStart(2, '0')}`;
+};
+
 export function TreasuryMarketDataComponent() {
   const gridRef = useRef<MacroReactGridRef>(null);
 
@@ -226,93 +246,93 @@ export function TreasuryMarketDataComponent() {
   }, []);
 
   // Treasury Market Data Columns
-  const columnsJson = useMemo(
-    () =>
-      JSON.stringify([
-        { field: 'cusip', headerName: 'CUSIP', width: 120, pinned: 'left' },
-        { field: 'securityType', headerName: 'Type', width: 100 },
-        { field: 'maturity', headerName: 'Maturity', width: 120 },
-        { field: 'yearsToMaturity', headerName: 'YTM', width: 100, valueFormatter: (params: any) => params.value.toFixed(2) },
-        { field: 'coupon', headerName: 'Coupon', width: 100, valueFormatter: (params: any) => `${params.value.toFixed(2)}%` },
-        { 
-          field: 'price', 
-          headerName: 'Price', 
-          width: 120,
-          valueFormatter: (params: any) => params.value.toFixed(4),
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'yield', 
-          headerName: 'Yield', 
-          width: 120,
-          valueFormatter: (params: any) => `${params.value.toFixed(4)}%`,
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'bid', 
-          headerName: 'Bid', 
-          width: 120,
-          valueFormatter: (params: any) => params.value.toFixed(4),
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'ask', 
-          headerName: 'Ask', 
-          width: 120,
-          valueFormatter: (params: any) => params.value.toFixed(4),
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'spread', 
-          headerName: 'Spread', 
-          width: 100,
-          valueFormatter: (params: any) => params.value.toFixed(4),
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'change', 
-          headerName: 'Change', 
-          width: 120,
-          valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}`,
-          cellStyle: (params: any) => {
-            if (params.value > 0) return { color: 'green', textAlign: 'right' };
-            if (params.value < 0) return { color: 'red', textAlign: 'right' };
-            return { textAlign: 'right' };
-          }
-        },
-        { 
-          field: 'changePercent', 
-          headerName: 'Change %', 
-          width: 120,
-          valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}%`,
-          cellStyle: (params: any) => {
-            if (params.value > 0) return { color: 'green', textAlign: 'right' };
-            if (params.value < 0) return { color: 'red', textAlign: 'right' };
-            return { textAlign: 'right' };
-          }
-        },
-        { 
-          field: 'volume', 
-          headerName: 'Volume', 
-          width: 120,
-          valueFormatter: (params: any) => `${params.value.toFixed(2)}M`,
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'duration', 
-          headerName: 'Duration', 
-          width: 120,
-          valueFormatter: (params: any) => params.value.toFixed(2),
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'convexity', 
-          headerName: 'Convexity', 
-          width: 120,
-          valueFormatter: (params: any) => params.value.toFixed(2),
-          cellStyle: { textAlign: 'right' }
-        },
-      ]),
+  // Note: Using array instead of JSON string to preserve function references (valueFormatter, cellStyle)
+  const columns = useMemo(
+    () => [
+      { field: 'cusip', headerName: 'CUSIP', width: 120, pinned: 'left' },
+      { field: 'securityType', headerName: 'Type', width: 100 },
+      { field: 'maturity', headerName: 'Maturity', width: 120 },
+      { field: 'yearsToMaturity', headerName: 'YTM', width: 100, valueFormatter: (params: any) => params.value.toFixed(2) },
+      { field: 'coupon', headerName: 'Coupon', width: 100, valueFormatter: (params: any) => `${params.value.toFixed(2)}%` },
+      { 
+        field: 'price', 
+        headerName: 'Price', 
+        width: 120,
+        valueFormatter: (params: any) => formatTreasury32nd(params.value),
+        cellStyle: { textAlign: 'right' }
+      },
+      { 
+        field: 'yield', 
+        headerName: 'Yield', 
+        width: 120,
+        valueFormatter: (params: any) => `${params.value.toFixed(4)}%`,
+        cellStyle: { textAlign: 'right' }
+      },
+      { 
+        field: 'bid', 
+        headerName: 'Bid', 
+        width: 120,
+        valueFormatter: (params: any) => formatTreasury32nd(params.value),
+        cellStyle: { textAlign: 'right' }
+      },
+      { 
+        field: 'ask', 
+        headerName: 'Ask', 
+        width: 120,
+        valueFormatter: (params: any) => formatTreasury32nd(params.value),
+        cellStyle: { textAlign: 'right' }
+      },
+      { 
+        field: 'spread', 
+        headerName: 'Spread', 
+        width: 100,
+        valueFormatter: (params: any) => params.value.toFixed(4),
+        cellStyle: { textAlign: 'right' }
+      },
+      { 
+        field: 'change', 
+        headerName: 'Change', 
+        width: 120,
+        valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}`,
+        cellStyle: (params: any) => {
+          if (params.value > 0) return { color: 'green', textAlign: 'right' };
+          if (params.value < 0) return { color: 'red', textAlign: 'right' };
+          return { textAlign: 'right' };
+        }
+      },
+      { 
+        field: 'changePercent', 
+        headerName: 'Change %', 
+        width: 120,
+        valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}%`,
+        cellStyle: (params: any) => {
+          if (params.value > 0) return { color: 'green', textAlign: 'right' };
+          if (params.value < 0) return { color: 'red', textAlign: 'right' };
+          return { textAlign: 'right' };
+        }
+      },
+      { 
+        field: 'volume', 
+        headerName: 'Volume', 
+        width: 120,
+        valueFormatter: (params: any) => `${params.value.toFixed(2)}M`,
+        cellStyle: { textAlign: 'right' }
+      },
+      { 
+        field: 'duration', 
+        headerName: 'Duration', 
+        width: 120,
+        valueFormatter: (params: any) => params.value.toFixed(2),
+        cellStyle: { textAlign: 'right' }
+      },
+      { 
+        field: 'convexity', 
+        headerName: 'Convexity', 
+        width: 120,
+        valueFormatter: (params: any) => params.value.toFixed(2),
+        cellStyle: { textAlign: 'right' }
+      },
+    ],
     []
   );
 
@@ -348,7 +368,7 @@ export function TreasuryMarketDataComponent() {
       <div style={{ height: 'calc(100vh - 100px)', width: '100%' }}>
         <MacroReactGrid 
           ref={gridRef}
-          columns={columnsJson} 
+          columns={columns} 
           rowData={rowData}
           getRowId={getRowId}
         />
