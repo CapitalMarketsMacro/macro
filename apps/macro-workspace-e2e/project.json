@@ -1,0 +1,9 @@
+{
+  "name": "macro-workspace-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/macro-workspace-e2e/src",
+  "implicitDependencies": ["macro-workspace"],
+  "// targets": "to see all targets run: nx show project macro-workspace-e2e --web",
+  "targets": {}
+}
