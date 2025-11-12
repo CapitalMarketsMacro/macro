@@ -1,50 +1,53 @@
 <div style="display: flex; flex-direction: column; height: 100vh;">
-  <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border-bottom: 1px solid var(--border, #e5e7eb);">
-    <h1 style="font-size: 1.5rem; font-weight: bold; margin: 0;">Hello MACRO Angular</h1>
-    <button
-      (click)="toggleTheme()"
-      style="padding: 0.5rem 1rem; border-radius: 0.375rem; background-color: var(--secondary, #f3f4f6); color: var(--secondary-foreground, #111827); border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background-color 0.2s;"
-      [attr.aria-label]="'Toggle theme'"
-      onmouseover="this.style.backgroundColor='var(--secondary-hover, #e5e7eb)'"
-      onmouseout="this.style.backgroundColor='var(--secondary, #f3f4f6)'">
-      @if (isDark) {
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2" />
-          <path d="M12 20v2" />
-          <path d="m4.93 4.93 1.41 1.41" />
-          <path d="m17.66 17.66 1.41 1.41" />
-          <path d="M2 12h2" />
-          <path d="M20 12h2" />
-          <path d="m6.34 17.66-1.41 1.41" />
-          <path d="m19.07 4.93-1.41 1.41" />
-        </svg>
-        <span>Light</span>
-      } @else {
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round">
-          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-        </svg>
-        <span>Dark</span>
-      }
-    </button>
+  <div style="border-bottom: 1px solid var(--border, #e5e7eb);">
+    <p-menubar [model]="menuItems" styleClass="border-none">
+      <ng-template #end>
+        <button
+          (click)="toggleTheme()"
+          style="padding: 0.5rem 1rem; border-radius: 0.375rem; background-color: var(--secondary, #f3f4f6); color: var(--secondary-foreground, #111827); border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background-color 0.2s;"
+          [attr.aria-label]="'Toggle theme'"
+          onmouseover="this.style.backgroundColor='var(--secondary-hover, #e5e7eb)'"
+          onmouseout="this.style.backgroundColor='var(--secondary, #f3f4f6)'">
+          @if (isDark) {
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2" />
+              <path d="M12 20v2" />
+              <path d="m4.93 4.93 1.41 1.41" />
+              <path d="m17.66 17.66 1.41 1.41" />
+              <path d="M2 12h2" />
+              <path d="M20 12h2" />
+              <path d="m6.34 17.66-1.41 1.41" />
+              <path d="m19.07 4.93-1.41 1.41" />
+            </svg>
+            <span>Light</span>
+          } @else {
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+            </svg>
+            <span>Dark</span>
+          }
+        </button>
+      </ng-template>
+    </p-menubar>
   </div>
   <div style="flex: 1; padding: 1rem; overflow: auto;">
     <router-outlet></router-outlet>

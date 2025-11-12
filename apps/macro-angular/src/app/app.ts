@@ -1,14 +1,17 @@
 import { Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { Logger, LogLevel } from '@macro/logger';
 import { isPlatformBrowser, DOCUMENT } from '@angular/common';
+import { Menubar } from 'primeng/menubar';
+import { MenuItem } from 'primeng/api';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.css',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, Menubar],
 })
 export class App implements OnInit, OnDestroy {
   private logger = Logger.getLogger('AngularApp');
@@ -16,9 +19,13 @@ export class App implements OnInit, OnDestroy {
   // Inject dependencies
   private document = inject(DOCUMENT);
   private platformId = inject(PLATFORM_ID);
+  private router = inject(Router);
   
   // Theme state
   public isDark = false;
+  
+  // Menu items for PrimeNG MenuBar
+  public menuItems: MenuItem[] = [];
   private mediaQuery?: MediaQueryList;
   private mediaQueryListener?: (e: MediaQueryListEvent) => void;
 
@@ -48,6 +55,10 @@ export class App implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Apply initial theme
     this.applyTheme();
+    
+    // Initialize menu items
+    this.initializeMenuItems();
+    
     // Set log level
     Logger.setGlobalLevel(LogLevel.DEBUG);
     console.log('Global log level set to:', Logger.getGlobalLevel());
@@ -148,5 +159,35 @@ export class App implements OnInit, OnDestroy {
       root.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
+  }
+
+  /**
+   * Initialize menu items for PrimeNG MenuBar
+   */
+  private initializeMenuItems(): void {
+    this.menuItems = [
+      {
+        label: 'FX Market Data',
+        icon: 'pi pi-chart-line',
+        routerLink: '/fx-market-data',
+      },
+      {
+        label: 'Treasury Microstructure',
+        icon: 'pi pi-chart-bar',
+        routerLink: '/treasury-microstructure',
+      },
+    ];
+    
+    // Subscribe to route changes to update active menu item
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        const currentUrl = this.router.url;
+        this.menuItems.forEach(item => {
+          if (item.routerLink) {
+            item.styleClass = currentUrl === item.routerLink ? 'active-menu-item' : '';
+          }
+        });
+      });
   }
 }
