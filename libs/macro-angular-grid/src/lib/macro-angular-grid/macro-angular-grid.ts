@@ -12,18 +12,24 @@ import {
   AllCommunityModule,
   Theme,
 } from 'ag-grid-community';
-import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import {
+  AllEnterpriseModule,
+  IntegratedChartsModule,
+} from 'ag-grid-enterprise';
 import {
   colorSchemeDarkBlue,
   iconSetAlpine,
   themeAlpine,
 } from "ag-grid-community";
+import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
 
 // Register all ag-Grid modules (Community and Enterprise)
 // This ensures all features are available without requiring registration in the application
 ModuleRegistry.registerModules([
   AllCommunityModule,
   AllEnterpriseModule,
+  IntegratedChartsModule.with(AgChartsEnterpriseModule)
+
 ]);
 
 /**
@@ -120,7 +126,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       headerFontFamily: 'Roboto',
       cellFontFamily: 'Ubuntu',
     })
-    
+
     // Subscribe to row operation subjects
     this.setupRowOperationSubscriptions();
   }
@@ -222,26 +228,26 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   /**
    * Apply transaction to update grid data
    * This method allows consumers to update grid data programmatically
-   * 
+   *
    * @param transaction - Transaction object with add, update, and/or remove arrays
-   * 
+   *
    * @example
    * ```typescript
    * // Add new rows
    * gridComponent.applyTransaction({
    *   add: [{ id: 5, name: 'New User', age: 25 }]
    * });
-   * 
+   *
    * // Update existing rows
    * gridComponent.applyTransaction({
    *   update: [{ id: 1, name: 'Updated Name', age: 31 }]
    * });
-   * 
+   *
    * // Remove rows
    * gridComponent.applyTransaction({
    *   remove: [{ id: 2 }]
    * });
-   * 
+   *
    * // Combined transaction
    * gridComponent.applyTransaction({
    *   add: [{ id: 6, name: 'New User 2', age: 30 }],

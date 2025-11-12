@@ -27,13 +27,18 @@ import {
   themeBalham,
   themeQuartz,
 } from 'ag-grid-community';
-import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import {
+  AllEnterpriseModule,
+  IntegratedChartsModule,
+} from 'ag-grid-enterprise';
+import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
 
 // Register all ag-Grid modules (Community and Enterprise)
 // This ensures all features are available without requiring registration in the application
 ModuleRegistry.registerModules([
   AllCommunityModule,
   AllEnterpriseModule,
+  IntegratedChartsModule.with(AgChartsEnterpriseModule)
 ]);
 
 export interface MacroReactGridProps {
@@ -233,6 +238,7 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       <AgGridReact
         theme={theme}
         columnDefs={columnDefs}
+        enableCharts={true}
         rowData={rowData}
         gridOptions={mergedGridOptions}
         getRowId={getRowId}
