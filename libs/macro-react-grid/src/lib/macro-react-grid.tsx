@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef, useImperativeHandle, forwardRef } from 'react';
 import { AgGridReact } from 'ag-grid-react';
+import { Subject, Subscription } from 'rxjs';
 import {
   ColDef,
   GridOptions,
   GridReadyEvent,
+  GridApi,
+  GetRowIdParams,
+  RowNodeTransaction,
   ModuleRegistry,
   AllCommunityModule,
   Theme,
@@ -48,18 +52,47 @@ export interface MacroReactGridProps {
    * Grid options (optional)
    */
   gridOptions?: GridOptions;
+
+  /**
+   * Function to get row ID for each row
+   * This is useful for tracking rows when data changes
+   */
+  getRowId?: (params: GetRowIdParams) => string;
+}
+
+export interface MacroReactGridRef {
+  /**
+   * Apply transaction to update grid data
+   */
+  applyTransaction: (transaction: RowNodeTransaction) => void;
+
+  /**
+   * Get the grid API instance
+   */
+  getGridApi: () => GridApi | undefined;
+
+  /**
+   * RxJS Subjects for row operations
+   */
+  addRows$: Subject<unknown[]>;
+  updateRows$: Subject<unknown[]>;
+  deleteRows$: Subject<unknown[]>;
 }
 
 /**
  * Macro React Grid Component
  * Wraps ag-Grid with support for JSON column configuration
  */
-export function MacroReactGrid({
-  columns = [],
-  rowData = [],
-  gridOptions = {},
-}: MacroReactGridProps) {
-  const [theme, setTheme] = useState<Theme | undefined>(undefined);
+export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>(
+  ({ columns = [], rowData = [], gridOptions = {}, getRowId }, ref) => {
+    const [theme, setTheme] = useState<Theme | undefined>(undefined);
+    const [gridApi, setGridApi] = useState<GridApi | undefined>(undefined);
+    const subscriptionsRef = useRef<Subscription>(new Subscription());
+
+    // RxJS Subjects for row operations
+    const addRows$ = useRef(new Subject<unknown[]>()).current;
+    const updateRows$ = useRef(new Subject<unknown[]>()).current;
+    const deleteRows$ = useRef(new Subject<unknown[]>()).current;
 
   // Default grid options
   const defaultGridOptions: GridOptions = useMemo(
@@ -110,9 +143,25 @@ export function MacroReactGrid({
       // Ensure columnDefs and rowData are not overridden by gridOptions
       columnDefs: columnDefs,
       rowData: rowData,
+      // Add getRowId if provided
+      ...(getRowId && { getRowId: getRowId }),
     }),
-    [defaultGridOptions, gridOptions, columnDefs, rowData]
+    [defaultGridOptions, gridOptions, columnDefs, rowData, getRowId]
   );
+
+  // Expose methods and subjects via ref
+  useImperativeHandle(ref, () => ({
+    applyTransaction: (transaction: RowNodeTransaction) => {
+      if (!gridApi) {
+        throw new Error('Grid API is not available. Ensure the grid is ready before calling applyTransaction.');
+      }
+      gridApi.applyTransactionAsync(transaction as any);
+    },
+    getGridApi: () => gridApi,
+    addRows$,
+    updateRows$,
+    deleteRows$,
+  }), [gridApi, addRows$, updateRows$, deleteRows$]);
 
   // Initialize theme
   useEffect(() => {
@@ -129,26 +178,71 @@ export function MacroReactGrid({
     setTheme(currentTheme);
   }, []);
 
+  // Setup subscriptions for row operations
+  useEffect(() => {
+    // Subscribe to addRows$ subject
+    subscriptionsRef.current.add(
+      addRows$.subscribe((rows) => {
+        if (rows && rows.length > 0 && gridApi) {
+          gridApi.applyTransactionAsync({
+            add: rows as any[],
+          } as RowNodeTransaction);
+        }
+      })
+    );
+
+    // Subscribe to updateRows$ subject
+    subscriptionsRef.current.add(
+      updateRows$.subscribe((rows) => {
+        if (rows && rows.length > 0 && gridApi) {
+          gridApi.applyTransactionAsync({
+            update: rows as any[],
+          } as RowNodeTransaction);
+        }
+      })
+    );
+
+    // Subscribe to deleteRows$ subject
+    subscriptionsRef.current.add(
+      deleteRows$.subscribe((rows) => {
+        if (rows && rows.length > 0 && gridApi) {
+          gridApi.applyTransactionAsync({
+            remove: rows as any[],
+          } as RowNodeTransaction);
+        }
+      })
+    );
+
+    // Cleanup subscriptions
+    return () => {
+      subscriptionsRef.current.unsubscribe();
+      subscriptionsRef.current = new Subscription();
+    };
+  }, [gridApi, addRows$, updateRows$, deleteRows$]);
+
   /**
    * Grid ready event handler
    */
   const onGridReady = (event: GridReadyEvent): void => {
+    setGridApi(event.api);
     console.log('AG Grid is ready', event);
   };
 
   return (
-    <div  style={{ height: '100%', width: '100%' }}>
+    <div style={{ height: '100%', width: '100%' }}>
       <AgGridReact
         theme={theme}
         columnDefs={columnDefs}
         rowData={rowData}
         gridOptions={mergedGridOptions}
+        getRowId={getRowId}
         onGridReady={onGridReady}
-
-
       />
     </div>
   );
-}
+  }
+);
+
+MacroReactGrid.displayName = 'MacroReactGrid';
 
 export default MacroReactGrid;
