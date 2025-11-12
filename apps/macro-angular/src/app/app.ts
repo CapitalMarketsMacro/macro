@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Logger, LogLevel } from '@macro/logger';
+import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 
 @Component({
   selector: 'app-root',
@@ -9,10 +10,44 @@ import { Logger, LogLevel } from '@macro/logger';
   standalone: true,
   imports: [RouterOutlet],
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   private logger = Logger.getLogger('AngularApp');
+  
+  // Inject dependencies
+  private document = inject(DOCUMENT);
+  private platformId = inject(PLATFORM_ID);
+  
+  // Theme state
+  public isDark = false;
+  private mediaQuery?: MediaQueryList;
+  private mediaQueryListener?: (e: MediaQueryListEvent) => void;
+
+  constructor() {
+    // Initialize theme state
+    if (isPlatformBrowser(this.platformId)) {
+      const stored = localStorage.getItem('theme');
+      if (stored) {
+        this.isDark = stored === 'dark';
+      } else {
+        // Check system preference
+        this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        this.isDark = this.mediaQuery.matches;
+        
+        // Listen for system theme changes
+        this.mediaQueryListener = (e: MediaQueryListEvent) => {
+          if (!localStorage.getItem('theme')) {
+            this.isDark = e.matches;
+            this.applyTheme();
+          }
+        };
+        this.mediaQuery.addEventListener('change', this.mediaQueryListener);
+      }
+    }
+  }
 
   ngOnInit(): void {
+    // Apply initial theme
+    this.applyTheme();
     // Set log level
     Logger.setGlobalLevel(LogLevel.DEBUG);
     console.log('Global log level set to:', Logger.getGlobalLevel());
@@ -80,5 +115,38 @@ export class App implements OnInit {
       newApi: '/api/v2/users',
       migrationGuide: 'https://docs.example.com/migration',
     });
+  }
+
+  ngOnDestroy(): void {
+    // Clean up media query listener
+    if (this.mediaQuery && this.mediaQueryListener) {
+      this.mediaQuery.removeEventListener('change', this.mediaQueryListener);
+    }
+  }
+
+  /**
+   * Toggle theme between light and dark
+   */
+  toggleTheme(): void {
+    this.isDark = !this.isDark;
+    this.applyTheme();
+  }
+
+  /**
+   * Apply theme to document root
+   */
+  private applyTheme(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const root = this.document.documentElement;
+    if (this.isDark) {
+      root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
   }
 }
