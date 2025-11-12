@@ -1,31 +1,11 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Logger, LogLevel } from '@macro/logger';
-import { MacroReactGrid, MacroReactGridRef } from '@macro/macro-react-grid';
-import { GetRowIdParams } from 'ag-grid-community';
+import TreasuryMarketDataComponent from './treasury-market-data/treasury-market-data.component';
 
 const logger = Logger.getLogger('ReactApp');
 
-interface TreasurySecurity {
-  id: string;
-  cusip: string;
-  securityType: 'T-Bill' | 'T-Note' | 'T-Bond';
-  maturity: string;
-  yearsToMaturity: number;
-  coupon: number;
-  price: number;
-  yield: number;
-  bid: number;
-  ask: number;
-  spread: number;
-  change: number;
-  changePercent: number;
-  volume: number;
-  duration: number;
-  convexity: number;
-}
-
 export function App() {
-  const gridRef = useRef<MacroReactGridRef>(null);
   // Theme state
   const [isDark, setIsDark] = useState(() => {
     // Check if user has a preference stored
@@ -57,388 +37,133 @@ export function App() {
     setIsDark((prev) => !prev);
   };
 
-  // Treasury Market Data state
-  const securitiesRef = useRef<Array<{
-    cusip: string;
-    securityType: 'T-Bill' | 'T-Note' | 'T-Bond';
-    maturity: string;
-    coupon: number;
-    basePrice: number;
-    baseYield: number;
-    volatility: number;
-  }>>([
-    // T-Bills (zero coupon)
-    { cusip: '912797XZ8', securityType: 'T-Bill', maturity: '2025-12-15', coupon: 0, basePrice: 99.85, baseYield: 4.25, volatility: 0.05 },
-    { cusip: '912797YF5', securityType: 'T-Bill', maturity: '2026-03-15', coupon: 0, basePrice: 99.70, baseYield: 4.30, volatility: 0.05 },
-    { cusip: '912797YG3', securityType: 'T-Bill', maturity: '2026-06-15', coupon: 0, basePrice: 99.55, baseYield: 4.35, volatility: 0.05 },
-    // T-Notes (2-10 years)
-    { cusip: '91282CJX8', securityType: 'T-Note', maturity: '2026-11-15', coupon: 4.25, basePrice: 99.95, baseYield: 4.28, volatility: 0.10 },
-    { cusip: '91282CJY6', securityType: 'T-Note', maturity: '2027-11-15', coupon: 4.50, basePrice: 100.10, baseYield: 4.35, volatility: 0.12 },
-    { cusip: '91282CJZ3', securityType: 'T-Note', maturity: '2028-11-15', coupon: 4.75, basePrice: 100.25, baseYield: 4.40, volatility: 0.15 },
-    { cusip: '91282CKA0', securityType: 'T-Note', maturity: '2029-11-15', coupon: 4.50, basePrice: 100.00, baseYield: 4.45, volatility: 0.18 },
-    { cusip: '91282CKB8', securityType: 'T-Note', maturity: '2030-11-15', coupon: 4.25, basePrice: 99.75, baseYield: 4.50, volatility: 0.20 },
-    // T-Notes (10 years)
-    { cusip: '91282CKC6', securityType: 'T-Note', maturity: '2034-11-15', coupon: 4.00, basePrice: 99.50, baseYield: 4.55, volatility: 0.25 },
-    // T-Bonds (20-30 years)
-    { cusip: '912810QZ8', securityType: 'T-Bond', maturity: '2044-11-15', coupon: 4.25, basePrice: 99.00, baseYield: 4.60, volatility: 0.30 },
-    { cusip: '912810RA5', securityType: 'T-Bond', maturity: '2054-11-15', coupon: 4.50, basePrice: 98.50, baseYield: 4.65, volatility: 0.35 },
-  ]);
-
-  const currentPricesRef = useRef<Map<string, number>>(new Map());
-  const currentYieldsRef = useRef<Map<string, number>>(new Map());
-  const previousPricesRef = useRef<Map<string, number>>(new Map());
-
-  // Helper functions
-  const getYearsToMaturity = (maturityDate: string): number => {
-    const maturity = new Date(maturityDate);
-    const today = new Date();
-    const diffTime = maturity.getTime() - today.getTime();
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    return diffDays / 365.25;
-  };
-
-  const calculateYield = (price: number, coupon: number, yearsToMaturity: number): number => {
-    if (yearsToMaturity < 0.5) {
-      return ((100 - price) / price) * (365 / (yearsToMaturity * 365)) * 100;
-    }
-    const annualCoupon = coupon;
-    const faceValue = 100;
-    const currentYield = (annualCoupon / price) * 100;
-    const capitalGain = ((faceValue - price) / price) * (100 / yearsToMaturity);
-    return currentYield + capitalGain;
-  };
-
-  const calculateBidAsk = (mid: number, spread: number): { bid: number; ask: number } => {
-    const halfSpread = spread / 2;
-    return {
-      bid: mid - halfSpread,
-      ask: mid + halfSpread,
-    };
-  };
-
-  const calculateDuration = (yearsToMaturity: number, coupon: number, yieldRate: number): number => {
-    if (yearsToMaturity < 0.5) {
-      return yearsToMaturity;
-    }
-    const c = coupon / 100;
-    const y = yieldRate / 100;
-    const n = yearsToMaturity;
-    if (c === 0) {
-      return n;
-    }
-    return (1 + y) / y - ((1 + y) + n * (c - y)) / (c * (Math.pow(1 + y, n) - 1) + y);
-  };
-
-  const calculateConvexity = (yearsToMaturity: number, coupon: number, yieldRate: number): number => {
-    if (yearsToMaturity < 0.5) {
-      return yearsToMaturity * yearsToMaturity;
-    }
-    const n = yearsToMaturity;
-    return (n * (n + 1)) / Math.pow(1 + yieldRate / 100, 2);
-  };
-
-  const round = (value: number, decimals: number): number => {
-    return Math.round(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
-  };
-
-  // Generate initial Treasury securities data
-  const generateInitialData = () => {
-    const securities: TreasurySecurity[] = [];
-
-    securitiesRef.current.forEach((sec) => {
-      const basePrice = sec.basePrice;
-      const baseYield = sec.baseYield;
-      previousPricesRef.current.set(sec.cusip, basePrice);
-
-      const yearsToMaturity = getYearsToMaturity(sec.maturity);
-      const tickSize = 0.03125; // 1/32 of a point
-      const spreadTicks = 1 + Math.random() * 2;
-      const spread = spreadTicks * tickSize;
-
-      const { bid, ask } = calculateBidAsk(basePrice, spread);
-      const duration = calculateDuration(yearsToMaturity, sec.coupon, baseYield);
-      const convexity = calculateConvexity(yearsToMaturity, sec.coupon, baseYield);
-      const volume = Math.random() * 500 + 50;
-
-      securities.push({
-        id: sec.cusip,
-        cusip: sec.cusip,
-        securityType: sec.securityType,
-        maturity: sec.maturity,
-        yearsToMaturity: round(yearsToMaturity, 2),
-        coupon: sec.coupon,
-        price: round(basePrice, 4),
-        yield: round(baseYield, 4),
-        bid: round(bid, 4),
-        ask: round(ask, 4),
-        spread: round(spread, 4),
-        change: 0,
-        changePercent: 0,
-        volume: round(volume, 2),
-        duration: round(duration, 2),
-        convexity: round(convexity, 2),
-      });
-    });
-
-    setRowData(securities);
-  };
-
-  // Update market data for all Treasury securities
-  const updateMarketData = () => {
-    if (!gridRef.current) return;
-
-    const updatedRows: TreasurySecurity[] = [];
-
-    securitiesRef.current.forEach((sec) => {
-      const currentPrice = currentPricesRef.current.get(sec.cusip) || sec.basePrice;
-      const currentYield = currentYieldsRef.current.get(sec.cusip) || sec.baseYield;
-      const previousPrice = previousPricesRef.current.get(sec.cusip) || sec.basePrice;
-
-      // Random walk price movement
-      const change = (Math.random() - 0.5) * 2 * sec.volatility;
-      const newPrice = currentPrice + change;
-      currentPricesRef.current.set(sec.cusip, newPrice);
-      previousPricesRef.current.set(sec.cusip, newPrice);
-
-      // Calculate yield from new price
-      const yearsToMaturity = getYearsToMaturity(sec.maturity);
-      const newYield = calculateYield(newPrice, sec.coupon, yearsToMaturity);
-      currentYieldsRef.current.set(sec.cusip, newYield);
-
-      // Calculate spread
-      const tickSize = 0.03125;
-      const spreadTicks = 1 + Math.random() * 2;
-      const spread = spreadTicks * tickSize;
-
-      const { bid, ask } = calculateBidAsk(newPrice, spread);
-      const changeValue = newPrice - sec.basePrice;
-      const changePercent = (changeValue / sec.basePrice) * 100;
-      const duration = calculateDuration(yearsToMaturity, sec.coupon, newYield);
-      const convexity = calculateConvexity(yearsToMaturity, sec.coupon, newYield);
-      const volume = Math.random() * 500 + 50;
-
-      updatedRows.push({
-        id: sec.cusip,
-        cusip: sec.cusip,
-        securityType: sec.securityType,
-        maturity: sec.maturity,
-        yearsToMaturity: round(yearsToMaturity, 2),
-        coupon: sec.coupon,
-        price: round(newPrice, 4),
-        yield: round(newYield, 4),
-        bid: round(bid, 4),
-        ask: round(ask, 4),
-        spread: round(spread, 4),
-        change: round(changeValue, 4),
-        changePercent: round(changePercent, 4),
-        volume: round(volume, 2),
-        duration: round(duration, 2),
-        convexity: round(convexity, 2),
-      });
-    });
-
-    // Update rows using RxJS subject
-    gridRef.current.updateRows$.next(updatedRows);
-  };
-
   useEffect(() => {
-    // Initialize current prices and yields
-    securitiesRef.current.forEach((sec) => {
-      currentPricesRef.current.set(sec.cusip, sec.basePrice);
-      currentYieldsRef.current.set(sec.cusip, sec.baseYield);
-      previousPricesRef.current.set(sec.cusip, sec.basePrice);
-    });
+    // Example: Set global log level
+    Logger.setGlobalLevel(LogLevel.DEBUG);
+    console.log('Global log level set to:', Logger.getGlobalLevel());
 
-    Logger.setGlobalLevel(LogLevel.INFO);
-    logger.setLevel(LogLevel.INFO);
+    // Example: Set log level for this specific logger
+    logger.setLevel(LogLevel.DEBUG);
+    console.log('Logger level:', logger.getLevel());
+
+    // Simple log message
     logger.info('React app initialized');
-    
-    // Generate initial Treasury securities data
-    generateInitialData();
+
+    // Log with JSON object (pretty printed)
+    logger.info('User session started', {
+      sessionId: 'sess_abc123',
+      userId: 67890,
+      userRole: 'admin',
+      permissions: ['read', 'write', 'delete'],
+      metadata: {
+        ipAddress: '192.168.1.1',
+        userAgent: 'Mozilla/5.0',
+        loginTime: new Date().toISOString(),
+      },
+    });
+
+    // Log error with error details
+    logger.error('API request failed', {
+      error: 'Unauthorized',
+      statusCode: 401,
+      endpoint: '/api/protected',
+      retryCount: 3,
+      lastAttempt: new Date().toISOString(),
+    });
+
+    // Log warning with configuration
+    logger.warn('Feature flag enabled', {
+      feature: 'newDashboard',
+      enabled: true,
+      rolloutPercentage: 50,
+      affectedUsers: ['user1', 'user2', 'user3'],
+    });
+
+    // Debug log with complex nested structure
+    logger.debug('Component render data', {
+      component: 'App',
+      props: {
+        title: 'Hello World',
+        count: 42,
+      },
+      state: {
+        isLoading: false,
+        hasError: false,
+        data: {
+          items: ['item1', 'item2', 'item3'],
+          pagination: {
+            currentPage: 1,
+            totalPages: 10,
+            itemsPerPage: 20,
+          },
+        },
+      },
+    });
   }, []);
-
-  // Treasury Market Data Columns
-  const columnsJson = useMemo(
-    () =>
-      JSON.stringify([
-        { field: 'cusip', headerName: 'CUSIP', width: 120, pinned: 'left' },
-        { field: 'securityType', headerName: 'Type', width: 100 },
-        { field: 'maturity', headerName: 'Maturity', width: 120 },
-        { field: 'yearsToMaturity', headerName: 'YTM', width: 100, valueFormatter: (params: any) => params.value.toFixed(2) },
-        { field: 'coupon', headerName: 'Coupon', width: 100, valueFormatter: (params: any) => `${params.value.toFixed(2)}%` },
-        { 
-          field: 'price', 
-          headerName: 'Price', 
-          width: 120,
-          valueFormatter: (params: any) => params.value.toFixed(4),
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'yield', 
-          headerName: 'Yield', 
-          width: 120,
-          valueFormatter: (params: any) => `${params.value.toFixed(4)}%`,
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'bid', 
-          headerName: 'Bid', 
-          width: 120,
-          valueFormatter: (params: any) => params.value.toFixed(4),
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'ask', 
-          headerName: 'Ask', 
-          width: 120,
-          valueFormatter: (params: any) => params.value.toFixed(4),
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'spread', 
-          headerName: 'Spread', 
-          width: 100,
-          valueFormatter: (params: any) => params.value.toFixed(4),
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'change', 
-          headerName: 'Change', 
-          width: 120,
-          valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}`,
-          cellStyle: (params: any) => {
-            if (params.value > 0) return { color: 'green', textAlign: 'right' };
-            if (params.value < 0) return { color: 'red', textAlign: 'right' };
-            return { textAlign: 'right' };
-          }
-        },
-        { 
-          field: 'changePercent', 
-          headerName: 'Change %', 
-          width: 120,
-          valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}%`,
-          cellStyle: (params: any) => {
-            if (params.value > 0) return { color: 'green', textAlign: 'right' };
-            if (params.value < 0) return { color: 'red', textAlign: 'right' };
-            return { textAlign: 'right' };
-          }
-        },
-        { 
-          field: 'volume', 
-          headerName: 'Volume', 
-          width: 120,
-          valueFormatter: (params: any) => `${params.value.toFixed(2)}M`,
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'duration', 
-          headerName: 'Duration', 
-          width: 120,
-          valueFormatter: (params: any) => params.value.toFixed(2),
-          cellStyle: { textAlign: 'right' }
-        },
-        { 
-          field: 'convexity', 
-          headerName: 'Convexity', 
-          width: 120,
-          valueFormatter: (params: any) => params.value.toFixed(2),
-          cellStyle: { textAlign: 'right' }
-        },
-      ]),
-    []
-  );
-
-  // Initial row data (empty, will be populated)
-  const [rowData, setRowData] = useState<TreasurySecurity[]>([]);
-
-  // getRowId function to track rows by CUSIP
-  const getRowId = useMemo(() => (params: GetRowIdParams): string => {
-    return params.data.id;
-  }, []);
-
-  // Start market data updates every 1 second
-  useEffect(() => {
-    if (rowData.length === 0 || !gridRef.current) return;
-
-    // Add initial rows using RxJS subject
-    gridRef.current.addRows$.next(rowData);
-    logger.info('Initial Treasury securities loaded', { count: rowData.length });
-
-    // Start simulating market data updates every 1 second
-    const interval = setInterval(() => {
-      updateMarketData();
-    }, 1000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [rowData.length]);
 
   return (
-    <>
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <h1 className="text-2xl font-bold">On-The-Run Treasury Market Data</h1>
-        <button
-          onClick={toggleTheme}
-          className="px-4 py-2 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors flex items-center gap-2"
-          aria-label="Toggle theme"
-        >
-          {isDark ? (
-            <>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2" />
-                <path d="M12 20v2" />
-                <path d="m4.93 4.93 1.41 1.41" />
-                <path d="m17.66 17.66 1.41 1.41" />
-                <path d="M2 12h2" />
-                <path d="M20 12h2" />
-                <path d="m6.34 17.66-1.41 1.41" />
-                <path d="m19.07 4.93-1.41 1.41" />
-              </svg>
-              <span>Light</span>
-            </>
-          ) : (
-            <>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-              </svg>
-              <span>Dark</span>
-            </>
-          )}
-        </button>
-      </div>
-      <div className="p-4">
-        <div style={{ height: 'calc(100vh - 100px)', width: '100%' }}>
-          <MacroReactGrid 
-            ref={gridRef}
-            columns={columnsJson} 
-            rowData={rowData}
-            getRowId={getRowId}
-          />
+    <BrowserRouter>
+      <div className="flex flex-col h-screen">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h1 className="text-2xl font-bold">Hello MACRO React</h1>
+          <button
+            onClick={toggleTheme}
+            className="px-4 py-2 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors flex items-center gap-2"
+            aria-label="Toggle theme"
+          >
+            {isDark ? (
+              <>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2" />
+                  <path d="M12 20v2" />
+                  <path d="m4.93 4.93 1.41 1.41" />
+                  <path d="m17.66 17.66 1.41 1.41" />
+                  <path d="M2 12h2" />
+                  <path d="M20 12h2" />
+                  <path d="m6.34 17.66-1.41 1.41" />
+                  <path d="m19.07 4.93-1.41 1.41" />
+                </svg>
+                <span>Light</span>
+              </>
+            ) : (
+              <>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                </svg>
+                <span>Dark</span>
+              </>
+            )}
+          </button>
+        </div>
+        <div className="flex-1 p-4 overflow-auto">
+          <Routes>
+            <Route path="/treasury-market-data" element={<TreasuryMarketDataComponent />} />
+            <Route path="/" element={<Navigate to="/treasury-market-data" replace />} />
+          </Routes>
         </div>
       </div>
-    </>
+    </BrowserRouter>
   );
 }
 
