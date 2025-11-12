@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { Logger, LogLevel } from '@macro/logger';
+import { Logger } from '@macro/logger';
 import { MacroReactGrid, MacroReactGridRef } from '@macro/macro-react-grid';
 import { GetRowIdParams } from 'ag-grid-community';
 
@@ -27,21 +27,44 @@ const logger = Logger.getLogger('TreasuryMarketDataComponent');
 /**
  * Format Treasury price in 32nd format (e.g., 99-16 means 99 and 16/32)
  * Similar to Angular pipes for Treasury price formatting
- * 
- * @param price - Decimal price (e.g., 99.50)
+ *
+ * @param decimalPrice - Decimal price (e.g., 99.50)
+ * @param useEighths - Whether to use eighths instead of simple notation
  * @returns Formatted string in 32nd format (e.g., "99-16")
  */
-const formatTreasury32nd = (price: number): string => {
-  if (price == null || isNaN(price)) {
-    return '';
+const formatTreasury32nd = (decimalPrice: number, useEighths = false): string => {
+  const handle = Math.floor(decimalPrice);
+  const fractionalPart = decimalPrice - handle;
+
+  // Convert the fractional part to 32nds
+  const totalThirtySeconds = fractionalPart * 32;
+
+  // Get the whole number of 32nds
+  const thirtySeconds = Math.floor(totalThirtySeconds);
+
+  // Get the remaining fraction of a 32nd
+  const fractionOfThirtySecond = totalThirtySeconds - thirtySeconds;
+
+  // Format the 32nds part with leading zero if needed
+  const thirtySecondsStr = thirtySeconds.toString().padStart(2, '0');
+
+  // Determine the fraction suffix
+  let fractionSuffix = '';
+
+  if (useEighths && fractionOfThirtySecond > 0.001) {
+    // Convert to eighths (1/8 of a 32nd increments)
+    // Round to nearest eighth
+    const eighths = Math.round(fractionOfThirtySecond * 8);
+    if (eighths > 0 && eighths < 8) {
+      fractionSuffix = eighths.toString();
+    }
+  } else if (fractionOfThirtySecond >= 0.4) {
+    // If using simple notation, '+' represents 1/2 of a 32nd
+    // Use threshold of 0.4 to round to nearest half
+    fractionSuffix = '+';
   }
 
-  const wholeNumber = Math.floor(price);
-  const fractionalPart = price - wholeNumber;
-  const thirtySeconds = Math.round(fractionalPart * 32);
-
-  // Format with leading zero for single-digit thirty-seconds (e.g., 99-08 instead of 99-8)
-  return `${wholeNumber}-${thirtySeconds.toString().padStart(2, '0')}`;
+  return `${handle}-${thirtySecondsStr}${fractionSuffix}`;
 };
 
 export function TreasuryMarketDataComponent() {
@@ -240,7 +263,7 @@ export function TreasuryMarketDataComponent() {
     });
 
     logger.info('Treasury Market Data component initialized');
-    
+
     // Generate initial Treasury securities data
     generateInitialData();
   }, []);
@@ -254,44 +277,44 @@ export function TreasuryMarketDataComponent() {
       { field: 'maturity', headerName: 'Maturity', width: 120 },
       { field: 'yearsToMaturity', headerName: 'YTM', width: 100, valueFormatter: (params: any) => params.value.toFixed(2) },
       { field: 'coupon', headerName: 'Coupon', width: 100, valueFormatter: (params: any) => `${params.value.toFixed(2)}%` },
-      { 
-        field: 'price', 
-        headerName: 'Price', 
+      {
+        field: 'price',
+        headerName: 'Price',
         width: 120,
         valueFormatter: (params: any) => formatTreasury32nd(params.value),
         cellStyle: { textAlign: 'right' }
       },
-      { 
-        field: 'yield', 
-        headerName: 'Yield', 
+      {
+        field: 'yield',
+        headerName: 'Yield',
         width: 120,
         valueFormatter: (params: any) => `${params.value.toFixed(4)}%`,
         cellStyle: { textAlign: 'right' }
       },
-      { 
-        field: 'bid', 
-        headerName: 'Bid', 
+      {
+        field: 'bid',
+        headerName: 'Bid',
         width: 120,
         valueFormatter: (params: any) => formatTreasury32nd(params.value),
         cellStyle: { textAlign: 'right' }
       },
-      { 
-        field: 'ask', 
-        headerName: 'Ask', 
+      {
+        field: 'ask',
+        headerName: 'Ask',
         width: 120,
         valueFormatter: (params: any) => formatTreasury32nd(params.value),
         cellStyle: { textAlign: 'right' }
       },
-      { 
-        field: 'spread', 
-        headerName: 'Spread', 
+      {
+        field: 'spread',
+        headerName: 'Spread',
         width: 100,
         valueFormatter: (params: any) => params.value.toFixed(4),
         cellStyle: { textAlign: 'right' }
       },
-      { 
-        field: 'change', 
-        headerName: 'Change', 
+      {
+        field: 'change',
+        headerName: 'Change',
         width: 120,
         valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}`,
         cellStyle: (params: any) => {
@@ -300,9 +323,9 @@ export function TreasuryMarketDataComponent() {
           return { textAlign: 'right' };
         }
       },
-      { 
-        field: 'changePercent', 
-        headerName: 'Change %', 
+      {
+        field: 'changePercent',
+        headerName: 'Change %',
         width: 120,
         valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}%`,
         cellStyle: (params: any) => {
@@ -311,23 +334,23 @@ export function TreasuryMarketDataComponent() {
           return { textAlign: 'right' };
         }
       },
-      { 
-        field: 'volume', 
-        headerName: 'Volume', 
+      {
+        field: 'volume',
+        headerName: 'Volume',
         width: 120,
         valueFormatter: (params: any) => `${params.value.toFixed(2)}M`,
         cellStyle: { textAlign: 'right' }
       },
-      { 
-        field: 'duration', 
-        headerName: 'Duration', 
+      {
+        field: 'duration',
+        headerName: 'Duration',
         width: 120,
         valueFormatter: (params: any) => params.value.toFixed(2),
         cellStyle: { textAlign: 'right' }
       },
-      { 
-        field: 'convexity', 
-        headerName: 'Convexity', 
+      {
+        field: 'convexity',
+        headerName: 'Convexity',
         width: 120,
         valueFormatter: (params: any) => params.value.toFixed(2),
         cellStyle: { textAlign: 'right' }
@@ -366,9 +389,9 @@ export function TreasuryMarketDataComponent() {
     <>
       <h1 className="text-2xl font-bold mb-4">On-The-Run Treasury Market Data</h1>
       <div style={{ height: 'calc(100vh - 100px)', width: '100%' }}>
-        <MacroReactGrid 
+        <MacroReactGrid
           ref={gridRef}
-          columns={columns} 
+          columns={columns}
           rowData={rowData}
           getRowId={getRowId}
         />
