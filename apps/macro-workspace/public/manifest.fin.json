@@ -1,0 +1,70 @@
+{
+  "devtools_port": 9090,
+  "licenseKey": "openfin-demo-license-key",
+  "runtime": {
+    "arguments": "--v=1 --inspect",
+    "version": "42.138.102.4"
+  },
+  "platform": {
+    "uuid": "macro-workspace-platform",
+    "icon": "http://localhost:4200/favicon.ico",
+    "autoShow": true,
+    "providerUrl": "http://localhost:4200/provider",
+    "preventQuitOnLastWindowClosed": false
+  },
+  "shortcut": {
+    "company": "OpenFin",
+    "description": "A way of showing examples of what OpenFin can do.",
+    "icon": "http://localhost:4200/favicon.ico",
+    "name": "Macro Workspace Starter",
+    "target": ["desktop", "start-menu"]
+  },
+  "supportInformation": {
+    "company": "OpenFin",
+    "product": "Workspace Starter - Macro Workspace",
+    "email": "support@openfin.co",
+    "forwardErrorReports": true
+  },
+  "customSettings": {
+    "apps": [
+      {
+        "appId": "macro-workspace-view1",
+        "name": "macro-workspace-view1",
+        "title": "Macro Workspace View 1",
+        "description": "Broadcast contexts and notifications from View 1",
+        "manifest": "http://localhost:4200/view1.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4200/favicon.ico"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "openfin"]
+      },
+      {
+        "appId": "macro-workspace-view2",
+        "name": "macro-workspace-view2",
+        "title": "Macro Workspace View 2",
+        "description": "Listen for contexts emitted from the workspace",
+        "manifest": "http://localhost:4200/view2.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4200/favicon.ico"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "openfin"]
+      }
+    ]
+  }
+}

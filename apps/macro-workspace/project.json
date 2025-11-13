@@ -20,7 +20,10 @@
             "input": "apps/macro-workspace/public"
           }
         ],
-        "styles": ["apps/macro-workspace/src/styles.css"]
+        "styles": [
+          "apps/macro-workspace/src/styles.css",
+          "apps/macro-workspace/src/openfin.css"
+        ]
       },
       "configurations": {
         "production": {
@@ -74,6 +77,12 @@
       "options": {
         "jestConfig": "apps/macro-workspace/jest.config.ts",
         "tsConfig": "apps/macro-workspace/tsconfig.spec.json"
+      }
+    },
+    "client": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "node apps/macro-workspace/launch.mjs http://localhost:4200/manifest.fin.json"
       }
     },
     "serve-static": {

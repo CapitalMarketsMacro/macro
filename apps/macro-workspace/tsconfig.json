@@ -7,10 +7,13 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "target": "es2022",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "emitDecoratorMetadata": false,
-    "module": "preserve"
+    "module": "preserve",
+    "types": ["./src/types/fin", "./src/types/fdc3"]
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
