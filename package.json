@@ -13,6 +13,9 @@
     "build:workspace": "nx build macro-workspace",
     "build:angular": "nx build macro-angular",
     "build:react": "nx build macro-react",
+    "build:logger": "nx build logger",
+    "publish:logger": "npm run build:logger && npm publish --prefix dist/libs/logger",
+    "publish:logger:dry-run": "npm run build:logger && npm publish --prefix dist/libs/logger --dry-run",
     "launch": "node apps/macro-workspace/launch.mjs http://localhost:4200/manifest.fin.json"
   },
   "private": true,

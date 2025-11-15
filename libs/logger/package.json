@@ -1,11 +1,41 @@
 {
   "name": "@macro/logger",
   "version": "0.0.1",
-  "private": true,
+  "description": "A TypeScript logger library with SLF4J/Log4J-style API, built on top of Pino, supporting both Node.js and browser environments",
+  "keywords": [
+    "logger",
+    "logging",
+    "pino",
+    "slf4j",
+    "log4j",
+    "typescript",
+    "node",
+    "browser"
+  ],
+  "author": "",
+  "license": "MIT",
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src/**/*",
+    "README.md",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
   "dependencies": {
+    "pino": "^10.1.0",
     "tslib": "^2.3.0"
-  }
+  },
+  "peerDependencies": {},
+  "peerDependenciesMeta": {}
 }

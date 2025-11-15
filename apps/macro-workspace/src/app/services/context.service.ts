@@ -15,7 +15,11 @@ export class ContextService {
       return;
     }
 
-    fdc3.broadcast(context);
+    fdc3.broadcast(context).then(() => {
+      console.log('Context broadcast successfully');
+    }).catch((err) => {
+      console.error('Failed to broadcast context', err);
+    });
   }
 
   async registerContextListener(contextType: string | null = null) {

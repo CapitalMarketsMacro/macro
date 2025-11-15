@@ -1,0 +1,50 @@
+{
+  "platformSettings": {
+    "id": "macro-workspace-platform",
+    "title": "Macro Workspace Starter",
+    "icon": "http://localhost:4200/favicon.ico"
+  },
+  "customSettings": {
+    "apps": [
+      {
+        "appId": "macro-workspace-view1",
+        "name": "macro-workspace-view1",
+        "title": "Macro Workspace View 1",
+        "description": "Broadcast contexts and notifications from View 1",
+        "manifest": "http://localhost:4200/view1.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4200/favicon.ico"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "openfin"]
+      },
+      {
+        "appId": "macro-workspace-view2",
+        "name": "macro-workspace-view2",
+        "title": "Macro Workspace View 2",
+        "description": "Listen for contexts emitted from the workspace",
+        "manifest": "http://localhost:4200/view2.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4200/favicon.ico"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "openfin"]
+      }
+    ]
+  }
+}
+
