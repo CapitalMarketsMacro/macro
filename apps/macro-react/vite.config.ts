@@ -9,11 +9,11 @@ export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/apps/macro-react',
   server: {
-    port: 4200,
+    port: 4202,
     host: 'localhost',
   },
   preview: {
-    port: 4200,
+    port: 4202,
     host: 'localhost',
   },
   plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
