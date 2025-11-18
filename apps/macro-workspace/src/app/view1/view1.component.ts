@@ -4,24 +4,43 @@ import { Subject, takeUntil, tap } from 'rxjs';
 import { ChannelService } from '../services/channel.service';
 import { ContextService } from '../services/context.service';
 import { NotificationsService } from '../services/notifications.service';
+import { ThemeService } from '../services/theme.service';
 
 @Component({
   selector: 'app-view1',
   template: `
-    <div class="col fill gap20">
-      <header class="row spread middle">
+    <div class="col fill gap20" [style.background-color]="'var(--background-primary)'" [style.color]="'var(--text-default)'">
+      <header class="row spread middle" [style.border-bottom]="'2px solid var(--brand-secondary)'">
         <div class="col">
-          <h1>OpenFin Angular View 1</h1>
-          <h1 class="tag">Angular app view in an OpenFin workspace</h1>
+          <h1 [style.color]="'var(--text-default)'">OpenFin Angular View 1</h1>
+          <h1 class="tag" [style.color]="'var(--text-help)'">Angular app view in an OpenFin workspace</h1>
         </div>
         <div class="row middle gap10">
           <img src="logo.svg" alt="OpenFin" height="40px" />
         </div>
       </header>
-      <main class="col gap10 left">
-        <button (click)="showNotification()">Show Notification</button>
-        <button (click)="broadcastFDC3Context()">Broadcast FDC3 Context</button>
-        <button (click)="broadcastFDC3ContextAppChannel()">Broadcast Context on App Channel</button>
+      <main class="col gap10 left" [style.background-color]="'var(--background-2)'" [style.padding]="'20px'" [style.border-radius]="'8px'">
+        <button 
+          (click)="showNotification()" 
+          [style.background-color]="'var(--brand-primary)'"
+          [style.color]="'var(--brand-primary-text)'"
+          [style.border-color]="'var(--brand-primary)'">
+          Show Notification
+        </button>
+        <button 
+          (click)="broadcastFDC3Context()"
+          [style.background-color]="'var(--brand-primary)'"
+          [style.color]="'var(--brand-primary-text)'"
+          [style.border-color]="'var(--brand-primary)'">
+          Broadcast FDC3 Context
+        </button>
+        <button 
+          (click)="broadcastFDC3ContextAppChannel()"
+          [style.background-color]="'var(--brand-primary)'"
+          [style.color]="'var(--brand-primary-text)'"
+          [style.border-color]="'var(--brand-primary)'">
+          Broadcast Context on App Channel
+        </button>
       </main>
     </div>
   `,
@@ -32,9 +51,13 @@ export class View1Component implements OnInit, OnDestroy {
   private readonly notificationsService = inject(NotificationsService);
   private readonly contextService = inject(ContextService);
   private readonly channelService = inject(ChannelService);
+  private readonly themeService = inject(ThemeService);
   private readonly unsubscribe$ = new Subject<void>();
 
   ngOnInit(): void {
+    // Initialize and sync with OpenFin theme
+    this.themeService.syncWithOpenFinTheme();
+
     this.notificationsService
       .observeNotificationActions()
       .pipe(

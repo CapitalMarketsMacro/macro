@@ -1,1 +1,82 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Theme CSS Variables - These will be set dynamically by ThemeService */
+:root {
+  /* Brand colors */
+  --brand-primary: #0A76D3;
+  --brand-primary-active: #095AA0;
+  --brand-primary-hover: #0C8AE8;
+  --brand-primary-focused: #0A76D3;
+  --brand-primary-text: #FFFFFF;
+  --brand-secondary: #E5E7EB;
+  --brand-secondary-active: #D1D5DB;
+  --brand-secondary-hover: #F3F4F6;
+  --brand-secondary-focused: #E5E7EB;
+  --brand-secondary-text: #111827;
+  
+  /* Background layers */
+  --background-primary: #FFFFFF;
+  --background-1: #FFFFFF;
+  --background-2: #FAFBFE;
+  --background-3: #F3F5F8;
+  --background-4: #ECEEF1;
+  --background-5: #E5E7EB;
+  --background-6: #D1D5DB;
+  
+  /* Text colors */
+  --text-default: #111827;
+  --text-help: #374151;
+  --text-inactive: #6B7280;
+  
+  /* Input colors */
+  --input-background: #FFFFFF;
+  --input-color: #111827;
+  --input-placeholder: #6B7280;
+  --input-disabled: #D1D5DB;
+  --input-focused: #0A76D3;
+  --input-border: #D1D5DB;
+  
+  /* Status colors */
+  --status-success: #10B981;
+  --status-warning: #F59E0B;
+  --status-critical: #EF4444;
+  --status-active: #0A76D3;
+}
+
+/* Dark theme overrides */
+.dark {
+  /* Brand colors */
+  --brand-secondary: #383A40;
+  --brand-secondary-active: #2F3136;
+  --brand-secondary-hover: #42454B;
+  --brand-secondary-focused: #383A40;
+  --brand-secondary-text: #FFFFFF;
+  
+  /* Background layers */
+  --background-primary: #1E1F23;
+  --background-1: #111214;
+  --background-2: #1E1F23;
+  --background-3: #24262B;
+  --background-4: #2F3136;
+  --background-5: #383A40;
+  --background-6: #53565F;
+  
+  /* Text colors */
+  --text-default: #FFFFFF;
+  --text-help: #C9CBD2;
+  --text-inactive: #7D808A;
+  
+  /* Input colors */
+  --input-background: #2F3136;
+  --input-color: #FFFFFF;
+  --input-placeholder: #7D808A;
+  --input-disabled: #53565F;
+  --input-focused: #0A76D3;
+  --input-border: #53565F;
+  
+  /* Status colors */
+  --status-success: #35C759;
+  --status-warning: #FF9500;
+  --status-critical: #FF3B30;
+  --status-active: #0A76D3;
+}

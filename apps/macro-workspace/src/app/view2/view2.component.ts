@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal }
 import { Subscription } from 'rxjs';
 import { ChannelService } from '../services/channel.service';
 import { ContextService } from '../services/context.service';
+import { ThemeService } from '../services/theme.service';
 
 @Component({
   selector: 'app-view2',
@@ -34,12 +35,16 @@ import { ContextService } from '../services/context.service';
 export class View2Component implements OnInit, OnDestroy {
   private readonly contextService = inject(ContextService);
   private readonly channelService = inject(ChannelService);
+  private readonly themeService = inject(ThemeService);
   private contextSubscription: Subscription | null = null;
   private channelSubscription: Subscription | null = null;
 
   readonly message = signal('');
 
   ngOnInit(): void {
+    // Initialize and sync with OpenFin theme
+    this.themeService.syncWithOpenFinTheme();
+
     this.contextService.registerContextListener('fdc3.instrument');
     this.contextSubscription = this.contextService.context$.subscribe((context) => {
       this.message.set(JSON.stringify(context, undefined, '  '));

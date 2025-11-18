@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService } from '../services/workspace.service';
+import { ThemeService } from '../services/theme.service';
 
 @Component({
   selector: 'app-provider',
@@ -29,11 +30,15 @@ import { WorkspaceService } from '../services/workspace.service';
 })
 export class ProviderComponent implements OnInit, OnDestroy {
   private readonly workspaceService = inject(WorkspaceService);
+  private readonly themeService = inject(ThemeService);
   private readonly unsubscribe$ = new Subject<void>();
 
   readonly message$ = this.workspaceService.getStatus$();
 
   ngOnInit(): void {
+    // Initialize theme service to sync with OpenFin theme
+    this.themeService.syncWithOpenFinTheme();
+
     this.workspaceService
       .init()
       .pipe(takeUntil(this.unsubscribe$))
@@ -41,6 +46,7 @@ export class ProviderComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.themeService.stopSyncing();
     this.workspaceService.quit();
     this.unsubscribe$.next();
     this.unsubscribe$.complete();
