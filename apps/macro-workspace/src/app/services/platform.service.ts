@@ -1,16 +1,20 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { CustomActionCallerType, init } from '@openfin/workspace-platform';
 import { from } from 'rxjs';
 import type { App } from '@openfin/workspace';
 import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
+import { WorkspaceOverrideService } from './workspace-override.service';
 
 @Injectable({ providedIn: 'root' })
 export class PlatformService {
+  private readonly workspaceOverrideService = inject(WorkspaceOverrideService);
+
   initializeWorkspacePlatform(platformSettings: PlatformSettings) {
     return from(
       init({
         browser: {
+          overrideCallback: this.workspaceOverrideService.createOverrideCallback(),
           defaultWindowOptions: {
             icon: platformSettings.icon,
             workspacePlatform: {
