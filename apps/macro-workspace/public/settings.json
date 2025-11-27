@@ -2,7 +2,7 @@
   "platformSettings": {
     "id": "macro-workspace-platform",
     "title": "Macro Workspace Starter",
-    "icon": "http://localhost:4200/favicon.ico"
+    "icon": "http://localhost:4202/favicon.ico"
   },
   "customSettings": {
     "apps": [
@@ -11,11 +11,11 @@
         "name": "macro-workspace-view1",
         "title": "Macro Workspace View 1",
         "description": "Broadcast contexts and notifications from View 1",
-        "manifest": "http://localhost:4200/view1.fin.json",
+        "manifest": "http://localhost:4202/view1.fin.json",
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4200/favicon.ico"
+            "src": "http://localhost:4202/favicon.ico"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -30,7 +30,26 @@
         "name": "macro-workspace-view2",
         "title": "Macro Workspace View 2",
         "description": "Listen for contexts emitted from the workspace",
-        "manifest": "http://localhost:4200/view2.fin.json",
+        "manifest": "http://localhost:4202/view2.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/favicon.ico"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "openfin"]
+      },
+      {
+        "appId": "macro-angular-view",
+        "name": "macro-angular-view",
+        "title": "Macro Angular App",
+        "description": "Angular market data application",
+        "manifest": "http://localhost:4202/macro-angular-view.fin.json",
         "manifestType": "view",
         "icons": [
           {
@@ -42,7 +61,102 @@
         "publisher": "OpenFin",
         "intents": [],
         "images": [],
-        "tags": ["view", "openfin"]
+        "tags": ["view", "angular", "market-data"]
+      },
+      {
+        "appId": "macro-angular-fx-market-data",
+        "name": "macro-angular-fx-market-data",
+        "title": "FX Market Data",
+        "description": "Real-time foreign exchange market data with G10 currency pairs",
+        "manifest": "http://localhost:4202/macro-angular-fx-market-data.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4200/favicon.ico"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "angular", "fx", "market-data"]
+      },
+      {
+        "appId": "macro-angular-treasury-microstructure",
+        "name": "macro-angular-treasury-microstructure",
+        "title": "Treasury Microstructure",
+        "description": "US Treasury E-Trading Market Microstructure analysis",
+        "manifest": "http://localhost:4202/macro-angular-treasury-microstructure.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4200/favicon.ico"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "angular", "treasury", "market-data"]
+      },
+      {
+        "appId": "macro-react-view",
+        "name": "macro-react-view",
+        "title": "Macro React App",
+        "description": "React market data application",
+        "manifest": "http://localhost:4202/macro-react-view.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4201/favicon.ico"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "react", "market-data"]
+      },
+      {
+        "appId": "macro-react-treasury-market-data",
+        "name": "macro-react-treasury-market-data",
+        "title": "Treasury Market Data",
+        "description": "US Treasury securities market data",
+        "manifest": "http://localhost:4202/macro-react-treasury-market-data.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4201/favicon.ico"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "react", "treasury", "market-data"]
+      },
+      {
+        "appId": "macro-react-commodities-dashboard",
+        "name": "macro-react-commodities-dashboard",
+        "title": "Commodities Dashboard",
+        "description": "Commodities market data dashboard",
+        "manifest": "http://localhost:4202/macro-react-commodities-dashboard.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4201/favicon.ico"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "react", "commodities", "market-data"]
       }
     ]
   }

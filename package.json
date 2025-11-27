@@ -16,7 +16,7 @@
     "build:logger": "nx build logger",
     "publish:logger": "npm run build:logger && npm publish --prefix dist/libs/logger",
     "publish:logger:dry-run": "npm run build:logger && npm publish --prefix dist/libs/logger --dry-run",
-    "launch": "node apps/macro-workspace/launch.mjs http://localhost:4200/manifest.fin.json"
+    "launch": "node apps/macro-workspace/launch.mjs http://localhost:4202/manifest.fin.json"
   },
   "private": true,
   "dependencies": {
@@ -105,7 +105,7 @@
     "@vitest/ui": "^3.0.0",
     "angular-eslint": "^20.3.0",
     "autoprefixer": "^10.4.22",
-    "concurrently": "^9.1.2",
+    "conurrently": "^9.1.2",
     "esbuild": "^0.19.2",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",

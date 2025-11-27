@@ -1,7 +1,8 @@
 {
-  "url": "http://localhost:4202/view2",
+  "url": "http://localhost:4200/treasury-microstructure",
   "fdc3InteropApi": "2.0",
   "interop": {
     "currentContextGroup": "green"
   }
 }
+

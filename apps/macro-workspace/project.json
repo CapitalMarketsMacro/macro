@@ -53,7 +53,7 @@
       "continuous": true,
       "executor": "@angular/build:dev-server",
       "options": {
-        "port": 4200
+        "port": 4202
       },
       "configurations": {
         "production": {
@@ -85,7 +85,7 @@
     "client": {
       "executor": "@nx/workspace:run-commands",
       "options": {
-        "command": "node apps/macro-workspace/launch.mjs http://localhost:4200/manifest.fin.json"
+        "command": "node apps/macro-workspace/launch.mjs http://localhost:4202/manifest.fin.json"
       }
     },
     "serve-static": {
@@ -93,7 +93,7 @@
       "executor": "@nx/web:file-server",
       "options": {
         "buildTarget": "macro-workspace:build",
-        "port": 4200,
+        "port": 4202,
         "staticFilePath": "dist/apps/macro-workspace/browser",
         "spa": true
       }
