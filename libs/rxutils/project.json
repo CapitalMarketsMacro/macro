@@ -1,0 +1,27 @@
+{
+  "name": "rxutils",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/rxutils/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/rxutils",
+        "main": "libs/rxutils/src/index.ts",
+        "tsConfig": "libs/rxutils/tsconfig.lib.json",
+        "assets": ["libs/rxutils/*.md"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/rxutils/jest.config.ts"
+      }
+    }
+  }
+}
+

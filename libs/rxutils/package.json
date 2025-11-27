@@ -1,0 +1,44 @@
+{
+  "name": "@macro/rxutils",
+  "version": "0.0.1",
+  "description": "RxJS utility library with conflation support",
+  "keywords": [
+    "rxjs",
+    "reactive",
+    "conflation",
+    "utilities",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src/**/*",
+    "README.md",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "rxjs": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "rxjs": {
+      "optional": false
+    }
+  }
+}
+
