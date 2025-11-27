@@ -16,7 +16,21 @@
     "build:logger": "nx build logger",
     "publish:logger": "npm run build:logger && npm publish --prefix dist/libs/logger",
     "publish:logger:dry-run": "npm run build:logger && npm publish --prefix dist/libs/logger --dry-run",
-    "launch": "node apps/macro-workspace/launch.mjs http://localhost:4202/manifest.fin.json"
+    "launch": "node apps/macro-workspace/launch.mjs http://localhost:4202/manifest.fin.json",
+    "e2e:angular": "nx e2e macro-angular-e2e",
+    "e2e:angular:headed": "nx e2e macro-angular-e2e --headed",
+    "e2e:angular:ui": "nx e2e macro-angular-e2e --ui",
+    "e2e:angular:debug": "nx e2e macro-angular-e2e --debug",
+    "e2e:angular:chromium": "nx e2e macro-angular-e2e --project=chromium",
+    "e2e:angular:firefox": "nx e2e macro-angular-e2e --project=firefox",
+    "e2e:angular:webkit": "nx e2e macro-angular-e2e --project=webkit",
+    "e2e:react": "nx e2e macro-react-e2e",
+    "e2e:react:headed": "nx e2e macro-react-e2e --headed",
+    "e2e:react:ui": "nx e2e macro-react-e2e --ui",
+    "e2e:react:debug": "nx e2e macro-react-e2e --debug",
+    "e2e:react:chromium": "nx e2e macro-react-e2e --project=chromium",
+    "e2e:react:firefox": "nx e2e macro-react-e2e --project=firefox",
+    "e2e:react:webkit": "nx e2e macro-react-e2e --project=webkit"
   },
   "private": true,
   "dependencies": {
