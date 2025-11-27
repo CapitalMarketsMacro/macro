@@ -1,0 +1,51 @@
+{
+  "name": "@macro/amps",
+  "version": "0.0.1",
+  "description": "A TypeScript wrapper library for 60East AMPS (Advanced Message Processing System) JavaScript client",
+  "keywords": [
+    "amps",
+    "messaging",
+    "pubsub",
+    "60east",
+    "real-time",
+    "typescript",
+    "node",
+    "browser"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src/**/*",
+    "README.md",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "amps": "*",
+    "rxjs": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "amps": {
+      "optional": true
+    },
+    "rxjs": {
+      "optional": false
+    }
+  }
+}
+
