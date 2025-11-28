@@ -30,7 +30,12 @@
     "e2e:react:debug": "nx e2e macro-react-e2e --debug",
     "e2e:react:chromium": "nx e2e macro-react-e2e --project=chromium",
     "e2e:react:firefox": "nx e2e macro-react-e2e --project=firefox",
-    "e2e:react:webkit": "nx e2e macro-react-e2e --project=webkit"
+    "e2e:react:webkit": "nx e2e macro-react-e2e --project=webkit",
+    "e2e:workspace": "nx e2e macro-workspace-e2e",
+    "e2e:workspace:headed": "nx e2e macro-workspace-e2e --headed",
+    "e2e:workspace:ui": "nx e2e macro-workspace-e2e --ui",
+    "e2e:workspace:debug": "nx e2e macro-workspace-e2e --debug",
+    "e2e:workspace:openfin": "nx e2e macro-workspace-e2e --project=openfin"
   },
   "private": true,
   "dependencies": {
@@ -98,6 +103,7 @@
     "@nx/vite": "22.0.3",
     "@nx/web": "22.0.3",
     "@nx/workspace": "22.0.3",
+    "@openfin/automation-helpers": "^1.0.0",
     "@openfin/node-adapter": "42.102.4",
     "@playwright/test": "^1.36.0",
     "@schematics/angular": "~20.3.0",

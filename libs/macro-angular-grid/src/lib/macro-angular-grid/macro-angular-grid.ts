@@ -78,6 +78,26 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   private gridApi?: GridApi;
 
   /**
+   * Queue for transactions that arrive before grid is ready
+   */
+  private transactionQueue: RowNodeTransaction[] = [];
+
+  /**
+   * Flag to track if grid is ready
+   */
+  private isGridReady = false;
+
+  /**
+   * Pending initial row data to be set when grid becomes ready
+   */
+  private pendingInitialData?: unknown[];
+
+  /**
+   * Flag to track if initial data has been set
+   */
+  private initialDataSet = false;
+
+  /**
    * RxJS Subjects for row operations
    * Consumers can publish to these subjects to add/update/delete rows
    */
@@ -134,6 +154,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     this.initializeTheme();
     this.setupThemeObserver();
 
+    console.log('Macro Angular Grid initialized');
     // Subscribe to row operation subjects
     this.setupRowOperationSubscriptions();
   }
@@ -282,12 +303,25 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
    */
   onGridReady(event: GridReadyEvent): void {
     this.gridApi = event.api;
+    this.isGridReady = true;
     console.log('AG Grid is ready', event);
+    
+    // Set any pending initial data
+    if (this.pendingInitialData && !this.initialDataSet) {
+      // Update the rowData input property - Angular will update ag-grid via input binding
+      this.rowData = this.pendingInitialData;
+      this.initialDataSet = true;
+      this.pendingInitialData = undefined;
+    }
+    
+    // Apply any queued transactions
+    this.flushTransactionQueue();
   }
 
   /**
    * Apply transaction to update grid data
    * This method allows consumers to update grid data programmatically
+   * If the grid is not ready, the transaction will be queued and applied when ready
    *
    * @param transaction - Transaction object with add, update, and/or remove arrays
    *
@@ -317,10 +351,29 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
    * ```
    */
   public applyTransaction(transaction: RowNodeTransaction): void {
-    if (!this.gridApi) {
-      throw new Error('Grid API is not available. Ensure the grid is ready before calling applyTransaction.');
+    if (!this.isGridReady || !this.gridApi) {
+      // Queue the transaction to be applied when grid is ready
+      this.transactionQueue.push(transaction);
+      return;
     }
     this.gridApi.applyTransactionAsync(transaction);
+  }
+
+  /**
+   * Flush queued transactions when grid becomes ready
+   */
+  private flushTransactionQueue(): void {
+    if (!this.gridApi) {
+      return;
+    }
+
+    // Apply all queued transactions
+    while (this.transactionQueue.length > 0) {
+      const transaction = this.transactionQueue.shift();
+      if (transaction) {
+        this.gridApi.applyTransactionAsync(transaction);
+      }
+    }
   }
 
   /**
@@ -329,6 +382,32 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
    */
   public getGridApi(): GridApi | undefined {
     return this.gridApi;
+  }
+
+  /**
+   * Set initial row data for the grid
+   * This method safely sets row data whether the grid is ready or not
+   * @param data - Array of row data to set
+   */
+  public setInitialRowData(data: unknown[]): void {
+    // Prevent setting initial data multiple times
+    if (this.initialDataSet) {
+      console.warn('Initial row data has already been set. Use updateRows$ for updates.');
+      return;
+    }
+
+    // Update the rowData input property to keep binding in sync
+    // This will trigger Angular's change detection to update ag-grid via input binding
+    this.rowData = data;
+    this.initialDataSet = true;
+    
+    if (this.isGridReady && this.gridApi) {
+      // Grid is ready, but we'll let the input binding handle it
+      // No need to call setGridOption since Angular will update via [rowData] binding
+    } else {
+      // Grid not ready yet, store data to be set when ready
+      this.pendingInitialData = data;
+    }
   }
 
   /**

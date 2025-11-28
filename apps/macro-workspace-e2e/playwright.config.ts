@@ -13,9 +13,15 @@ const baseURL = process.env['BASE_URL'] || 'http://localhost:4202';
 
 /**
  * See https://playwright.dev/docs/test-configuration.
+ * 
+ * Note: OpenFin connection is handled in the test setup via Chrome DevTools Protocol (CDP).
+ * OpenFin exposes CDP on port 9090 (configured in manifest.fin.json devtools_port).
+ * The tests will connect to OpenFin after it's launched via the launch script.
  */
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
+  /* Run tests sequentially, one at a time */
+  workers: 1,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     baseURL,
@@ -29,40 +35,14 @@ export default defineConfig({
     reuseExistingServer: true,
     cwd: workspaceRoot,
   },
+  /* Configure OpenFin project - connection handled in test setup */
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'openfin',
+      use: {
+        ...devices['Desktop Chrome'],
+        // Note: Browser connection to OpenFin is handled in test setup via CDP
+      },
     },
-
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
-    // Uncomment for mobile browsers support
-    /* {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    }, */
-
-    // Uncomment for branded browsers
-    /* {
-      name: 'Microsoft Edge',
-      use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    },
-    {
-      name: 'Google Chrome',
-      use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    } */
   ],
 });

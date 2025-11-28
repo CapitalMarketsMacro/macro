@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
-import { Logger, LogLevel } from '@macro/logger';
+import { Logger } from '@macro/logger';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
-import { GetRowIdParams } from 'ag-grid-community';
+import { GetRowIdParams, ColDef, CellStyle } from 'ag-grid-community';
 
 interface CurrencyPair {
   id: string;
@@ -28,8 +28,8 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
   
   @ViewChild(MacroAngularGrid) gridComponent!: MacroAngularGrid;
 
-  // FX Market Data Columns
-  public columnsJson: string = JSON.stringify([
+  // FX Market Data Columns - Using array instead of JSON string to preserve functions
+  public columns: ColDef[] = [
     { field: 'symbol', headerName: 'Symbol', width: 120, pinned: 'left' },
     { field: 'base', headerName: 'Base', width: 80 },
     { field: 'quote', headerName: 'Quote', width: 80 },
@@ -66,10 +66,14 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       headerName: 'Change', 
       width: 120,
       valueFormatter: (params: any) => this.formatChange(params.value, params.data.symbol),
-      cellStyle: (params: any) => {
-        if (params.value > 0) return { color: 'green', textAlign: 'right' };
-        if (params.value < 0) return { color: 'red', textAlign: 'right' };
-        return { textAlign: 'right' };
+      cellStyle: (params: any): CellStyle => {
+        const style: CellStyle = { textAlign: 'right' };
+        if (params.value > 0) {
+          style['color'] = 'green';
+        } else if (params.value < 0) {
+          style['color'] = 'red';
+        }
+        return style;
       }
     },
     { 
@@ -77,16 +81,23 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       headerName: 'Change %', 
       width: 120,
       valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}%`,
-      cellStyle: (params: any) => {
-        if (params.value > 0) return { color: 'green', textAlign: 'right' };
-        if (params.value < 0) return { color: 'red', textAlign: 'right' };
-        return { textAlign: 'right' };
+      cellStyle: (params: any): CellStyle => {
+        const style: CellStyle = { textAlign: 'right' };
+        if (params.value > 0) {
+          style['color'] = 'green';
+        } else if (params.value < 0) {
+          style['color'] = 'red';
+        }
+        return style;
       }
     },
-  ]);
+  ];
 
-  // Initial row data (empty, will be populated)
+  // Initial row data (empty, will be populated via transactions)
   public rowData: CurrencyPair[] = [];
+
+  // Store initial data separately to avoid duplicate binding
+  private initialData: CurrencyPair[] = [];
 
   // getRowId function to track rows by symbol
   public getRowId = (params: GetRowIdParams): string => {
@@ -136,16 +147,16 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.logger.info('FX Market Data component initialized');
     
-    // Generate initial G10 currency pairs
+    // Generate initial G10 currency pairs (store in initialData, not rowData)
     this.generateInitialData();
   }
 
   ngAfterViewInit(): void {
     this.logger.info('Grid component ready', { gridApi: this.gridComponent.getGridApi() });
     
-    // Add initial rows using RxJS subject
-    this.gridComponent.addRows$.next(this.rowData);
-    this.logger.info('Initial G10 currency pairs loaded', { count: this.rowData.length });
+    // Set initial data using the safe method that handles grid readiness
+    this.gridComponent.setInitialRowData(this.initialData);
+    this.logger.info('Initial G10 currency pairs queued/loaded', { count: this.initialData.length });
 
     // Start simulating market data updates every 1 second
     this.startMarketDataUpdates();
@@ -189,7 +200,8 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     }
 
-    this.rowData = pairs;
+    // Store in initialData instead of rowData to avoid duplicate binding
+    this.initialData = pairs;
   }
 
   /**
@@ -201,6 +213,8 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 1000);
   }
 
+
+  
   /**
    * Update market data for all currency pairs
    */
