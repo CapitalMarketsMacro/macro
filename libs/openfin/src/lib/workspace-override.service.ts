@@ -12,6 +12,54 @@ import { Logger } from '@macro/logger';
 /**
  * Workspace override service for customizing workspace platform behavior
  * Framework-agnostic implementation
+ * 
+ * This service provides a comprehensive override callback that can customize
+ * various aspects of the OpenFin Workspace Platform behavior.
+ * 
+ * Available override methods (currently implemented):
+ * - handleAnalytics: Analytics event handling
+ * - getSavedWorkspaces/getSavedWorkspacesMetadata/getSavedWorkspace: Workspace storage
+ * - createSavedWorkspace/updateSavedWorkspace/deleteSavedWorkspace: Workspace CRUD
+ * - applyWorkspace: Workspace application
+ * 
+ * Additional methods that can be overridden (not yet implemented):
+ * - Page Management:
+ *   - getSavedPages(query?: string): Promise<Page[]>
+ *   - getSavedPage(id: string): Promise<Page | undefined>
+ *   - createSavedPage(req: CreateSavedPageRequest): Promise<void>
+ *   - updateSavedPage(req: UpdateSavedPageRequest): Promise<void>
+ *   - deleteSavedPage(id: string): Promise<void>
+ *   - handlePageChanges(payload: HandlePageChangesPayload): Promise<ModifiedPageState>
+ *   - copyPage(payload: CopyPagePayload): Promise<Page>
+ *   - setActivePage(payload: SetActivePageForWindowPayload): Promise<void>
+ *   - addDefaultPage(payload: AddDefaultPagePayload): Promise<void>
+ * 
+ * - Context Menus:
+ *   - openGlobalContextMenu(req: OpenGlobalContextMenuPayload, callerIdentity: OpenFin.Identity): Promise<void>
+ *   - openViewTabContextMenu(req: OpenViewTabContextMenuPayload, callerIdentity: OpenFin.Identity): Promise<void>
+ *   - openPageTabContextMenu(req: OpenPageTabContextMenuPayload, callerIdentity: OpenFin.Identity): Promise<void>
+ *   - openSaveButtonContextMenu(req: OpenSaveButtonContextMenuPayload, callerIdentity: OpenFin.Identity): Promise<void>
+ * 
+ * - Theme Management:
+ *   - getSelectedScheme(): ColorSchemeOptionType | null | undefined
+ *   - setSelectedScheme(schemeType: ColorSchemeOptionType): Promise<void>
+ * 
+ * - View Management:
+ *   - createView(payload: BrowserCreateViewPayload, callerIdentity: OpenFin.Identity): Promise<OpenFin.View>
+ * 
+ * - Close/Unload Handling:
+ *   - shouldPageClose(payload: ShouldPageClosePayload): Promise<ShouldPageCloseResult>
+ *   - handlePagesAndWindowClose(payload: HandlePagesAndWindowClosePayload): Promise<HandlePagesAndWindowCloseResult>
+ *   - getUserDecisionForBeforeUnload(payload: ViewsPreventingUnloadPayload): Promise<OpenFin.BeforeUnloadUserDecision>
+ *   - handleSaveModalOnPageClose(payload: HandleSaveModalOnPageClosePayload): Promise<SaveModalOnPageCloseResult>
+ * 
+ * - Dock Provider:
+ *   - getDockProviderConfig(id: string): Promise<DockProviderConfigWithIdentity | undefined>
+ *   - saveDockProviderConfig(config: DockProviderConfigWithIdentity): Promise<void>
+ * 
+ * - Localization:
+ *   - getLanguage(): Promise<Locale>
+ *   - setLanguage(locale: Locale): Promise<void>
  */
 export class WorkspaceOverrideService {
   private readonly logger = Logger.getLogger('WorkspaceOverrideService');
@@ -56,6 +104,7 @@ export class WorkspaceOverrideService {
       localStorage.setItem(LAST_SAVED_KEY, workspaceId);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return async (WorkspacePlatformProvider: any) => {
       class CustomWorkspacePlatformProvider extends WorkspacePlatformProvider {
         /**
@@ -201,9 +250,79 @@ export class WorkspaceOverrideService {
           logger.info('Workspace apply result', { workspaceId: payload.workspaceId, result });
           return result;
         }
+
+        // ============================================
+        // ADDITIONAL OVERRIDE METHODS (Examples)
+        // Uncomment and customize as needed
+        // ============================================
+
+        /**
+         * Override to customize page save behavior
+         * Example: Save pages to a remote API instead of localStorage
+         */
+        // async createSavedPage(req: CreateSavedPageRequest): Promise<void> {
+        //   logger.info('Creating saved page', { pageId: req.page.pageId });
+        //   // Custom implementation here (e.g., save to API)
+        //   return super.createSavedPage(req);
+        // }
+
+        /**
+         * Override to customize context menu behavior
+         * Example: Add custom menu items to the global context menu
+         */
+        // async openGlobalContextMenu(
+        //   req: OpenGlobalContextMenuPayload,
+        //   callerIdentity: OpenFin.Identity
+        // ): Promise<void> {
+        //   logger.debug('Opening global context menu', { callerIdentity });
+        //   // Add custom menu items to req.template before calling super
+        //   return super.openGlobalContextMenu(req, callerIdentity);
+        // }
+
+        /**
+         * Override to customize view creation
+         * Example: Add custom properties or modify view options
+         */
+        // async createView(
+        //   payload: BrowserCreateViewPayload,
+        //   callerIdentity: OpenFin.Identity
+        // ): Promise<OpenFin.View> {
+        //   logger.info('Creating view', { callerIdentity });
+        //   // Modify payload if needed
+        //   return super.createView(payload, callerIdentity);
+        // }
+
+        /**
+         * Override to customize page close behavior
+         * Example: Show custom confirmation dialog
+         */
+        // async shouldPageClose(payload: ShouldPageClosePayload): Promise<ShouldPageCloseResult> {
+        //   logger.debug('Checking if page should close', { pageId: payload.page.pageId });
+        //   // Custom logic to determine if page should close
+        //   return super.shouldPageClose(payload);
+        // }
+
+        /**
+         * Override to customize theme selection
+         * Example: Persist theme preference to backend
+         */
+        // async setSelectedScheme(schemeType: ColorSchemeOptionType): Promise<void> {
+        //   logger.info('Setting theme scheme', { schemeType });
+        //   // Save to backend or custom storage
+        //   return super.setSelectedScheme(schemeType);
+        // }
+
+        /**
+         * Override to customize language/locale
+         * Example: Sync language with user preferences
+         */
+        // async setLanguage(locale: Locale): Promise<void> {
+        //   logger.info('Setting language', { locale });
+        //   // Save language preference
+        //   return super.setLanguage(locale);
+        // }
       }
       return new CustomWorkspacePlatformProvider() as WorkspacePlatformProvider;
     };
   }
 }
-
