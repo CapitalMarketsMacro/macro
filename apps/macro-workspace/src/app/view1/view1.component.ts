@@ -1,10 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Subject, takeUntil, tap } from 'rxjs';
-import { ChannelService } from '../services/channel.service';
-import { ContextService } from '../services/context.service';
-import { NotificationsService } from '../services/notifications.service';
-import { ThemeService } from '../services/theme.service';
+import { ChannelService, ContextService, NotificationsService, ThemeService } from '@macro/openfin';
 
 @Component({
   selector: 'app-view1',

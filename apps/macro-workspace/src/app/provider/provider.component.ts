@@ -1,8 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
-import { WorkspaceService } from '../services/workspace.service';
-import { ThemeService } from '../services/theme.service';
+import { WorkspaceService, ThemeService } from '@macro/openfin';
 
 @Component({
   selector: 'app-provider',
@@ -26,7 +25,6 @@ import { ThemeService } from '../services/theme.service';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
-  providers: [WorkspaceService],
 })
 export class ProviderComponent implements OnInit, OnDestroy {
   private readonly workspaceService = inject(WorkspaceService);

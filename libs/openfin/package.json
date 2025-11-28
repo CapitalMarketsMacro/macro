@@ -1,0 +1,45 @@
+{
+  "name": "@macro/openfin",
+  "version": "0.0.1",
+  "description": "OpenFin workspace platform services and utilities for Angular and React applications",
+  "keywords": [
+    "openfin",
+    "workspace",
+    "platform",
+    "fdc3",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src/**/*",
+    "README.md",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "dependencies": {
+    "@finos/fdc3": "2.0.3",
+    "@openfin/core": "42.102.4",
+    "@openfin/workspace": "22.3.25",
+    "@openfin/workspace-platform": "22.3.25",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "@macro/logger": "*"
+  },
+  "peerDependenciesMeta": {}
+}
+

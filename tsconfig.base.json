@@ -19,7 +19,8 @@
       "@macro/amps": ["libs/amps/src/index.ts"],
       "@macro/rxutils": ["libs/rxutils/src/index.ts"],
       "@macro/macro-angular-grid": ["libs/macro-angular-grid/src/index.ts"],
-      "@macro/macro-react-grid": ["libs/macro-react-grid/src/index.ts"]
+      "@macro/macro-react-grid": ["libs/macro-react-grid/src/index.ts"],
+      "@macro/openfin": ["libs/openfin/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
