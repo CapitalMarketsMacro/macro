@@ -1,0 +1,52 @@
+{
+  "name": "@macro/solace",
+  "version": "0.0.1",
+  "description": "A TypeScript wrapper library for Solace PubSub+ JavaScript API with RxJS support for Angular and React applications",
+  "keywords": [
+    "solace",
+    "pubsub+",
+    "messaging",
+    "pubsub",
+    "real-time",
+    "typescript",
+    "rxjs",
+    "angular",
+    "react"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src/**/*",
+    "README.md",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "solclientjs": "*",
+    "rxjs": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "solclientjs": {
+      "optional": true
+    },
+    "rxjs": {
+      "optional": false
+    }
+  }
+}
+
