@@ -6,6 +6,9 @@ import { DockService } from './dock.service';
 import { HomeService } from './home.service';
 import { StoreService } from './store.service';
 import { getCurrentSync, type Workspace } from '@openfin/workspace-platform';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('WorkspaceService');
 
 /**
  * Workspace service for managing the OpenFin workspace platform initialization
@@ -56,7 +59,7 @@ export class WorkspaceService {
       map(() => true),
       catchError((error) => {
         const message = error instanceof Error ? error.message : String(error);
-        console.error('Error initializing platform', message);
+        logger.error('Error initializing platform', { message, error });
         this.status$.next(`Error: ${message}`);
         return of(false);
       }),
@@ -114,13 +117,13 @@ export class WorkspaceService {
             observer.complete();
           })
           .catch((error) => {
-            console.error('Error restoring workspace', error);
+            logger.error('Error restoring workspace', error);
             this.status$.next('Error restoring workspace');
             observer.next();
             observer.complete();
           });
       } catch (error) {
-        console.error('Error in restoreLastSavedWorkspace', error);
+        logger.error('Error in restoreLastSavedWorkspace', error);
         this.status$.next('Error restoring workspace');
         observer.next();
         observer.complete();

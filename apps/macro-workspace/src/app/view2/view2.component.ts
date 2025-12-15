@@ -3,6 +3,9 @@ import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal }
 import { Subscription } from 'rxjs';
 import { ChannelService, ContextService, ThemeService } from '@macro/openfin';
 import { OpenFin } from '@openfin/core';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('View2Component');
 
 @Component({
   selector: 'app-view2',
@@ -77,20 +80,12 @@ export class View2Component implements OnInit, OnDestroy {
 
     this.providerBus.onConnection((identity, payload) => {
       // can reject a connection here by throwing an error
-      console.log(
-        'Client connection request identity: ',
-        JSON.stringify(identity)
-      );
-      console.log(
-        'Client connection request payload: ',
-        JSON.stringify(payload)
-      );
+      logger.info('Client connection request', { identity, payload });
     });
 
     this.providerBus.register('example-topic', (payload, identity) => {
       // register a callback for a 'topic' to which clients can dispatch an action
-      console.log('Action dispatched by client: ', JSON.stringify(identity));
-      console.log('Payload sent in dispatch: ', JSON.stringify(payload));
+      logger.info('Action dispatched by client', { identity, payload });
     });
   }
 

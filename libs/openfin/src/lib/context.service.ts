@@ -1,5 +1,8 @@
 import type { Context, Listener } from '@finos/fdc3';
 import { Observable, Subject, shareReplay } from 'rxjs';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('ContextService');
 
 /**
  * Context service for FDC3 context broadcasting and listening
@@ -13,14 +16,14 @@ export class ContextService {
 
   broadcast(context: Context) {
     if (typeof fdc3 === 'undefined') {
-      console.warn('FDC3 desktop agent not available');
+      logger.warn('FDC3 desktop agent not available');
       return;
     }
 
     fdc3.broadcast(context).then(() => {
-      console.log('Context broadcast successfully');
+      logger.info('Context broadcast successfully');
     }).catch((err) => {
-      console.error('Failed to broadcast context', err);
+      logger.error('Failed to broadcast context', err);
     });
   }
 
@@ -30,7 +33,7 @@ export class ContextService {
     }
 
     if (typeof fdc3 === 'undefined') {
-      console.warn('FDC3 desktop agent not available');
+      logger.warn('FDC3 desktop agent not available');
       return;
     }
 

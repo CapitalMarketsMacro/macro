@@ -7,6 +7,9 @@ import {
 } from '@openfin/workspace/notifications';
 import { Observable, Subject, takeUntil, tap } from 'rxjs';
 import type { SettingsService } from './settings.service';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('NotificationsService');
 
 /**
  * Notifications service for managing OpenFin notifications
@@ -32,7 +35,7 @@ export class NotificationsService {
         });
       })
       .catch((error) => {
-        console.error('Error registering notifications platform', error);
+        logger.error('Error registering notifications platform', error);
       });
   }
 

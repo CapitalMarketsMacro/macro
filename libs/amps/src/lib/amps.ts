@@ -18,6 +18,9 @@
 // ES6/TypeScript module import
 import { Client, Command } from 'amps';
 import { Observable, Subject } from 'rxjs';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('AmpsClient');
 
 // Type definitions based on AMPS JavaScript Client API
 export interface AmpsMessage {
@@ -384,7 +387,7 @@ export class AmpsClient {
     if (this.client.unsubscribe && typeof this.client.unsubscribe === 'function') {
       await this.client.unsubscribe(subId);
     } else {
-      console.warn('AMPS client does not support unsubscribe. Subscription may remain active.');
+      logger.warn('AMPS client does not support unsubscribe. Subscription may remain active.');
     }
   }
 

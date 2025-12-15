@@ -2,6 +2,9 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Subject, takeUntil, tap } from 'rxjs';
 import { ChannelService, ContextService, NotificationsService, ThemeService } from '@macro/openfin';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('View1Component');
 
 @Component({
   selector: 'app-view1',
@@ -58,7 +61,7 @@ export class View1Component implements OnInit, OnDestroy {
     this.notificationsService
       .observeNotificationActions()
       .pipe(
-        tap((event) => console.log('Notification clicked', event.result['customData'])),
+        tap((event) => logger.info('Notification clicked', { customData: event.result['customData'] })),
         takeUntil(this.unsubscribe$),
       )
       .subscribe();
@@ -74,7 +77,7 @@ export class View1Component implements OnInit, OnDestroy {
 
   showNotification() {
     if (!this.hasFin()) {
-      console.warn('OpenFin runtime not detected');
+      logger.warn('OpenFin runtime not detected');
       return;
     }
 

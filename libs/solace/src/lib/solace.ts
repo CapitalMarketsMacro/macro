@@ -18,6 +18,9 @@
 import * as solace from 'solclientjs';
 
 import { Observable, Subject } from 'rxjs';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('SolaceClient');
 
 // Re-export solace types for convenience
 export type SolaceMessage = solace.Message;
@@ -123,7 +126,7 @@ export class SolaceClient {
       } catch (error) {
         // Factory might already be initialized, which is fine
         // Or initialization failed - log warning but continue
-        console.warn('Solace factory initialization warning:', error);
+        logger.warn('Solace factory initialization warning', error);
         this.initialized = true; // Mark as initialized to prevent repeated attempts
       }
     }
@@ -279,7 +282,7 @@ export class SolaceClient {
         try {
           this.unsubscribe(subscriptionId, topic);
         } catch (error) {
-          console.warn('Error unsubscribing from topic', topic, error);
+          logger.warn('Error unsubscribing from topic', { topic, error });
         }
         subject.complete();
       }

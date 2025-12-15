@@ -1,5 +1,8 @@
 import type { Channel, Context, Listener } from '@finos/fdc3';
 import { shareReplay, Subject } from 'rxjs';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('ChannelService');
 
 /**
  * Channel service for FDC3 channel-based context broadcasting
@@ -14,7 +17,7 @@ export class ChannelService {
 
   broadcast(channelName: string, context: Context) {
     if (typeof fdc3 === 'undefined') {
-      console.warn('FDC3 desktop agent not available');
+      logger.warn('FDC3 desktop agent not available');
       return;
     }
 
@@ -31,7 +34,7 @@ export class ChannelService {
       this.removeListener();
     }
     if (typeof fdc3 === 'undefined') {
-      console.warn('FDC3 desktop agent not available');
+      logger.warn('FDC3 desktop agent not available');
       return;
     }
 
@@ -65,7 +68,7 @@ export class ChannelService {
 
   private getMyChannel() {
     if (typeof fdc3 === 'undefined') {
-      console.warn('FDC3 desktop agent not available');
+      logger.warn('FDC3 desktop agent not available');
       return null;
     }
 
@@ -73,7 +76,7 @@ export class ChannelService {
       this.myChannelPromise = fdc3
         .getOrCreateChannel('my-channel')
         .catch((error) => {
-          console.error('Failed to initialise my-channel provider', error);
+          logger.error('Failed to initialise my-channel provider', error);
           this.myChannelPromise = null;
           throw error;
         });

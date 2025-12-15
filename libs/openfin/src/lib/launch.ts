@@ -1,12 +1,15 @@
 import type OpenFin from '@openfin/core';
 import type { App } from '@openfin/workspace';
 import { AppManifestType, getCurrentSync } from '@openfin/workspace-platform';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('LaunchService');
 
 export async function launchApp(
   app: App,
 ): Promise<OpenFin.Platform | OpenFin.Identity | OpenFin.View | OpenFin.Application | undefined> {
   if (!app.manifest) {
-    console.error(`No manifest provided for type ${app.manifestType}`);
+    logger.error(`No manifest provided for type ${app.manifestType}`);
     return;
   }
 

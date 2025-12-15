@@ -11,11 +11,11 @@ export function App() {
   useEffect(() => {
     // Example: Set global log level
     Logger.setGlobalLevel(LogLevel.DEBUG);
-    console.log('Global log level set to:', Logger.getGlobalLevel());
+    logger.info('Global log level set', { level: Logger.getGlobalLevel() });
 
     // Example: Set log level for this specific logger
     logger.setLevel(LogLevel.DEBUG);
-    console.log('Logger level:', logger.getLevel());
+    logger.info('Logger level set', { level: logger.getLevel() });
 
     // Simple log message
     logger.info('React app initialized');

@@ -10,36 +10,36 @@
  */
 
 import { AmpsClient } from './amps';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('AmpsTestClient');
 
 async function testAmpsConnection() {
-  console.log('Creating AMPS client...');
+  logger.info('Creating AMPS client...');
   const client = new AmpsClient('amps-test-client');
 
   // Set up error handler before connecting
   client.errorHandler(async (error) => {
-    console.error('❌ AMPS Error:', error.message);
-    if (error.stack) {
-      console.error('Error stack:', error.stack);
-    }
+    logger.error('AMPS Error', { message: error.message, stack: error.stack });
   });
 
   try {
-    console.log('Connecting to AMPS server...');
+    logger.info('Connecting to AMPS server...');
     const ampsUrl = 'ws://MontuNobleNumbat2404:9008/amps/json';
     await client.connect(ampsUrl);
 
-    console.log('✓ Successfully connected to AMPS server!');
+    logger.info('Successfully connected to AMPS server!');
 
     // Test subscribing to a topic
-    console.log('\nSubscribing to test topic...');
+    logger.info('Subscribing to test topic...');
     const { observable, subId } = await client.subscribeAsObservable('test/topic');
 
-    console.log(`✓ Subscribed to 'test/topic' with subscription ID: ${subId}`);
+    logger.info(`Subscribed to 'test/topic' with subscription ID: ${subId}`);
 
     // Listen for messages
     const subscription = observable.subscribe({
       next: (message) => {
-        console.log('📨 Received message:', {
+        logger.info('Received message', {
           topic: message.topic,
           subId: message.subId,
           sequence: message.sequence,
@@ -47,26 +47,26 @@ async function testAmpsConnection() {
         
         // Display message data
         if (typeof message.data === 'string') {
-          console.log('📝 Message content (string):', message.data);
+          logger.info('Message content (string)', { data: message.data });
         } else {
-          console.log('📝 Message content (object):', JSON.stringify(message.data, null, 2));
+          logger.info('Message content (object)', message.data);
         }
         
         // Display header if available
         if (message.header) {
-          console.log('📋 Message header command:', message.header.command?.());
+          logger.info('Message header command', { command: message.header.command?.() });
         }
       },
       error: (error) => {
-        console.error('❌ Subscription error:', error);
+        logger.error('Subscription error', error);
       },
       complete: () => {
-        console.log('✓ Subscription completed');
+        logger.info('Subscription completed');
       },
     });
 
     // Test publishing 5 messages
-    console.log('\nPublishing 5 test messages...');
+    logger.info('Publishing 5 test messages...');
     for (let i = 1; i <= 5; i++) {
       client.publish('test/topic', { 
         message: `Hello from AmpsClient test! Message #${i}`,
@@ -74,32 +74,31 @@ async function testAmpsConnection() {
         timestamp: Date.now(),
         clientName: 'amps-test-client'
       });
-      console.log(`✓ Message ${i}/5 published`);
+      logger.info(`Message ${i}/5 published`);
       // Small delay between messages
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    console.log('✓ All 5 messages published');
+    logger.info('All 5 messages published');
 
     // Keep connection alive for a bit to receive messages
-    console.log('\nWaiting for messages (press Ctrl+C to exit)...');
-    console.log('Connection will stay open for 30 seconds...\n');
+    logger.info('Waiting for messages (press Ctrl+C to exit)...');
+    logger.info('Connection will stay open for 30 seconds...');
 
     // Wait for 30 seconds then disconnect
     setTimeout(async () => {
-      console.log('\nDisconnecting...');
+      logger.info('Disconnecting...');
       subscription.unsubscribe();
       await client.unsubscribe(subId);
       await client.disconnect();
-      console.log('✓ Disconnected successfully');
+      logger.info('Disconnected successfully');
       process.exit(0);
     }, 30000);
 
   } catch (error) {
-    console.error('❌ Connection failed:', error);
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
+    logger.error('Connection failed', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     process.exit(1);
   }
 }
@@ -107,7 +106,7 @@ async function testAmpsConnection() {
 // Run the test
 if (require.main === module) {
   testAmpsConnection().catch((error) => {
-    console.error('❌ Test failed:', error);
+    logger.error('Test failed', error);
     process.exit(1);
   });
 }

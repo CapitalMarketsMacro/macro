@@ -13,6 +13,9 @@ import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
 import { WorkspaceOverrideService } from './workspace-override.service';
 import { themeConfig } from './theme.config';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('PlatformService');
 
 /**
  * Platform service for initializing the OpenFin workspace platform
@@ -80,7 +83,7 @@ export class PlatformService {
         });
       }
     } catch (error) {
-      console.error('Error updating theme button icon', error);
+      logger.error('Error updating theme button icon', error);
     }
   }
 

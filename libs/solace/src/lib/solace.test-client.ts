@@ -10,22 +10,25 @@
  */
 
 import { SolaceClient } from './solace';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('SolaceTestClient');
 
 async function testSolaceConnection() {
-  console.log('Creating Solace client...');
+  logger.info('Creating Solace client...');
   const client = new SolaceClient({ logLevel: 'INFO' });
 
   // Set up event handlers before connecting
   client.eventHandler((event, details) => {
-    console.log(`📡 Event: ${event}`, details ? JSON.stringify(details) : '');
+    logger.info(`Event: ${event}`, details || {});
   });
 
   client.errorHandler((error) => {
-    console.error('❌ Error:', error.message);
+    logger.error('Error', { message: error.message });
   });
 
   try {
-    console.log('Connecting to Solace Cloud...');
+    logger.info('Connecting to Solace Cloud...');
     await client.connect({
       hostUrl: 'wss://mr-connection-q5agmcv5edb.messaging.solace.cloud:443',
       vpnName: 'MACRO',
@@ -33,62 +36,60 @@ async function testSolaceConnection() {
       password: 'fhr8ncq2h9jsvnjb2s4ppmnngh',
     });
 
-    console.log('✓ Successfully connected to Solace Cloud!');
+    logger.info('Successfully connected to Solace Cloud!');
 
     // Test subscribing to a topic
-    console.log('\nSubscribing to test topic...');
+    logger.info('Subscribing to test topic...');
     const { observable, subscriptionId } = await client.subscribeAsObservable('test/topic');
 
-    console.log(`✓ Subscribed to 'test/topic' with subscription ID: ${subscriptionId}`);
+    logger.info(`Subscribed to 'test/topic' with subscription ID: ${subscriptionId}`);
 
     // Listen for messages
     const subscription = observable.subscribe({
       next: (message) => {
-        console.log('📨 Received message:', {
-          destination: message.getDestination()?.getName(),
-          data: message.getBinaryAttachment(),
-          correlationId: message.getCorrelationId(),
-        });
         const data = message.getBinaryAttachment();
         // convert data from ArrayBuffer to string
         const decoder = new TextDecoder('utf-8');
         // @ts-ignore
         const messageString = decoder.decode(data);
-        console.log('📝 Message content:', messageString);
+        logger.info('Received message', {
+          destination: message.getDestination()?.getName(),
+          correlationId: message.getCorrelationId(),
+          content: messageString,
+        });
       },
       error: (error) => {
-        console.error('❌ Subscription error:', error);
+        logger.error('Subscription error', error);
       },
       complete: () => {
-        console.log('✓ Subscription completed');
+        logger.info('Subscription completed');
       },
     });
 
     // Test publishing a message
-    console.log('\nPublishing test message...');
+    logger.info('Publishing test message...');
     client.publish('test/topic', { message: 'Hello from SolaceClient test!', timestamp: Date.now() }, {correlationId: subscriptionId});
-    console.log('✓ Message published');
+    logger.info('Message published');
 
     // Keep connection alive for a bit to receive messages
-    console.log('\nWaiting for messages (press Ctrl+C to exit)...');
-    console.log('Connection will stay open for 30 seconds...\n');
+    logger.info('Waiting for messages (press Ctrl+C to exit)...');
+    logger.info('Connection will stay open for 30 seconds...');
 
     // Wait for 30 seconds then disconnect
     setTimeout(async () => {
-      console.log('\nDisconnecting...');
+      logger.info('Disconnecting...');
       subscription.unsubscribe();
       await client.unsubscribe(subscriptionId);
       await client.disconnect();
-      console.log('✓ Disconnected successfully');
+      logger.info('Disconnected successfully');
       process.exit(0);
     }, 30000);
 
   } catch (error) {
-    console.error('❌ Connection failed:', error);
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
+    logger.error('Connection failed', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     process.exit(1);
   }
 }
@@ -96,7 +97,7 @@ async function testSolaceConnection() {
 // Run the test
 if (require.main === module) {
   testSolaceConnection().catch((error) => {
-    console.error('❌ Test failed:', error);
+    logger.error('Test failed', error);
     process.exit(1);
   });
 }

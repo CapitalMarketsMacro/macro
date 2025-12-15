@@ -61,11 +61,11 @@ export class App implements OnInit, OnDestroy {
     
     // Set log level
     Logger.setGlobalLevel(LogLevel.DEBUG);
-    console.log('Global log level set to:', Logger.getGlobalLevel());
+    this.logger.info('Global log level set', { level: Logger.getGlobalLevel() });
 
     // Example: Set log level for this specific logger
     this.logger.setLevel(LogLevel.DEBUG);
-    console.log('Logger level:', this.logger.getLevel());
+    this.logger.info('Logger level set', { level: this.logger.getLevel() });
 
     const testData = {
       name: 'John Doe',

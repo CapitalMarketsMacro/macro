@@ -1,6 +1,9 @@
 import { ColorSchemeOptionType, getCurrentSync } from '@openfin/workspace-platform';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { themeConfig, type ThemePalette } from './theme.config';
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('ThemeService');
 
 /**
  * Theme service for managing OpenFin workspace platform themes
@@ -37,7 +40,7 @@ export class ThemeService {
       const isDarkMode = scheme === ColorSchemeOptionType.Dark;
       this.applyTheme(isDarkMode ? 'dark' : 'light');
     } catch (error) {
-      console.error('Error initializing theme', error);
+      logger.error('Error initializing theme', error);
       this.applyTheme('dark');
     }
   }
@@ -132,7 +135,7 @@ export class ThemeService {
       await workspacePlatform.Theme.setSelectedScheme(newScheme);
       // Theme will be updated via the listener
     } catch (error) {
-      console.error('Error toggling theme', error);
+      logger.error('Error toggling theme', error);
     }
   }
 
@@ -173,7 +176,7 @@ export class ThemeService {
         }
       }, 500); // Check every 500ms for more responsive updates
     } catch (error) {
-      console.error('Error syncing with OpenFin theme', error);
+      logger.error('Error syncing with OpenFin theme', error);
     }
   }
 

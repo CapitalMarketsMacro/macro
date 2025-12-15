@@ -2,6 +2,7 @@ import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, PLATFORM
 import { AgGridAngular } from 'ag-grid-angular';
 import { Subject, Subscription } from 'rxjs';
 import { isPlatformBrowser, DOCUMENT } from '@angular/common';
+import { Logger } from '@macro/logger';
 import {
   ColDef,
   GridOptions,
@@ -120,6 +121,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
    */
   private document = inject(DOCUMENT);
   private platformId = inject(PLATFORM_ID);
+  private logger = Logger.getLogger('MacroAngularGrid');
 
   /**
    * Default grid options
@@ -154,7 +156,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     this.initializeTheme();
     this.setupThemeObserver();
 
-    console.log('Macro Angular Grid initialized');
+    this.logger.info('Macro Angular Grid initialized');
     // Subscribe to row operation subjects
     this.setupRowOperationSubscriptions();
   }
@@ -273,7 +275,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
         const parsed = JSON.parse(this.columns);
         this.columnDefs = Array.isArray(parsed) ? parsed : [parsed];
       } catch (error) {
-        console.error('Error parsing columns JSON:', error);
+        this.logger.error('Error parsing columns JSON', error);
         this.columnDefs = [];
       }
     } else if (Array.isArray(this.columns)) {
@@ -304,7 +306,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   onGridReady(event: GridReadyEvent): void {
     this.gridApi = event.api;
     this.isGridReady = true;
-    console.log('AG Grid is ready', event);
+    this.logger.info('AG Grid is ready', { event });
     
     // Set any pending initial data
     if (this.pendingInitialData && !this.initialDataSet) {
@@ -392,7 +394,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   public setInitialRowData(data: unknown[]): void {
     // Prevent setting initial data multiple times
     if (this.initialDataSet) {
-      console.warn('Initial row data has already been set. Use updateRows$ for updates.');
+      this.logger.warn('Initial row data has already been set. Use updateRows$ for updates.');
       return;
     }
 
