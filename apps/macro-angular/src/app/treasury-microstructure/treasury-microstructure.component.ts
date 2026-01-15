@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
 import { Logger } from '@macro/logger';
 import { AgCharts } from 'ag-charts-angular';
-import { AgChartOptions } from 'ag-charts-community';
+import type { AgCartesianChartOptions } from 'ag-charts-types';
 import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 import clone from "clone";
 
@@ -32,10 +32,10 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
 
 
   // Chart options for each metric
-  public tradeFrequencyOptions: AgChartOptions = {};
-  public orderToTradeRatioOptions: AgChartOptions = {};
-  public quoteUpdateFrequencyOptions: AgChartOptions = {};
-  public timeBetweenTradesOptions: AgChartOptions = {};
+  public tradeFrequencyOptions: AgCartesianChartOptions<MicrostructureDataPoint> = {};
+  public orderToTradeRatioOptions: AgCartesianChartOptions<MicrostructureDataPoint> = {};
+  public quoteUpdateFrequencyOptions: AgCartesianChartOptions<MicrostructureDataPoint> = {};
+  public timeBetweenTradesOptions: AgCartesianChartOptions<MicrostructureDataPoint> = {};
 
   // Data storage
   private microstructureData: MicrostructureDataPoint[] = [];
@@ -155,8 +155,8 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
           stroke: '#4338ca',
         },
       ],
-      axes: [
-        {
+      axes: {
+        x: {
           type: 'time',
           position: 'bottom',
           nice: true,
@@ -164,7 +164,7 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
             format: '%H:%M:%S',
           },
         },
-        {
+        y: {
           type: 'number',
           position: 'left',
           nice: false,
@@ -172,7 +172,7 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
             text: 'Trade Count',
           },
         },
-      ],
+      },
       legend: {
         enabled: false,
       },
@@ -204,8 +204,8 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
           },
         },
       ],
-      axes: [
-        {
+      axes: {
+        x: {
           type: 'time',
           position: 'bottom',
           nice: false,
@@ -213,7 +213,7 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
             format: '%H:%M:%S',
           },
         },
-        {
+        y: {
           type: 'number',
           position: 'left',
           nice: false,
@@ -221,7 +221,7 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
             text: 'Ratio',
           },
         },
-      ],
+      },
       legend: {
         enabled: false,
       },
@@ -253,8 +253,8 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
           },
         },
       ],
-      axes: [
-        {
+      axes: {
+        x: {
           type: 'time',
           position: 'bottom',
           nice: false,
@@ -262,7 +262,7 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
             format: '%H:%M:%S',
           },
         },
-        {
+        y: {
           type: 'number',
           position: 'left',
           nice: false,
@@ -270,7 +270,7 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
             text: 'Update Count',
           },
         },
-      ],
+      },
       legend: {
         enabled: false,
       },
@@ -302,8 +302,8 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
           },
         },
       ],
-      axes: [
-        {
+      axes: {
+        x: {
           type: 'time',
           position: 'bottom',
           nice: true,
@@ -311,7 +311,7 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
             format: '%H:%M:%S',
           },
         },
-        {
+        y: {
           type: 'number',
           position: 'left',
           nice: false,
@@ -319,7 +319,7 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
             text: 'Time (ms)',
           },
         },
-      ],
+      },
       legend: {
         enabled: false,
       },
