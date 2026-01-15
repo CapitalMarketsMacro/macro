@@ -1,4 +1,4 @@
-/* eslint-disable unicorn/no-process-exit */
+/* eslint-disable no-process-exit */
 /**
  * This script will launch an OpenFin application.
  * It uses the OpenFin Node.js adapter to launch the url specified on the command line.

@@ -7,7 +7,7 @@ import {
   type CustomBrowserButtonConfig,
   type ToolbarButton,
 } from '@openfin/workspace-platform';
-import { from } from 'rxjs';
+import { from, map, type Observable } from 'rxjs';
 import type { App } from '@openfin/workspace';
 import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
@@ -87,7 +87,7 @@ export class PlatformService {
     }
   }
 
-  initializeWorkspacePlatform(platformSettings: PlatformSettings) {
+  initializeWorkspacePlatform(platformSettings: PlatformSettings): Observable<void> {
     return from(
       init({
         browser: {
@@ -138,7 +138,7 @@ export class PlatformService {
           },
         },
       }),
-    );
+    ).pipe(map(() => undefined));
   }
 }
 

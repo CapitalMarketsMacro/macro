@@ -1,8 +1,12 @@
-import type { Channel, Context, Listener } from '@finos/fdc3';
+import type { Channel, Context, DesktopAgent, Listener } from '@finos/fdc3';
 import { shareReplay, Subject } from 'rxjs';
 import { Logger } from '@macro/logger';
 
 const logger = Logger.getLogger('ChannelService');
+
+function getFdc3(): DesktopAgent | undefined {
+  return (globalThis as unknown as { fdc3?: DesktopAgent }).fdc3;
+}
 
 /**
  * Channel service for FDC3 channel-based context broadcasting
@@ -16,7 +20,8 @@ export class ChannelService {
   readonly channel$ = this.channelSubject.asObservable().pipe(shareReplay(1));
 
   broadcast(channelName: string, context: Context) {
-    if (typeof fdc3 === 'undefined') {
+    const fdc3 = getFdc3();
+    if (!fdc3) {
       logger.warn('FDC3 desktop agent not available');
       return;
     }
@@ -33,7 +38,8 @@ export class ChannelService {
     if (this.listenerRef) {
       this.removeListener();
     }
-    if (typeof fdc3 === 'undefined') {
+    const fdc3 = getFdc3();
+    if (!fdc3) {
       logger.warn('FDC3 desktop agent not available');
       return;
     }
@@ -67,7 +73,8 @@ export class ChannelService {
   }
 
   private getMyChannel() {
-    if (typeof fdc3 === 'undefined') {
+    const fdc3 = getFdc3();
+    if (!fdc3) {
       logger.warn('FDC3 desktop agent not available');
       return null;
     }

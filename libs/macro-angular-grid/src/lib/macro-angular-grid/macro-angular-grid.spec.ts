@@ -12,7 +12,6 @@ describe('MacroAngularGrid', () => {
 
     fixture = TestBed.createComponent(MacroAngularGrid);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {

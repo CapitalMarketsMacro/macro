@@ -1,8 +1,12 @@
-import type { Context, Listener } from '@finos/fdc3';
+import type { Context, DesktopAgent, Listener } from '@finos/fdc3';
 import { Observable, Subject, shareReplay } from 'rxjs';
 import { Logger } from '@macro/logger';
 
 const logger = Logger.getLogger('ContextService');
+
+function getFdc3(): DesktopAgent | undefined {
+  return (globalThis as unknown as { fdc3?: DesktopAgent }).fdc3;
+}
 
 /**
  * Context service for FDC3 context broadcasting and listening
@@ -15,7 +19,8 @@ export class ContextService {
   readonly context$ = this.contextSubject.asObservable().pipe(shareReplay(1));
 
   broadcast(context: Context) {
-    if (typeof fdc3 === 'undefined') {
+    const fdc3 = getFdc3();
+    if (!fdc3) {
       logger.warn('FDC3 desktop agent not available');
       return;
     }
@@ -32,7 +37,8 @@ export class ContextService {
       this.removeListener();
     }
 
-    if (typeof fdc3 === 'undefined') {
+    const fdc3 = getFdc3();
+    if (!fdc3) {
       logger.warn('FDC3 desktop agent not available');
       return;
     }
