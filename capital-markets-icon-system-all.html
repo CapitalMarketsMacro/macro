@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capital Markets — Icon System</title>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #060810;
+  --bg: #0a0d16;
+  --surface: #10141e;
+  --surface-2: #161b28;
+  --surface-3: #1c2233;
+  --surface-hover: #1a2030;
+  --border: #1e2738;
+  --border-bright: #2a3548;
+  --text: #cdd6e4;
+  --text-muted: #687890;
+  --text-dim: #3a4860;
+  --accent: #00d4aa;
+  --accent-dim: rgba(0,212,170,0.10);
+  --fx: #3b82f6;
+  --rates: #00d4aa;
+  --commod: #f59e0b;
+  --all-tag: #8b5cf6;
+  --icon-color: #00d4aa;
+  --icon-size: 26px;
+  --icon-bg: transparent;
+  --icon-radius: 8px;
+  --icon-padding: 8px;
+  --icon-opacity: 1;
+  --icon-border: none;
+  --icon-text-color: var(--icon-color);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: 'Instrument Sans', sans-serif;
+  min-height: 100vh;
+  display: flex;
+}
+
+/* ═══════ SIDEBAR ═══════ */
+.sidebar {
+  width: 290px;
+  min-width: 290px;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.sidebar-brand {
+  padding: 1.3rem 1.3rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(0,212,170,0.03), transparent);
+}
+
+.sidebar-brand .brand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.sidebar-brand .brand-icon {
+  width: 28px; height: 28px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(0,212,170,0.2);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-brand .brand-icon .material-icons-sharp { font-size: 16px; color: var(--accent); }
+
+.sidebar-brand h2 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+
+.sidebar-brand .tagline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+
+.controls {
+  padding: 0.8rem 1.3rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.ctrl-section {
+  margin-bottom: 1.1rem;
+}
+
+.ctrl-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--text-muted);
+  margin-bottom: 0.45rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ctrl-val { color: var(--accent); font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+/* Swatches */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.cswatch {
+  aspect-ratio: 1;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.cswatch:hover { transform: scale(1.15); z-index: 2; }
+.cswatch.active { border-color: #fff; box-shadow: 0 0 6px rgba(255,255,255,0.25); }
+
+.hex-row {
+  display: flex;
+  gap: 5px;
+}
+
+.hex-row input[type="color"] {
+  width: 32px; height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  cursor: pointer;
+  padding: 2px;
+}
+
+.hex-row input[type="text"] {
+  flex: 1;
+  height: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  padding: 0 8px;
+  outline: none;
+}
+
+.hex-row input[type="text"]:focus { border-color: var(--accent); }
+
+/* Range */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+}
+
+/* Toggle buttons */
+.toggle-row { display: flex; gap: 4px; }
+
+.tbtn {
+  flex: 1;
+  height: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.56rem;
+  cursor: pointer;
+  transition: all 0.12s;
+  letter-spacing: 0.03em;
+}
+
+.tbtn:hover { border-color: var(--border-bright); color: var(--text); }
+.tbtn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+/* Select */
+select {
+  width: 100%;
+  height: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 0.75rem;
+  padding: 0 8px;
+  outline: none;
+  cursor: pointer;
+}
+
+select:focus { border-color: var(--accent); }
+
+/* BG swatches */
+.bg-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.bgsw {
+  height: 22px;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.bgsw:hover { transform: scale(1.08); }
+.bgsw.active { border-color: var(--accent); }
+
+/* Export */
+.sidebar-footer {
+  padding: 0.8rem 1.3rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 6px;
+}
+
+.exp-btn {
+  flex: 1;
+  height: 32px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(0,212,170,0.25);
+  border-radius: 7px;
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.15s;
+}
+
+.exp-btn:hover { background: var(--accent); color: var(--bg); }
+.exp-btn .material-icons-sharp { font-size: 14px; }
+
+/* ═══════ MAIN ═══════ */
+.main {
+  flex: 1;
+  overflow-y: auto;
+  height: 100vh;
+}
+
+/* Top bar with business area filters */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  backdrop-filter: blur(10px);
+}
+
+.topbar-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-right: auto;
+  white-space: nowrap;
+}
+
+.topbar-title span {
+  background: linear-gradient(135deg, #e0e8f4, #7a90b0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Business area pills */
+.ba-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.ba-pill {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 15px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ba-pill:hover { border-color: var(--border-bright); color: var(--text); }
+
+.ba-pill.active-all { border-color: var(--all-tag); background: rgba(139,92,246,0.1); color: var(--all-tag); }
+.ba-pill.active-fx { border-color: var(--fx); background: rgba(59,130,246,0.1); color: var(--fx); }
+.ba-pill.active-rates { border-color: var(--rates); background: rgba(0,212,170,0.1); color: var(--rates); }
+.ba-pill.active-commod { border-color: var(--commod); background: rgba(245,158,11,0.1); color: var(--commod); }
+
+.ba-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+}
+
+/* Search */
+.search-wrap {
+  padding: 0.8rem 2rem;
+}
+
+.search-bar {
+  position: relative;
+}
+
+.search-bar input {
+  width: 100%;
+  height: 38px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.82rem;
+  padding: 0 3rem 0 2.6rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-bar input:focus { border-color: var(--accent); }
+.search-bar input::placeholder { color: var(--text-dim); }
+
+.search-bar > .material-icons-sharp {
+  position: absolute; left: 0.8rem; top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px; color: var(--text-dim);
+}
+
+.search-count {
+  position: absolute; right: 0.8rem; top: 50%;
+  transform: translateY(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--text-dim);
+}
+
+/* Content */
+.content { padding: 0.5rem 2rem 3rem; }
+
+/* Function section */
+.fn-section {
+  margin-bottom: 2rem;
+  animation: slideUp 0.35s ease both;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fn-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.fn-indicator {
+  width: 3px;
+  height: 20px;
+  border-radius: 2px;
+}
+
+.fn-header h3 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text);
+}
+
+.fn-header .fn-count {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--text-dim);
+}
+
+/* Icon grid */
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 6px;
+}
+
+.icon-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 0.5rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  position: relative;
+}
+
+.icon-tile:hover {
+  border-color: var(--border-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  background: var(--surface-hover);
+}
+
+.icon-tile.selected {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* Business area tags on icons */
+.ba-tags {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 2px;
+}
+
+.ba-tag {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}
+
+.ba-tag.fx { background: var(--fx); }
+.ba-tag.rates { background: var(--rates); }
+.ba-tag.commod { background: var(--commod); }
+
+.icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--icon-radius);
+  background: var(--icon-bg);
+  padding: var(--icon-padding);
+  border: var(--icon-border);
+  transition: all 0.15s;
+}
+
+.icon-tile .material-icons-sharp.tile-icon {
+  font-size: var(--icon-size);
+  color: var(--icon-text-color);
+  opacity: var(--icon-opacity);
+  transition: all 0.15s;
+}
+
+.icon-tile .icon-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--text-muted);
+  text-align: center;
+  word-break: break-all;
+  line-height: 1.2;
+}
+
+.icon-tile .icon-label {
+  font-size: 0.58rem;
+  color: var(--text-dim);
+  text-align: center;
+  line-height: 1.15;
+}
+
+/* Hidden */
+.fn-section.hidden { display: none; }
+.icon-tile.hidden { display: none; }
+
+/* CSS Output */
+.css-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  margin-top: 1.5rem;
+}
+
+.css-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.css-panel-head h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.copy-btn {
+  height: 24px;
+  padding: 0 10px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.56rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.12s;
+}
+
+.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.copy-btn .material-icons-sharp { font-size: 12px; }
+
+#cssCode {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+.hp { color: #7DD3FC; }
+.hv { color: #86EFAC; }
+.hs { color: #F9A8D4; }
+.hc { color: #3a4860; font-style: italic; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--accent);
+  color: var(--bg);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 7px;
+  opacity: 0;
+  transition: all 0.25s ease;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.6rem 2rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,13,22,0.6);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.56rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
+
+@media (max-width: 1000px) {
+  body { flex-direction: column; }
+  .sidebar { width: 100%; min-width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+  .main { height: auto; }
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-row">
+      <div class="brand-icon"><span class="material-icons-sharp">diamond</span></div>
+      <h2>Icon Config</h2>
+    </div>
+    <div class="tagline">Capital Markets • FX · Rates · Commodities</div>
+  </div>
+  <div class="controls">
+
+    <div class="ctrl-section">
+      <div class="ctrl-label">Icon Color <span class="ctrl-val" id="colorVal">#00D4AA</span></div>
+      <div class="color-grid" id="colorGrid">
+        <div class="cswatch active" data-c="#00d4aa" style="background:#00d4aa" title="Rates Primary"></div>
+        <div class="cswatch" data-c="#3b82f6" style="background:#3b82f6" title="FX Primary"></div>
+        <div class="cswatch" data-c="#f59e0b" style="background:#f59e0b" title="Commodities"></div>
+        <div class="cswatch" data-c="#ef4444" style="background:#ef4444" title="Sell/Ask"></div>
+        <div class="cswatch" data-c="#8b5cf6" style="background:#8b5cf6" title="Highlight"></div>
+        <div class="cswatch" data-c="#ec4899" style="background:#ec4899" title="Alert"></div>
+        <div class="cswatch" data-c="#06b6d4" style="background:#06b6d4" title="Cyan"></div>
+        <div class="cswatch" data-c="#d4dae6" style="background:#d4dae6" title="Neutral"></div>
+        <div class="cswatch" data-c="#10b981" style="background:#10b981" title="Success"></div>
+        <div class="cswatch" data-c="#f97316" style="background:#f97316" title="Warning"></div>
+        <div class="cswatch" data-c="#64748b" style="background:#64748b" title="Muted"></div>
+        <div class="cswatch" data-c="#38bdf8" style="background:#38bdf8" title="Sky"></div>
+        <div class="cswatch" data-c="#a3e635" style="background:#a3e635" title="Lime"></div>
+        <div class="cswatch" data-c="#fb7185" style="background:#fb7185" title="Rose"></div>
+        <div class="cswatch" data-c="#fbbf24" style="background:#fbbf24" title="Gold"></div>
+        <div class="cswatch" data-c="#c084fc" style="background:#c084fc" title="Violet"></div>
+      </div>
+      <div class="hex-row">
+        <input type="color" id="customColor" value="#00d4aa">
+        <input type="text" id="hexInput" value="#00d4aa" maxlength="7" placeholder="#hex">
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-label">Size <span class="ctrl-val" id="sizeVal">26px</span></div>
+      <input type="range" id="sizeSlider" min="14" max="56" value="26">
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-label">Opacity <span class="ctrl-val" id="opVal">100%</span></div>
+      <input type="range" id="opSlider" min="15" max="100" value="100">
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-label">Padding <span class="ctrl-val" id="padVal">8px</span></div>
+      <input type="range" id="padSlider" min="0" max="24" value="8">
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-label">Corner Radius <span class="ctrl-val" id="radVal">8px</span></div>
+      <input type="range" id="radSlider" min="0" max="28" value="8">
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-label">Background</div>
+      <div class="bg-row" id="bgRow">
+        <div class="bgsw active" data-bg="transparent" style="background:repeating-conic-gradient(#232d40 0% 25%,#10141e 0% 50%) 50%/8px 8px" title="None"></div>
+        <div class="bgsw" data-bg="rgba(0,212,170,0.08)" style="background:rgba(0,212,170,0.22)" title="Accent"></div>
+        <div class="bgsw" data-bg="rgba(59,130,246,0.08)" style="background:rgba(59,130,246,0.22)" title="Blue"></div>
+        <div class="bgsw" data-bg="rgba(245,158,11,0.08)" style="background:rgba(245,158,11,0.22)" title="Gold"></div>
+        <div class="bgsw" data-bg="#1c2233" style="background:#1c2233" title="Surface"></div>
+        <div class="bgsw" data-bg="rgba(255,255,255,0.05)" style="background:rgba(255,255,255,0.12)" title="Light"></div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-label">Style</div>
+      <div class="toggle-row">
+        <button class="tbtn active" onclick="setStyle('default',this)">Default</button>
+        <button class="tbtn" onclick="setStyle('outlined',this)">Outline</button>
+        <button class="tbtn" onclick="setStyle('filled',this)">Filled</button>
+        <button class="tbtn" onclick="setStyle('soft',this)">Soft</button>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-label">Theme</div>
+      <select id="themeSelect" onchange="applyTheme(this.value)">
+        <option value="default">Bloomberg Dark</option>
+        <option value="ice">ICE Terminal</option>
+        <option value="tradeweb">Tradeweb Blue</option>
+        <option value="refinitiv">Refinitiv Amber</option>
+        <option value="murex">Murex Grey</option>
+        <option value="light">Light Mode</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="exp-btn" onclick="copyCSS()"><span class="material-icons-sharp">content_copy</span>Copy CSS</button>
+    <button class="exp-btn" onclick="copyIconList()"><span class="material-icons-sharp">list</span>Icon List</button>
+  </div>
+</aside>
+
+<main class="main" id="main">
+  <div class="topbar">
+    <div class="topbar-title"><span>Capital Markets Icon System</span></div>
+    <div class="ba-pills">
+      <button class="ba-pill active-all" data-ba="all" onclick="filterBA('all',this)">
+        <div class="ba-dot" style="background:var(--all-tag)"></div>All
+      </button>
+      <button class="ba-pill" data-ba="fx" onclick="filterBA('fx',this)">
+        <div class="ba-dot" style="background:var(--fx)"></div>FX
+      </button>
+      <button class="ba-pill" data-ba="rates" onclick="filterBA('rates',this)">
+        <div class="ba-dot" style="background:var(--rates)"></div>Rates
+      </button>
+      <button class="ba-pill" data-ba="commod" onclick="filterBA('commod',this)">
+        <div class="ba-dot" style="background:var(--commod)"></div>Commodities
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-item"><span class="stat-num" id="totalIcons">0</span><span class="stat-label">Icons</span></div>
+    <div class="stat-item"><span class="stat-num" id="totalFns">0</span><span class="stat-label">Functions</span></div>
+    <div class="stat-item"><span class="stat-num">3</span><span class="stat-label">Business Areas</span></div>
+  </div>
+
+  <div class="search-wrap">
+    <div class="search-bar">
+      <span class="material-icons-sharp">search</span>
+      <input type="text" id="searchInput" placeholder="Search icons... (e.g. trade, settle, price, blotter)">
+      <span class="search-count" id="searchCount"></span>
+    </div>
+  </div>
+
+  <div class="content" id="content"></div>
+
+  <div class="css-panel" id="cssPanel">
+    <div class="css-panel-head">
+      <h4>Generated CSS</h4>
+      <button class="copy-btn" onclick="copyCSS()"><span class="material-icons-sharp">content_copy</span>Copy</button>
+    </div>
+    <div id="cssCode"></div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════ ICON DATA ════════
+// ba = business area tags: fx, rates, commod
+const DATA = [
+  {
+    fn: "Pricing",
+    color: "#00d4aa",
+    icons: [
+      { id:"candlestick_chart", label:"Yield/FX Curve", ba:["rates","fx"] },
+      { id:"show_chart", label:"Price Chart", ba:["fx","rates","commod"] },
+      { id:"trending_up", label:"Price Up", ba:["fx","rates","commod"] },
+      { id:"trending_down", label:"Price Down", ba:["fx","rates","commod"] },
+      { id:"trending_flat", label:"Unchanged", ba:["fx","rates","commod"] },
+      { id:"ssid_chart", label:"Spread Chart", ba:["rates","fx"] },
+      { id:"timeline", label:"Time Series", ba:["fx","rates","commod"] },
+      { id:"area_chart", label:"Spot Curve", ba:["fx","rates"] },
+      { id:"stacked_line_chart", label:"Multi Curve", ba:["rates"] },
+      { id:"waterfall_chart", label:"Waterfall", ba:["rates","commod"] },
+      { id:"data_thresholding", label:"Threshold", ba:["fx","rates","commod"] },
+      { id:"query_stats", label:"Vol Surface", ba:["fx","commod"] },
+      { id:"auto_graph", label:"Forward Curve", ba:["commod","rates"] },
+      { id:"bar_chart", label:"Volume Bars", ba:["fx","rates","commod"] },
+      { id:"bubble_chart", label:"Basis Map", ba:["commod"] },
+      { id:"scatter_plot", label:"Scatter Analy", ba:["fx","rates"] },
+      { id:"analytics", label:"Analytics", ba:["fx","rates","commod"] },
+      { id:"calculate", label:"Calculator", ba:["fx","rates","commod"] },
+      { id:"functions", label:"Pricer", ba:["rates","fx"] },
+      { id:"monitor_heart", label:"Live Pricing", ba:["fx","rates","commod"] },
+    ]
+  },
+  {
+    fn: "PnL",
+    color: "#34d399",
+    icons: [
+      { id:"account_balance_wallet", label:"PnL Book", ba:["fx","rates","commod"] },
+      { id:"savings", label:"Daily PnL", ba:["fx","rates","commod"] },
+      { id:"pie_chart", label:"PnL Breakdown", ba:["fx","rates","commod"] },
+      { id:"donut_large", label:"Attribution", ba:["rates","fx"] },
+      { id:"leaderboard", label:"Desk PnL", ba:["fx","rates","commod"] },
+      { id:"moving", label:"MTD / YTD", ba:["fx","rates","commod"] },
+      { id:"difference", label:"PnL Explain", ba:["rates","fx","commod"] },
+      { id:"monitoring", label:"Real-time PnL", ba:["fx","rates","commod"] },
+      { id:"payments", label:"Cash PnL", ba:["fx","rates","commod"] },
+      { id:"receipt_long", label:"PnL Report", ba:["fx","rates","commod"] },
+      { id:"price_change", label:"Delta PnL", ba:["rates","fx"] },
+      { id:"insert_chart", label:"PnL Trend", ba:["fx","rates","commod"] },
+    ]
+  },
+  {
+    fn: "Risk",
+    color: "#f59e0b",
+    icons: [
+      { id:"shield", label:"Risk Shield", ba:["fx","rates","commod"] },
+      { id:"warning", label:"Risk Alert", ba:["fx","rates","commod"] },
+      { id:"gpp_maybe", label:"Limit Breach", ba:["fx","rates","commod"] },
+      { id:"speed", label:"VaR Meter", ba:["rates","fx","commod"] },
+      { id:"thermostat", label:"Risk Gauge", ba:["fx","rates","commod"] },
+      { id:"report", label:"Risk Exception", ba:["fx","rates","commod"] },
+      { id:"crisis_alert", label:"Stress Test", ba:["rates","fx"] },
+      { id:"balance", label:"Greeks / DV01", ba:["rates","fx","commod"] },
+      { id:"exposure", label:"Exposure", ba:["fx","rates","commod"] },
+      { id:"compare_arrows", label:"Long/Short", ba:["fx","rates","commod"] },
+      { id:"track_changes", label:"Sensitivity", ba:["rates","fx","commod"] },
+      { id:"health_and_safety", label:"Compliance", ba:["fx","rates","commod"] },
+      { id:"privacy_tip", label:"Restricted", ba:["fx","rates","commod"] },
+      { id:"verified_user", label:"Approved", ba:["fx","rates","commod"] },
+      { id:"block", label:"Blocked", ba:["fx","rates","commod"] },
+      { id:"policy", label:"Policy", ba:["fx","rates","commod"] },
+    ]
+  },
+  {
+    fn: "Trading",
+    color: "#3b82f6",
+    icons: [
+      { id:"swap_horiz", label:"Buy/Sell", ba:["fx","rates","commod"] },
+      { id:"swap_vert", label:"Bid/Ask", ba:["fx","rates","commod"] },
+      { id:"bolt", label:"Quick Trade", ba:["fx","rates"] },
+      { id:"storefront", label:"Dealer Panel", ba:["fx","rates"] },
+      { id:"assignment", label:"Trade Blotter", ba:["fx","rates","commod"] },
+      { id:"fact_check", label:"Confirm", ba:["fx","rates","commod"] },
+      { id:"pending_actions", label:"Pending", ba:["fx","rates","commod"] },
+      { id:"playlist_add_check", label:"Filled", ba:["fx","rates","commod"] },
+      { id:"checklist", label:"Order Queue", ba:["fx","rates","commod"] },
+      { id:"published_with_changes", label:"Amend", ba:["fx","rates","commod"] },
+      { id:"cancel", label:"Cancel", ba:["fx","rates","commod"] },
+      { id:"inventory_2", label:"Inventory", ba:["rates","commod"] },
+      { id:"account_tree", label:"Book Hierarchy", ba:["fx","rates","commod"] },
+      { id:"hub", label:"Trading Hub", ba:["fx","rates","commod"] },
+      { id:"handshake", label:"Counterparty", ba:["fx","rates","commod"] },
+      { id:"group", label:"Desk", ba:["fx","rates","commod"] },
+    ]
+  },
+  {
+    fn: "E-Trading",
+    color: "#06b6d4",
+    icons: [
+      { id:"send", label:"Submit Order", ba:["fx","rates","commod"] },
+      { id:"schedule_send", label:"Algo Schedule", ba:["fx","rates"] },
+      { id:"timer", label:"TWAP Timer", ba:["fx","rates"] },
+      { id:"auto_mode", label:"Auto-Quote", ba:["fx","rates"] },
+      { id:"smart_toy", label:"Algo Engine", ba:["fx","rates","commod"] },
+      { id:"memory", label:"Smart Router", ba:["fx","rates"] },
+      { id:"route", label:"Order Route", ba:["fx","rates","commod"] },
+      { id:"cell_tower", label:"Feed Status", ba:["fx","rates","commod"] },
+      { id:"sensors", label:"AMPS Stream", ba:["rates","fx"] },
+      { id:"rss_feed", label:"Live Feed", ba:["fx","rates","commod"] },
+      { id:"stream", label:"Stream", ba:["fx","rates","commod"] },
+      { id:"lan", label:"Network", ba:["fx","rates","commod"] },
+      { id:"wifi", label:"Connected", ba:["fx","rates","commod"] },
+      { id:"wifi_off", label:"Disconnected", ba:["fx","rates","commod"] },
+      { id:"cable", label:"Data Link", ba:["fx","rates","commod"] },
+      { id:"cloud_sync", label:"Cloud Sync", ba:["fx","rates","commod"] },
+      { id:"electrical_services", label:"API Gateway", ba:["fx","rates","commod"] },
+      { id:"developer_board", label:"Platform", ba:["fx","rates","commod"] },
+    ]
+  },
+  {
+    fn: "Middle Office",
+    color: "#8b5cf6",
+    icons: [
+      { id:"rule", label:"Validation Rule", ba:["fx","rates","commod"] },
+      { id:"task_alt", label:"Trade Match", ba:["fx","rates","commod"] },
+      { id:"sync_alt", label:"Reconciliation", ba:["fx","rates","commod"] },
+      { id:"published_with_changes", label:"Lifecycle Evt", ba:["fx","rates","commod"] },
+      { id:"content_paste_search", label:"Trade Review", ba:["fx","rates","commod"] },
+      { id:"checklist_rtl", label:"Confirm Queue", ba:["fx","rates","commod"] },
+      { id:"approval", label:"Approval", ba:["fx","rates","commod"] },
+      { id:"grading", label:"Mark-to-Market", ba:["rates","fx","commod"] },
+      { id:"manage_search", label:"Exception Mgmt", ba:["fx","rates","commod"] },
+      { id:"tune", label:"Adjustments", ba:["fx","rates","commod"] },
+      { id:"event_repeat", label:"Rollover", ba:["rates","commod"] },
+      { id:"low_priority", label:"Netting", ba:["fx","rates"] },
+      { id:"swap_calls", label:"Novation", ba:["rates","fx"] },
+      { id:"description", label:"Confirm Letter", ba:["fx","rates","commod"] },
+    ]
+  },
+  {
+    fn: "Ticketing",
+    color: "#ec4899",
+    icons: [
+      { id:"confirmation_number", label:"Ticket", ba:["fx","rates","commod"] },
+      { id:"receipt_long", label:"Trade Ticket", ba:["fx","rates","commod"] },
+      { id:"note_add", label:"New Ticket", ba:["fx","rates","commod"] },
+      { id:"edit_note", label:"Edit Ticket", ba:["fx","rates","commod"] },
+      { id:"assignment_turned_in", label:"Ticket Done", ba:["fx","rates","commod"] },
+      { id:"assignment_late", label:"Ticket Overdue", ba:["fx","rates","commod"] },
+      { id:"assignment_return", label:"Returned", ba:["fx","rates","commod"] },
+      { id:"mark_email_read", label:"Acknowledged", ba:["fx","rates","commod"] },
+      { id:"priority_high", label:"Priority", ba:["fx","rates","commod"] },
+      { id:"label", label:"Tag/Label", ba:["fx","rates","commod"] },
+      { id:"comment", label:"Comment", ba:["fx","rates","commod"] },
+      { id:"attach_file", label:"Attachment", ba:["fx","rates","commod"] },
+    ]
+  },
+  {
+    fn: "Back Office / Settlement",
+    color: "#f97316",
+    icons: [
+      { id:"currency_exchange", label:"FX Settlement", ba:["fx"] },
+      { id:"account_balance", label:"Clearing", ba:["fx","rates","commod"] },
+      { id:"local_shipping", label:"Delivery", ba:["commod"] },
+      { id:"warehouse", label:"Warehouse Rcpt", ba:["commod"] },
+      { id:"inventory", label:"Physical Stock", ba:["commod"] },
+      { id:"real_estate_agent", label:"Custody", ba:["rates","fx"] },
+      { id:"request_quote", label:"Settlement Msg", ba:["fx","rates","commod"] },
+      { id:"assured_workload", label:"Regulatory Rpt", ba:["fx","rates","commod"] },
+      { id:"summarize", label:"Reporting", ba:["fx","rates","commod"] },
+      { id:"folder_open", label:"Document Mgmt", ba:["fx","rates","commod"] },
+      { id:"history", label:"Audit Trail", ba:["fx","rates","commod"] },
+      { id:"gavel", label:"Legal", ba:["fx","rates","commod"] },
+      { id:"event_available", label:"Value Date", ba:["fx","rates","commod"] },
+      { id:"update", label:"Status Update", ba:["fx","rates","commod"] },
+      { id:"check_circle", label:"Settled", ba:["fx","rates","commod"] },
+      { id:"error", label:"Failed", ba:["fx","rates","commod"] },
+    ]
+  },
+  {
+    fn: "Workspace & Utilities",
+    color: "#64748b",
+    icons: [
+      { id:"dashboard", label:"Dashboard", ba:["fx","rates","commod"] },
+      { id:"grid_view", label:"Grid Layout", ba:["fx","rates","commod"] },
+      { id:"view_column", label:"Columns", ba:["fx","rates","commod"] },
+      { id:"splitscreen", label:"Split View", ba:["fx","rates","commod"] },
+      { id:"picture_in_picture", label:"Tearout", ba:["fx","rates","commod"] },
+      { id:"open_in_new", label:"Pop Out", ba:["fx","rates","commod"] },
+      { id:"fullscreen", label:"Fullscreen", ba:["fx","rates","commod"] },
+      { id:"tab", label:"Tabs", ba:["fx","rates","commod"] },
+      { id:"search", label:"Search", ba:["fx","rates","commod"] },
+      { id:"filter_list", label:"Filter", ba:["fx","rates","commod"] },
+      { id:"sort", label:"Sort", ba:["fx","rates","commod"] },
+      { id:"download", label:"Export", ba:["fx","rates","commod"] },
+      { id:"upload", label:"Import", ba:["fx","rates","commod"] },
+      { id:"print", label:"Print", ba:["fx","rates","commod"] },
+      { id:"refresh", label:"Refresh", ba:["fx","rates","commod"] },
+      { id:"notifications", label:"Alerts", ba:["fx","rates","commod"] },
+      { id:"person", label:"Trader", ba:["fx","rates","commod"] },
+      { id:"mail", label:"Messages", ba:["fx","rates","commod"] },
+      { id:"chat", label:"Chat", ba:["fx","rates","commod"] },
+      { id:"help", label:"Help", ba:["fx","rates","commod"] },
+      { id:"bookmark", label:"Bookmark", ba:["fx","rates","commod"] },
+      { id:"settings", label:"Settings", ba:["fx","rates","commod"] },
+    ]
+  }
+];
+
+// ════════ STATE ════════
+let currentBA = "all";
+let currentColor = "#00d4aa";
+let currentStyle = "default";
+
+// ════════ RENDER ════════
+function render() {
+  const el = document.getElementById('content');
+  let totalIcons = 0;
+
+  el.innerHTML = DATA.map((section, si) => {
+    const visibleIcons = section.icons.filter(ic =>
+      currentBA === 'all' || ic.ba.includes(currentBA)
+    );
+    totalIcons += visibleIcons.length;
+
+    if (visibleIcons.length === 0) return '';
+
+    return `
+    <div class="fn-section" data-fn="${si}" style="animation-delay:${si*0.04}s">
+      <div class="fn-header">
+        <div class="fn-indicator" style="background:${section.color}"></div>
+        <h3>${section.fn}</h3>
+        <span class="fn-count">${visibleIcons.length} icons</span>
+      </div>
+      <div class="icon-grid">
+        ${visibleIcons.map(ic => `
+          <div class="icon-tile" data-icon="${ic.id}" data-label="${ic.label}" data-ba="${ic.ba.join(',')}" onclick="selectIcon(this,'${ic.id}')">
+            <div class="ba-tags">${ic.ba.map(b=>`<div class="ba-tag ${b}"></div>`).join('')}</div>
+            <div class="icon-wrap">
+              <span class="material-icons-sharp tile-icon">${ic.id}</span>
+            </div>
+            <div class="icon-id">${ic.id}</div>
+            <div class="icon-label">${ic.label}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('totalIcons').textContent = totalIcons;
+  document.getElementById('totalFns').textContent = DATA.filter((s) =>
+    s.icons.some(ic => currentBA === 'all' || ic.ba.includes(currentBA))
+  ).length;
+  document.getElementById('searchCount').textContent = totalIcons + ' icons';
+
+  reapplyStyle();
+}
+
+// ════════ FILTERS ════════
+function filterBA(ba, btn) {
+  currentBA = ba;
+  document.querySelectorAll('.ba-pill').forEach(p => {
+    p.className = 'ba-pill';
+  });
+  btn.classList.add(ba === 'all' ? 'active-all' : `active-${ba}`);
+  render();
+}
+
+// ════════ SEARCH ════════
+document.getElementById('searchInput').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase().trim();
+  let vis = 0;
+
+  document.querySelectorAll('.fn-section').forEach(sec => {
+    let sv = 0;
+    sec.querySelectorAll('.icon-tile').forEach(tile => {
+      const m = tile.dataset.icon.includes(q) || tile.dataset.label.toLowerCase().includes(q);
+      tile.classList.toggle('hidden', !m);
+      if(m) sv++;
+    });
+    sec.classList.toggle('hidden', sv === 0);
+    sec.querySelector('.fn-count').textContent = sv + ' icons';
+    vis += sv;
+  });
+  document.getElementById('searchCount').textContent = q ? `${vis} found` : `${document.querySelectorAll('.icon-tile').length} icons`;
+});
+
+// ════════ ICON SELECT ════════
+function selectIcon(el, id) {
+  document.querySelectorAll('.icon-tile.selected').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  updateCSS(id);
+  toast(`${id} selected`);
+}
+
+// ════════ COLOR ════════
+document.getElementById('colorGrid').addEventListener('click', e => {
+  const sw = e.target.closest('.cswatch');
+  if(!sw) return;
+  setColor(sw.dataset.c);
+  document.querySelectorAll('.cswatch').forEach(s=>s.classList.remove('active'));
+  sw.classList.add('active');
+});
+
+document.getElementById('customColor').addEventListener('input', e => {
+  setColor(e.target.value);
+  document.querySelectorAll('.cswatch').forEach(s=>s.classList.remove('active'));
+});
+
+document.getElementById('hexInput').addEventListener('input', e => {
+  if(/^#[0-9a-fA-F]{6}$/.test(e.target.value)) {
+    setColor(e.target.value);
+    document.getElementById('customColor').value = e.target.value;
+    document.querySelectorAll('.cswatch').forEach(s=>s.classList.remove('active'));
+  }
+});
+
+function setColor(c) {
+  currentColor = c;
+  document.documentElement.style.setProperty('--icon-color', c);
+  document.documentElement.style.setProperty('--icon-text-color', currentStyle === 'filled' ? 'var(--bg)' : c);
+  document.getElementById('colorVal').textContent = c.toUpperCase();
+  document.getElementById('hexInput').value = c;
+  document.getElementById('customColor').value = c;
+  updateCSS();
+}
+
+// ════════ SLIDERS ════════
+const sliders = [
+  { id:'sizeSlider', prop:'--icon-size', unit:'px', valId:'sizeVal' },
+  { id:'opSlider', prop:'--icon-opacity', unit:'', valId:'opVal', transform: v => v/100 },
+  { id:'padSlider', prop:'--icon-padding', unit:'px', valId:'padVal' },
+  { id:'radSlider', prop:'--icon-radius', unit:'px', valId:'radVal' },
+];
+
+sliders.forEach(s => {
+  document.getElementById(s.id).addEventListener('input', e => {
+    const v = e.target.value;
+    const actual = s.transform ? s.transform(v) : v;
+    document.documentElement.style.setProperty(s.prop, actual + s.unit);
+    document.getElementById(s.valId).textContent = s.id === 'opSlider' ? v+'%' : v+'px';
+    updateCSS();
+  });
+});
+
+// ════════ BG ════════
+document.getElementById('bgRow').addEventListener('click', e => {
+  const sw = e.target.closest('.bgsw');
+  if(!sw) return;
+  document.documentElement.style.setProperty('--icon-bg', sw.dataset.bg);
+  document.querySelectorAll('.bgsw').forEach(s=>s.classList.remove('active'));
+  sw.classList.add('active');
+  updateCSS();
+});
+
+// ════════ STYLE ════════
+function setStyle(style, btn) {
+  currentStyle = style;
+  document.querySelectorAll('.toggle-row .tbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  reapplyStyle();
+  updateCSS();
+}
+
+function reapplyStyle() {
+  const root = document.documentElement;
+  root.style.setProperty('--icon-border', 'none');
+  root.style.setProperty('--icon-text-color', 'var(--icon-color)');
+
+  document.querySelectorAll('.icon-wrap').forEach(w => {
+    w.style.background = '';
+    w.style.boxShadow = '';
+  });
+
+  if (currentStyle === 'outlined') {
+    root.style.setProperty('--icon-border', '1.5px solid var(--icon-color)');
+  } else if (currentStyle === 'filled') {
+    document.querySelectorAll('.icon-wrap').forEach(w => {
+      w.style.background = 'var(--icon-color)';
+    });
+    root.style.setProperty('--icon-text-color', 'var(--bg)');
+  } else if (currentStyle === 'soft') {
+    document.querySelectorAll('.icon-wrap').forEach(w => {
+      w.style.background = 'var(--accent-dim)';
+    });
+  }
+}
+
+// ════════ THEMES ════════
+function applyTheme(t) {
+  const themes = {
+    default:  { bg:'#060810', bgm:'#0a0d16', sf:'#10141e', bd:'#1e2738', tx:'#cdd6e4', ac:'#00d4aa' },
+    ice:      { bg:'#04080e', bgm:'#081018', sf:'#0c1624', bd:'#1a2840', tx:'#b8d0e8', ac:'#4dd0e1' },
+    tradeweb: { bg:'#040814', bgm:'#061024', sf:'#0a1630', bd:'#162844', tx:'#b0c8e4', ac:'#2196f3' },
+    refinitiv:{ bg:'#0a0806', bgm:'#100e0a', sf:'#181510', bd:'#2c261c', tx:'#d8ceb8', ac:'#ff9800' },
+    murex:    { bg:'#08080a', bgm:'#0e0e12', sf:'#16161c', bd:'#262630', tx:'#c4c4d0', ac:'#7c8cf8' },
+    light:    { bg:'#eaeef4', bgm:'#f2f5fa', sf:'#ffffff', bd:'#d0d6e0', tx:'#2c3a50', ac:'#0066cc' },
+  };
+  const th = themes[t];
+  if(!th) return;
+  const r = document.documentElement.style;
+  r.setProperty('--bg-deep', th.bg);
+  r.setProperty('--bg', th.bgm);
+  r.setProperty('--surface', th.sf);
+  r.setProperty('--border', th.bd);
+  r.setProperty('--text', th.tx);
+  r.setProperty('--accent', th.ac);
+  r.setProperty('--accent-dim', th.ac + '1a');
+  setColor(th.ac);
+}
+
+// ════════ CSS OUTPUT ════════
+function updateCSS(sel) {
+  const sz = document.getElementById('sizeSlider').value;
+  const op = document.getElementById('opSlider').value;
+  const pd = document.getElementById('padSlider').value;
+  const rd = document.getElementById('radSlider').value;
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--icon-bg').trim();
+  const ic = sel || document.querySelector('.icon-tile.selected')?.dataset.icon || 'icon_name';
+
+  let c = `<span class="hc">/* Capital Markets — Icon Style */</span>\n`;
+  c += `<span class="hc">/* Business: FX · Rates · Commodities */</span>\n\n`;
+  c += `<span class="hs">.material-icons-sharp</span> {\n`;
+  c += `  <span class="hp">color</span>: <span class="hv">${currentColor}</span>;\n`;
+  c += `  <span class="hp">font-size</span>: <span class="hv">${sz}px</span>;\n`;
+  if(op<100) c += `  <span class="hp">opacity</span>: <span class="hv">${(op/100).toFixed(2)}</span>;\n`;
+  c += `}\n\n`;
+
+  const hasBg = bg !== 'transparent';
+  if(hasBg || parseInt(pd) > 0 || currentStyle !== 'default') {
+    c += `<span class="hs">.icon-container</span> {\n`;
+    c += `  <span class="hp">display</span>: <span class="hv">inline-flex</span>;\n`;
+    c += `  <span class="hp">align-items</span>: <span class="hv">center</span>;\n`;
+    c += `  <span class="hp">justify-content</span>: <span class="hv">center</span>;\n`;
+    c += `  <span class="hp">padding</span>: <span class="hv">${pd}px</span>;\n`;
+    c += `  <span class="hp">border-radius</span>: <span class="hv">${rd}px</span>;\n`;
+    if(hasBg) c += `  <span class="hp">background</span>: <span class="hv">${bg}</span>;\n`;
+    if(currentStyle==='outlined') c += `  <span class="hp">border</span>: <span class="hv">1.5px solid ${currentColor}</span>;\n`;
+    if(currentStyle==='filled') {
+      c += `  <span class="hp">background</span>: <span class="hv">${currentColor}</span>;\n`;
+      c += `  <span class="hp">color</span>: <span class="hv">#0a0d16</span>;\n`;
+    }
+    if(currentStyle==='soft') {
+      c += `  <span class="hp">background</span>: <span class="hv">${currentColor}1a</span>;\n`;
+    }
+    c += `}\n\n`;
+  }
+
+  c += `<span class="hc">/* Business area colors */</span>\n`;
+  c += `<span class="hs">.icon--fx</span>     { <span class="hp">color</span>: <span class="hv">#3b82f6</span>; }\n`;
+  c += `<span class="hs">.icon--rates</span>  { <span class="hp">color</span>: <span class="hv">#00d4aa</span>; }\n`;
+  c += `<span class="hs">.icon--commod</span> { <span class="hp">color</span>: <span class="hv">#f59e0b</span>; }\n\n`;
+
+  c += `<span class="hc">/* Usage */</span>\n`;
+  c += `<span class="hs">&lt;span class="material-icons-sharp"&gt;</span>${ic}<span class="hs">&lt;/span&gt;</span>`;
+
+  document.getElementById('cssCode').innerHTML = c;
+}
+
+// ════════ EXPORT ════════
+function copyCSS() {
+  const t = document.getElementById('cssCode').textContent;
+  navigator.clipboard.writeText(t).then(()=>toast('CSS copied!'));
+}
+
+function copyIconList() {
+  const icons = [];
+  DATA.forEach(s => {
+    s.icons.forEach(ic => {
+      if(currentBA === 'all' || ic.ba.includes(currentBA)) {
+        icons.push(`${s.fn} | ${ic.id} | ${ic.label} | ${ic.ba.join(', ')}`);
+      }
+    });
+  });
+  const header = "Function | Icon ID | Label | Business Areas\n" + "─".repeat(60) + "\n";
+  navigator.clipboard.writeText(header + icons.join('\n')).then(()=>toast(`${icons.length} icons copied!`));
+}
+
+// ════════ TOAST ════════
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+// ════════ INIT ════════
+render();
+updateCSS();
+</script>
+</body>
+</html>
