@@ -1,452 +1,1256 @@
 # Macro Desktop MFE
 
-A comprehensive monorepo for building financial market data applications using Angular, React, and OpenFin. This workspace provides real-time market data visualization, trading dashboards, and workspace integration capabilities.
+A production-grade NX monorepo for building **Capital Markets desktop applications** using Angular, React, and OpenFin Workspace. This repository provides real-time market data visualization, enterprise messaging transports (AMPS, Solace), AG Grid wrappers, a structured logging framework, and a complete OpenFin Workspace platform with FDC3 interoperability -- all ready for LOB teams to fork and build upon.
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
-## 🏗️ Architecture
+---
 
-This is an [Nx monorepo](https://nx.dev) workspace containing multiple applications and shared libraries:
+## Table of Contents
 
-- **Applications**: Standalone Angular and React applications for different market data views
-- **Libraries**: Reusable components and utilities shared across applications
-- **Workspace**: OpenFin workspace platform integration
+- [Architecture Overview](#architecture-overview)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Applications](#applications)
+  - [macro-workspace (OpenFin Platform)](#1-macro-workspace---openfin-workspace-platform)
+  - [macro-angular (Angular App)](#2-macro-angular---angular-market-data-application)
+  - [macro-react (React App)](#3-macro-react---react-market-data-application)
+  - [market-data-server (Node.js)](#4-market-data-server---websocket-market-data-service)
+- [Shared Libraries](#shared-libraries)
+  - [@macro/logger](#macrologger---structured-logging)
+  - [@macro/amps](#macroamps---amps-message-transport)
+  - [@macro/solace](#macrosolace---solace-message-transport)
+  - [@macro/openfin](#macroopenfin---openfin-workspace-services)
+  - [@macro/rxutils](#macrorxutils---reactive-utilities)
+  - [@macro/macro-angular-grid](#macromacro-angular-grid---angular-ag-grid-wrapper)
+  - [@macro/macro-react-grid](#macromacro-react-grid---react-ag-grid-wrapper)
+- [OpenFin Workspace Platform](#openfin-workspace-platform)
+- [Icon System](#icon-system)
+- [Theming](#theming)
+- [Ports & URLs](#ports--urls)
+- [LOB Implementation Guide](#lob-implementation-guide)
+- [Technology Stack](#technology-stack)
+- [Testing](#testing)
+- [Available Commands](#available-commands)
+- [Useful Links](#useful-links)
+- [Contributing](#contributing)
 
-## 📦 Applications
+---
 
-### 1. **macro-angular** - Angular Market Data Application
+## Architecture Overview
 
-A standalone Angular application featuring:
+```
++---------------------------------------------------------------+
+|                    OpenFin Workspace Platform                  |
+|                    (macro-workspace :4202)                     |
+|   +-------------------+  +-------------------+                |
+|   |  Home / Search    |  |  Dock / Taskbar   |                |
+|   +-------------------+  +-------------------+                |
+|   +-------------------+  +-------------------+                |
+|   |  Store / Catalog  |  |  Notifications    |                |
+|   +-------------------+  +-------------------+                |
+|                                                               |
+|   +-------------------------+  +-------------------------+    |
+|   | macro-angular :4200     |  | macro-react :4201       |    |
+|   | - FX Market Data        |  | - Treasury Market Data  |    |
+|   | - Treasury Microstructure  | - Commodities Dashboard |    |
+|   | - PrimeNG + AG Grid     |  | - Shadcn/Tailwind + AG |    |
+|   +-------------------------+  +-------------------------+    |
+|                                                               |
+|   FDC3 Context Sharing / InterApplicationBus / Channels       |
++---------------------------------------------------------------+
+        |                   |                   |
+   +----------+      +----------+      +--------------+
+   | @macro/  |      | @macro/  |      | @macro/      |
+   | logger   |      | openfin  |      | rxutils      |
+   +----------+      +----------+      +--------------+
+        |                   |
+   +----------+      +----------+
+   | @macro/  |      | @macro/  |
+   | amps     |      | solace   |
+   +----------+      +----------+
 
-- **FX Market Data Component**: Real-time foreign exchange market data with G10 currency pairs
-  - Live bid/ask prices and spreads
-  - Price change indicators
-  - Real-time updates via ag-Grid
-  - Custom price formatting
+   +---------------------+      +---------------------+
+   | @macro/             |      | @macro/             |
+   | macro-angular-grid  |      | macro-react-grid    |
+   +---------------------+      +---------------------+
 
-- **Treasury Microstructure Component**: US Treasury E-Trading Market Microstructure analysis
-  - Trade frequency/count per interval (bar chart)
-  - Order-to-trade ratios (line chart)
-  - Quote update frequency (line chart)
-  - Time between trades (line chart)
-  - Real-time data updates with ag-Charts
-  - Responsive 2x2 grid layout
-
-**Features:**
-- Angular Router for navigation
-- PrimeNG MenuBar for top navigation
-- Light/Dark theme toggle with system preference detection
-- Theme persistence via localStorage
-- ag-Grid with automatic theme switching
-- ag-Charts with theme-aware styling
-
-**Run:**
-```bash
-npx nx serve macro-angular
+   +-----------------------------------------------+
+   |  market-data-server :3000 (WebSocket)          |
+   |  ws://localhost:3000/marketData/fx              |
+   |  ws://localhost:3000/marketData/tsy             |
+   +-----------------------------------------------+
 ```
 
-**Build:**
-```bash
-npx nx build macro-angular
-```
+**Key Design Principles:**
 
-### 2. **macro-react** - React Market Data Application
+| Principle | Implementation |
+|-----------|---------------|
+| **Framework-agnostic libraries** | Base TypeScript classes in `@macro/openfin`, Angular/React wrappers on top |
+| **Reactive-first** | RxJS Observables/Subjects throughout -- BehaviorSubject for state, Subject for events |
+| **High-frequency data** | `@macro/rxutils` conflation for 10K+ msg/sec reduction to UI-friendly rates |
+| **FDC3 interop** | Standard FINOS FDC3 2.0 context sharing between all views |
+| **Dark/Light theming** | CSS variables injected at document root, synced across OpenFin platform |
 
-A standalone React application featuring:
+---
 
-- **Treasury Market Data Component**: US Treasury securities market data
-  - Treasury 32nd price formatting (similar to Angular pipes)
-  - T-Bills, T-Notes, and T-Bonds
-  - Real-time price updates
-  - Yield, duration, and convexity calculations
-  - ag-Grid with theme support
-
-- **Commodities Trading Dashboard**: Professional commodities trading interface
-  - **Commodities**: Energy (Crude Oil, Natural Gas), Metals (Gold, Silver, Copper), Agriculture (Corn, SoyBeans)
-  - Live streaming with pause/play controls (Shadcn Switch)
-  - Speed adjustment (0.5x to 4x)
-  - Color-coded spreads (positive = green, negative = red)
-  - Enhanced order book with visual styling
-  - Market summary panel with key metrics
-  - Custom tooltips with dark theme support
-  - 5 live statistics updating constantly
-  - Category-based commodity selection
-  - Live indicator with pulsing animation
-  - Realistic market behavior (contango/backwardation)
-  - Professional trading desk styling
-  - Responsive grid layout
-
-**Features:**
-- React Router for navigation
-- Shadcn UI Menubar for navigation
-- Shadcn UI Switch for controls
-- Light/Dark theme toggle with blue theme
-- Theme persistence via localStorage
-- ag-Grid with automatic theme switching
-- Recharts for data visualization
-- Tailwind CSS for styling
-
-**Run:**
-```bash
-npx nx serve macro-react
-```
-
-**Build:**
-```bash
-npx nx build macro-react
-```
-
-### 3. **macro-workspace** - OpenFin Workspace Platform
-
-An OpenFin workspace application providing:
-- FDC3 integration
-- Workspace platform services
-- Multi-window management
-- Channel management
-- Context sharing
-
-**Run:**
-```bash
-npx nx serve macro-workspace
-```
-
-### 4. **market-data-server** - Market Data Service
-
-A Node.js service providing market data streams:
-- FX market data service
-- Treasury market data service
-- WebSocket support for real-time updates
-
-## 📚 Libraries
-
-### **@macro/logger** - Logging Library
-
-A shared logging library using Pino for structured logging:
-
-**Features:**
-- Multiple log levels (DEBUG, INFO, WARN, ERROR)
-- Per-logger level configuration
-- Global log level configuration
-- Pretty printing in development
-- JSON structured logging
-- Works in both Angular and React applications
-
-**Usage:**
-```typescript
-import { Logger, LogLevel } from '@macro/logger';
-
-const logger = Logger.getLogger('MyComponent');
-logger.info('Application started', { userId: 123 });
-logger.error('Error occurred', { error: 'Something went wrong' });
-```
-
-### **@macro/macro-angular-grid** - Angular ag-Grid Wrapper
-
-A wrapper component for ag-Grid in Angular applications:
-
-**Features:**
-- JSON column configuration support
-- ag-Grid Enterprise features
-- Automatic light/dark theme switching
-- RxJS Subjects for row operations (add, update, delete)
-- Default grid options (pagination, sorting, filtering)
-- TypeScript type safety
-
-**Usage:**
-```typescript
-import { MacroAngularGrid } from '@macro/macro-angular-grid';
-
-@Component({
-  template: `
-    <lib-macro-angular-grid
-      [columns]="columns"
-      [rowData]="rowData">
-    </lib-macro-angular-grid>
-  `
-})
-```
-
-### **@macro/macro-react-grid** - React ag-Grid Wrapper
-
-A wrapper component for ag-Grid in React applications:
-
-**Features:**
-- JSON column configuration support
-- ag-Grid Enterprise features
-- Automatic light/dark theme switching
-- RxJS Subjects for row operations
-- Forward ref support for grid API access
-- TypeScript type safety
-
-**Usage:**
-```typescript
-import { MacroReactGrid } from '@macro/macro-react-grid';
-
-<MacroReactGrid
-  columns={columns}
-  rowData={rowData}
-  ref={gridRef}
-/>
-```
-
-## 🎨 Theming
-
-Both Angular and React applications support comprehensive theming:
-
-### Light/Dark Theme Toggle
-- System preference detection on first load
-- Theme persistence in localStorage
-- Automatic theme switching for:
-  - ag-Grid (light/dark color schemes)
-  - ag-Charts (theme-aware styling)
-  - PrimeNG components (via darkModeSelector)
-  - Shadcn UI components (via CSS variables)
-  - Custom application styles
-
-### Theme Implementation
-- **Angular**: CSS variables with `.dark` class on document root
-- **React**: Tailwind CSS with Shadcn UI CSS variables
-- **Blue Theme**: Consistent blue color scheme across light and dark modes
-
-## 🛠️ Technology Stack
-
-### Frontend Frameworks
-- **Angular** 20.3.0 - Standalone components, signals-ready
-- **React** 19.0.0 - Latest React with hooks
-
-### UI Libraries
-- **ag-Grid** 34.3.1 - Enterprise data grid
-- **ag-Charts** 12.3.1 - Enterprise charts
-- **Recharts** 3.4.1 - React charting library
-- **PrimeNG** 20.3.0 - Angular UI component library
-- **Shadcn UI** - React component library (manually installed)
-
-### Styling
-- **Tailwind CSS** 4.1.17 - Utility-first CSS framework
-- **CSS Variables** - Theme system
-- **PostCSS** - CSS processing
-
-### Routing
-- **Angular Router** - Client-side routing for Angular
-- **React Router** 6.29.0 - Client-side routing for React
-
-### State Management
-- **RxJS** 7.8.0 - Reactive programming
-- **React Hooks** - useState, useEffect, useMemo, useCallback
-
-### Build Tools
-- **Nx** 22.0.3 - Monorepo build system
-- **Vite** 7.0.0 - Fast build tool for React
-- **Angular Build** 20.3.0 - Angular build system
-- **TypeScript** 5.9.2 - Type-safe JavaScript
-
-### Logging
-- **Pino** 10.1.0 - Fast JSON logger
-- **pino-pretty** 13.1.2 - Pretty printing for development
-
-### Workspace
-- **OpenFin** 42.102.4 - Desktop application platform
-- **FDC3** 2.0.3 - Financial Desktop Connectivity
-
-## 🚀 Getting Started
+## Quick Start
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn
+
+- **Node.js** v18+ (v20 recommended)
+- **npm** (included with Node.js)
+- **OpenFin** runtime (auto-installed on first launch, Windows/Mac)
 
 ### Installation
 
-1. Clone the repository:
 ```bash
 git clone <repository-url>
 cd macro
-```
-
-2. Install dependencies:
-```bash
 npm install
 ```
 
-3. Start development server for Angular app:
+### Running Everything
+
 ```bash
-npx nx serve macro-angular
+# Start all three apps concurrently (workspace + angular + react)
+npm start
+
+# Or start individually:
+npm run start:workspace    # OpenFin Platform  -> http://localhost:4202
+npm run start:angular      # Angular App       -> http://localhost:4200
+npm run start:react        # React App         -> http://localhost:4201
 ```
 
-4. Start development server for React app:
+### Launch OpenFin Desktop
+
+Once the workspace is serving on port 4202:
+
 ```bash
-npx nx serve macro-react
+npm run launch
+# Equivalent to: node apps/macro-workspace/launch.mjs http://localhost:4202/manifest.fin.json
 ```
 
-### Available Commands
+This launches the OpenFin runtime, which loads the workspace platform and registers all apps (Angular views, React views, workspace views) into the Home search, Dock, and Store.
 
-#### Development
-```bash
-# Serve Angular application
-npx nx serve macro-angular
+---
 
-# Serve React application
-npx nx serve macro-react
-
-# Serve workspace application
-npx nx serve macro-workspace
-```
-
-#### Building
-```bash
-# Build Angular application
-npx nx build macro-angular
-
-# Build React application
-npx nx build macro-react
-
-# Build all applications
-npx nx run-many --target=build --all
-```
-
-#### Testing
-```bash
-# Run tests for a specific project
-npx nx test <project-name>
-
-# Run tests for all projects
-npx nx run-many --target=test --all
-
-# Run e2e tests
-npx nx e2e <project-name>-e2e
-```
-
-#### Linting
-```bash
-# Lint a specific project
-npx nx lint <project-name>
-
-# Lint all projects
-npx nx run-many --target=lint --all
-```
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 macro/
 ├── apps/
-│   ├── macro-angular/          # Angular market data application
+│   ├── macro-workspace/              # OpenFin Workspace Platform (Angular, :4202)
 │   │   ├── src/app/
-│   │   │   ├── fx-market-data/         # FX market data component
-│   │   │   ├── treasury-microstructure/ # Treasury microstructure component
-│   │   │   └── app.ts                   # Main app component with routing
-│   │   └── ...
-│   ├── macro-react/            # React market data application
-│   │   ├── src/app/
-│   │   │   ├── treasury-market-data/    # Treasury market data component
-│   │   │   ├── commodities-dashboard/  # Commodities dashboard component
-│   │   │   └── app.tsx                  # Main app component with routing
-│   │   ├── src/components/ui/           # Shadcn UI components
-│   │   └── ...
-│   ├── macro-workspace/        # OpenFin workspace application
-│   └── market-data-server/     # Market data service
+│   │   │   ├── provider/             # Platform initialization component
+│   │   │   ├── view1/                # FDC3 context broadcaster demo
+│   │   │   └── view2/                # FDC3 context listener demo
+│   │   ├── public/
+│   │   │   ├── manifest.fin.json     # OpenFin platform manifest (app registry)
+│   │   │   ├── settings.json         # Platform settings
+│   │   │   ├── view1.fin.json        # View manifest for View 1
+│   │   │   ├── view2.fin.json        # View manifest for View 2
+│   │   │   └── macro-*.fin.json      # View manifests for Angular/React apps
+│   │   └── launch.mjs               # OpenFin launch script (Windows/Mac)
+│   │
+│   ├── macro-angular/                # Angular Market Data App (:4200)
+│   │   └── src/app/
+│   │       ├── fx-market-data/       # G10 FX currency pairs (AG Grid)
+│   │       ├── treasury-microstructure/  # 4-chart microstructure analysis (AG Charts)
+│   │       ├── app.routes.ts         # Route definitions
+│   │       └── app.ts               # Root component (PrimeNG MenuBar, theme toggle)
+│   │
+│   ├── macro-react/                  # React Market Data App (:4201)
+│   │   └── src/
+│   │       ├── app/
+│   │       │   ├── treasury-market-data/     # Treasury 32nd pricing (AG Grid)
+│   │       │   ├── commodities-dashboard/    # 7 commodities + order book (Recharts)
+│   │       │   └── app.tsx                   # Root component (Shadcn Menubar)
+│   │       └── components/ui/                # Shadcn UI components
+│   │
+│   ├── market-data-server/           # Node.js WebSocket Server (:3000)
+│   │   └── src/
+│   │       ├── main.ts               # WebSocket server with path routing
+│   │       ├── fx-market-data.service.ts    # 15 FX pairs data generator
+│   │       └── tsy-market-data.service.ts   # 11 Treasury securities generator
+│   │
+│   ├── macro-angular-e2e/            # Playwright E2E for Angular
+│   ├── macro-react-e2e/              # Playwright E2E for React
+│   └── macro-workspace-e2e/          # Playwright E2E for OpenFin (CDP)
+│
 ├── libs/
-│   ├── logger/                 # Shared logging library
-│   ├── macro-angular-grid/     # Angular ag-Grid wrapper
-│   └── macro-react-grid/       # React ag-Grid wrapper
-└── ...
+│   ├── logger/                       # @macro/logger - Pino-based logging
+│   ├── amps/                         # @macro/amps - AMPS message transport
+│   ├── solace/                       # @macro/solace - Solace PubSub+ transport
+│   ├── openfin/                      # @macro/openfin - Workspace services + Angular DI
+│   ├── rxutils/                      # @macro/rxutils - RxJS conflation utilities
+│   ├── macro-angular-grid/           # @macro/macro-angular-grid - AG Grid Angular
+│   └── macro-react-grid/             # @macro/macro-react-grid - AG Grid React
+│
+├── capital-markets-icon-system-all.html   # Full icon system (160+ icons, 10 categories)
+├── rates-etrading-icon-showcase.html      # Rates-focused icons (110+ icons, 8 categories)
+├── nx.json                           # NX workspace configuration
+├── tsconfig.base.json                # TypeScript path aliases (@macro/*)
+└── package.json                      # Scripts and dependencies
 ```
 
-## 🔧 Development Guidelines
+### TypeScript Path Aliases
 
-### Adding New Components
+All shared libraries are available via `@macro/*` imports (configured in `tsconfig.base.json`):
 
-#### Angular
-1. Create component in `apps/macro-angular/src/app/`
-2. Add route in `apps/macro-angular/src/app/app.routes.ts`
-3. Add menu item in `apps/macro-angular/src/app/app.ts`
-
-#### React
-1. Create component in `apps/macro-react/src/app/`
-2. Add route in `apps/macro-react/src/app/app.tsx`
-3. Add menu item in the Menubar
-
-### Theming
-- Always use CSS variables for colors
-- Test both light and dark themes
-- Ensure ag-Grid and ag-Charts respond to theme changes
-- Use MutationObserver for theme detection in libraries
-
-### Grid Components
-- Use `@macro/macro-angular-grid` or `@macro/macro-react-grid` for data grids
-- Configure columns as JSON strings or TypeScript arrays
-- Leverage RxJS Subjects for real-time updates
-
-### Logging
-- Use `@macro/logger` for all logging
-- Set appropriate log levels
-- Include context in log messages
-
-## 📊 Features Overview
-
-### Real-Time Data Simulation
-- Simulated market data updates
-- Realistic price movements
-- Configurable update intervals
-- Pause/play controls
-
-### Data Visualization
-- **ag-Charts**: Time-series charts, bar charts
-- **Recharts**: Price charts, volume charts
-- **ag-Grid**: Interactive data grids with sorting, filtering, pagination
-
-### Navigation
-- **Angular**: PrimeNG MenuBar with routing
-- **React**: Shadcn UI Menubar with routing
-- Active route highlighting
-
-### Responsive Design
-- Grid layouts that adapt to screen size
-- Scrollable sections where needed
-- Professional trading desk styling
-
-## 🧪 Testing
-
-### Unit Tests
-```bash
-npx nx test <project-name>
+```typescript
+import { Logger, LogLevel } from '@macro/logger';
+import { AmpsClient } from '@macro/amps';
+import { SolaceClient } from '@macro/solace';
+import { WorkspaceService, ThemeService, launchApp } from '@macro/openfin';
+import { conflateByKey, ConflationSubject } from '@macro/rxutils';
+import { MacroAngularGrid } from '@macro/macro-angular-grid';
+import { MacroReactGrid } from '@macro/macro-react-grid';
 ```
-
-### E2E Tests
-```bash
-npx nx e2e <project-name>-e2e
-```
-
-## 📝 Code Quality
-
-- **ESLint**: Code linting
-- **Prettier**: Code formatting
-- **TypeScript**: Type safety
-- **Jest**: Unit testing
-- **Playwright**: E2E testing
-
-## 🔗 Useful Links
-
-- [Nx Documentation](https://nx.dev)
-- [Angular Documentation](https://angular.dev)
-- [React Documentation](https://react.dev)
-- [ag-Grid Documentation](https://www.ag-grid.com)
-- [ag-Charts Documentation](https://www.ag-grid.com/charts)
-- [PrimeNG Documentation](https://primeng.org)
-- [Shadcn UI Documentation](https://ui.shadcn.com)
-- [OpenFin Documentation](https://developers.openfin.co)
-- [FDC3 Documentation](https://fdc3.finos.org)
-
-## 🤝 Contributing
-
-1. Create a feature branch
-2. Make your changes
-3. Run tests and linting
-4. Submit a pull request
-
-## 📄 License
-
-MIT
 
 ---
 
-Built with ❤️ using Nx, Angular, React, and OpenFin
+## Applications
+
+### 1. macro-workspace - OpenFin Workspace Platform
+
+The workspace is the **shell** that hosts all other apps. It provides the Home search bar, Dock taskbar, Store catalog, Notifications, workspace persistence, and theme management.
+
+**Technology:** Angular 21 (zoneless), OpenFin Workspace 22.3.25, FDC3 2.0
+
+**Port:** 4202
+
+**Routes:**
+
+| Route | Component | Purpose |
+|-------|-----------|---------|
+| `/provider` | ProviderComponent | Initializes platform, displays status |
+| `/view1` | View1Component | Demo: broadcasts FDC3 contexts & notifications |
+| `/view2` | View2Component | Demo: listens for FDC3 contexts, IAB provider |
+
+**OpenFin Manifest** (`public/manifest.fin.json`):
+
+The manifest registers **9 applications** in the workspace:
+
+| App ID | Framework | Description |
+|--------|-----------|-------------|
+| `macro-workspace-view1` | Angular | FDC3 context broadcaster demo |
+| `macro-workspace-view2` | Angular | FDC3 context listener demo |
+| `macro-angular-view` | Angular | Main Angular app |
+| `macro-angular-fx-market-data` | Angular | FX Market Data (G10 pairs) |
+| `macro-angular-treasury-microstructure` | Angular | Treasury microstructure charts |
+| `macro-react-view` | React | Main React app |
+| `macro-react-treasury-market-data` | React | Treasury securities data |
+| `macro-react-commodities-dashboard` | React | Commodities trading dashboard |
+
+All apps are configured with FDC3 2.0 interop and context group `"green"`.
+
+**Platform Initialization Sequence:**
+
+```
+1. isOpenFin() check
+2. Load settings (fetch /settings.json -> app registry)
+3. Initialize WorkspacePlatform (toolbar, theme, custom actions)
+4. Await platform ready
+5. Register components (Dock + Home + Store in parallel)
+6. Show Home and Dock
+7. Restore last saved workspace from localStorage
+```
+
+**Launch Script** (`launch.mjs`):
+- Windows: Uses `@openfin/node-adapter` to start OpenFin runtime
+- Mac: Converts HTTP manifest URL to `fin://` protocol link
+- Handles graceful shutdown (SIGINT/SIGTERM)
+
+---
+
+### 2. macro-angular - Angular Market Data Application
+
+**Technology:** Angular 21.1, PrimeNG 21, AG Grid 35, AG Charts 13, Zoneful (with event coalescing)
+
+**Port:** 4200
+
+**Features:**
+- PrimeNG Menubar navigation
+- Light/Dark theme toggle (system preference -> localStorage -> toggle)
+- PrimeNG Aura theme with `.dark` CSS class selector
+
+**Routes:**
+
+| Route | Component | Description |
+|-------|-----------|-------------|
+| `/fx-market-data` | FxMarketDataComponent | G10 FX currency pairs grid |
+| `/treasury-microstructure` | TreasuryMicrostructureComponent | 4 real-time charts |
+
+#### FX Market Data Component
+
+Displays **15 G10 currency pairs** with 1-second simulated updates:
+
+- **Majors:** EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD, USDCHF, NZDUSD
+- **Exotics:** USDSEK, USDNOK
+- **Crosses:** EURGBP, EURJPY, GBPJPY, AUDJPY, EURCHF, GBPCHF
+
+Each pair shows: Symbol, Base, Quote, Bid, Ask, Mid, Spread, Change, Change%. Prices use 5 decimal places (2 for JPY pairs). Changes are color-coded green/red.
+
+Uses `@macro/macro-angular-grid` with `updateRows$` Subject for real-time row updates.
+
+#### Treasury Microstructure Component
+
+Displays **4 AG Charts** in a 2x2 grid with 1-second data updates:
+
+1. **Trade Frequency** (Bar Chart) - Trades per interval
+2. **Order-to-Trade Ratio** (Line Chart) - Orders per trade
+3. **Quote Update Frequency** (Line Chart) - Quotes/second
+4. **Time Between Trades** (Line Chart) - Milliseconds
+
+Maintains a rolling window of 50 data points. Uses `clone` library for immutable chart option updates. Theme-aware via MutationObserver on document root class.
+
+---
+
+### 3. macro-react - React Market Data Application
+
+**Technology:** React 19, Vite 7, Tailwind CSS 4, Shadcn UI, AG Grid 35, Recharts 3
+
+**Port:** 4201
+
+**Features:**
+- Shadcn UI Menubar navigation (Radix UI primitives)
+- Light/Dark theme toggle with Tailwind `dark` class
+- CSS variable-based theming throughout
+
+**Routes:**
+
+| Route | Component | Description |
+|-------|-----------|-------------|
+| `/treasury-market-data` | TreasuryMarketDataComponent | Treasury securities with 32nd pricing |
+| `/commodities-dashboard` | CommoditiesDashboardComponent | Multi-commodity trading dashboard |
+
+#### Treasury Market Data Component
+
+Displays **11 US Treasury securities** with 1-second updates:
+
+- **T-Bills (3):** 3-month, 6-month, 1-year (zero coupon)
+- **T-Notes (6):** 2, 3, 5, 7, 10-year maturities
+- **T-Bonds (2):** 20-year, 30-year
+
+Prices displayed in **Treasury 32nd notation** (e.g., `99-16` = 99 + 16/32, `99-16+` = 99 + 16.5/32). Columns include: CUSIP, Type, Maturity, YTM, Coupon, Price, Yield, Bid, Ask, Spread, Change, Volume, Duration, Convexity.
+
+Uses `@macro/macro-react-grid` with `forwardRef` for imperative grid API access.
+
+#### Commodities Dashboard Component
+
+A full **trading dashboard** for 7 commodities across 3 categories:
+
+| Category | Commodities | Symbols |
+|----------|-------------|---------|
+| Energy | Crude Oil, Natural Gas | CL, NG |
+| Metals | Gold, Silver, Copper | GC, SI, HG |
+| Agriculture | Corn, Soybeans | ZC, ZS |
+
+**UI Features:**
+- Live/Paused toggle with pulsing indicator
+- Playback speed control (0.5x - 4x)
+- Market Summary panel (price, bid, ask, spread, volume, open interest, curve type)
+- **Order Book** (20 levels: 10 bid / 10 ask, color-coded green/red)
+- **Price Chart** (Recharts AreaChart, 100-point rolling window)
+- **5 Live Statistics** (Total Volume, Avg Spread, Volatility, 24h High/Low)
+- Futures curve detection (contango / backwardation)
+
+---
+
+### 4. market-data-server - WebSocket Market Data Service
+
+**Technology:** Node.js, WebSocket (ws library), esbuild
+
+**Port:** 3000
+
+A standalone WebSocket server that publishes simulated market data at 1-second intervals. Supports path-based routing for different data streams.
+
+**Endpoints:**
+
+| Endpoint | Data |
+|----------|------|
+| `ws://localhost:3000/marketData/fx` | 15 G10 FX currency pairs |
+| `ws://localhost:3000/marketData/tsy` | 11 Treasury securities + benchmark rates |
+
+**Message Protocol:**
+
+```jsonc
+// Connection welcome
+{ "type": "connected", "message": "...", "currencies": [...], "timestamp": "..." }
+
+// Market data tick (every 1 second)
+{ "type": "marketData", "data": { "pairs": [...] }, "timestamp": "..." }
+
+// Client subscription
+{ "type": "subscribe" }
+{ "type": "subscribed", "message": "...", "timestamp": "..." }
+```
+
+**Treasury data includes benchmark rates:**
+```json
+{ "benchmarkRates": { "2Y": 4.30, "5Y": 4.45, "10Y": 4.55, "30Y": 4.65 } }
+```
+
+**Run:**
+```bash
+npx nx serve market-data-server
+```
+
+---
+
+## Shared Libraries
+
+### @macro/logger - Structured Logging
+
+A centralized logging library built on [Pino](https://github.com/pinojs/pino) that provides context-aware, level-filtered logging for both browser and Node.js environments.
+
+**API:**
+
+```typescript
+import { Logger, LogLevel } from '@macro/logger';
+
+// Create named logger (cached singleton per context)
+const logger = Logger.getLogger('MyComponent');
+
+// Log at different levels
+logger.debug('Detailed debug info', { key: 'value' });
+logger.info('Application started', { userId: 123 });
+logger.warn('Rate limit approaching', { current: 95, max: 100 });
+logger.error('Connection failed', { endpoint: '/api/data', statusCode: 500 });
+
+// Global level control
+Logger.setGlobalLevel(LogLevel.DEBUG);   // TRACE=10, DEBUG=20, INFO=30, WARN=40, ERROR=50, FATAL=60
+Logger.getGlobalLevel();
+
+// Per-logger level override
+logger.setLevel(LogLevel.WARN);
+```
+
+**Output Format:**
+```
+[2026-02-15 10:30:45.123] [INFO] [MyComponent] - Application started
+  {
+    "userId": 123
+  }
+```
+
+**Environment Routing:**
+- Browser: Routes to `console.debug/info/warn/error`
+- Node.js: INFO/DEBUG to stdout, WARN/ERROR/FATAL to stderr
+
+**Build & Publish:**
+```bash
+npm run build:logger            # Build to dist/libs/logger
+npm run publish:logger           # Publish to npm registry
+npm run publish:logger:dry-run   # Dry run
+```
+
+---
+
+### @macro/amps - AMPS Message Transport
+
+A TypeScript wrapper for the [60East AMPS](https://www.crankuptheamps.com/) high-performance message broker, providing RxJS-integrated subscriptions, SOW (State of the World) queries, and publish operations.
+
+**API:**
+
+```typescript
+import { AmpsClient, type AmpsMessage } from '@macro/amps';
+
+// Create and connect
+const client = new AmpsClient('my-client');
+await client.connect('ws://amps-server:9007/amps/json');
+
+// Set error handler
+client.onError((error) => console.error('AMPS error:', error));
+
+// Subscribe with callback
+const subId = client.subscribe(
+  (msg: AmpsMessage) => console.log(msg.data),
+  '/topic/fx-rates',
+  "/symbol='EURUSD'"   // Optional AMPS filter expression
+);
+
+// Subscribe as RxJS Observable
+const rates$ = client.subscribeAsObservable('/topic/fx-rates', "/symbol='EURUSD'");
+rates$.subscribe((msg) => updateGrid(msg.data));
+
+// Subscribe as Subject (allows external message injection)
+const { subject, observable } = client.subscribeAsSubject('/topic/fx-rates');
+
+// SOW query (State of the World - query existing state)
+client.sow(
+  (msg) => console.log('SOW result:', msg.data),
+  '/topic/positions',
+  "/desk='FX'"
+);
+
+// Publish
+client.publish('/topic/orders', { symbol: 'EURUSD', side: 'BUY', qty: 1000000 });
+
+// Disconnect (completes all subjects, clears subscriptions)
+client.disconnect();
+```
+
+**AmpsMessage Interface:**
+```typescript
+interface AmpsMessage {
+  data: string | Record<string, unknown>;
+  header?: { command(): string; [key: string]: unknown };
+  topic?: string;
+  subId?: string;
+  sequence?: number;
+}
+```
+
+---
+
+### @macro/solace - Solace Message Transport
+
+A TypeScript wrapper for [Solace PubSub+](https://solace.com/) enterprise message broker with wildcard topic matching, session management, and RxJS integration.
+
+**API:**
+
+```typescript
+import { SolaceClient, type SolaceConnectionProperties } from '@macro/solace';
+
+// Create and connect
+const client = new SolaceClient('my-client');
+await client.connect({
+  hostUrl: 'ws://solace-server:8008',
+  vpnName: 'default',
+  userName: 'user',
+  password: 'pass',
+});
+
+// Set handlers
+client.onError((error) => console.error('Solace error:', error));
+client.onEvent((event, details) => console.log('Event:', event));
+
+// Subscribe (supports wildcards: * = single level, > = any suffix)
+client.subscribe(
+  (msg) => console.log(msg.data),
+  'orders/stock/*'      // Matches orders/stock/AAPL, orders/stock/MSFT, etc.
+);
+
+// Subscribe as Observable
+const orders$ = client.subscribeAsObservable('orders/>');  // All order topics
+
+// Publish with optional properties
+client.publish('orders/stock/AAPL', { side: 'BUY', qty: 100 }, {
+  correlationId: 'order-123',
+  replyTo: 'replies/my-client',
+  userProperties: { desk: 'equity', trader: 'jdoe' },
+});
+
+// Disconnect
+client.disconnect();
+```
+
+**SolaceMessage Interface:**
+```typescript
+interface SolaceMessage {
+  data: string | Record<string, unknown>;
+  topic?: string;
+  correlationId?: string;
+}
+```
+
+---
+
+### @macro/openfin - OpenFin Workspace Services
+
+A comprehensive library providing **framework-agnostic base classes** and **Angular DI wrappers** for the entire OpenFin Workspace platform.
+
+**Exports:**
+
+| Export | Type | Purpose |
+|--------|------|---------|
+| `WorkspaceService` | Angular Injectable | **Orchestrator** -- initializes entire platform |
+| `ThemeService` | Angular Injectable | Dark/light theme management + CSS variable injection |
+| `PlatformService` | Angular Injectable | Platform init, toolbar buttons, custom actions |
+| `SettingsService` | Angular Injectable | Loads app registry from `/settings.json` |
+| `HomeService` | Angular Injectable | Quick-search app launcher |
+| `DockService` | Angular Injectable | Taskbar with app dropdown |
+| `StoreService` | Angular Injectable | App catalog / storefront |
+| `ContextService` | Angular Injectable | FDC3 context broadcasting |
+| `ChannelService` | Angular Injectable | FDC3 named + user channels |
+| `NotificationsService` | Angular Injectable | Desktop toast notifications |
+| `WorkspaceOverrideService` | Angular Injectable | Workspace persistence (localStorage) |
+| `launchApp()` | Function | Launch apps by manifest type (view/snapshot/external) |
+| `themeConfig` | Object | Dark/Light theme palettes |
+| `Base*Service` | Classes | Framework-agnostic base classes for non-Angular usage |
+
+**Angular Usage (Workspace Init):**
+
+```typescript
+import { WorkspaceService, ThemeService } from '@macro/openfin';
+
+@Component({...})
+export class ProviderComponent implements OnInit, OnDestroy {
+  private readonly workspaceService = inject(WorkspaceService);
+  private readonly themeService = inject(ThemeService);
+  private readonly destroy$ = new Subject<void>();
+
+  ngOnInit() {
+    this.themeService.syncWithOpenFinTheme();
+    this.workspaceService.init()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe();
+  }
+
+  ngOnDestroy() {
+    this.themeService.stopSyncing();
+    this.workspaceService.quit();
+    this.destroy$.next();
+  }
+}
+```
+
+**FDC3 Context Sharing:**
+
+```typescript
+import { ContextService, ChannelService } from '@macro/openfin';
+
+// Broadcast to all listeners
+contextService.broadcast({
+  type: 'fdc3.instrument',
+  name: 'Microsoft Corporation',
+  id: { ticker: 'MSFT' }
+});
+
+// Listen for contexts
+contextService.registerContextListener('fdc3.instrument');
+contextService.context$.subscribe((ctx) => console.log('Received:', ctx));
+
+// Named app channels
+channelService.broadcast('MY-CHANNEL', { type: 'fdc3.instrument', ... });
+channelService.registerChannelListener('MY-CHANNEL', 'fdc3.instrument');
+channelService.channel$.subscribe((ctx) => console.log('Channel:', ctx));
+```
+
+**React / Non-Angular Usage (Base classes):**
+
+```typescript
+import {
+  BaseSettingsService,
+  BaseThemeService,
+  BaseContextService,
+} from '@macro/openfin';
+
+// Provide your own HTTP client
+const settingsService = new BaseSettingsService({
+  get: <T>(url: string) => fetch(url).then(r => r.json()) as Promise<T>
+});
+
+const themeService = new BaseThemeService(document, (theme, palette) => {
+  console.log('Theme changed:', theme);
+});
+```
+
+---
+
+### @macro/rxutils - Reactive Utilities
+
+Provides high-frequency data **conflation** using a double-buffering algorithm. Essential for real-time market data where raw feed rates (10,000+ msg/sec) far exceed UI refresh capabilities (~60 Hz).
+
+**How Conflation Works:**
+
+```
+Input:  AAPL=150.25  MSFT=310.00  AAPL=150.30  AAPL=150.28  MSFT=310.05
+        |___________ 100ms interval ___________|
+                                                |
+Output: AAPL=150.28 (latest)  MSFT=310.05 (latest)
+```
+
+Only the **latest value per key** is emitted each interval. Two buffers alternate (write to one, emit from the other) for zero-lock performance.
+
+**API:**
+
+```typescript
+import { conflateByKey, ConflationSubject } from '@macro/rxutils';
+
+// Option 1: Function-based
+const conflated$ = conflateByKey(sourceObservable$, 100);  // 100ms interval
+conflated$.subscribe(({ key, value }) => updateUI(key, value));
+
+// Option 2: Subject-based (more flexible)
+const subject = new ConflationSubject<string, number>(100);
+
+subject.subscribeToConflated(({ key, value }) => {
+  // Receives conflated updates every 100ms
+});
+
+// Emit high-frequency data
+subject.next({ key: 'AAPL', value: 150.25 });
+subject.next({ key: 'AAPL', value: 150.30 });  // Overwrites previous
+subject.next({ key: 'MSFT', value: 310.00 });
+
+// Option 3: Pipe to another Subject
+const updateSubject = new Subject();
+subject.pipeToSubject(updateSubject);
+
+// Cleanup
+subject.complete();
+```
+
+**Performance:** With 100 unique symbols at 10,000 updates/sec and a 100ms interval, output is ~100 updates/sec (99% reduction, 100% data accuracy).
+
+---
+
+### @macro/macro-angular-grid - Angular AG Grid Wrapper
+
+A ready-to-use AG Grid Enterprise wrapper for Angular with JSON column config, RxJS reactive row operations, and automatic dark/light theme switching.
+
+**Usage:**
+
+```typescript
+import { MacroAngularGrid } from '@macro/macro-angular-grid';
+
+@Component({
+  imports: [MacroAngularGrid],
+  template: `
+    <div style="height: 600px; width: 100%;">
+      <lib-macro-angular-grid
+        #gridComponent
+        [columns]="columns"
+        [rowData]="rowData"
+        [getRowId]="getRowId">
+      </lib-macro-angular-grid>
+    </div>
+  `
+})
+export class MyComponent {
+  @ViewChild('gridComponent') gridComponent!: MacroAngularGrid;
+
+  // Columns as JSON string or ColDef[]
+  columns = JSON.stringify([
+    { field: 'symbol', headerName: 'Symbol', width: 120, pinned: 'left' },
+    { field: 'price', headerName: 'Price', width: 120, cellStyle: { textAlign: 'right' } },
+  ]);
+
+  rowData = [...];
+  getRowId = (params: GetRowIdParams) => params.data.symbol;
+
+  // Reactive row operations
+  addRows() { this.gridComponent.addRows$.next([{ symbol: 'AAPL', price: 150 }]); }
+  updateRows() { this.gridComponent.updateRows$.next([{ symbol: 'AAPL', price: 151 }]); }
+  deleteRows() { this.gridComponent.deleteRows$.next([{ symbol: 'AAPL' }]); }
+
+  // Transaction API
+  applyBatch() {
+    this.gridComponent.applyTransaction({ add: [...], update: [...], remove: [...] });
+  }
+
+  // Direct API access
+  getApi() { return this.gridComponent.getGridApi(); }
+}
+```
+
+**Default Grid Options:** Pagination (10/25/50/100), sortable, filterable, resizable, multiple row selection, range selection, animated rows.
+
+**Enterprise Modules:** AllCommunityModule + AllEnterpriseModule + IntegratedChartsModule (AG Charts).
+
+**Theme:** Alpine theme with `colorSchemeDarkBlue` (dark) / `colorSchemeLight` (light), auto-switches via MutationObserver.
+
+---
+
+### @macro/macro-react-grid - React AG Grid Wrapper
+
+The React equivalent with `forwardRef` for imperative API access and the same feature set.
+
+**Usage:**
+
+```tsx
+import { MacroReactGrid, MacroReactGridRef } from '@macro/macro-react-grid';
+
+function MyComponent() {
+  const gridRef = useRef<MacroReactGridRef>(null);
+
+  const columns = useMemo(() => JSON.stringify([
+    { field: 'symbol', headerName: 'Symbol', width: 120 },
+    { field: 'price', headerName: 'Price', width: 120 },
+  ]), []);
+
+  // Reactive updates via ref
+  const addRow = () => gridRef.current?.addRows$.next([{ symbol: 'AAPL', price: 150 }]);
+  const updateRow = () => gridRef.current?.updateRows$.next([{ symbol: 'AAPL', price: 151 }]);
+
+  return (
+    <div style={{ height: '600px', width: '100%' }}>
+      <MacroReactGrid
+        ref={gridRef}
+        columns={columns}
+        rowData={rowData}
+        getRowId={(params) => params.data.symbol}
+      />
+    </div>
+  );
+}
+```
+
+---
+
+## OpenFin Workspace Platform
+
+### Custom Actions
+
+The platform registers two custom actions available from Dock, Home, and Store:
+
+| Action ID | Trigger | Behavior |
+|-----------|---------|----------|
+| `launch-app` | Dock dropdown, Home result, Store click | Launches app by manifest type |
+| `toggle-theme` | Toolbar button | Switches dark/light theme |
+
+### Workspace Persistence
+
+Workspaces are saved to **localStorage**:
+- `workspace-platform-workspaces` -- Array of saved workspaces
+- `workspace-platform-last-saved` -- Last active workspace ID
+
+On startup, the platform automatically restores the last saved workspace.
+
+### Toolbar Buttons
+
+The browser window toolbar includes:
+1. Show/Hide Tabs
+2. Color Linking (FDC3)
+3. Preset Layouts
+4. Lock/Unlock Page
+5. Save Menu
+6. **Theme Toggle** (custom sun/moon SVG icons)
+
+---
+
+## Icon System
+
+The repository includes two comprehensive, interactive HTML icon showcases for Capital Markets applications. Open them directly in a browser -- no build step required.
+
+### capital-markets-icon-system-all.html
+
+**160+ icons** across **10 functional categories** covering FX, Rates, and Commodities:
+
+| Category | Count | Color | Examples |
+|----------|-------|-------|----------|
+| Pricing | 20 | #00d4aa | Candlestick, Vol Surface, Forward Curves |
+| PnL | 12 | #34d399 | Daily PnL, Attribution, Delta |
+| Risk | 16 | #f59e0b | VaR Meter, Risk Shield, Stress Test |
+| Trading | 16 | #3b82f6 | Buy/Sell, Blotter, Confirmations |
+| E-Trading | 18 | #06b6d4 | Algo Engine, TWAP, Smart Router, AMPS |
+| Middle Office | 14 | #8b5cf6 | Matching, Reconciliation, MTM |
+| Ticketing | 12 | #ec4899 | Ticket Create, Status, Priority |
+| Back Office | 16 | #f97316 | Settlement, Clearing, Custody |
+| Workspace | 22 | #64748b | Dashboard, Tearout, Notifications |
+
+**Interactive Features:**
+- Business area filtering (All / FX / Rates / Commodities)
+- Real-time search across icon names and labels
+- Color picker with 16 presets + custom hex input
+- Size, opacity, padding, corner radius sliders
+- 4 style variants: Default, Outlined, Filled, Soft
+- 6 background options
+- **6 theme presets:** Bloomberg Dark, ICE Terminal, Tradeweb Blue, Refinitiv Amber, Murex Grey, Light Mode
+- CSS code generation with copy-to-clipboard
+- Icon export as tab-separated list
+
+Built on **Google Material Icons Sharp** (filled variant). Icons are tagged with business areas (fx, rates, commod) for filtering.
+
+### rates-etrading-icon-showcase.html
+
+A domain-specific subset for **Rates E-Trading** with **110+ icons** across 8 categories, tailored for US Treasury front-office workflows.
+
+---
+
+## Theming
+
+### Architecture
+
+The theming system operates in three tiers:
+
+```
+Tier 1: OpenFin Platform Theme
+  └─ ThemeService polls every 500ms for changes
+      └─ Applies to all windows in the platform
+
+Tier 2: CSS Variables on document root
+  └─ ~50 CSS variables (--brand-primary, --background-1, etc.)
+  └─ Both kebab-case and theme-prefixed versions
+  └─ .dark class toggled on <html>
+
+Tier 3: Framework-specific integration
+  ├─ Angular: PrimeNG responds to darkModeSelector: '.dark'
+  ├─ React: Tailwind responds to darkMode: ['class']
+  ├─ AG Grid: MutationObserver watches .dark class
+  └─ AG Charts: theme prop updated on class change
+```
+
+### Theme Palette
+
+Both dark and light palettes share a consistent blue primary (`#0A76D3`) with:
+- 6 background layers for depth hierarchy
+- Brand primary + secondary colors (8 variants each)
+- Text colors (default, help, inactive)
+- Input colors (background, text, placeholder, disabled, focused, border)
+- Status colors (success, warning, critical, active)
+
+### Adding Theme Support to New Components
+
+```typescript
+// Angular: Use MutationObserver
+const observer = new MutationObserver(() => {
+  const isDark = document.documentElement.classList.contains('dark');
+  // Update component theme
+});
+observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+// React: Use useEffect
+useEffect(() => {
+  const observer = new MutationObserver(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setTheme(isDark ? 'dark' : 'light');
+  });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  return () => observer.disconnect();
+}, []);
+```
+
+---
+
+## Ports & URLs
+
+| Service | Port | URL |
+|---------|------|-----|
+| Angular App | 4200 | http://localhost:4200 |
+| React App | 4201 | http://localhost:4201 |
+| OpenFin Workspace | 4202 | http://localhost:4202 |
+| Market Data Server | 3000 | ws://localhost:3000 |
+| OpenFin DevTools | 9090 | http://localhost:9090 |
+
+**Angular App Routes:**
+- http://localhost:4200/fx-market-data
+- http://localhost:4200/treasury-microstructure
+
+**React App Routes:**
+- http://localhost:4201/treasury-market-data
+- http://localhost:4201/commodities-dashboard
+
+**Workspace Routes:**
+- http://localhost:4202/provider (platform init window)
+- http://localhost:4202/view1 (FDC3 broadcaster)
+- http://localhost:4202/view2 (FDC3 listener)
+
+**WebSocket Endpoints:**
+- ws://localhost:3000/marketData/fx (FX data)
+- ws://localhost:3000/marketData/tsy (Treasury data)
+
+---
+
+## LOB Implementation Guide
+
+This section guides other Lines of Business (LOB) teams on how to use this repository as a foundation for their own trading applications.
+
+### Step 1: Create Your Application
+
+```bash
+# Generate a new Angular app
+npx nx generate @nx/angular:application my-lob-angular --directory=apps/my-lob-angular --standalone
+
+# Generate a new React app
+npx nx generate @nx/react:application my-lob-react --directory=apps/my-lob-react --bundler=vite
+```
+
+### Step 2: Use Shared Libraries
+
+All `@macro/*` libraries are available immediately via the TypeScript path aliases.
+
+```typescript
+// Logging
+import { Logger } from '@macro/logger';
+const logger = Logger.getLogger('MyLobApp');
+
+// AG Grid
+import { MacroAngularGrid } from '@macro/macro-angular-grid';  // or MacroReactGrid
+
+// Messaging (pick your transport)
+import { AmpsClient } from '@macro/amps';
+import { SolaceClient } from '@macro/solace';
+
+// Conflation for high-frequency data
+import { ConflationSubject } from '@macro/rxutils';
+
+// OpenFin services (if running in OpenFin)
+import { ContextService, ChannelService, ThemeService } from '@macro/openfin';
+```
+
+### Step 3: Register in OpenFin Workspace
+
+Add your app to `apps/macro-workspace/public/manifest.fin.json` under `customSettings.apps`:
+
+```json
+{
+  "appId": "my-lob-app",
+  "name": "my-lob-app",
+  "title": "My LOB Application",
+  "description": "Description for Home search and Store",
+  "manifest": "http://localhost:4202/my-lob-app.fin.json",
+  "manifestType": "view",
+  "icons": [{ "src": "http://localhost:YOUR_PORT/favicon.ico" }],
+  "contactEmail": "team@example.com",
+  "supportEmail": "support@example.com",
+  "publisher": "My LOB Team",
+  "intents": [],
+  "images": [],
+  "tags": ["view", "my-lob"]
+}
+```
+
+Create the view manifest file `apps/macro-workspace/public/my-lob-app.fin.json`:
+
+```json
+{
+  "url": "http://localhost:YOUR_PORT",
+  "fdc3InteropApi": "2.0",
+  "interop": {
+    "currentContextGroup": "green"
+  }
+}
+```
+
+### Step 4: Connect Real-Time Data
+
+Replace client-side simulation with AMPS or Solace:
+
+```typescript
+// Example: Connect to AMPS for real-time FX data
+const amps = new AmpsClient('my-lob-fx');
+await amps.connect('ws://amps-server:9007/amps/json');
+
+// Subscribe with conflation for grid updates
+const conflation = new ConflationSubject<string, FxRate>(100);  // 100ms
+
+amps.subscribeAsObservable('/topic/fx-rates')
+  .subscribe((msg) => {
+    const rate = msg.data as FxRate;
+    conflation.next({ key: rate.symbol, value: rate });
+  });
+
+conflation.subscribeToConflated(({ key, value }) => {
+  gridComponent.updateRows$.next([value]);
+});
+```
+
+### Step 5: Add FDC3 Context Sharing
+
+Enable your app to participate in cross-app communication:
+
+```typescript
+// Broadcast when user clicks a row
+onRowClicked(row: FxRate) {
+  contextService.broadcast({
+    type: 'fdc3.instrument',
+    name: row.symbol,
+    id: { ticker: row.symbol }
+  });
+}
+
+// Listen for context from other apps
+contextService.registerContextListener('fdc3.instrument');
+contextService.context$.subscribe((ctx) => {
+  const ticker = ctx.id?.ticker;
+  highlightRow(ticker);
+});
+```
+
+### Step 6: Theme Integration
+
+For PrimeNG (Angular):
+```typescript
+providePrimeNG({
+  theme: {
+    preset: Aura,
+    options: { darkModeSelector: '.dark' }
+  }
+})
+```
+
+For Tailwind (React): Use `darkMode: ['class']` in `tailwind.config.js` and reference CSS variables for colors.
+
+### Step 7: Create a Shared Library (Optional)
+
+If you have reusable logic:
+
+```bash
+# TypeScript library (framework-agnostic)
+npx nx generate @nx/js:library my-lob-utils --directory=libs/my-lob-utils --bundler=tsc
+
+# Angular library
+npx nx generate @nx/angular:library my-lob-ng --directory=libs/my-lob-ng
+
+# React library
+npx nx generate @nx/react:library my-lob-react --directory=libs/my-lob-react
+```
+
+Add the path alias to `tsconfig.base.json`:
+```json
+"@macro/my-lob-utils": ["libs/my-lob-utils/src/index.ts"]
+```
+
+---
+
+## Technology Stack
+
+### Core Versions
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| **NX** | 22.5.1 | Monorepo build system |
+| **Angular** | 21.1.0 | Frontend framework (macro-angular, macro-workspace) |
+| **React** | 19.0.0 | Frontend framework (macro-react) |
+| **TypeScript** | 5.9.2 | Type safety |
+| **Node.js** | 18+ | Runtime |
+
+### UI & Visualization
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| **AG Grid Enterprise** | 35.0.0 | Data grids (both Angular and React) |
+| **AG Charts Enterprise** | 13.0.0 | Charts (Angular microstructure component) |
+| **Recharts** | 3.4.1 | Charts (React commodities dashboard) |
+| **PrimeNG** | 21.0.4 | Angular UI components (Menubar, theme) |
+| **PrimeIcons** | 7.0.0 | Icon set for PrimeNG |
+| **Shadcn UI / Radix** | latest | React UI components (Menubar, Switch, Label) |
+| **Tailwind CSS** | 4.1.17 | Utility-first CSS (React) |
+| **Lucide React** | 0.553.0 | React icon library |
+
+### Desktop & Messaging
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| **OpenFin Core** | 42.102.4 | Desktop application container |
+| **OpenFin Workspace** | 22.3.25 | Home, Dock, Store, Notifications |
+| **FDC3** | 2.0.3 | Financial Desktop Connectivity standard |
+| **AMPS** | 5.3.4 | High-performance message broker client |
+| **Solace (solclientjs)** | 10.18.2 | Enterprise PubSub+ message broker client |
+
+### Infrastructure
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| **RxJS** | 7.8.0 | Reactive programming |
+| **Pino** | 10.1.0 | Structured logging |
+| **Vite** | 7.0.0 | React build tool |
+| **esbuild** | 0.19.2 | Node.js build tool |
+| **Jest** | 30.0.0 | Unit testing (Angular, libs) |
+| **Vitest** | 4.0.16 | Unit testing (React) |
+| **Playwright** | 1.36.0 | E2E testing |
+| **ESLint** | 9.8.0 | Linting |
+| **Prettier** | 2.6.2 | Code formatting |
+
+---
+
+## Testing
+
+### Unit Tests
+
+```bash
+npx nx test logger                   # Test logger library
+npx nx test macro-angular-grid       # Test Angular grid
+npx nx test macro-react-grid         # Test React grid
+npx nx test amps                     # Test AMPS transport
+npx nx test solace                   # Test Solace transport
+npx nx run-many --target=test --all  # Test everything
+```
+
+### E2E Tests (Playwright)
+
+```bash
+# Angular E2E (port 4200)
+npm run e2e:angular
+npm run e2e:angular:headed           # With browser UI
+npm run e2e:angular:ui               # Playwright UI mode
+npm run e2e:angular:debug            # Debug mode
+
+# React E2E (port 4201)
+npm run e2e:react
+npm run e2e:react:headed
+
+# OpenFin Workspace E2E (port 4202, uses CDP on port 9090)
+npm run e2e:workspace
+npm run e2e:workspace:openfin        # OpenFin-specific project
+```
+
+---
+
+## Available Commands
+
+### Development
+
+```bash
+npm start                            # Start workspace + angular + react concurrently
+npm run start:workspace              # OpenFin Workspace (:4202)
+npm run start:angular                # Angular App (:4200)
+npm run start:react                  # React App (:4201)
+npm run launch                       # Launch OpenFin runtime
+```
+
+### Building
+
+```bash
+npm run build:workspace              # Build workspace
+npm run build:angular                # Build Angular app
+npm run build:react                  # Build React app
+npm run build:logger                 # Build logger lib (for publishing)
+npx nx run-many --target=build --all # Build everything
+```
+
+### Publishing
+
+```bash
+npm run publish:logger               # Publish @macro/logger to npm
+npm run publish:logger:dry-run       # Dry-run publish
+```
+
+### NX Utilities
+
+```bash
+npx nx graph                         # Visualize dependency graph
+npx nx show project <name> --web     # View project details in browser
+npx nx affected --target=test        # Test only affected projects
+npx nx affected --target=build       # Build only affected projects
+```
+
+---
+
+## Useful Links
+
+- [NX Documentation](https://nx.dev)
+- [Angular Documentation](https://angular.dev)
+- [React Documentation](https://react.dev)
+- [AG Grid Documentation](https://www.ag-grid.com)
+- [AG Charts Documentation](https://www.ag-grid.com/charts)
+- [PrimeNG Documentation](https://primeng.org)
+- [Shadcn UI Documentation](https://ui.shadcn.com)
+- [Tailwind CSS Documentation](https://tailwindcss.com)
+- [OpenFin Developer Docs](https://developers.openfin.co)
+- [FDC3 Standard](https://fdc3.finos.org)
+- [AMPS Documentation](https://www.crankuptheamps.com/documentation)
+- [Solace PubSub+ Docs](https://docs.solace.com)
+- [Pino Logger](https://github.com/pinojs/pino)
+- [Recharts](https://recharts.org)
+- [RxJS Documentation](https://rxjs.dev)
+
+---
+
+## Contributing
+
+1. Create a feature branch from `master`
+2. Make your changes
+3. Run linting: `npx nx run-many --target=lint --all`
+4. Run tests: `npx nx run-many --target=test --all`
+5. Submit a pull request
+
+---
+
+## License
+
+MIT
