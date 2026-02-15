@@ -79,13 +79,13 @@ function main() {
   const all = getAllLockPackages(lock);
 
   writeText(
-    path.join(outDir, 'npm-packages-direct.txt'),
-    direct.map((d) => `${d.type}\t${d.name}\t${d.spec}`).join('\n') + '\n',
+    path.join(outDir, 'npm-packages-direct.csv'),
+    'npm,version,type\n' + direct.map((d) => `${d.name},${d.spec},${d.type}`).join('\n') + '\n',
   );
 
   writeText(
-    path.join(outDir, 'npm-packages-all.txt'),
-    all.map((p) => `${p.name}@${p.version}`).join('\n') + '\n',
+    path.join(outDir, 'npm-packages-all.csv'),
+    'npm,version\n' + all.map((p) => `${p.name},${p.version}`).join('\n') + '\n',
   );
 
   // Summary for quick checks / automation.
@@ -99,8 +99,8 @@ function main() {
   writeText(path.join(outDir, 'npm-packages-summary.json'), JSON.stringify(summary, null, 2) + '\n');
 
   // Console output for CI logs.
-  console.log(`Wrote ${direct.length} direct deps to reports/npm-packages-direct.txt`);
-  console.log(`Wrote ${all.length} total (direct+transitive) packages to reports/npm-packages-all.txt`);
+  console.log(`Wrote ${direct.length} direct deps to reports/npm-packages-direct.csv`);
+  console.log(`Wrote ${all.length} total (direct+transitive) packages to reports/npm-packages-all.csv`);
   console.log(`Wrote summary JSON to reports/npm-packages-summary.json`);
 }
 

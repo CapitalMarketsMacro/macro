@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-01-15T00:56:13.799Z",
+  "generatedAt": "2026-02-15T23:24:24.314Z",
   "directCount": 116,
-  "allCount": 2290,
+  "allCount": 2275,
   "direct": [
     {
       "name": "@angular-devkit/core",
@@ -95,67 +95,67 @@
     },
     {
       "name": "@nx/angular",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
       "name": "@nx/devkit",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
       "name": "@nx/esbuild",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
       "name": "@nx/eslint",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
       "name": "@nx/eslint-plugin",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
       "name": "@nx/jest",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
       "name": "@nx/js",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
       "name": "@nx/node",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
       "name": "@nx/playwright",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
       "name": "@nx/react",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
       "name": "@nx/vite",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
       "name": "@nx/web",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
       "name": "@nx/workspace",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
@@ -190,7 +190,7 @@
     },
     {
       "name": "@primeuix/themes",
-      "spec": "^2.0.0",
+      "spec": "^2.0.3",
       "type": "dependency"
     },
     {
@@ -215,17 +215,17 @@
     },
     {
       "name": "@swc-node/register",
-      "spec": "~1.9.1",
+      "spec": "1.11.1",
       "type": "devDependency"
     },
     {
       "name": "@swc/core",
-      "spec": "~1.5.7",
+      "spec": "1.15.5",
       "type": "devDependency"
     },
     {
       "name": "@swc/helpers",
-      "spec": "~0.5.11",
+      "spec": "0.5.18",
       "type": "devDependency"
     },
     {
@@ -455,7 +455,7 @@
     },
     {
       "name": "nx",
-      "spec": "22.3.3",
+      "spec": "22.5.1",
       "type": "devDependency"
     },
     {
@@ -485,7 +485,7 @@
     },
     {
       "name": "primeng",
-      "spec": "^21.0.0",
+      "spec": "^21.0.4",
       "type": "dependency"
     },
     {
@@ -505,7 +505,7 @@
     },
     {
       "name": "react-router-dom",
-      "spec": "6.29.0",
+      "spec": "6.30.3",
       "type": "dependency"
     },
     {
@@ -703,7 +703,7 @@
     },
     {
       "name": "@angular/cdk",
-      "version": "21.1.0"
+      "version": "21.1.3"
     },
     {
       "name": "@angular/cli",
@@ -1259,7 +1259,7 @@
     },
     {
       "name": "@bufbuild/protobuf",
-      "version": "2.10.2"
+      "version": "2.11.0"
     },
     {
       "name": "@cspotcode/source-map-support",
@@ -1878,24 +1878,80 @@
       "version": "1.1.2"
     },
     {
+      "name": "@jsonjoy.com/base64",
+      "version": "17.67.0"
+    },
+    {
       "name": "@jsonjoy.com/buffers",
       "version": "1.2.1"
+    },
+    {
+      "name": "@jsonjoy.com/buffers",
+      "version": "17.67.0"
     },
     {
       "name": "@jsonjoy.com/codegen",
       "version": "1.0.0"
     },
     {
+      "name": "@jsonjoy.com/codegen",
+      "version": "17.67.0"
+    },
+    {
+      "name": "@jsonjoy.com/fs-core",
+      "version": "4.56.10"
+    },
+    {
+      "name": "@jsonjoy.com/fs-fsa",
+      "version": "4.56.10"
+    },
+    {
+      "name": "@jsonjoy.com/fs-node",
+      "version": "4.56.10"
+    },
+    {
+      "name": "@jsonjoy.com/fs-node-builtins",
+      "version": "4.56.10"
+    },
+    {
+      "name": "@jsonjoy.com/fs-node-to-fsa",
+      "version": "4.56.10"
+    },
+    {
+      "name": "@jsonjoy.com/fs-node-utils",
+      "version": "4.56.10"
+    },
+    {
+      "name": "@jsonjoy.com/fs-print",
+      "version": "4.56.10"
+    },
+    {
+      "name": "@jsonjoy.com/fs-snapshot",
+      "version": "4.56.10"
+    },
+    {
       "name": "@jsonjoy.com/json-pack",
       "version": "1.21.0"
+    },
+    {
+      "name": "@jsonjoy.com/json-pack",
+      "version": "17.67.0"
     },
     {
       "name": "@jsonjoy.com/json-pointer",
       "version": "1.0.2"
     },
     {
+      "name": "@jsonjoy.com/json-pointer",
+      "version": "17.67.0"
+    },
+    {
       "name": "@jsonjoy.com/util",
       "version": "1.9.0"
+    },
+    {
+      "name": "@jsonjoy.com/util",
+      "version": "17.67.0"
     },
     {
       "name": "@leichtgewicht/ip-codec",
@@ -1943,7 +1999,7 @@
     },
     {
       "name": "@module-federation/bridge-react-webpack-plugin",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/cli",
@@ -1951,7 +2007,7 @@
     },
     {
       "name": "@module-federation/cli",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/data-prefetch",
@@ -1959,7 +2015,7 @@
     },
     {
       "name": "@module-federation/data-prefetch",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/dts-plugin",
@@ -1967,7 +2023,7 @@
     },
     {
       "name": "@module-federation/dts-plugin",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/enhanced",
@@ -1975,7 +2031,7 @@
     },
     {
       "name": "@module-federation/enhanced",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/error-codes",
@@ -1987,7 +2043,7 @@
     },
     {
       "name": "@module-federation/error-codes",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/inject-external-runtime-core-plugin",
@@ -1995,7 +2051,7 @@
     },
     {
       "name": "@module-federation/inject-external-runtime-core-plugin",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/managers",
@@ -2003,7 +2059,7 @@
     },
     {
       "name": "@module-federation/managers",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/manifest",
@@ -2011,11 +2067,11 @@
     },
     {
       "name": "@module-federation/manifest",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/node",
-      "version": "2.7.27"
+      "version": "2.7.32"
     },
     {
       "name": "@module-federation/rspack",
@@ -2023,7 +2079,7 @@
     },
     {
       "name": "@module-federation/rspack",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/runtime",
@@ -2035,7 +2091,7 @@
     },
     {
       "name": "@module-federation/runtime",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/runtime-core",
@@ -2047,7 +2103,7 @@
     },
     {
       "name": "@module-federation/runtime-core",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/runtime-tools",
@@ -2059,7 +2115,7 @@
     },
     {
       "name": "@module-federation/runtime-tools",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/sdk",
@@ -2071,7 +2127,7 @@
     },
     {
       "name": "@module-federation/sdk",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/third-party-dts-extractor",
@@ -2079,7 +2135,7 @@
     },
     {
       "name": "@module-federation/third-party-dts-extractor",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@module-federation/webpack-bundler-runtime",
@@ -2091,7 +2147,7 @@
     },
     {
       "name": "@module-federation/webpack-bundler-runtime",
-      "version": "0.22.1"
+      "version": "2.0.1"
     },
     {
       "name": "@msgpackr-extract/msgpackr-extract-darwin-arm64",
@@ -2259,119 +2315,119 @@
     },
     {
       "name": "@nx/angular",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/devkit",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/docker",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/esbuild",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/eslint",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/eslint-plugin",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/jest",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/js",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/module-federation",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/node",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/nx-darwin-arm64",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/nx-darwin-x64",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/nx-freebsd-x64",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/nx-linux-arm-gnueabihf",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/nx-linux-arm64-gnu",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/nx-linux-arm64-musl",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/nx-linux-x64-gnu",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/nx-linux-x64-musl",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/nx-win32-arm64-msvc",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/nx-win32-x64-msvc",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/playwright",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/react",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/rollup",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/rspack",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/vite",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/vitest",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/web",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/webpack",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@nx/workspace",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "@openfin/automation-helpers",
@@ -2400,6 +2456,86 @@
     {
       "name": "@oxc-project/types",
       "version": "0.106.0"
+    },
+    {
+      "name": "@oxc-resolver/binding-android-arm-eabi",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-android-arm64",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-darwin-arm64",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-darwin-x64",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-freebsd-x64",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-linux-arm-gnueabihf",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-linux-arm-musleabihf",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-linux-arm64-gnu",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-linux-arm64-musl",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-linux-ppc64-gnu",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-linux-riscv64-gnu",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-linux-riscv64-musl",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-linux-s390x-gnu",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-linux-x64-gnu",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-linux-x64-musl",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-openharmony-arm64",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-wasm32-wasi",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-win32-arm64-msvc",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-win32-ia32-msvc",
+      "version": "11.17.1"
+    },
+    {
+      "name": "@oxc-resolver/binding-win32-x64-msvc",
+      "version": "11.17.1"
     },
     {
       "name": "@parcel/watcher",
@@ -2459,31 +2595,31 @@
     },
     {
       "name": "@peculiar/asn1-cms",
-      "version": "2.6.0"
+      "version": "2.6.1"
     },
     {
       "name": "@peculiar/asn1-csr",
-      "version": "2.6.0"
+      "version": "2.6.1"
     },
     {
       "name": "@peculiar/asn1-ecc",
-      "version": "2.6.0"
+      "version": "2.6.1"
     },
     {
       "name": "@peculiar/asn1-pfx",
-      "version": "2.6.0"
+      "version": "2.6.1"
     },
     {
       "name": "@peculiar/asn1-pkcs8",
-      "version": "2.6.0"
+      "version": "2.6.1"
     },
     {
       "name": "@peculiar/asn1-pkcs9",
-      "version": "2.6.0"
+      "version": "2.6.1"
     },
     {
       "name": "@peculiar/asn1-rsa",
-      "version": "2.6.0"
+      "version": "2.6.1"
     },
     {
       "name": "@peculiar/asn1-schema",
@@ -2491,11 +2627,11 @@
     },
     {
       "name": "@peculiar/asn1-x509",
-      "version": "2.6.0"
+      "version": "2.6.1"
     },
     {
       "name": "@peculiar/asn1-x509-attr",
-      "version": "2.6.0"
+      "version": "2.6.1"
     },
     {
       "name": "@peculiar/x509",
@@ -2503,7 +2639,7 @@
     },
     {
       "name": "@phenomnomnominal/tsquery",
-      "version": "5.0.1"
+      "version": "6.1.4"
     },
     {
       "name": "@pinojs/redact",
@@ -2539,7 +2675,7 @@
     },
     {
       "name": "@primeuix/themes",
-      "version": "2.0.2"
+      "version": "2.0.3"
     },
     {
       "name": "@primeuix/utils",
@@ -2683,7 +2819,7 @@
     },
     {
       "name": "@remix-run/router",
-      "version": "1.22.0"
+      "version": "1.23.2"
     },
     {
       "name": "@rolldown/binding-android-arm64",
@@ -2879,55 +3015,103 @@
     },
     {
       "name": "@rspack/binding",
-      "version": "1.7.2"
+      "version": "1.6.8"
+    },
+    {
+      "name": "@rspack/binding",
+      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-darwin-arm64",
-      "version": "1.7.2"
+      "version": "1.6.8"
+    },
+    {
+      "name": "@rspack/binding-darwin-arm64",
+      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-darwin-x64",
-      "version": "1.7.2"
+      "version": "1.6.8"
+    },
+    {
+      "name": "@rspack/binding-darwin-x64",
+      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-linux-arm64-gnu",
-      "version": "1.7.2"
+      "version": "1.6.8"
+    },
+    {
+      "name": "@rspack/binding-linux-arm64-gnu",
+      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-linux-arm64-musl",
-      "version": "1.7.2"
+      "version": "1.6.8"
+    },
+    {
+      "name": "@rspack/binding-linux-arm64-musl",
+      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-linux-x64-gnu",
-      "version": "1.7.2"
+      "version": "1.6.8"
+    },
+    {
+      "name": "@rspack/binding-linux-x64-gnu",
+      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-linux-x64-musl",
-      "version": "1.7.2"
+      "version": "1.6.8"
+    },
+    {
+      "name": "@rspack/binding-linux-x64-musl",
+      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-wasm32-wasi",
-      "version": "1.7.2"
+      "version": "1.6.8"
+    },
+    {
+      "name": "@rspack/binding-wasm32-wasi",
+      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-win32-arm64-msvc",
-      "version": "1.7.2"
+      "version": "1.6.8"
+    },
+    {
+      "name": "@rspack/binding-win32-arm64-msvc",
+      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-win32-ia32-msvc",
-      "version": "1.7.2"
+      "version": "1.6.8"
+    },
+    {
+      "name": "@rspack/binding-win32-ia32-msvc",
+      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-win32-x64-msvc",
-      "version": "1.7.2"
+      "version": "1.6.8"
+    },
+    {
+      "name": "@rspack/binding-win32-x64-msvc",
+      "version": "1.7.6"
     },
     {
       "name": "@rspack/core",
-      "version": "1.7.2"
+      "version": "1.6.8"
+    },
+    {
+      "name": "@rspack/core",
+      "version": "1.7.6"
     },
     {
       "name": "@rspack/dev-server",
-      "version": "1.1.5"
+      "version": "1.2.1"
     },
     {
       "name": "@rspack/lite-tapable",
@@ -2935,7 +3119,7 @@
     },
     {
       "name": "@rspack/plugin-react-refresh",
-      "version": "1.6.0"
+      "version": "1.6.1"
     },
     {
       "name": "@rtsao/scc",
@@ -2968,6 +3152,10 @@
     {
       "name": "@sigstore/verify",
       "version": "3.1.0"
+    },
+    {
+      "name": "@sinclair/typebox",
+      "version": "0.27.10"
     },
     {
       "name": "@sinclair/typebox",
@@ -3063,55 +3251,55 @@
     },
     {
       "name": "@swc-node/register",
-      "version": "1.9.2"
+      "version": "1.11.1"
     },
     {
       "name": "@swc-node/sourcemap-support",
-      "version": "0.5.1"
+      "version": "0.6.1"
     },
     {
       "name": "@swc/core",
-      "version": "1.5.29"
+      "version": "1.15.5"
     },
     {
       "name": "@swc/core-darwin-arm64",
-      "version": "1.5.29"
+      "version": "1.15.5"
     },
     {
       "name": "@swc/core-darwin-x64",
-      "version": "1.5.29"
+      "version": "1.15.5"
     },
     {
       "name": "@swc/core-linux-arm-gnueabihf",
-      "version": "1.5.29"
+      "version": "1.15.5"
     },
     {
       "name": "@swc/core-linux-arm64-gnu",
-      "version": "1.5.29"
+      "version": "1.15.5"
     },
     {
       "name": "@swc/core-linux-arm64-musl",
-      "version": "1.5.29"
+      "version": "1.15.5"
     },
     {
       "name": "@swc/core-linux-x64-gnu",
-      "version": "1.5.29"
+      "version": "1.15.5"
     },
     {
       "name": "@swc/core-linux-x64-musl",
-      "version": "1.5.29"
+      "version": "1.15.5"
     },
     {
       "name": "@swc/core-win32-arm64-msvc",
-      "version": "1.5.29"
+      "version": "1.15.5"
     },
     {
       "name": "@swc/core-win32-ia32-msvc",
-      "version": "1.5.29"
+      "version": "1.15.5"
     },
     {
       "name": "@swc/core-win32-x64-msvc",
-      "version": "1.5.29"
+      "version": "1.15.5"
     },
     {
       "name": "@swc/counter",
@@ -3330,6 +3518,10 @@
       "version": "3.7.7"
     },
     {
+      "name": "@types/esquery",
+      "version": "1.5.4"
+    },
+    {
       "name": "@types/estree",
       "version": "1.0.8"
     },
@@ -3343,7 +3535,7 @@
     },
     {
       "name": "@types/http-cache-semantics",
-      "version": "4.0.4"
+      "version": "4.2.0"
     },
     {
       "name": "@types/http-errors",
@@ -3391,7 +3583,7 @@
     },
     {
       "name": "@types/node",
-      "version": "22.19.6"
+      "version": "22.19.8"
     },
     {
       "name": "@types/node-forge",
@@ -3743,7 +3935,7 @@
     },
     {
       "name": "@zip.js/zip.js",
-      "version": "2.8.15"
+      "version": "2.8.16"
     },
     {
       "name": "@zkochan/js-yaml",
@@ -4222,10 +4414,6 @@
       "version": "6.0.3"
     },
     {
-      "name": "buffer-builder",
-      "version": "0.2.0"
-    },
-    {
       "name": "buffer-crc32",
       "version": "0.2.13"
     },
@@ -4611,10 +4799,6 @@
     },
     {
       "name": "css-declaration-sorter",
-      "version": "6.4.1"
-    },
-    {
-      "name": "css-declaration-sorter",
       "version": "7.3.1"
     },
     {
@@ -4627,10 +4811,6 @@
     },
     {
       "name": "css-select",
-      "version": "4.3.0"
-    },
-    {
-      "name": "css-select",
       "version": "5.2.2"
     },
     {
@@ -4640,10 +4820,6 @@
     {
       "name": "css-to-react-native",
       "version": "3.2.0"
-    },
-    {
-      "name": "css-tree",
-      "version": "1.1.3"
     },
     {
       "name": "css-tree",
@@ -4671,31 +4847,15 @@
     },
     {
       "name": "cssnano",
-      "version": "5.1.15"
-    },
-    {
-      "name": "cssnano",
       "version": "6.1.2"
     },
     {
       "name": "cssnano-preset-default",
-      "version": "5.2.14"
-    },
-    {
-      "name": "cssnano-preset-default",
       "version": "6.1.2"
-    },
-    {
-      "name": "cssnano-utils",
-      "version": "3.1.0"
     },
     {
       "name": "cssnano-utils",
       "version": "4.0.2"
-    },
-    {
-      "name": "csso",
-      "version": "4.2.0"
     },
     {
       "name": "csso",
@@ -4859,7 +5019,7 @@
     },
     {
       "name": "default-browser",
-      "version": "5.4.0"
+      "version": "5.5.0"
     },
     {
       "name": "default-browser-id",
@@ -4963,10 +5123,6 @@
     },
     {
       "name": "dom-serializer",
-      "version": "1.4.1"
-    },
-    {
-      "name": "dom-serializer",
       "version": "2.0.0"
     },
     {
@@ -4975,15 +5131,7 @@
     },
     {
       "name": "domhandler",
-      "version": "4.3.1"
-    },
-    {
-      "name": "domhandler",
       "version": "5.0.3"
-    },
-    {
-      "name": "domutils",
-      "version": "2.8.0"
     },
     {
       "name": "domutils",
@@ -5067,15 +5215,11 @@
     },
     {
       "name": "enhanced-resolve",
-      "version": "5.18.4"
+      "version": "5.19.0"
     },
     {
       "name": "enquirer",
       "version": "2.3.6"
-    },
-    {
-      "name": "entities",
-      "version": "2.2.0"
     },
     {
       "name": "entities",
@@ -5295,10 +5439,6 @@
     },
     {
       "name": "estree-walker",
-      "version": "0.6.1"
-    },
-    {
-      "name": "estree-walker",
       "version": "2.0.2"
     },
     {
@@ -5464,10 +5604,6 @@
     {
       "name": "file-entry-cache",
       "version": "8.0.0"
-    },
-    {
-      "name": "file-loader",
-      "version": "6.2.0"
     },
     {
       "name": "filelist",
@@ -5823,7 +5959,7 @@
     },
     {
       "name": "hono",
-      "version": "4.11.4"
+      "version": "4.11.7"
     },
     {
       "name": "hosted-git-info",
@@ -5876,10 +6012,6 @@
     {
       "name": "http-deceiver",
       "version": "1.2.7"
-    },
-    {
-      "name": "http-errors",
-      "version": "1.6.3"
     },
     {
       "name": "http-errors",
@@ -5946,10 +6078,6 @@
       "version": "0.7.2"
     },
     {
-      "name": "icss-replace-symbols",
-      "version": "1.1.0"
-    },
-    {
       "name": "icss-utils",
       "version": "5.1.0"
     },
@@ -5994,16 +6122,8 @@
       "version": "5.1.4"
     },
     {
-      "name": "import-cwd",
-      "version": "3.0.0"
-    },
-    {
       "name": "import-fresh",
       "version": "3.3.1"
-    },
-    {
-      "name": "import-from",
-      "version": "3.0.0"
     },
     {
       "name": "import-local",
@@ -6020,10 +6140,6 @@
     {
       "name": "inflight",
       "version": "1.0.6"
-    },
-    {
-      "name": "inherits",
-      "version": "2.0.3"
     },
     {
       "name": "inherits",
@@ -6267,7 +6383,7 @@
     },
     {
       "name": "is-wsl",
-      "version": "3.1.0"
+      "version": "3.1.1"
     },
     {
       "name": "is2",
@@ -6775,10 +6891,6 @@
     },
     {
       "name": "lilconfig",
-      "version": "2.1.0"
-    },
-    {
-      "name": "lilconfig",
       "version": "3.1.3"
     },
     {
@@ -6971,10 +7083,6 @@
     },
     {
       "name": "mdn-data",
-      "version": "2.0.14"
-    },
-    {
-      "name": "mdn-data",
       "version": "2.0.28"
     },
     {
@@ -6999,7 +7107,7 @@
     },
     {
       "name": "memfs",
-      "version": "4.51.1"
+      "version": "4.56.10"
     },
     {
       "name": "memorystream",
@@ -7088,10 +7196,6 @@
     {
       "name": "minimatch",
       "version": "5.1.6"
-    },
-    {
-      "name": "minimatch",
-      "version": "9.0.3"
     },
     {
       "name": "minimatch",
@@ -7291,10 +7395,6 @@
     },
     {
       "name": "normalize-url",
-      "version": "6.1.0"
-    },
-    {
-      "name": "normalize-url",
       "version": "8.1.1"
     },
     {
@@ -7343,7 +7443,7 @@
     },
     {
       "name": "nx",
-      "version": "22.3.3"
+      "version": "22.5.1"
     },
     {
       "name": "object-assign",
@@ -7454,12 +7554,12 @@
       "version": "1.0.1"
     },
     {
-      "name": "p-cancelable",
-      "version": "3.0.0"
+      "name": "oxc-resolver",
+      "version": "11.17.1"
     },
     {
-      "name": "p-finally",
-      "version": "1.0.0"
+      "name": "p-cancelable",
+      "version": "3.0.0"
     },
     {
       "name": "p-limit",
@@ -7490,16 +7590,8 @@
       "version": "7.0.4"
     },
     {
-      "name": "p-queue",
-      "version": "6.6.2"
-    },
-    {
       "name": "p-retry",
       "version": "6.2.1"
-    },
-    {
-      "name": "p-timeout",
-      "version": "3.2.0"
     },
     {
       "name": "p-try",
@@ -7658,10 +7750,6 @@
       "version": "4.0.1"
     },
     {
-      "name": "pify",
-      "version": "5.0.0"
-    },
-    {
       "name": "pino",
       "version": "10.2.0"
     },
@@ -7723,31 +7811,15 @@
     },
     {
       "name": "postcss-calc",
-      "version": "8.2.4"
-    },
-    {
-      "name": "postcss-calc",
       "version": "9.0.1"
     },
     {
       "name": "postcss-colormin",
-      "version": "5.3.1"
-    },
-    {
-      "name": "postcss-colormin",
       "version": "6.1.0"
     },
     {
       "name": "postcss-convert-values",
-      "version": "5.1.3"
-    },
-    {
-      "name": "postcss-convert-values",
       "version": "6.1.0"
-    },
-    {
-      "name": "postcss-discard-comments",
-      "version": "5.1.2"
     },
     {
       "name": "postcss-discard-comments",
@@ -7755,23 +7827,11 @@
     },
     {
       "name": "postcss-discard-duplicates",
-      "version": "5.1.0"
-    },
-    {
-      "name": "postcss-discard-duplicates",
       "version": "6.0.3"
     },
     {
       "name": "postcss-discard-empty",
-      "version": "5.1.1"
-    },
-    {
-      "name": "postcss-discard-empty",
       "version": "6.0.3"
-    },
-    {
-      "name": "postcss-discard-overridden",
-      "version": "5.1.0"
     },
     {
       "name": "postcss-discard-overridden",
@@ -7782,16 +7842,12 @@
       "version": "14.1.0"
     },
     {
-      "name": "postcss-load-config",
-      "version": "3.1.4"
-    },
-    {
       "name": "postcss-loader",
       "version": "6.2.1"
     },
     {
       "name": "postcss-loader",
-      "version": "8.2.0"
+      "version": "8.2.1"
     },
     {
       "name": "postcss-media-query-parser",
@@ -7799,15 +7855,7 @@
     },
     {
       "name": "postcss-merge-longhand",
-      "version": "5.1.7"
-    },
-    {
-      "name": "postcss-merge-longhand",
       "version": "6.0.5"
-    },
-    {
-      "name": "postcss-merge-rules",
-      "version": "5.1.4"
     },
     {
       "name": "postcss-merge-rules",
@@ -7815,15 +7863,7 @@
     },
     {
       "name": "postcss-minify-font-values",
-      "version": "5.1.0"
-    },
-    {
-      "name": "postcss-minify-font-values",
       "version": "6.1.0"
-    },
-    {
-      "name": "postcss-minify-gradients",
-      "version": "5.1.1"
     },
     {
       "name": "postcss-minify-gradients",
@@ -7831,15 +7871,7 @@
     },
     {
       "name": "postcss-minify-params",
-      "version": "5.1.4"
-    },
-    {
-      "name": "postcss-minify-params",
       "version": "6.1.0"
-    },
-    {
-      "name": "postcss-minify-selectors",
-      "version": "5.2.1"
     },
     {
       "name": "postcss-minify-selectors",
@@ -7847,7 +7879,7 @@
     },
     {
       "name": "postcss-modules",
-      "version": "4.3.1"
+      "version": "6.0.1"
     },
     {
       "name": "postcss-modules-extract-imports",
@@ -7867,15 +7899,7 @@
     },
     {
       "name": "postcss-normalize-charset",
-      "version": "5.1.0"
-    },
-    {
-      "name": "postcss-normalize-charset",
       "version": "6.0.2"
-    },
-    {
-      "name": "postcss-normalize-display-values",
-      "version": "5.1.0"
     },
     {
       "name": "postcss-normalize-display-values",
@@ -7883,15 +7907,7 @@
     },
     {
       "name": "postcss-normalize-positions",
-      "version": "5.1.1"
-    },
-    {
-      "name": "postcss-normalize-positions",
       "version": "6.0.2"
-    },
-    {
-      "name": "postcss-normalize-repeat-style",
-      "version": "5.1.1"
     },
     {
       "name": "postcss-normalize-repeat-style",
@@ -7899,15 +7915,7 @@
     },
     {
       "name": "postcss-normalize-string",
-      "version": "5.1.0"
-    },
-    {
-      "name": "postcss-normalize-string",
       "version": "6.0.2"
-    },
-    {
-      "name": "postcss-normalize-timing-functions",
-      "version": "5.1.0"
     },
     {
       "name": "postcss-normalize-timing-functions",
@@ -7915,15 +7923,7 @@
     },
     {
       "name": "postcss-normalize-unicode",
-      "version": "5.1.1"
-    },
-    {
-      "name": "postcss-normalize-unicode",
       "version": "6.1.0"
-    },
-    {
-      "name": "postcss-normalize-url",
-      "version": "5.1.0"
     },
     {
       "name": "postcss-normalize-url",
@@ -7931,31 +7931,15 @@
     },
     {
       "name": "postcss-normalize-whitespace",
-      "version": "5.1.1"
-    },
-    {
-      "name": "postcss-normalize-whitespace",
       "version": "6.0.2"
     },
     {
       "name": "postcss-ordered-values",
-      "version": "5.1.3"
-    },
-    {
-      "name": "postcss-ordered-values",
       "version": "6.0.2"
-    },
-    {
-      "name": "postcss-reduce-initial",
-      "version": "5.1.2"
     },
     {
       "name": "postcss-reduce-initial",
       "version": "6.1.0"
-    },
-    {
-      "name": "postcss-reduce-transforms",
-      "version": "5.1.0"
     },
     {
       "name": "postcss-reduce-transforms",
@@ -7971,15 +7955,7 @@
     },
     {
       "name": "postcss-svgo",
-      "version": "5.1.0"
-    },
-    {
-      "name": "postcss-svgo",
       "version": "6.0.3"
-    },
-    {
-      "name": "postcss-unique-selectors",
-      "version": "5.1.1"
     },
     {
       "name": "postcss-unique-selectors",
@@ -8019,7 +7995,7 @@
     },
     {
       "name": "primeng",
-      "version": "21.0.3"
+      "version": "21.0.4"
     },
     {
       "name": "proc-log",
@@ -8044,10 +8020,6 @@
     {
       "name": "promise-retry",
       "version": "2.0.1"
-    },
-    {
-      "name": "promise.series",
-      "version": "0.2.0"
     },
     {
       "name": "prop-types",
@@ -8171,11 +8143,11 @@
     },
     {
       "name": "react-router",
-      "version": "6.29.0"
+      "version": "6.30.3"
     },
     {
       "name": "react-router-dom",
-      "version": "6.29.0"
+      "version": "6.30.3"
     },
     {
       "name": "react-style-singleton",
@@ -8354,16 +8326,8 @@
       "version": "4.55.1"
     },
     {
-      "name": "rollup-plugin-postcss",
-      "version": "4.0.2"
-    },
-    {
       "name": "rollup-plugin-typescript2",
       "version": "0.36.0"
-    },
-    {
-      "name": "rollup-pluginutils",
-      "version": "2.8.2"
     },
     {
       "name": "router",
@@ -8402,10 +8366,6 @@
       "version": "5.2.1"
     },
     {
-      "name": "safe-identifier",
-      "version": "0.4.2"
-    },
-    {
       "name": "safe-push-apply",
       "version": "1.0.0"
     },
@@ -8427,87 +8387,87 @@
     },
     {
       "name": "sass",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-all-unknown",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-android-arm",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-android-arm64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-android-riscv64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-android-x64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-darwin-arm64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-darwin-x64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-linux-arm",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-linux-arm64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-linux-musl-arm",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-linux-musl-arm64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-linux-musl-riscv64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-linux-musl-x64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-linux-riscv64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-linux-x64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-unknown-all",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-win32-arm64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-embedded-win32-x64",
-      "version": "1.97.2"
+      "version": "1.97.3"
     },
     {
       "name": "sass-loader",
-      "version": "16.0.6"
+      "version": "16.0.7"
     },
     {
       "name": "sax",
@@ -8543,7 +8503,7 @@
     },
     {
       "name": "selenium-webdriver",
-      "version": "4.39.0"
+      "version": "4.40.0"
     },
     {
       "name": "selfsigned",
@@ -8587,7 +8547,7 @@
     },
     {
       "name": "serve-index",
-      "version": "1.9.1"
+      "version": "1.9.2"
     },
     {
       "name": "serve-static",
@@ -8612,10 +8572,6 @@
     {
       "name": "setimmediate",
       "version": "1.0.5"
-    },
-    {
-      "name": "setprototypeof",
-      "version": "1.1.0"
     },
     {
       "name": "setprototypeof",
@@ -8802,10 +8758,6 @@
       "version": "13.0.0"
     },
     {
-      "name": "stable",
-      "version": "0.1.8"
-    },
-    {
       "name": "stack-utils",
       "version": "2.0.6"
     },
@@ -8946,20 +8898,12 @@
       "version": "1.1.2"
     },
     {
-      "name": "style-inject",
-      "version": "0.3.0"
-    },
-    {
       "name": "style-loader",
       "version": "3.3.4"
     },
     {
       "name": "styled-components",
       "version": "5.3.11"
-    },
-    {
-      "name": "stylehacks",
-      "version": "5.1.1"
     },
     {
       "name": "stylehacks",
@@ -8984,10 +8928,6 @@
     {
       "name": "svg-parser",
       "version": "2.0.4"
-    },
-    {
-      "name": "svgo",
-      "version": "2.8.0"
     },
     {
       "name": "svgo",
@@ -9043,7 +8983,7 @@
     },
     {
       "name": "terser",
-      "version": "5.44.1"
+      "version": "5.46.0"
     },
     {
       "name": "terser-webpack-plugin",
@@ -9171,7 +9111,7 @@
     },
     {
       "name": "ts-checker-rspack-plugin",
-      "version": "1.2.3"
+      "version": "1.2.6"
     },
     {
       "name": "ts-jest",
@@ -9466,6 +9406,10 @@
       "version": "2.5.0"
     },
     {
+      "name": "watchpack",
+      "version": "2.5.1"
+    },
+    {
       "name": "wbuf",
       "version": "1.7.3"
     },
@@ -9499,15 +9443,11 @@
     },
     {
       "name": "webpack",
-      "version": "5.104.1"
+      "version": "5.105.2"
     },
     {
       "name": "webpack-dev-middleware",
       "version": "7.4.5"
-    },
-    {
-      "name": "webpack-dev-server",
-      "version": "5.2.2"
     },
     {
       "name": "webpack-dev-server",
@@ -9523,7 +9463,7 @@
     },
     {
       "name": "webpack-sources",
-      "version": "3.3.3"
+      "version": "3.3.4"
     },
     {
       "name": "webpack-subresource-integrity",
