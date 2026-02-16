@@ -17,6 +17,7 @@ A production-grade NX monorepo for building **Capital Markets desktop applicatio
   - [macro-react (React App)](#3-macro-react---react-market-data-application)
   - [market-data-server (Node.js)](#4-market-data-server---websocket-market-data-service)
 - [Shared Libraries](#shared-libraries)
+  - [@macro/macro-design](#macromacro-design---shared-design-library)
   - [@macro/logger](#macrologger---structured-logging)
   - [@macro/amps](#macroamps---amps-message-transport)
   - [@macro/solace](#macrosolace---solace-message-transport)
@@ -71,6 +72,11 @@ A production-grade NX monorepo for building **Capital Markets desktop applicatio
    | amps     |      | solace   |
    +----------+      +----------+
 
+   +---------------------------------------------------+
+   | @macro/macro-design  (design tokens, dark mode,   |
+   |   AG Grid theme, CSS variables — used by ALL apps)|
+   +---------------------------------------------------+
+
    +---------------------+      +---------------------+
    | @macro/             |      | @macro/             |
    | macro-angular-grid  |      | macro-react-grid    |
@@ -91,7 +97,7 @@ A production-grade NX monorepo for building **Capital Markets desktop applicatio
 | **Reactive-first** | RxJS Observables/Subjects throughout -- BehaviorSubject for state, Subject for events |
 | **High-frequency data** | `@macro/rxutils` conflation for 10K+ msg/sec reduction to UI-friendly rates |
 | **FDC3 interop** | Standard FINOS FDC3 2.0 context sharing between all views |
-| **Dark/Light theming** | CSS variables injected at document root, synced across OpenFin platform |
+| **Dark/Light theming** | `@macro/macro-design` provides single-source CSS variables, dark mode utils, and AG Grid theming for all apps |
 
 ---
 
@@ -180,6 +186,13 @@ macro/
 │   └── macro-workspace-e2e/          # Playwright E2E for OpenFin (CDP)
 │
 ├── libs/
+│   ├── macro-design/                 # @macro/macro-design - Shared design tokens & theming
+│   │   └── src/lib/
+│   │       ├── css/fonts.css         # Google Font imports (Noto Sans, Roboto, Ubuntu)
+│   │       ├── css/macro-design.css  # Unified CSS variables (:root + .dark) — blue primary
+│   │       ├── theme.config.ts       # ThemePalette + ThemeConfig + themeConfig (OpenFin)
+│   │       ├── ag-grid-theme.ts      # buildAgGridTheme(isDark) — AG Grid theme builder
+│   │       └── dark-mode.ts          # getInitialIsDark(), applyDarkMode(), onSystemThemeChange()
 │   ├── logger/                       # @macro/logger - Pino-based logging
 │   ├── amps/                         # @macro/amps - AMPS message transport
 │   ├── solace/                       # @macro/solace - Solace PubSub+ transport
@@ -207,6 +220,7 @@ import { WorkspaceService, ThemeService, launchApp } from '@macro/openfin';
 import { conflateByKey, ConflationSubject } from '@macro/rxutils';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import { MacroReactGrid } from '@macro/macro-react-grid';
+import { themeConfig, buildAgGridTheme, getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
 ```
 
 ---
@@ -403,6 +417,93 @@ npx nx serve market-data-server
 
 ## Shared Libraries
 
+### @macro/macro-design - Shared Design Library
+
+The **single source of truth** for design tokens, CSS variables, dark mode utilities, and AG Grid theming across all Angular and React applications. Created to eliminate duplicated theming logic as new LOB apps are added.
+
+**What it provides:**
+
+| Export | Purpose |
+|--------|---------|
+| `fonts.css` | Google Font `@import` statements (Noto Sans, Roboto, Ubuntu) |
+| `macro-design.css` | Unified `:root` + `.dark` CSS variables — blue primary (`oklch(0.488 0.243 264.376)`) matching OpenFin's `#0A76D3`, plus chart-*, sidebar-* variables |
+| `themeConfig` | `ThemeConfig` object with dark/light `ThemePalette` (brand, background, text, input, status colors) — used by `@macro/openfin` |
+| `buildAgGridTheme(isDark)` | Returns a fully configured AG Grid `Theme` (Alpine + fonts + color scheme) |
+| `AG_GRID_FONTS` | Font family constants for AG Grid (`Noto Sans`, `Roboto`, `Ubuntu`) |
+| `getInitialIsDark()` | Reads dark mode from localStorage or system preference (SSR-safe) |
+| `applyDarkMode(isDark)` | Toggles `.dark` class on `<html>` and persists to localStorage |
+| `onSystemThemeChange(cb)` | Listens for OS color-scheme changes; returns cleanup function |
+
+**CSS Usage (in app `styles.css`):**
+
+```css
+/* Import shared design tokens — BEFORE any framework CSS */
+@import '../../../libs/macro-design/src/lib/css/fonts.css';
+@import '../../../libs/macro-design/src/lib/css/macro-design.css';
+```
+
+Both Angular and React apps import these files. Angular apps no longer need their own `:root`/`.dark` variable blocks.
+
+**Dark Mode Usage (Angular):**
+
+```typescript
+import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
+
+export class App implements OnInit, OnDestroy {
+  isDark = false;
+  private cleanupSystemListener?: () => void;
+
+  constructor() {
+    this.isDark = getInitialIsDark();
+    this.cleanupSystemListener = onSystemThemeChange((isDark) => {
+      this.isDark = isDark;
+      applyDarkMode(this.isDark);
+    });
+  }
+
+  ngOnInit() { applyDarkMode(this.isDark); }
+  ngOnDestroy() { this.cleanupSystemListener?.(); }
+  toggleTheme() { this.isDark = !this.isDark; applyDarkMode(this.isDark); }
+}
+```
+
+**Dark Mode Usage (React):**
+
+```tsx
+import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
+
+function AppContent() {
+  const [isDark, setIsDark] = useState(getInitialIsDark);
+
+  useEffect(() => { applyDarkMode(isDark); }, [isDark]);
+  useEffect(() => onSystemThemeChange((dark) => setIsDark(dark)), []);
+
+  const toggleTheme = () => setIsDark((prev) => !prev);
+  // ...
+}
+```
+
+**AG Grid Theme Usage (both frameworks):**
+
+```typescript
+import { buildAgGridTheme } from '@macro/macro-design';
+
+// In your grid component's theme update logic:
+const theme = buildAgGridTheme(isDark);  // Returns Theme with Alpine + fonts + color scheme
+```
+
+**Dependency graph:**
+```
+@macro/macro-design  ← used by all apps + grid libs + @macro/openfin
+  ├── apps/macro-angular (CSS imports + dark mode utils)
+  ├── apps/macro-react (CSS imports + dark mode utils)
+  ├── libs/macro-angular-grid (buildAgGridTheme)
+  ├── libs/macro-react-grid (buildAgGridTheme)
+  └── libs/openfin (themeConfig + ThemePalette re-exported)
+```
+
+---
+
 ### @macro/logger - Structured Logging
 
 A centralized logging library built on [Pino](https://github.com/pinojs/pino) that provides context-aware, level-filtered logging for both browser and Node.js environments.
@@ -580,7 +681,7 @@ A comprehensive library providing **framework-agnostic base classes** and **Angu
 | `NotificationsService` | Angular Injectable | Desktop toast notifications |
 | `WorkspaceOverrideService` | Angular Injectable | Workspace persistence (localStorage) |
 | `launchApp()` | Function | Launch apps by manifest type (view/snapshot/external) |
-| `themeConfig` | Object | Dark/Light theme palettes |
+| `themeConfig` | Object | Dark/Light theme palettes (re-exported from `@macro/macro-design`) |
 | `Base*Service` | Classes | Framework-agnostic base classes for non-Angular usage |
 
 **Angular Usage (Workspace Init):**
@@ -753,13 +854,13 @@ export class MyComponent {
 
 **Enterprise Modules:** AllCommunityModule + AllEnterpriseModule + IntegratedChartsModule (AG Charts).
 
-**Theme:** Alpine theme with `colorSchemeDarkBlue` (dark) / `colorSchemeLight` (light), auto-switches via MutationObserver.
+**Theme:** Uses `buildAgGridTheme(isDark)` from `@macro/macro-design` (Alpine base, `colorSchemeDarkBlue`/`colorSchemeLight`, Noto Sans/Roboto/Ubuntu fonts), auto-switches via MutationObserver on document root class.
 
 ---
 
 ### @macro/macro-react-grid - React AG Grid Wrapper
 
-The React equivalent with `forwardRef` for imperative API access and the same feature set.
+The React equivalent with `forwardRef` for imperative API access and the same feature set. Uses `buildAgGridTheme()` from `@macro/macro-design` for consistent theming.
 
 **Usage:**
 
@@ -867,54 +968,69 @@ A domain-specific subset for **Rates E-Trading** with **110+ icons** across 8 ca
 
 ### Architecture
 
-The theming system operates in three tiers:
+All theming flows from `@macro/macro-design`, which provides the single source of truth for colors, dark mode, and AG Grid theming. The system operates in three tiers:
 
 ```
-Tier 1: OpenFin Platform Theme
-  └─ ThemeService polls every 500ms for changes
-      └─ Applies to all windows in the platform
+Tier 1: OpenFin Platform Theme (when running inside OpenFin)
+  └─ ThemeService polls every 500ms for scheme changes
+      └─ Uses themeConfig from @macro/macro-design for palette
 
-Tier 2: CSS Variables on document root
-  └─ ~50 CSS variables (--brand-primary, --background-1, etc.)
-  └─ Both kebab-case and theme-prefixed versions
-  └─ .dark class toggled on <html>
+Tier 2: @macro/macro-design — CSS Variables + Dark Mode Utilities
+  ├─ macro-design.css: ~30 CSS variables (:root + .dark) — blue primary
+  ├─ fonts.css: Google Font imports (Noto Sans, Roboto, Ubuntu)
+  ├─ applyDarkMode(isDark): toggles .dark class on <html> + localStorage
+  ├─ getInitialIsDark(): reads localStorage → system preference → false
+  ├─ onSystemThemeChange(cb): listens for OS-level color-scheme changes
+  └─ buildAgGridTheme(isDark): returns configured AG Grid Theme
 
 Tier 3: Framework-specific integration
   ├─ Angular: PrimeNG responds to darkModeSelector: '.dark'
   ├─ React: PrimeReact responds to darkModeSelector: '.dark'
-  ├─ React: Tailwind responds to darkMode: ['class']
-  ├─ AG Grid: MutationObserver watches .dark class
-  └─ AG Charts: theme prop updated on class change
+  ├─ React: Tailwind responds to @custom-variant dark (&:is(.dark *))
+  ├─ AG Grid: Both grid wrappers use buildAgGridTheme() from macro-design
+  └─ AG Charts: theme prop updated on class change via MutationObserver
 ```
 
 ### Theme Palette
 
-Both dark and light palettes share a consistent blue primary (`#0A76D3`) with:
+Both dark and light palettes share a consistent blue primary (`#0A76D3` / `oklch(0.488 0.243 264.376)`) with:
 - 6 background layers for depth hierarchy
 - Brand primary + secondary colors (8 variants each)
 - Text colors (default, help, inactive)
 - Input colors (background, text, placeholder, disabled, focused, border)
 - Status colors (success, warning, critical, active)
+- Chart colors (5 chart-* variables for data visualization)
+- Sidebar colors (sidebar, sidebar-primary, sidebar-accent, sidebar-border, sidebar-ring)
+
+The `themeConfig` object (in `theme.config.ts`) provides hex-based palettes for OpenFin Workspace platform integration, while `macro-design.css` provides oklch-based CSS variables for web apps.
 
 ### Adding Theme Support to New Components
 
-```typescript
-// Angular: Use MutationObserver
-const observer = new MutationObserver(() => {
-  const isDark = document.documentElement.classList.contains('dark');
-  // Update component theme
-});
-observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+Use the shared utilities from `@macro/macro-design` instead of writing manual localStorage/classList logic:
 
-// React: Use useEffect
-useEffect(() => {
-  const observer = new MutationObserver(() => {
-    const isDark = document.documentElement.classList.contains('dark');
-    setTheme(isDark ? 'dark' : 'light');
+```typescript
+import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
+
+// Angular
+constructor() {
+  this.isDark = getInitialIsDark();
+  this.cleanup = onSystemThemeChange((isDark) => {
+    this.isDark = isDark;
+    applyDarkMode(this.isDark);
   });
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-  return () => observer.disconnect();
-}, []);
+}
+
+// React
+const [isDark, setIsDark] = useState(getInitialIsDark);
+useEffect(() => { applyDarkMode(isDark); }, [isDark]);
+useEffect(() => onSystemThemeChange((dark) => setIsDark(dark)), []);
+```
+
+For AG Grid components, use the shared theme builder:
+
+```typescript
+import { buildAgGridTheme } from '@macro/macro-design';
+const theme = buildAgGridTheme(isDark);  // Alpine + fonts + dark/light color scheme
 ```
 
 ---
@@ -1066,6 +1182,26 @@ contextService.context$.subscribe((ctx) => {
 
 ### Step 6: Theme Integration
 
+**Step 6a: Import shared CSS** in your app's global `styles.css`:
+
+```css
+/* Must come before any framework-specific CSS */
+@import '../../../libs/macro-design/src/lib/css/fonts.css';
+@import '../../../libs/macro-design/src/lib/css/macro-design.css';
+```
+
+This gives you all CSS variables (`:root` + `.dark`) — no need to define your own.
+
+**Step 6b: Use dark mode utilities** in your root component:
+
+```typescript
+import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
+```
+
+See the [`@macro/macro-design` section](#macromacro-design---shared-design-library) for full Angular and React examples.
+
+**Step 6c: Configure PrimeNG/PrimeReact** to respond to the `.dark` class:
+
 For PrimeNG (Angular):
 ```typescript
 providePrimeNG({
@@ -1089,7 +1225,7 @@ root.render(
 );
 ```
 
-For Tailwind (React): Use `darkMode: ['class']` in `tailwind.config.js` and reference CSS variables for colors.
+For Tailwind (React): Use `@custom-variant dark (&:is(.dark *))` and reference CSS variables for colors.
 
 ### Step 7: Create a Shared Library (Optional)
 
@@ -1170,6 +1306,7 @@ Add the path alias to `tsconfig.base.json`:
 ### Unit Tests
 
 ```bash
+npx nx test macro-design             # Test design library (jsdom)
 npx nx test logger                   # Test logger library
 npx nx test macro-angular-grid       # Test Angular grid
 npx nx test macro-react-grid         # Test React grid
