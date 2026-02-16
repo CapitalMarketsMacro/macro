@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:registry.npmjs.org)",
+      "Bash(npm install:*)",
+      "Bash(npm ls:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.ag-grid.com)",
+      "WebFetch(domain:primeng.org)",
+      "WebFetch(domain:primevue.org)",
+      "WebFetch(domain:techoverflow.net)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:libraries.io)",
+      "WebFetch(domain:primereact.org)",
+      "WebFetch(domain:nx.dev)",
+      "WebFetch(domain:angular.dev)",
+      "Bash(git add:*)"
+    ]
+  }
+}
