@@ -9,8 +9,9 @@
       "args": ["-y", "@primeng/mcp"]
     },
     "nx-mcp": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["nx", "mcp"]
+      "args": ["-y", "nx-mcp@latest", "."]
     },
     "angular-cli": {
       "command": "npx",
@@ -22,7 +23,7 @@
     },
     "macro-mcp": {
       "command": "node",
-      "args": ["dist/apps/macro-mcp/main.js"]
+      "args": ["E:/MacroDesktopMFE/macro/dist/apps/macro-mcp/main.js"]
     }
   }
 }

@@ -24,7 +24,17 @@
       "Bash(npx nx build:*)",
       "Bash(npx nx show:*)",
       "Bash(npx nx reset:*)",
-      "Bash(npx nx run-many:*)"
+      "Bash(npx nx run-many:*)",
+      "Bash(test:*)",
+      "WebFetch(domain:modelcontextprotocol.info)",
+      "WebFetch(domain:code.visualstudio.com)",
+      "Bash(git status:*)",
+      "Bash(claude mcp add --help:*)",
+      "Bash(npx nx:*)",
+      "Bash(npx nx-mcp@latest --help:*)",
+      "Bash(npx:*)",
+      "Bash(cygpath:*)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true
 }
