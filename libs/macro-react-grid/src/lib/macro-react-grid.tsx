@@ -93,6 +93,7 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
         filter: true,
         resizable: true,
       },
+      sideBar: true,
       pagination: true,
       paginationPageSize: 10,
       paginationPageSizeSelector: [10, 25, 50, 100],
