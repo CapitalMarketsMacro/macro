@@ -19,6 +19,10 @@
     "tailwindcss": {
       "command": "npx",
       "args": ["-y", "tailwindcss-mcp-server"]
+    },
+    "macro-mcp": {
+      "command": "node",
+      "args": ["dist/apps/macro-mcp/main.js"]
     }
   }
 }
