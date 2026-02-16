@@ -54,7 +54,8 @@ A production-grade NX monorepo for building **Capital Markets desktop applicatio
 |   | macro-angular :4200     |  | macro-react :4201       |    |
 |   | - FX Market Data        |  | - Treasury Market Data  |    |
 |   | - Treasury Microstructure  | - Commodities Dashboard |    |
-|   | - PrimeNG + AG Grid     |  | - Shadcn/Tailwind + AG |    |
+|   | - PrimeNG + AG Grid     |  | - PrimeReact + Shadcn  |    |
+|   |                         |  |   + Tailwind + AG Grid |    |
 |   +-------------------------+  +-------------------------+    |
 |                                                               |
 |   FDC3 Context Sharing / InterApplicationBus / Channels       |
@@ -309,12 +310,13 @@ Maintains a rolling window of 50 data points. Uses `clone` library for immutable
 
 ### 3. macro-react - React Market Data Application
 
-**Technology:** React 19, Vite 7, Tailwind CSS 4, Shadcn UI, AG Grid 35, Recharts 3
+**Technology:** React 19, Vite 7, PrimeReact 11 (Aura theme), Tailwind CSS 4, Shadcn UI, AG Grid 35, Recharts 3
 
 **Port:** 4201
 
 **Features:**
 - Shadcn UI Menubar navigation (Radix UI primitives)
+- PrimeReact Aura theme with `.dark` CSS class selector (matches Angular's PrimeNG config)
 - Light/Dark theme toggle with Tailwind `dark` class
 - CSS variable-based theming throughout
 
@@ -879,6 +881,7 @@ Tier 2: CSS Variables on document root
 
 Tier 3: Framework-specific integration
   ├─ Angular: PrimeNG responds to darkModeSelector: '.dark'
+  ├─ React: PrimeReact responds to darkModeSelector: '.dark'
   ├─ React: Tailwind responds to darkMode: ['class']
   ├─ AG Grid: MutationObserver watches .dark class
   └─ AG Charts: theme prop updated on class change
@@ -1073,6 +1076,19 @@ providePrimeNG({
 })
 ```
 
+For PrimeReact (React):
+```tsx
+// main.tsx
+import { PrimeReactProvider } from '@primereact/core/config';
+import Aura from '@primeuix/themes/aura';
+
+root.render(
+  <PrimeReactProvider theme={{ preset: Aura, options: { darkModeSelector: '.dark' } }}>
+    <App />
+  </PrimeReactProvider>
+);
+```
+
 For Tailwind (React): Use `darkMode: ['class']` in `tailwind.config.js` and reference CSS variables for colors.
 
 ### Step 7: Create a Shared Library (Optional)
@@ -1117,7 +1133,8 @@ Add the path alias to `tsconfig.base.json`:
 | **AG Charts Enterprise** | 13.0.0 | Charts (Angular microstructure component) |
 | **Recharts** | 3.4.1 | Charts (React commodities dashboard) |
 | **PrimeNG** | 21.0.4 | Angular UI components (Menubar, theme) |
-| **PrimeIcons** | 7.0.0 | Icon set for PrimeNG |
+| **PrimeReact** | 11.0.0-alpha | React UI components (Aura theme) |
+| **PrimeIcons** | 7.0.0 | Icon set for PrimeNG / PrimeReact |
 | **Shadcn UI / Radix** | latest | React UI components (Menubar, Switch, Label) |
 | **Tailwind CSS** | 4.1.17 | Utility-first CSS (React) |
 | **Lucide React** | 0.553.0 | React icon library |
@@ -1229,6 +1246,7 @@ npx nx affected --target=build       # Build only affected projects
 - [AG Grid Documentation](https://www.ag-grid.com)
 - [AG Charts Documentation](https://www.ag-grid.com/charts)
 - [PrimeNG Documentation](https://primeng.org)
+- [PrimeReact Documentation](https://primereact.org)
 - [Shadcn UI Documentation](https://ui.shadcn.com)
 - [Tailwind CSS Documentation](https://tailwindcss.com)
 - [OpenFin Developer Docs](https://developers.openfin.co)

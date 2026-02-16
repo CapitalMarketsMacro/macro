@@ -15,7 +15,13 @@
       "WebFetch(domain:primereact.org)",
       "WebFetch(domain:nx.dev)",
       "WebFetch(domain:angular.dev)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npm view:*)",
+      "WebFetch(domain:v11.primereact.org)",
+      "Bash(node:*)",
+      "Bash(npx nx build:*)"
     ]
   }
 }
