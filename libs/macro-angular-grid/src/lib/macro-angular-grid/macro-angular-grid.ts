@@ -127,7 +127,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       filter: true,
       resizable: true,
     },
-    sideBar: { toolPanels: ['columns', 'filters'], hiddenByDefault: true },
+    sideBar: { toolPanels: ['columns', 'filters'], hiddenByDefault: false },
     pagination: true,
     paginationPageSize: 10,
     paginationPageSizeSelector: [10, 25, 50, 100],
@@ -295,7 +295,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     this.gridApi = event.api;
     this.isGridReady = true;
     this.logger.info('AG Grid is ready', { event });
-    
+
     // Set any pending initial data
     if (this.pendingInitialData && !this.initialDataSet) {
       // Update the rowData input property - Angular will update ag-grid via input binding
@@ -303,7 +303,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       this.initialDataSet = true;
       this.pendingInitialData = undefined;
     }
-    
+
     // Apply any queued transactions
     this.flushTransactionQueue();
   }
@@ -390,7 +390,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     // This will trigger Angular's change detection to update ag-grid via input binding
     this.rowData = data;
     this.initialDataSet = true;
-    
+
     if (this.isGridReady && this.gridApi) {
       // Grid is ready, but we'll let the input binding handle it
       // No need to call setGridOption since Angular will update via [rowData] binding
