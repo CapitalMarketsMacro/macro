@@ -21,7 +21,10 @@
       "Bash(npm view:*)",
       "WebFetch(domain:v11.primereact.org)",
       "Bash(node:*)",
-      "Bash(npx nx build:*)"
+      "Bash(npx nx build:*)",
+      "Bash(npx nx show:*)",
+      "Bash(npx nx reset:*)",
+      "Bash(npx nx run-many:*)"
     ]
   }
 }
