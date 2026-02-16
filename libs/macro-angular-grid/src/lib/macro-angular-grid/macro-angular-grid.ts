@@ -18,13 +18,8 @@ import {
   AllEnterpriseModule,
   IntegratedChartsModule,
 } from 'ag-grid-enterprise';
-import {
-  colorSchemeDarkBlue,
-  colorSchemeLight,
-  iconSetAlpine,
-  themeAlpine,
-} from "ag-grid-community";
 import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
+import { buildAgGridTheme } from '@macro/macro-design';
 
 // Register all ag-Grid modules (Community and Enterprise)
 // This ensures all features are available without requiring registration in the application
@@ -147,7 +142,6 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
    */
   public mergedGridOptions: GridOptions = {};
 
-  baseTheme = themeAlpine;
   theme : Theme | undefined;
 
   ngOnInit(): void {
@@ -178,14 +172,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
    * Update theme based on dark mode
    */
   private updateTheme(isDark: boolean): void {
-    this.theme = this.baseTheme;
-    this.theme = this.theme.withPart(iconSetAlpine);
-    this.theme = this.theme.withPart(isDark ? colorSchemeDarkBlue : colorSchemeLight);
-    this.theme = this.theme.withParams({
-      fontFamily: 'Noto Sans',
-      headerFontFamily: 'Roboto',
-      cellFontFamily: 'Ubuntu',
-    });
+    this.theme = buildAgGridTheme(isDark);
   }
 
   /**

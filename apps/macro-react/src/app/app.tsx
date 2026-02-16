@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Logger, LogLevel } from '@macro/logger';
 import { Menubar, MenubarMenu, MenubarTrigger } from '@/components/ui/menubar';
+import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
 import TreasuryMarketDataComponent from './treasury-market-data/treasury-market-data.component';
 import CommoditiesDashboardComponent from './commodities-dashboard/commodities-dashboard.component';
 
@@ -82,27 +83,15 @@ export function App() {
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('theme');
-      if (stored) {
-        return stored === 'dark';
-      }
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
+  const [isDark, setIsDark] = useState(getInitialIsDark);
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (isDark) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
+    applyDarkMode(isDark);
   }, [isDark]);
+
+  useEffect(() => {
+    return onSystemThemeChange((dark) => setIsDark(dark));
+  }, []);
 
   const toggleTheme = () => {
     setIsDark((prev) => !prev);

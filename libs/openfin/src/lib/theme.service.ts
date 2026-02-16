@@ -1,6 +1,6 @@
 import { ColorSchemeOptionType, getCurrentSync } from '@openfin/workspace-platform';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { themeConfig, type ThemePalette } from './theme.config';
+import { themeConfig, type ThemePalette } from '@macro/macro-design';
 import { Logger } from '@macro/logger';
 
 const logger = Logger.getLogger('ThemeService');

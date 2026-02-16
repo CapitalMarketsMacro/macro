@@ -1,7 +1,7 @@
 // Types
 export * from './lib/types';
-export type { ThemePalette, ThemeConfig } from './lib/theme.config';
-export { themeConfig } from './lib/theme.config';
+export type { ThemePalette, ThemeConfig } from '@macro/macro-design';
+export { themeConfig } from '@macro/macro-design';
 
 // Utilities
 export { launchApp } from './lib/launch';

@@ -11,16 +11,13 @@ import {
   ModuleRegistry,
   AllCommunityModule,
   Theme,
-  colorSchemeDarkBlue,
-  colorSchemeLight,
-  iconSetAlpine,
-  themeAlpine,
 } from 'ag-grid-community';
 import {
   AllEnterpriseModule,
   IntegratedChartsModule,
 } from 'ag-grid-enterprise';
 import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
+import { buildAgGridTheme } from '@macro/macro-design';
 
 // Register all ag-Grid modules (Community and Enterprise)
 // This ensures all features are available without requiring registration in the application
@@ -162,17 +159,7 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
     const updateTheme = () => {
       const root = document.documentElement;
       const isDark = root.classList.contains('dark');
-      
-      const baseTheme = themeAlpine;
-      let currentTheme: Theme = baseTheme;
-      currentTheme = currentTheme.withPart(iconSetAlpine);
-      currentTheme = currentTheme.withPart(isDark ? colorSchemeDarkBlue : colorSchemeLight);
-      currentTheme = currentTheme.withParams({
-        fontFamily: 'Noto Sans',
-        headerFontFamily: 'Roboto',
-        cellFontFamily: 'Ubuntu',
-      });
-      setTheme(currentTheme);
+      setTheme(buildAgGridTheme(isDark));
     };
 
     // Initialize theme

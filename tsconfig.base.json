@@ -21,7 +21,8 @@
       "@macro/macro-angular-grid": ["libs/macro-angular-grid/src/index.ts"],
       "@macro/macro-react-grid": ["libs/macro-react-grid/src/index.ts"],
       "@macro/openfin": ["libs/openfin/src/index.ts"],
-      "@macro/solace": ["libs/solace/src/index.ts"]
+      "@macro/solace": ["libs/solace/src/index.ts"],
+      "@macro/macro-design": ["libs/macro-design/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

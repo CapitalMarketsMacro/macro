@@ -1,0 +1,39 @@
+{
+  "name": "@macro/macro-design",
+  "version": "0.0.1",
+  "description": "Shared design tokens, theme utilities, and AG Grid theming for all Macro apps",
+  "keywords": [
+    "design-tokens",
+    "theme",
+    "dark-mode",
+    "ag-grid",
+    "css-variables"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src/**/*",
+    "README.md",
+    "package.json"
+  ],
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "ag-grid-community": ">=33.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ag-grid-community": {
+      "optional": true
+    }
+  }
+}

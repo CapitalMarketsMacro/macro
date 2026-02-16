@@ -1,10 +1,11 @@
 import { Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { Logger, LogLevel } from '@macro/logger';
-import { isPlatformBrowser, DOCUMENT } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { Menubar } from 'primeng/menubar';
 import { MenuItem } from 'primeng/api';
 import { filter } from 'rxjs/operators';
+import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
 
 @Component({
   selector: 'app-root',
@@ -17,38 +18,24 @@ export class App implements OnInit, OnDestroy {
   private logger = Logger.getLogger('AngularApp');
   
   // Inject dependencies
-  private document = inject(DOCUMENT);
   private platformId = inject(PLATFORM_ID);
   private router = inject(Router);
-  
+
   // Theme state
   public isDark = false;
-  
+
   // Menu items for PrimeNG MenuBar
   public menuItems: MenuItem[] = [];
-  private mediaQuery?: MediaQueryList;
-  private mediaQueryListener?: (e: MediaQueryListEvent) => void;
+  private cleanupSystemListener?: () => void;
 
   constructor() {
     // Initialize theme state
     if (isPlatformBrowser(this.platformId)) {
-      const stored = localStorage.getItem('theme');
-      if (stored) {
-        this.isDark = stored === 'dark';
-      } else {
-        // Check system preference
-        this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        this.isDark = this.mediaQuery.matches;
-        
-        // Listen for system theme changes
-        this.mediaQueryListener = (e: MediaQueryListEvent) => {
-          if (!localStorage.getItem('theme')) {
-            this.isDark = e.matches;
-            this.applyTheme();
-          }
-        };
-        this.mediaQuery.addEventListener('change', this.mediaQueryListener);
-      }
+      this.isDark = getInitialIsDark();
+      this.cleanupSystemListener = onSystemThemeChange((isDark) => {
+        this.isDark = isDark;
+        this.applyTheme();
+      });
     }
   }
 
@@ -129,10 +116,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Clean up media query listener
-    if (this.mediaQuery && this.mediaQueryListener) {
-      this.mediaQuery.removeEventListener('change', this.mediaQueryListener);
-    }
+    this.cleanupSystemListener?.();
   }
 
   /**
@@ -151,16 +135,7 @@ export class App implements OnInit, OnDestroy {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
-
-    const root = this.document.documentElement;
-    if (this.isDark) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-    // PrimeNG components will automatically update via darkModeSelector configuration
+    applyDarkMode(this.isDark);
   }
 
   /**

@@ -121,4 +121,3 @@ export const themeConfig: ThemeConfig = {
     statusActive: '#0A76D3',
   },
 };
-

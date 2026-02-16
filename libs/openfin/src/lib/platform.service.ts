@@ -12,7 +12,7 @@ import type { App } from '@openfin/workspace';
 import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
 import { WorkspaceOverrideService } from './workspace-override.service';
-import { themeConfig } from './theme.config';
+import { themeConfig } from '@macro/macro-design';
 import { Logger } from '@macro/logger';
 
 const logger = Logger.getLogger('PlatformService');
