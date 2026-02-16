@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-02-15T23:24:24.314Z",
-  "directCount": 116,
-  "allCount": 2275,
+  "generatedAt": "2026-02-16T18:07:22.807Z",
+  "directCount": 117,
+  "allCount": 2154,
   "direct": [
     {
       "name": "@angular-devkit/core",
@@ -295,32 +295,32 @@
     },
     {
       "name": "ag-charts-angular",
-      "spec": "^13.0.0",
+      "spec": "^13.1.0",
       "type": "dependency"
     },
     {
       "name": "ag-charts-enterprise",
-      "spec": "^13.0.0",
+      "spec": "^13.1.0",
       "type": "dependency"
     },
     {
       "name": "ag-charts-react",
-      "spec": "^13.0.0",
+      "spec": "^13.1.0",
       "type": "dependency"
     },
     {
       "name": "ag-grid-angular",
-      "spec": "^35.0.0",
+      "spec": "^35.1.0",
       "type": "dependency"
     },
     {
       "name": "ag-grid-enterprise",
-      "spec": "^35.0.0",
+      "spec": "^35.1.0",
       "type": "dependency"
     },
     {
       "name": "ag-grid-react",
-      "spec": "^35.0.0",
+      "spec": "^35.1.0",
       "type": "dependency"
     },
     {
@@ -485,7 +485,12 @@
     },
     {
       "name": "primeng",
-      "spec": "^21.0.4",
+      "spec": "^21.1.1",
+      "type": "dependency"
+    },
+    {
+      "name": "primereact",
+      "spec": "^11.0.0-alpha.10",
       "type": "dependency"
     },
     {
@@ -700,10 +705,6 @@
     {
       "name": "@angular/build",
       "version": "21.1.0"
-    },
-    {
-      "name": "@angular/cdk",
-      "version": "21.1.3"
     },
     {
       "name": "@angular/cli",
@@ -1244,10 +1245,6 @@
     {
       "name": "@babel/types",
       "version": "7.28.6"
-    },
-    {
-      "name": "@bazel/runfiles",
-      "version": "6.5.0"
     },
     {
       "name": "@bcoe/v8-coverage",
@@ -2039,10 +2036,6 @@
     },
     {
       "name": "@module-federation/error-codes",
-      "version": "0.22.0"
-    },
-    {
-      "name": "@module-federation/error-codes",
       "version": "2.0.1"
     },
     {
@@ -2087,10 +2080,6 @@
     },
     {
       "name": "@module-federation/runtime",
-      "version": "0.22.0"
-    },
-    {
-      "name": "@module-federation/runtime",
       "version": "2.0.1"
     },
     {
@@ -2099,19 +2088,11 @@
     },
     {
       "name": "@module-federation/runtime-core",
-      "version": "0.22.0"
-    },
-    {
-      "name": "@module-federation/runtime-core",
       "version": "2.0.1"
     },
     {
       "name": "@module-federation/runtime-tools",
       "version": "0.21.6"
-    },
-    {
-      "name": "@module-federation/runtime-tools",
-      "version": "0.22.0"
     },
     {
       "name": "@module-federation/runtime-tools",
@@ -2120,10 +2101,6 @@
     {
       "name": "@module-federation/sdk",
       "version": "0.21.6"
-    },
-    {
-      "name": "@module-federation/sdk",
-      "version": "0.22.0"
     },
     {
       "name": "@module-federation/sdk",
@@ -2140,10 +2117,6 @@
     {
       "name": "@module-federation/webpack-bundler-runtime",
       "version": "0.21.6"
-    },
-    {
-      "name": "@module-federation/webpack-bundler-runtime",
-      "version": "0.22.0"
     },
     {
       "name": "@module-federation/webpack-bundler-runtime",
@@ -2662,8 +2635,28 @@
       "version": "1.0.0-next.29"
     },
     {
+      "name": "@primereact/core",
+      "version": "11.0.0-alpha.10"
+    },
+    {
+      "name": "@primereact/headless",
+      "version": "11.0.0-alpha.10"
+    },
+    {
+      "name": "@primereact/hooks",
+      "version": "11.0.0-alpha.10"
+    },
+    {
+      "name": "@primereact/icons",
+      "version": "11.0.0-alpha.10"
+    },
+    {
       "name": "@primeuix/motion",
       "version": "0.0.10"
+    },
+    {
+      "name": "@primeuix/motion",
+      "version": "0.0.11"
     },
     {
       "name": "@primeuix/styled",
@@ -2671,7 +2664,7 @@
     },
     {
       "name": "@primeuix/styles",
-      "version": "2.0.2"
+      "version": "2.0.3"
     },
     {
       "name": "@primeuix/themes",
@@ -2679,15 +2672,7 @@
     },
     {
       "name": "@primeuix/utils",
-      "version": "0.6.3"
-    },
-    {
-      "name": "@promptbook/utils",
-      "version": "0.69.5"
-    },
-    {
-      "name": "@puppeteer/browsers",
-      "version": "1.9.1"
+      "version": "0.6.4"
     },
     {
       "name": "@radix-ui/primitive",
@@ -3018,96 +3003,48 @@
       "version": "1.6.8"
     },
     {
-      "name": "@rspack/binding",
-      "version": "1.7.6"
-    },
-    {
       "name": "@rspack/binding-darwin-arm64",
       "version": "1.6.8"
-    },
-    {
-      "name": "@rspack/binding-darwin-arm64",
-      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-darwin-x64",
       "version": "1.6.8"
     },
     {
-      "name": "@rspack/binding-darwin-x64",
-      "version": "1.7.6"
-    },
-    {
       "name": "@rspack/binding-linux-arm64-gnu",
       "version": "1.6.8"
-    },
-    {
-      "name": "@rspack/binding-linux-arm64-gnu",
-      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-linux-arm64-musl",
       "version": "1.6.8"
     },
     {
-      "name": "@rspack/binding-linux-arm64-musl",
-      "version": "1.7.6"
-    },
-    {
       "name": "@rspack/binding-linux-x64-gnu",
       "version": "1.6.8"
-    },
-    {
-      "name": "@rspack/binding-linux-x64-gnu",
-      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-linux-x64-musl",
       "version": "1.6.8"
     },
     {
-      "name": "@rspack/binding-linux-x64-musl",
-      "version": "1.7.6"
-    },
-    {
       "name": "@rspack/binding-wasm32-wasi",
       "version": "1.6.8"
-    },
-    {
-      "name": "@rspack/binding-wasm32-wasi",
-      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-win32-arm64-msvc",
       "version": "1.6.8"
     },
     {
-      "name": "@rspack/binding-win32-arm64-msvc",
-      "version": "1.7.6"
-    },
-    {
       "name": "@rspack/binding-win32-ia32-msvc",
       "version": "1.6.8"
-    },
-    {
-      "name": "@rspack/binding-win32-ia32-msvc",
-      "version": "1.7.6"
     },
     {
       "name": "@rspack/binding-win32-x64-msvc",
       "version": "1.6.8"
     },
     {
-      "name": "@rspack/binding-win32-x64-msvc",
-      "version": "1.7.6"
-    },
-    {
       "name": "@rspack/core",
       "version": "1.6.8"
-    },
-    {
-      "name": "@rspack/core",
-      "version": "1.7.6"
     },
     {
       "name": "@rspack/dev-server",
@@ -3164,10 +3101,6 @@
     {
       "name": "@sinclair/typebox",
       "version": "0.34.47"
-    },
-    {
-      "name": "@sindresorhus/is",
-      "version": "5.6.0"
     },
     {
       "name": "@sinonjs/commons",
@@ -3314,10 +3247,6 @@
       "version": "0.1.25"
     },
     {
-      "name": "@szmarczak/http-timer",
-      "version": "5.0.1"
-    },
-    {
       "name": "@tailwindcss/node",
       "version": "4.1.18"
     },
@@ -3384,10 +3313,6 @@
     {
       "name": "@testing-library/react",
       "version": "16.3.0"
-    },
-    {
-      "name": "@tootallnate/quickjs-emscripten",
-      "version": "0.23.0"
     },
     {
       "name": "@trysound/sax",
@@ -3534,10 +3459,6 @@
       "version": "4.19.8"
     },
     {
-      "name": "@types/http-cache-semantics",
-      "version": "4.2.0"
-    },
-    {
       "name": "@types/http-errors",
       "version": "2.0.5"
     },
@@ -3580,10 +3501,6 @@
     {
       "name": "@types/node",
       "version": "20.19.29"
-    },
-    {
-      "name": "@types/node",
-      "version": "22.19.8"
     },
     {
       "name": "@types/node-forge",
@@ -3654,10 +3571,6 @@
       "version": "0.0.6"
     },
     {
-      "name": "@types/which",
-      "version": "2.0.2"
-    },
-    {
       "name": "@types/ws",
       "version": "8.18.1"
     },
@@ -3668,10 +3581,6 @@
     {
       "name": "@types/yargs-parser",
       "version": "21.0.3"
-    },
-    {
-      "name": "@types/yauzl",
-      "version": "2.10.3"
     },
     {
       "name": "@typescript-eslint/eslint-plugin",
@@ -3838,26 +3747,6 @@
       "version": "4.0.17"
     },
     {
-      "name": "@wdio/config",
-      "version": "8.46.0"
-    },
-    {
-      "name": "@wdio/logger",
-      "version": "8.38.0"
-    },
-    {
-      "name": "@wdio/protocols",
-      "version": "8.44.0"
-    },
-    {
-      "name": "@wdio/types",
-      "version": "8.41.0"
-    },
-    {
-      "name": "@wdio/utils",
-      "version": "8.46.0"
-    },
-    {
       "name": "@webassemblyjs/ast",
       "version": "1.14.1"
     },
@@ -3934,10 +3823,6 @@
       "version": "3.0.2"
     },
     {
-      "name": "@zip.js/zip.js",
-      "version": "2.8.16"
-    },
-    {
       "name": "@zkochan/js-yaml",
       "version": "0.0.7"
     },
@@ -3983,47 +3868,47 @@
     },
     {
       "name": "ag-charts-angular",
-      "version": "13.0.0"
+      "version": "13.1.0"
     },
     {
       "name": "ag-charts-community",
-      "version": "13.0.0"
+      "version": "13.1.0"
     },
     {
       "name": "ag-charts-core",
-      "version": "13.0.0"
+      "version": "13.1.0"
     },
     {
       "name": "ag-charts-enterprise",
-      "version": "13.0.0"
+      "version": "13.1.0"
     },
     {
       "name": "ag-charts-locale",
-      "version": "13.0.0"
+      "version": "13.1.0"
     },
     {
       "name": "ag-charts-react",
-      "version": "13.0.0"
+      "version": "13.1.0"
     },
     {
       "name": "ag-charts-types",
-      "version": "13.0.0"
+      "version": "13.1.0"
     },
     {
       "name": "ag-grid-angular",
-      "version": "35.0.0"
+      "version": "35.1.0"
     },
     {
       "name": "ag-grid-community",
-      "version": "35.0.0"
+      "version": "35.1.0"
     },
     {
       "name": "ag-grid-enterprise",
-      "version": "35.0.0"
+      "version": "35.1.0"
     },
     {
       "name": "ag-grid-react",
-      "version": "35.0.0"
+      "version": "35.1.0"
     },
     {
       "name": "agent-base",
@@ -4182,10 +4067,6 @@
       "version": "2.0.1"
     },
     {
-      "name": "ast-types",
-      "version": "0.13.4"
-    },
-    {
       "name": "ast-types-flow",
       "version": "0.0.8"
     },
@@ -4232,10 +4113,6 @@
     {
       "name": "axobject-query",
       "version": "4.1.0"
-    },
-    {
-      "name": "b4a",
-      "version": "1.7.3"
     },
     {
       "name": "babel-jest",
@@ -4306,10 +4183,6 @@
       "version": "1.0.2"
     },
     {
-      "name": "bare-events",
-      "version": "2.8.2"
-    },
-    {
       "name": "base64-js",
       "version": "1.5.1"
     },
@@ -4320,10 +4193,6 @@
     {
       "name": "basic-auth",
       "version": "2.0.1"
-    },
-    {
-      "name": "basic-ftp",
-      "version": "5.1.0"
     },
     {
       "name": "batch",
@@ -4338,16 +4207,8 @@
       "version": "1.0.3"
     },
     {
-      "name": "big-integer",
-      "version": "1.6.52"
-    },
-    {
       "name": "big.js",
       "version": "5.2.2"
-    },
-    {
-      "name": "binary",
-      "version": "0.3.0"
     },
     {
       "name": "binary-extensions",
@@ -4356,10 +4217,6 @@
     {
       "name": "bl",
       "version": "4.1.0"
-    },
-    {
-      "name": "bluebird",
-      "version": "3.4.7"
     },
     {
       "name": "body-parser",
@@ -4414,20 +4271,8 @@
       "version": "6.0.3"
     },
     {
-      "name": "buffer-crc32",
-      "version": "0.2.13"
-    },
-    {
       "name": "buffer-from",
       "version": "1.1.2"
-    },
-    {
-      "name": "buffer-indexof-polyfill",
-      "version": "1.0.2"
-    },
-    {
-      "name": "buffers",
-      "version": "0.1.1"
     },
     {
       "name": "bufferutil",
@@ -4448,14 +4293,6 @@
     {
       "name": "cacache",
       "version": "20.0.3"
-    },
-    {
-      "name": "cacheable-lookup",
-      "version": "7.0.0"
-    },
-    {
-      "name": "cacheable-request",
-      "version": "10.2.14"
     },
     {
       "name": "call-bind",
@@ -4496,10 +4333,6 @@
     {
       "name": "chai",
       "version": "6.2.2"
-    },
-    {
-      "name": "chainsaw",
-      "version": "0.1.0"
     },
     {
       "name": "chalk",
@@ -4664,10 +4497,6 @@
     {
       "name": "commander",
       "version": "7.2.0"
-    },
-    {
-      "name": "commander",
-      "version": "9.5.0"
     },
     {
       "name": "common-path-prefix",
@@ -4926,14 +4755,6 @@
       "version": "1.0.8"
     },
     {
-      "name": "data-uri-to-buffer",
-      "version": "4.0.1"
-    },
-    {
-      "name": "data-uri-to-buffer",
-      "version": "6.0.2"
-    },
-    {
       "name": "data-urls",
       "version": "5.0.0"
     },
@@ -4975,15 +4796,7 @@
     },
     {
       "name": "debug",
-      "version": "4.3.4"
-    },
-    {
-      "name": "debug",
       "version": "4.4.3"
-    },
-    {
-      "name": "decamelize",
-      "version": "6.0.1"
     },
     {
       "name": "decimal.js",
@@ -4992,10 +4805,6 @@
     {
       "name": "decimal.js-light",
       "version": "2.5.1"
-    },
-    {
-      "name": "decompress-response",
-      "version": "6.0.0"
     },
     {
       "name": "dedent",
@@ -5014,10 +4823,6 @@
       "version": "4.3.1"
     },
     {
-      "name": "deepmerge-ts",
-      "version": "5.1.0"
-    },
-    {
       "name": "default-browser",
       "version": "5.5.0"
     },
@@ -5028,10 +4833,6 @@
     {
       "name": "defaults",
       "version": "1.0.4"
-    },
-    {
-      "name": "defer-to-connect",
-      "version": "2.0.1"
     },
     {
       "name": "define-data-property",
@@ -5048,10 +4849,6 @@
     {
       "name": "define-properties",
       "version": "1.2.1"
-    },
-    {
-      "name": "degenerator",
-      "version": "5.0.1"
     },
     {
       "name": "delayed-stream",
@@ -5154,20 +4951,8 @@
       "version": "1.0.1"
     },
     {
-      "name": "duplexer2",
-      "version": "0.1.4"
-    },
-    {
       "name": "eastasianwidth",
       "version": "0.2.0"
-    },
-    {
-      "name": "edge-paths",
-      "version": "3.0.5"
-    },
-    {
-      "name": "edgedriver",
-      "version": "5.6.1"
     },
     {
       "name": "ee-first",
@@ -5346,10 +5131,6 @@
       "version": "4.0.0"
     },
     {
-      "name": "escodegen",
-      "version": "2.1.0"
-    },
-    {
       "name": "eslint",
       "version": "9.39.2"
     },
@@ -5474,10 +5255,6 @@
       "version": "3.3.0"
     },
     {
-      "name": "events-universal",
-      "version": "1.0.1"
-    },
-    {
       "name": "eventsource",
       "version": "3.0.7"
     },
@@ -5530,20 +5307,12 @@
       "version": "1.7.0"
     },
     {
-      "name": "extract-zip",
-      "version": "2.0.1"
-    },
-    {
       "name": "fast-copy",
       "version": "4.0.2"
     },
     {
       "name": "fast-deep-equal",
       "version": "3.1.3"
-    },
-    {
-      "name": "fast-fifo",
-      "version": "1.3.2"
     },
     {
       "name": "fast-glob",
@@ -5566,10 +5335,6 @@
       "version": "3.1.0"
     },
     {
-      "name": "fast-xml-parser",
-      "version": "4.5.3"
-    },
-    {
       "name": "fastq",
       "version": "1.20.1"
     },
@@ -5582,16 +5347,8 @@
       "version": "2.0.2"
     },
     {
-      "name": "fd-slicer",
-      "version": "1.1.0"
-    },
-    {
       "name": "fdir",
       "version": "6.5.0"
-    },
-    {
-      "name": "fetch-blob",
-      "version": "3.2.0"
     },
     {
       "name": "fflate",
@@ -5682,14 +5439,6 @@
       "version": "4.0.5"
     },
     {
-      "name": "form-data-encoder",
-      "version": "2.1.4"
-    },
-    {
-      "name": "formdata-polyfill",
-      "version": "4.0.10"
-    },
-    {
       "name": "forwarded",
       "version": "0.2.0"
     },
@@ -5746,10 +5495,6 @@
       "version": "2.3.3"
     },
     {
-      "name": "fstream",
-      "version": "1.0.12"
-    },
-    {
       "name": "function-bind",
       "version": "1.1.2"
     },
@@ -5760,10 +5505,6 @@
     {
       "name": "functions-have-names",
       "version": "1.2.3"
-    },
-    {
-      "name": "geckodriver",
-      "version": "4.2.1"
     },
     {
       "name": "generator-function",
@@ -5798,16 +5539,8 @@
       "version": "0.1.0"
     },
     {
-      "name": "get-port",
-      "version": "7.1.0"
-    },
-    {
       "name": "get-proto",
       "version": "1.0.1"
-    },
-    {
-      "name": "get-stream",
-      "version": "5.2.0"
     },
     {
       "name": "get-stream",
@@ -5820,10 +5553,6 @@
     {
       "name": "get-them-args",
       "version": "1.3.2"
-    },
-    {
-      "name": "get-uri",
-      "version": "6.0.5"
     },
     {
       "name": "glob",
@@ -5890,10 +5619,6 @@
       "version": "1.2.0"
     },
     {
-      "name": "got",
-      "version": "12.6.1"
-    },
-    {
       "name": "graceful-fs",
       "version": "4.2.11"
     },
@@ -5956,10 +5681,6 @@
     {
       "name": "homedir-polyfill",
       "version": "1.0.3"
-    },
-    {
-      "name": "hono",
-      "version": "4.11.7"
     },
     {
       "name": "hosted-git-info",
@@ -6046,10 +5767,6 @@
       "version": "14.1.1"
     },
     {
-      "name": "http2-wrapper",
-      "version": "2.2.1"
-    },
-    {
       "name": "https-proxy-agent",
       "version": "7.0.6"
     },
@@ -6106,10 +5823,6 @@
       "version": "0.5.5"
     },
     {
-      "name": "immediate",
-      "version": "3.0.6"
-    },
-    {
       "name": "immer",
       "version": "10.2.0"
     },
@@ -6128,10 +5841,6 @@
     {
       "name": "import-local",
       "version": "3.2.0"
-    },
-    {
-      "name": "import-meta-resolve",
-      "version": "4.2.0"
     },
     {
       "name": "imurmurhash",
@@ -6770,10 +6479,6 @@
       "version": "3.3.5"
     },
     {
-      "name": "jszip",
-      "version": "3.10.1"
-    },
-    {
       "name": "keygrip",
       "version": "1.1.0"
     },
@@ -6800,10 +6505,6 @@
     {
       "name": "koa-compose",
       "version": "4.1.0"
-    },
-    {
-      "name": "ky",
-      "version": "0.33.3"
     },
     {
       "name": "language-subtag-registry",
@@ -6836,10 +6537,6 @@
     {
       "name": "license-webpack-plugin",
       "version": "4.0.2"
-    },
-    {
-      "name": "lie",
-      "version": "3.3.0"
     },
     {
       "name": "lightningcss",
@@ -6902,10 +6599,6 @@
       "version": "2.0.3"
     },
     {
-      "name": "listenercount",
-      "version": "1.0.1"
-    },
-    {
       "name": "listr2",
       "version": "9.0.5"
     },
@@ -6928,10 +6621,6 @@
     {
       "name": "loader-utils",
       "version": "3.3.1"
-    },
-    {
-      "name": "locate-app",
-      "version": "2.5.0"
     },
     {
       "name": "locate-path",
@@ -6990,14 +6679,6 @@
       "version": "6.9.1"
     },
     {
-      "name": "loglevel",
-      "version": "1.9.2"
-    },
-    {
-      "name": "loglevel-plugin-prefix",
-      "version": "0.8.4"
-    },
-    {
       "name": "long-timeout",
       "version": "0.1.1"
     },
@@ -7010,10 +6691,6 @@
       "version": "2.0.2"
     },
     {
-      "name": "lowercase-keys",
-      "version": "3.0.0"
-    },
-    {
       "name": "lru-cache",
       "version": "10.4.3"
     },
@@ -7024,10 +6701,6 @@
     {
       "name": "lru-cache",
       "version": "5.1.1"
-    },
-    {
-      "name": "lru-cache",
-      "version": "7.18.3"
     },
     {
       "name": "lucide-react",
@@ -7166,14 +6839,6 @@
       "version": "5.0.1"
     },
     {
-      "name": "mimic-response",
-      "version": "3.1.0"
-    },
-    {
-      "name": "mimic-response",
-      "version": "4.0.0"
-    },
-    {
       "name": "mini-css-extract-plugin",
       "version": "2.4.7"
     },
@@ -7236,14 +6901,6 @@
     {
       "name": "minizlib",
       "version": "3.1.0"
-    },
-    {
-      "name": "mkdirp",
-      "version": "0.5.6"
-    },
-    {
-      "name": "mkdirp-classic",
-      "version": "0.5.3"
     },
     {
       "name": "mrmime",
@@ -7310,10 +6967,6 @@
       "version": "2.6.2"
     },
     {
-      "name": "netmask",
-      "version": "2.0.2"
-    },
-    {
       "name": "next-tick",
       "version": "1.1.0"
     },
@@ -7338,16 +6991,8 @@
       "version": "7.1.1"
     },
     {
-      "name": "node-domexception",
-      "version": "1.0.0"
-    },
-    {
       "name": "node-fetch",
       "version": "2.7.0"
-    },
-    {
-      "name": "node-fetch",
-      "version": "3.3.2"
     },
     {
       "name": "node-forge",
@@ -7392,10 +7037,6 @@
     {
       "name": "normalize-path",
       "version": "3.0.0"
-    },
-    {
-      "name": "normalize-url",
-      "version": "8.1.1"
     },
     {
       "name": "npm-bundled",
@@ -7558,10 +7199,6 @@
       "version": "11.17.1"
     },
     {
-      "name": "p-cancelable",
-      "version": "3.0.0"
-    },
-    {
       "name": "p-limit",
       "version": "2.3.0"
     },
@@ -7598,24 +7235,12 @@
       "version": "2.2.0"
     },
     {
-      "name": "pac-proxy-agent",
-      "version": "7.2.0"
-    },
-    {
-      "name": "pac-resolver",
-      "version": "7.0.1"
-    },
-    {
       "name": "package-json-from-dist",
       "version": "1.0.1"
     },
     {
       "name": "pacote",
       "version": "21.0.4"
-    },
-    {
-      "name": "pako",
-      "version": "1.0.11"
     },
     {
       "name": "parent-module",
@@ -7712,10 +7337,6 @@
     {
       "name": "pathe",
       "version": "2.0.3"
-    },
-    {
-      "name": "pend",
-      "version": "1.2.0"
     },
     {
       "name": "picocolors",
@@ -7995,7 +7616,11 @@
     },
     {
       "name": "primeng",
-      "version": "21.0.4"
+      "version": "21.1.1"
+    },
+    {
+      "name": "primereact",
+      "version": "11.0.0-alpha.10"
     },
     {
       "name": "proc-log",
@@ -8014,10 +7639,6 @@
       "version": "5.0.0"
     },
     {
-      "name": "progress",
-      "version": "2.0.3"
-    },
-    {
       "name": "promise-retry",
       "version": "2.0.1"
     },
@@ -8028,10 +7649,6 @@
     {
       "name": "proxy-addr",
       "version": "2.0.7"
-    },
-    {
-      "name": "proxy-agent",
-      "version": "6.3.1"
     },
     {
       "name": "proxy-from-env",
@@ -8072,10 +7689,6 @@
     {
       "name": "quick-format-unescaped",
       "version": "4.0.4"
-    },
-    {
-      "name": "quick-lru",
-      "version": "5.1.1"
     },
     {
       "name": "rambda",
@@ -8262,10 +7875,6 @@
       "version": "2.0.0-next.5"
     },
     {
-      "name": "resolve-alpn",
-      "version": "1.2.1"
-    },
-    {
       "name": "resolve-cwd",
       "version": "3.0.0"
     },
@@ -8284,10 +7893,6 @@
     {
       "name": "resolve.exports",
       "version": "2.0.3"
-    },
-    {
-      "name": "responselike",
-      "version": "3.0.0"
     },
     {
       "name": "restore-cursor",
@@ -8312,10 +7917,6 @@
     {
       "name": "rfdc",
       "version": "1.4.1"
-    },
-    {
-      "name": "rimraf",
-      "version": "2.7.1"
     },
     {
       "name": "rolldown",
@@ -8348,10 +7949,6 @@
     {
       "name": "rxjs",
       "version": "7.8.2"
-    },
-    {
-      "name": "safaridriver",
-      "version": "0.1.2"
     },
     {
       "name": "safe-array-concat",
@@ -8502,10 +8099,6 @@
       "version": "2.0.0"
     },
     {
-      "name": "selenium-webdriver",
-      "version": "4.40.0"
-    },
-    {
       "name": "selfsigned",
       "version": "2.4.1"
     },
@@ -8568,10 +8161,6 @@
     {
       "name": "set-proto",
       "version": "1.0.0"
-    },
-    {
-      "name": "setimmediate",
-      "version": "1.0.5"
     },
     {
       "name": "setprototypeof",
@@ -8718,10 +8307,6 @@
       "version": "0.5.21"
     },
     {
-      "name": "spacetrim",
-      "version": "0.11.59"
-    },
-    {
       "name": "spdx-correct",
       "version": "3.2.0"
     },
@@ -8792,10 +8377,6 @@
     {
       "name": "streamroller",
       "version": "3.1.5"
-    },
-    {
-      "name": "streamx",
-      "version": "2.23.0"
     },
     {
       "name": "string_decoder",
@@ -8894,10 +8475,6 @@
       "version": "5.0.3"
     },
     {
-      "name": "strnum",
-      "version": "1.1.2"
-    },
-    {
       "name": "style-loader",
       "version": "3.3.4"
     },
@@ -8966,16 +8543,8 @@
       "version": "7.5.2"
     },
     {
-      "name": "tar-fs",
-      "version": "3.0.4"
-    },
-    {
       "name": "tar-stream",
       "version": "2.2.0"
-    },
-    {
-      "name": "tar-stream",
-      "version": "3.1.7"
     },
     {
       "name": "tcp-port-used",
@@ -8994,20 +8563,12 @@
       "version": "6.0.0"
     },
     {
-      "name": "text-decoder",
-      "version": "1.2.3"
-    },
-    {
       "name": "thingies",
       "version": "2.5.0"
     },
     {
       "name": "thread-stream",
       "version": "4.0.0"
-    },
-    {
-      "name": "through",
-      "version": "2.3.8"
     },
     {
       "name": "thunky",
@@ -9092,10 +8653,6 @@
     {
       "name": "tr46",
       "version": "6.0.0"
-    },
-    {
-      "name": "traverse",
-      "version": "0.3.9"
     },
     {
       "name": "tree-dump",
@@ -9183,10 +8740,6 @@
     },
     {
       "name": "type-fest",
-      "version": "4.26.0"
-    },
-    {
-      "name": "type-fest",
       "version": "4.41.0"
     },
     {
@@ -9236,10 +8789,6 @@
     {
       "name": "unbox-primitive",
       "version": "1.1.0"
-    },
-    {
-      "name": "unbzip2-stream",
-      "version": "1.4.3"
     },
     {
       "name": "undici",
@@ -9294,10 +8843,6 @@
       "version": "1.11.1"
     },
     {
-      "name": "unzipper",
-      "version": "0.10.14"
-    },
-    {
       "name": "upath",
       "version": "2.0.1"
     },
@@ -9324,10 +8869,6 @@
     {
       "name": "use-sync-external-store",
       "version": "1.6.0"
-    },
-    {
-      "name": "userhome",
-      "version": "1.0.1"
     },
     {
       "name": "utf-8-validate",
@@ -9394,10 +8935,6 @@
       "version": "5.0.0"
     },
     {
-      "name": "wait-port",
-      "version": "1.1.0"
-    },
-    {
       "name": "walker",
       "version": "1.0.8"
     },
@@ -9420,14 +8957,6 @@
     {
       "name": "weak-lru-cache",
       "version": "1.2.2"
-    },
-    {
-      "name": "web-streams-polyfill",
-      "version": "3.3.3"
-    },
-    {
-      "name": "webdriver",
-      "version": "8.46.0"
     },
     {
       "name": "webidl-conversions",
@@ -9512,10 +9041,6 @@
     {
       "name": "which",
       "version": "2.0.2"
-    },
-    {
-      "name": "which",
-      "version": "4.0.0"
     },
     {
       "name": "which",
@@ -9648,10 +9173,6 @@
     {
       "name": "yargs-parser",
       "version": "22.0.0"
-    },
-    {
-      "name": "yauzl",
-      "version": "2.10.0"
     },
     {
       "name": "yn",
