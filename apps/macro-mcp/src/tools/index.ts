@@ -3,10 +3,16 @@ import { registerScaffoldAngularApp } from './scaffold-angular-app.js';
 import { registerScaffoldReactApp } from './scaffold-react-app.js';
 import { registerListLibraries } from './list-libraries.js';
 import { registerGetLibraryApi } from './get-library-api.js';
+import { registerGetCommands } from './get-commands.js';
+import { registerScaffoldLibrary } from './scaffold-library.js';
+import { registerRegisterOpenfinApp } from './register-openfin-app.js';
 
 export function registerTools(server: McpServer): void {
   registerScaffoldAngularApp(server);
   registerScaffoldReactApp(server);
   registerListLibraries(server);
   registerGetLibraryApi(server);
+  registerGetCommands(server);
+  registerScaffoldLibrary(server);
+  registerRegisterOpenfinApp(server);
 }
