@@ -8,6 +8,7 @@ import {
   GridOptions,
   GridReadyEvent,
   GridApi,
+  GridState,
   GetRowIdParams,
   RowNodeTransaction,
   ModuleRegistry,
@@ -398,6 +399,26 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       // Grid not ready yet, store data to be set when ready
       this.pendingInitialData = data;
     }
+  }
+
+  /**
+   * Get the current grid state (column order, sizing, sort, filter, etc.)
+   * Returns undefined if the grid is not ready.
+   */
+  public getGridState(): GridState | undefined {
+    return this.gridApi?.getState();
+  }
+
+  /**
+   * Apply a previously saved grid state.
+   * @param state - GridState object from getGridState()
+   */
+  public applyGridState(state: GridState): void {
+    if (!this.gridApi) {
+      this.logger.warn('Cannot apply grid state — grid is not ready');
+      return;
+    }
+    this.gridApi.setState(state);
   }
 
   /**

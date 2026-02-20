@@ -13,6 +13,7 @@ import { WorkspaceOverrideService as BaseWorkspaceOverrideService } from '../wor
 import { PlatformService as BasePlatformService } from '../platform.service';
 import { WorkspaceService as BaseWorkspaceService } from '../workspace.service';
 import { ThemeService as BaseThemeService } from '../theme.service';
+import { ViewStateService as BaseViewStateService } from '../view-state.service';
 
 /**
  * Angular wrapper services for @macro/openfin
@@ -114,4 +115,7 @@ export class ThemeService extends BaseThemeService {
     });
   }
 }
+
+@Injectable({ providedIn: 'root' })
+export class ViewStateService extends BaseViewStateService {}
 

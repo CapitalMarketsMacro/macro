@@ -6,6 +6,7 @@ import {
   GridOptions,
   GridReadyEvent,
   GridApi,
+  GridState,
   GetRowIdParams,
   RowNodeTransaction,
   ModuleRegistry,
@@ -61,6 +62,16 @@ export interface MacroReactGridRef {
    * Get the grid API instance
    */
   getGridApi: () => GridApi | undefined;
+
+  /**
+   * Get the current grid state (column order, sizing, sort, filter, etc.)
+   */
+  getGridState: () => GridState | undefined;
+
+  /**
+   * Apply a previously saved grid state.
+   */
+  applyGridState: (state: GridState) => void;
 
   /**
    * RxJS Subjects for row operations
@@ -150,6 +161,12 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       gridApi.applyTransactionAsync(transaction as any);
     },
     getGridApi: () => gridApi,
+    getGridState: () => gridApi?.getState(),
+    applyGridState: (state: GridState) => {
+      if (gridApi) {
+        gridApi.setState(state);
+      }
+    },
     addRows$,
     updateRows$,
     deleteRows$,

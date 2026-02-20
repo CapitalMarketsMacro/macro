@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Logger } from '@macro/logger';
 import { MacroReactGrid, MacroReactGridRef } from '@macro/macro-react-grid';
-import { GetRowIdParams } from 'ag-grid-community';
+import { useViewState } from '@macro/openfin/react';
+import { GetRowIdParams, GridState } from 'ag-grid-community';
 
 interface TreasurySecurity {
   id: string;
@@ -69,6 +70,7 @@ const formatTreasury32nd = (decimalPrice: number, useEighths = false): string =>
 
 export function TreasuryMarketDataComponent() {
   const gridRef = useRef<MacroReactGridRef>(null);
+  const [viewState, savedState, isRestored] = useViewState();
 
   // Treasury Market Data state
   const securitiesRef = useRef<Array<{
@@ -267,6 +269,22 @@ export function TreasuryMarketDataComponent() {
     // Generate initial Treasury securities data
     generateInitialData();
   }, []);
+
+  // Restore saved grid state when ready
+  useEffect(() => {
+    if (isRestored && savedState['agGrid'] && gridRef.current) {
+      gridRef.current.applyGridState(savedState['agGrid'] as GridState);
+      logger.info('Restored grid state from workspace snapshot');
+    }
+  }, [isRestored]);
+
+  // Auto-save grid state every 5 seconds
+  useEffect(() => {
+    viewState.enableAutoSave(() => ({
+      agGrid: gridRef.current?.getGridState(),
+    }));
+    return () => viewState.disableAutoSave();
+  }, [viewState]);
 
   // Treasury Market Data Columns
   // Note: Using array instead of JSON string to preserve function references (valueFormatter, cellStyle)

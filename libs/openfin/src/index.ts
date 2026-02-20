@@ -18,6 +18,8 @@ export { WorkspaceOverrideService as BaseWorkspaceOverrideService } from './lib/
 export { PlatformService as BasePlatformService } from './lib/platform.service';
 export { WorkspaceService as BaseWorkspaceService } from './lib/workspace.service';
 export { ThemeService as BaseThemeService } from './lib/theme.service';
+export { ViewStateService as BaseViewStateService } from './lib/view-state.service';
+export type { ViewStateData } from './lib/view-state.service';
 
 // Angular wrappers (for Angular applications) - these are the default exports
 export * from './lib/angular';

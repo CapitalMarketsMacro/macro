@@ -1,7 +1,8 @@
-import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy, inject } from '@angular/core';
 import { Logger } from '@macro/logger';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
-import { GetRowIdParams, ColDef, CellStyle } from 'ag-grid-community';
+import { ViewStateService } from '@macro/openfin';
+import { GetRowIdParams, ColDef, CellStyle, GridState } from 'ag-grid-community';
 
 interface CurrencyPair {
   id: string;
@@ -25,7 +26,8 @@ interface CurrencyPair {
 })
 export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
   private logger = Logger.getLogger('FxMarketDataComponent');
-  
+  private viewState = inject(ViewStateService);
+
   @ViewChild(MacroAngularGrid) gridComponent!: MacroAngularGrid;
 
   // FX Market Data Columns - Using array instead of JSON string to preserve functions
@@ -151,18 +153,31 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
     this.generateInitialData();
   }
 
-  ngAfterViewInit(): void {
+  async ngAfterViewInit(): Promise<void> {
     this.logger.info('Grid component ready', { gridApi: this.gridComponent.getGridApi() });
-    
+
     // Set initial data using the safe method that handles grid readiness
     this.gridComponent.setInitialRowData(this.initialData);
     this.logger.info('Initial G10 currency pairs queued/loaded', { count: this.initialData.length });
+
+    // Restore any previously saved grid state (column order, filters, sort, etc.)
+    const saved = await this.viewState.restoreState();
+    if (saved['agGrid']) {
+      this.gridComponent.applyGridState(saved['agGrid'] as GridState);
+      this.logger.info('Restored grid state from workspace snapshot');
+    }
+
+    // Auto-save grid state every 5 seconds so workspace save captures it
+    this.viewState.enableAutoSave(() => ({
+      agGrid: this.gridComponent.getGridState(),
+    }));
 
     // Start simulating market data updates every 1 second
     this.startMarketDataUpdates();
   }
 
   ngOnDestroy(): void {
+    this.viewState.destroy();
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
     }
