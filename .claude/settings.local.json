@@ -33,7 +33,10 @@
       "Bash(npx nx:*)",
       "Bash(npx nx-mcp@latest --help:*)",
       "Bash(npx:*)",
-      "Bash(cygpath:*)"
+      "Bash(cygpath:*)",
+      "Bash(npm run build:mcp:*)",
+      "Bash(wc:*)",
+      "mcp__ag-mcp__search_docs"
     ]
   },
   "enableAllProjectMcpServers": true
