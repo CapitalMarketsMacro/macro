@@ -1479,8 +1479,8 @@ Add the path alias to `tsconfig.base.json`:
 
 | Technology | Version | Purpose |
 |-----------|---------|---------|
-| **OpenFin Core** | 42.102.4 | Desktop application container |
-| **OpenFin Workspace** | 22.3.25 | Home, Dock, Store, Notifications |
+| **OpenFin Core** | 42.103.4 | Desktop application container |
+| **OpenFin Workspace** | 22.3.29 | Home, Dock, Store, Notifications |
 | **FDC3** | 2.0.3 | Financial Desktop Connectivity standard |
 | **AMPS** | 5.3.4 | High-performance message broker client |
 | **Solace (solclientjs)** | 10.18.2 | Enterprise PubSub+ message broker client |
