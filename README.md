@@ -1465,11 +1465,11 @@ Add the path alias to `tsconfig.base.json`:
 
 | Technology | Version | Purpose |
 |-----------|---------|---------|
-| **AG Grid Enterprise** | 35.0.0 | Data grids (both Angular and React) |
-| **AG Charts Enterprise** | 13.0.0 | Charts (Angular microstructure component) |
+| **AG Grid Enterprise** | 35.1.0 | Data grids (both Angular and React) |
+| **AG Charts Enterprise** | 13.1.0 | Charts (Angular microstructure component) |
 | **Recharts** | 3.4.1 | Charts (React commodities dashboard) |
-| **PrimeNG** | 21.0.4 | Angular UI components (Menubar, theme) |
-| **PrimeReact** | 11.0.0-alpha | React UI components (Aura theme) |
+| **PrimeNG** | 21.1.1 | Angular UI components (Menubar, theme) |
+| **PrimeReact** | 11.0.0-alpha.10 | React UI components (Aura theme) |
 | **PrimeIcons** | 7.0.0 | Icon set for PrimeNG / PrimeReact |
 | **Shadcn UI / Radix** | latest | React UI components (Menubar, Switch, Label) |
 | **Tailwind CSS** | 4.1.17 | Utility-first CSS (React) |
@@ -1491,7 +1491,7 @@ Add the path alias to `tsconfig.base.json`:
 |-----------|---------|---------|
 | **RxJS** | 7.8.0 | Reactive programming |
 | **Pino** | 10.1.0 | Structured logging |
-| **Vite** | 7.0.0 | React build tool |
+| **Vite** | 7.3.1 | React build tool |
 | **esbuild** | 0.19.2 | Node.js build tool |
 | **Jest** | 30.0.0 | Unit testing (Angular, libs) |
 | **Vitest** | 4.0.16 | Unit testing (React) |
