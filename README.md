@@ -26,6 +26,7 @@ A production-grade NX monorepo for building **Capital Markets desktop applicatio
   - [@macro/macro-angular-grid](#macromacro-angular-grid---angular-ag-grid-wrapper)
   - [@macro/macro-react-grid](#macromacro-react-grid---react-ag-grid-wrapper)
 - [OpenFin Workspace Platform](#openfin-workspace-platform)
+- [View State Persistence](#view-state-persistence)
 - [Icon System](#icon-system)
 - [Theming](#theming)
 - [Ports & URLs](#ports--urls)
@@ -925,6 +926,161 @@ The browser window toolbar includes:
 
 ---
 
+## View State Persistence
+
+When a user saves an OpenFin workspace, only the window/page/view layout is captured by default. Individual view state -- AG Grid column order, filters, sort, custom preferences -- is lost. The `ViewStateService` solves this by piggybacking on OpenFin's `customData` mechanism, which is automatically included in workspace snapshots.
+
+### How It Works
+
+```
+Save path:
+  View calls viewState.saveState('agGrid', gridState)
+    -> fin.me.updateOptions({ customData: { viewState: { agGrid: {...} } } })
+      -> User saves workspace -> snapshot includes customData automatically
+
+Restore path:
+  Workspace restored -> OpenFin recreates view with saved options
+    -> View calls viewState.restoreState()
+      -> fin.me.getOptions() -> reads customData.viewState
+        -> View applies state (e.g., grid.applyGridState())
+```
+
+No changes to `WorkspaceOverrideService` or `WorkspaceService` are needed. State flows through the existing snapshot pipeline.
+
+### Imports
+
+```typescript
+// Angular -- Injectable service (providedIn: 'root')
+import { ViewStateService } from '@macro/openfin';
+
+// React -- hook for automatic lifecycle management
+import { useViewState } from '@macro/openfin/react';
+
+// Types (if needed)
+import type { ViewStateData } from '@macro/openfin';
+```
+
+### Angular Integration
+
+```typescript
+import { Component, ViewChild, AfterViewInit, OnDestroy, inject } from '@angular/core';
+import { ViewStateService } from '@macro/openfin';
+import { MacroAngularGrid } from '@macro/macro-angular-grid';
+import { GridState } from 'ag-grid-community';
+
+@Component({...})
+export class MyViewComponent implements AfterViewInit, OnDestroy {
+  private viewState = inject(ViewStateService);
+  @ViewChild(MacroAngularGrid) grid!: MacroAngularGrid;
+
+  async ngAfterViewInit() {
+    // 1. Restore any previously saved state
+    const saved = await this.viewState.restoreState();
+    if (saved['agGrid']) {
+      this.grid.applyGridState(saved['agGrid'] as GridState);
+    }
+
+    // 2. Enable auto-save (collects state every 5 seconds by default)
+    this.viewState.enableAutoSave(() => ({
+      agGrid: this.grid.getGridState(),
+      // Add any other namespaced state:
+      prefs: { selectedTab: this.activeTab },
+    }));
+  }
+
+  ngOnDestroy() {
+    this.viewState.destroy(); // stops auto-save timer
+  }
+}
+```
+
+### React Integration
+
+```tsx
+import { useRef, useEffect } from 'react';
+import { useViewState } from '@macro/openfin/react';
+import { MacroReactGrid, MacroReactGridRef } from '@macro/macro-react-grid';
+import { GridState } from 'ag-grid-community';
+
+function MyView() {
+  const gridRef = useRef<MacroReactGridRef>(null);
+  const [viewState, savedState, isRestored] = useViewState();
+  // viewState   = ViewStateService instance (stable ref)
+  // savedState  = restored ViewStateData object
+  // isRestored  = true once restoreState() has completed
+
+  // 1. Apply restored state when ready
+  useEffect(() => {
+    if (isRestored && savedState['agGrid']) {
+      gridRef.current?.applyGridState(savedState['agGrid'] as GridState);
+    }
+  }, [isRestored]);
+
+  // 2. Enable auto-save
+  useEffect(() => {
+    viewState.enableAutoSave(() => ({
+      agGrid: gridRef.current?.getGridState(),
+    }));
+    return () => viewState.disableAutoSave();
+  }, [viewState]);
+
+  return <MacroReactGrid ref={gridRef} columns={columns} rowData={rowData} />;
+}
+```
+
+### ViewStateService API
+
+| Method | Description |
+|--------|-------------|
+| `restoreState(): Promise<ViewStateData>` | Reads `customData.viewState` from `fin.me.getOptions()`. Call once on view init. |
+| `saveState(namespace, data): Promise<void>` | Writes a single namespace to `fin.me.updateOptions()`. Merges with existing namespaces. |
+| `getState(namespace): unknown` | In-memory read of a previously restored namespace. |
+| `enableAutoSave(collectFn, intervalMs?)` | Periodically (default 5s) collects state via `collectFn` and persists it. |
+| `disableAutoSave(): void` | Stops the auto-save timer. |
+| `destroy(): void` | Full cleanup -- call on component destroy. |
+
+### Grid State Methods
+
+Both `MacroAngularGrid` and `MacroReactGrid` (via `MacroReactGridRef`) expose:
+
+| Method | Description |
+|--------|-------------|
+| `getGridState(): GridState \| undefined` | Returns the full AG Grid state (column order, sizing, visibility, pinning, sort, filter, pagination, row group, pivot, side bar, scroll position). |
+| `applyGridState(state: GridState): void` | Restores a previously saved grid state. |
+
+These use AG Grid v35's unified `getState()`/`setState()` API. The `GridState` object is fully JSON-serializable (typically 2-5 KB per grid).
+
+### Persisting Non-Grid State
+
+State is namespace-based, so you can persist anything JSON-serializable alongside grid state:
+
+```typescript
+// Save multiple namespaces
+this.viewState.enableAutoSave(() => ({
+  agGrid: this.grid.getGridState(),
+  prefs: {
+    selectedTab: this.activeTab,
+    sortDirection: this.currentSort,
+  },
+  filters: {
+    dateRange: this.dateRange,
+    selectedDesks: this.selectedDesks,
+  },
+}));
+
+// Restore individual namespaces
+const saved = await this.viewState.restoreState();
+if (saved['prefs']) {
+  this.activeTab = (saved['prefs'] as any).selectedTab;
+}
+```
+
+### Browser Development
+
+When running outside OpenFin (e.g., `http://localhost:4200` in a browser), the service is a graceful no-op: `restoreState()` returns an empty object, `saveState()` does nothing, and auto-save silently skips persistence. No conditional checks needed in your component code.
+
+---
+
 ## Icon System
 
 The repository includes two comprehensive, interactive HTML icon showcases for Capital Markets applications. Open them directly in a browser -- no build step required.
@@ -1227,7 +1383,51 @@ root.render(
 
 For Tailwind (React): Use `@custom-variant dark (&:is(.dark *))` and reference CSS variables for colors.
 
-### Step 7: Create a Shared Library (Optional)
+### Step 7: Add View State Persistence (Recommended)
+
+Persist AG Grid state and custom preferences across workspace save/restore cycles so users don't lose their column layout, filters, and sort when workspaces are restored.
+
+**Angular:**
+```typescript
+import { ViewStateService } from '@macro/openfin';
+import { GridState } from 'ag-grid-community';
+
+export class MyView implements AfterViewInit, OnDestroy {
+  private viewState = inject(ViewStateService);
+  @ViewChild(MacroAngularGrid) grid!: MacroAngularGrid;
+
+  async ngAfterViewInit() {
+    const saved = await this.viewState.restoreState();
+    if (saved['agGrid']) this.grid.applyGridState(saved['agGrid'] as GridState);
+    this.viewState.enableAutoSave(() => ({ agGrid: this.grid.getGridState() }));
+  }
+
+  ngOnDestroy() { this.viewState.destroy(); }
+}
+```
+
+**React:**
+```tsx
+import { useViewState } from '@macro/openfin/react';
+
+function MyView() {
+  const gridRef = useRef<MacroReactGridRef>(null);
+  const [viewState, saved, isReady] = useViewState();
+
+  useEffect(() => {
+    if (isReady && saved['agGrid']) gridRef.current?.applyGridState(saved['agGrid']);
+  }, [isReady]);
+
+  useEffect(() => {
+    viewState.enableAutoSave(() => ({ agGrid: gridRef.current?.getGridState() }));
+    return () => viewState.disableAutoSave();
+  }, [viewState]);
+}
+```
+
+See the [View State Persistence](#view-state-persistence) section for the full API reference and non-grid state examples.
+
+### Step 8: Create a Shared Library (Optional)
 
 If you have reusable logic:
 
