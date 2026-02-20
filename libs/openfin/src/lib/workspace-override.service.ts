@@ -7,6 +7,7 @@ import type {
   WorkspacePlatformOverrideCallback,
   WorkspacePlatformProvider,
 } from '@openfin/workspace-platform';
+import { ColorSchemeOptionType } from '@openfin/workspace-platform';
 import { Logger } from '@macro/logger';
 
 /**
@@ -66,6 +67,15 @@ export class WorkspaceOverrideService {
   private readonly STORAGE_KEY = 'workspace-platform-workspaces';
   private readonly LAST_SAVED_KEY = 'workspace-platform-last-saved';
 
+  private onThemeChanged?: (scheme: ColorSchemeOptionType) => Promise<void>;
+
+  /**
+   * Register a callback that fires after the platform theme changes.
+   */
+  setOnThemeChanged(callback: (scheme: ColorSchemeOptionType) => Promise<void>): void {
+    this.onThemeChanged = callback;
+  }
+
   /**
    * Creates an override callback function for the Workspace Platform initialization.
    * This allows customizing the WorkspacePlatformProvider behavior by extending it.
@@ -76,6 +86,7 @@ export class WorkspaceOverrideService {
     const logger = this.logger;
     const STORAGE_KEY = this.STORAGE_KEY;
     const LAST_SAVED_KEY = this.LAST_SAVED_KEY;
+    const getOnThemeChanged = () => this.onThemeChanged;
 
     // Helper functions for localStorage operations
     const getWorkspaces = (): Workspace[] => {
@@ -249,6 +260,17 @@ export class WorkspaceOverrideService {
           const result = await super.applyWorkspace(payload);
           logger.info('Workspace apply result', { workspaceId: payload.workspaceId, result });
           return result;
+        }
+
+        /**
+         * Override theme change to swap sun/moon icon after theme is applied.
+         */
+        async setSelectedScheme(schemeType: ColorSchemeOptionType): Promise<void> {
+          await super.setSelectedScheme(schemeType);
+          const callback = getOnThemeChanged();
+          if (callback) {
+            await callback(schemeType);
+          }
         }
 
         // ============================================

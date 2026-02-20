@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, catchError, concatMap, forkJoin, from, map, of, tap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, concatMap, delay, forkJoin, from, map, of, tap } from 'rxjs';
 import type { CustomSettings, PlatformSettings } from './types';
 import { PlatformService } from './platform.service';
 import { SettingsService } from './settings.service';
@@ -53,6 +53,9 @@ export class WorkspaceService {
           concatMap(() => this.registerComponents(settings)),
           concatMap(() => this.showStartupComponents()),
           concatMap(() => this.restoreLastSavedWorkspace()),
+          // Update toolbar buttons on all windows after restore (snapshots carry old toolbar config)
+          delay(500),
+          concatMap(() => from(this.platformService.updateToolbarButtons())),
           tap(() => this.status$.next('Platform initialized')),
         ),
       ),
