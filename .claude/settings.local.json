@@ -36,7 +36,13 @@
       "Bash(cygpath:*)",
       "Bash(npm run build:mcp:*)",
       "Bash(wc:*)",
-      "mcp__ag-mcp__search_docs"
+      "mcp__ag-mcp__search_docs",
+      "WebFetch(domain:developer.openfin.co)",
+      "WebFetch(domain:cdn.openfin.co)",
+      "WebFetch(domain:developers.openfin.co)",
+      "Bash(base64:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(find:*)"
     ]
   },
   "enableAllProjectMcpServers": true
