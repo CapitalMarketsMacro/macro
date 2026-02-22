@@ -7,6 +7,7 @@ import { ContextService as BaseContextService } from '../context.service';
 import { ChannelService as BaseChannelService } from '../channel.service';
 import { StoreService as BaseStoreService } from '../store.service';
 import { DockService as BaseDockService } from '../dock.service';
+import { Dock3Service as BaseDock3Service } from '../dock3.service';
 import { HomeService as BaseHomeService } from '../home.service';
 import { NotificationsService as BaseNotificationsService } from '../notifications.service';
 import { WorkspaceOverrideService as BaseWorkspaceOverrideService } from '../workspace-override.service';
@@ -60,6 +61,13 @@ export class DockService extends BaseDockService {
 }
 
 @Injectable({ providedIn: 'root' })
+export class Dock3Service extends BaseDock3Service {
+  constructor() {
+    super();
+  }
+}
+
+@Injectable({ providedIn: 'root' })
 export class HomeService extends BaseHomeService {
   constructor() {
     const settingsService = inject(SettingsService);
@@ -95,10 +103,11 @@ export class WorkspaceService extends BaseWorkspaceService {
   constructor() {
     const platformService = inject(PlatformService);
     const dockService = inject(DockService);
+    const dock3Service = inject(Dock3Service);
     const homeService = inject(HomeService);
     const storeService = inject(StoreService);
     const settingsService = inject(SettingsService);
-    super(platformService, dockService, homeService, storeService, settingsService);
+    super(platformService, dockService, dock3Service, homeService, storeService, settingsService);
   }
 }
 

@@ -12,6 +12,7 @@ export { ContextService as BaseContextService } from './lib/context.service';
 export { ChannelService as BaseChannelService } from './lib/channel.service';
 export { StoreService as BaseStoreService } from './lib/store.service';
 export { DockService as BaseDockService } from './lib/dock.service';
+export { Dock3Service as BaseDock3Service } from './lib/dock3.service';
 export { HomeService as BaseHomeService } from './lib/home.service';
 export { NotificationsService as BaseNotificationsService } from './lib/notifications.service';
 export { WorkspaceOverrideService as BaseWorkspaceOverrideService } from './lib/workspace-override.service';

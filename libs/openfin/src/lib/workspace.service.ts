@@ -3,6 +3,7 @@ import type { CustomSettings, PlatformSettings } from './types';
 import { PlatformService } from './platform.service';
 import { SettingsService } from './settings.service';
 import { DockService } from './dock.service';
+import { Dock3Service } from './dock3.service';
 import { HomeService } from './home.service';
 import { StoreService } from './store.service';
 import { getCurrentSync, type Workspace } from '@openfin/workspace-platform';
@@ -17,6 +18,7 @@ const logger = Logger.getLogger('WorkspaceService');
 export class WorkspaceService {
   private readonly platformService: PlatformService;
   private readonly dockService: DockService;
+  private readonly dock3Service: Dock3Service;
   private readonly homeService: HomeService;
   private readonly storeService: StoreService;
   private readonly settingsService: SettingsService;
@@ -27,12 +29,14 @@ export class WorkspaceService {
   constructor(
     platformService: PlatformService,
     dockService: DockService,
+    dock3Service: Dock3Service,
     homeService: HomeService,
     storeService: StoreService,
     settingsService: SettingsService
   ) {
     this.platformService = platformService;
     this.dockService = dockService;
+    this.dock3Service = dock3Service;
     this.homeService = homeService;
     this.storeService = storeService;
     this.settingsService = settingsService;
@@ -154,14 +158,21 @@ export class WorkspaceService {
   }) {
     this.status$.next('Registering workspace components...');
     return forkJoin([
-      this.dockService.register(platformSettings, customSettings?.apps),
+      from(
+        this.dock3Service.init(
+          platformSettings,
+          customSettings?.apps,
+          customSettings?.dock3
+        )
+      ),
       this.homeService.register(platformSettings),
       this.storeService.register(platformSettings),
     ]);
   }
 
   private showStartupComponents() {
-    return forkJoin([this.homeService.show(), this.dockService.show()]);
+    // Dock3 auto-shows on init, only need to show Home
+    return from(this.homeService.show());
   }
 
   private isOpenFin() {
@@ -170,7 +181,9 @@ export class WorkspaceService {
 
   quit() {
     if (this.isOpenFin()) {
-      fin.Platform.getCurrentSync().quit();
+      this.dock3Service.shutdown().finally(() => {
+        fin.Platform.getCurrentSync().quit();
+      });
     }
   }
 
