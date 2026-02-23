@@ -6,7 +6,8 @@ import { DockService } from './dock.service';
 import { Dock3Service } from './dock3.service';
 import { HomeService } from './home.service';
 import { StoreService } from './store.service';
-import { getCurrentSync, type Workspace } from '@openfin/workspace-platform';
+import { WorkspaceStorageService } from './workspace-storage.service';
+import { getCurrentSync } from '@openfin/workspace-platform';
 import { Logger } from '@macro/logger';
 
 const logger = Logger.getLogger('WorkspaceService');
@@ -22,9 +23,9 @@ export class WorkspaceService {
   private readonly homeService: HomeService;
   private readonly storeService: StoreService;
   private readonly settingsService: SettingsService;
+  private readonly storageService: WorkspaceStorageService;
 
   private readonly status$ = new BehaviorSubject<string>('');
-  private readonly LAST_SAVED_KEY = 'workspace-platform-last-saved';
 
   constructor(
     platformService: PlatformService,
@@ -32,7 +33,8 @@ export class WorkspaceService {
     dock3Service: Dock3Service,
     homeService: HomeService,
     storeService: StoreService,
-    settingsService: SettingsService
+    settingsService: SettingsService,
+    storageService: WorkspaceStorageService
   ) {
     this.platformService = platformService;
     this.dockService = dockService;
@@ -40,6 +42,7 @@ export class WorkspaceService {
     this.homeService = homeService;
     this.storeService = storeService;
     this.settingsService = settingsService;
+    this.storageService = storageService;
   }
 
   init() {
@@ -75,67 +78,54 @@ export class WorkspaceService {
 
   private restoreLastSavedWorkspace(): Observable<void> {
     return new Observable<void>((observer) => {
-      try {
-        const lastSavedId = localStorage.getItem(this.LAST_SAVED_KEY);
-        if (!lastSavedId) {
-          this.status$.next('No saved workspace found');
+      this.restoreLastSavedWorkspaceAsync()
+        .then(() => {
           observer.next();
           observer.complete();
-          return;
-        }
-
-        this.status$.next('Restoring last saved workspace...');
-        const workspacePlatform = getCurrentSync();
-
-        // Get the saved workspace from storage
-        const stored = localStorage.getItem('workspace-platform-workspaces');
-        if (!stored) {
-          this.status$.next('No saved workspaces found');
+        })
+        .catch((error) => {
+          logger.error('Error in restoreLastSavedWorkspace', error);
+          this.status$.next('Error restoring workspace');
           observer.next();
           observer.complete();
-          return;
-        }
-
-        const workspaces: Workspace[] = JSON.parse(stored);
-        const workspace = workspaces.find((w) => w.workspaceId === lastSavedId);
-
-        if (!workspace) {
-          this.status$.next('Last saved workspace not found');
-          observer.next();
-          observer.complete();
-          return;
-        }
-
-        // Apply the workspace without prompting
-        workspacePlatform
-          .applyWorkspace(workspace, {
-            skipPrompt: true,
-            applySnapshotOptions: {
-              closeExistingWindows: true,
-            },
-          })
-          .then((result) => {
-            if (result) {
-              this.status$.next(`Restored workspace: ${workspace.title}`);
-            } else {
-              this.status$.next('Failed to restore workspace');
-            }
-            observer.next();
-            observer.complete();
-          })
-          .catch((error) => {
-            logger.error('Error restoring workspace', error);
-            this.status$.next('Error restoring workspace');
-            observer.next();
-            observer.complete();
-          });
-      } catch (error) {
-        logger.error('Error in restoreLastSavedWorkspace', error);
-        this.status$.next('Error restoring workspace');
-        observer.next();
-        observer.complete();
-      }
+        });
     });
+  }
+
+  private async restoreLastSavedWorkspaceAsync(): Promise<void> {
+    const lastSavedId = await this.storageService.getLastSavedWorkspaceId();
+    if (!lastSavedId) {
+      this.status$.next('No saved workspace found');
+      return;
+    }
+
+    this.status$.next('Restoring last saved workspace...');
+
+    const workspaces = await this.storageService.getWorkspaces();
+    const workspace = workspaces.find((w) => w.workspaceId === lastSavedId);
+
+    if (!workspace) {
+      this.status$.next('Last saved workspace not found');
+      return;
+    }
+
+    const workspacePlatform = getCurrentSync();
+    try {
+      const result = await workspacePlatform.applyWorkspace(workspace, {
+        skipPrompt: true,
+        applySnapshotOptions: {
+          closeExistingWindows: true,
+        },
+      });
+      if (result) {
+        this.status$.next(`Restored workspace: ${workspace.title}`);
+      } else {
+        this.status$.next('Failed to restore workspace');
+      }
+    } catch (error) {
+      logger.error('Error restoring workspace', error);
+      this.status$.next('Error restoring workspace');
+    }
   }
 
   private awaitPlatformReady() {

@@ -9,20 +9,21 @@ import type {
 } from '@openfin/workspace-platform';
 import { ColorSchemeOptionType } from '@openfin/workspace-platform';
 import { Logger } from '@macro/logger';
+import { WorkspaceStorageService } from './workspace-storage.service';
 
 /**
  * Workspace override service for customizing workspace platform behavior
  * Framework-agnostic implementation
- * 
+ *
  * This service provides a comprehensive override callback that can customize
  * various aspects of the OpenFin Workspace Platform behavior.
- * 
+ *
  * Available override methods (currently implemented):
  * - handleAnalytics: Analytics event handling
  * - getSavedWorkspaces/getSavedWorkspacesMetadata/getSavedWorkspace: Workspace storage
  * - createSavedWorkspace/updateSavedWorkspace/deleteSavedWorkspace: Workspace CRUD
  * - applyWorkspace: Workspace application
- * 
+ *
  * Additional methods that can be overridden (not yet implemented):
  * - Page Management:
  *   - getSavedPages(query?: string): Promise<Page[]>
@@ -34,40 +35,43 @@ import { Logger } from '@macro/logger';
  *   - copyPage(payload: CopyPagePayload): Promise<Page>
  *   - setActivePage(payload: SetActivePageForWindowPayload): Promise<void>
  *   - addDefaultPage(payload: AddDefaultPagePayload): Promise<void>
- * 
+ *
  * - Context Menus:
  *   - openGlobalContextMenu(req: OpenGlobalContextMenuPayload, callerIdentity: OpenFin.Identity): Promise<void>
  *   - openViewTabContextMenu(req: OpenViewTabContextMenuPayload, callerIdentity: OpenFin.Identity): Promise<void>
  *   - openPageTabContextMenu(req: OpenPageTabContextMenuPayload, callerIdentity: OpenFin.Identity): Promise<void>
  *   - openSaveButtonContextMenu(req: OpenSaveButtonContextMenuPayload, callerIdentity: OpenFin.Identity): Promise<void>
- * 
+ *
  * - Theme Management:
  *   - getSelectedScheme(): ColorSchemeOptionType | null | undefined
  *   - setSelectedScheme(schemeType: ColorSchemeOptionType): Promise<void>
- * 
+ *
  * - View Management:
  *   - createView(payload: BrowserCreateViewPayload, callerIdentity: OpenFin.Identity): Promise<OpenFin.View>
- * 
+ *
  * - Close/Unload Handling:
  *   - shouldPageClose(payload: ShouldPageClosePayload): Promise<ShouldPageCloseResult>
  *   - handlePagesAndWindowClose(payload: HandlePagesAndWindowClosePayload): Promise<HandlePagesAndWindowCloseResult>
  *   - getUserDecisionForBeforeUnload(payload: ViewsPreventingUnloadPayload): Promise<OpenFin.BeforeUnloadUserDecision>
  *   - handleSaveModalOnPageClose(payload: HandleSaveModalOnPageClosePayload): Promise<SaveModalOnPageCloseResult>
- * 
+ *
  * - Dock Provider:
  *   - getDockProviderConfig(id: string): Promise<DockProviderConfigWithIdentity | undefined>
  *   - saveDockProviderConfig(config: DockProviderConfigWithIdentity): Promise<void>
- * 
+ *
  * - Localization:
  *   - getLanguage(): Promise<Locale>
  *   - setLanguage(locale: Locale): Promise<void>
  */
 export class WorkspaceOverrideService {
   private readonly logger = Logger.getLogger('WorkspaceOverrideService');
-  private readonly STORAGE_KEY = 'workspace-platform-workspaces';
-  private readonly LAST_SAVED_KEY = 'workspace-platform-last-saved';
+  private readonly storageService: WorkspaceStorageService;
 
   private onThemeChanged?: (scheme: ColorSchemeOptionType) => Promise<void>;
+
+  constructor(storageService: WorkspaceStorageService) {
+    this.storageService = storageService;
+  }
 
   /**
    * Register a callback that fires after the platform theme changes.
@@ -84,36 +88,8 @@ export class WorkspaceOverrideService {
    */
   createOverrideCallback(): WorkspacePlatformOverrideCallback {
     const logger = this.logger;
-    const STORAGE_KEY = this.STORAGE_KEY;
-    const LAST_SAVED_KEY = this.LAST_SAVED_KEY;
+    const storageService = this.storageService;
     const getOnThemeChanged = () => this.onThemeChanged;
-
-    // Helper functions for localStorage operations
-    const getWorkspaces = (): Workspace[] => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        return stored ? JSON.parse(stored) : [];
-      } catch (error) {
-        logger.error('Failed to get workspaces from localStorage', { error });
-        return [];
-      }
-    };
-
-    const saveWorkspaces = (workspaces: Workspace[]): void => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(workspaces));
-      } catch (error) {
-        logger.error('Failed to save workspaces to localStorage', { error });
-      }
-    };
-
-    const getLastSavedWorkspaceId = (): string | null => {
-      return localStorage.getItem(LAST_SAVED_KEY);
-    };
-
-    const setLastSavedWorkspaceId = (workspaceId: string): void => {
-      localStorage.setItem(LAST_SAVED_KEY, workspaceId);
-    };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return async (WorkspacePlatformProvider: any) => {
@@ -128,12 +104,12 @@ export class WorkspaceOverrideService {
         }
 
         /**
-         * Get all saved workspaces from localStorage.
+         * Get all saved workspaces from storage.
          * @param query Optional query string to filter workspaces by title
          */
         async getSavedWorkspaces(query?: string): Promise<Workspace[]> {
           logger.debug('Getting saved workspaces', { query });
-          const workspaces = getWorkspaces();
+          const workspaces = await storageService.getWorkspaces();
           if (!query) {
             return workspaces;
           }
@@ -144,7 +120,7 @@ export class WorkspaceOverrideService {
         }
 
         /**
-         * Get metadata for all saved workspaces from localStorage.
+         * Get metadata for all saved workspaces from storage.
          * @param query Optional query string to filter workspaces by title
          */
         async getSavedWorkspacesMetadata(query?: string): Promise<Pick<Workspace, 'workspaceId' | 'title'>[]> {
@@ -157,12 +133,12 @@ export class WorkspaceOverrideService {
         }
 
         /**
-         * Get a single saved workspace by ID from localStorage.
+         * Get a single saved workspace by ID from storage.
          * @param id The workspace ID
          */
         async getSavedWorkspace(id: string): Promise<Workspace | undefined> {
           logger.debug('Getting saved workspace', { workspaceId: id });
-          const workspaces = getWorkspaces();
+          const workspaces = await storageService.getWorkspaces();
           const workspace = workspaces.find((w) => w.workspaceId === id);
           if (workspace) {
             logger.info('Found saved workspace', { workspaceId: id, title: workspace.title });
@@ -173,12 +149,12 @@ export class WorkspaceOverrideService {
         }
 
         /**
-         * Create a new workspace in localStorage.
+         * Create a new workspace in storage.
          * @param req The create workspace request
          */
         async createSavedWorkspace(req: CreateSavedWorkspaceRequest): Promise<void> {
           logger.info('Creating saved workspace', { workspaceId: req.workspace.workspaceId, title: req.workspace.title });
-          const workspaces = getWorkspaces();
+          const workspaces = await storageService.getWorkspaces();
           const existingIndex = workspaces.findIndex((w) => w.workspaceId === req.workspace.workspaceId);
           if (existingIndex >= 0) {
             logger.warn('Workspace already exists, updating instead', { workspaceId: req.workspace.workspaceId });
@@ -186,45 +162,45 @@ export class WorkspaceOverrideService {
           } else {
             workspaces.push(req.workspace);
           }
-          saveWorkspaces(workspaces);
-          setLastSavedWorkspaceId(req.workspace.workspaceId);
+          await storageService.saveWorkspaces(workspaces);
+          await storageService.setLastSavedWorkspaceId(req.workspace.workspaceId);
           logger.info('Workspace created successfully', { workspaceId: req.workspace.workspaceId });
         }
 
         /**
-         * Update an existing workspace in localStorage.
+         * Update an existing workspace in storage.
          * @param req The update workspace request
          */
         async updateSavedWorkspace(req: UpdateSavedWorkspaceRequest): Promise<void> {
           logger.info('Updating saved workspace', { workspaceId: req.workspaceId, title: req.workspace.title });
-          const workspaces = getWorkspaces();
+          const workspaces = await storageService.getWorkspaces();
           const index = workspaces.findIndex((w) => w.workspaceId === req.workspaceId);
           if (index >= 0) {
             workspaces[index] = req.workspace;
-            saveWorkspaces(workspaces);
-            setLastSavedWorkspaceId(req.workspaceId);
+            await storageService.saveWorkspaces(workspaces);
+            await storageService.setLastSavedWorkspaceId(req.workspaceId);
             logger.info('Workspace updated successfully', { workspaceId: req.workspaceId });
           } else {
             logger.warn('Workspace not found for update, creating new one', { workspaceId: req.workspaceId });
             workspaces.push(req.workspace);
-            saveWorkspaces(workspaces);
-            setLastSavedWorkspaceId(req.workspaceId);
+            await storageService.saveWorkspaces(workspaces);
+            await storageService.setLastSavedWorkspaceId(req.workspaceId);
           }
         }
 
         /**
-         * Delete a workspace from localStorage.
+         * Delete a workspace from storage.
          * @param id The workspace ID to delete
          */
         async deleteSavedWorkspace(id: string): Promise<void> {
           logger.info('Deleting saved workspace', { workspaceId: id });
-          const workspaces = getWorkspaces();
+          const workspaces = await storageService.getWorkspaces();
           const filtered = workspaces.filter((w) => w.workspaceId !== id);
           if (filtered.length < workspaces.length) {
-            saveWorkspaces(filtered);
-            const lastSavedId = getLastSavedWorkspaceId();
+            await storageService.saveWorkspaces(filtered);
+            const lastSavedId = await storageService.getLastSavedWorkspaceId();
             if (lastSavedId === id) {
-              localStorage.removeItem(LAST_SAVED_KEY);
+              await storageService.removeLastSavedWorkspaceId();
               logger.info('Removed last saved workspace reference', { workspaceId: id });
             }
             logger.info('Workspace deleted successfully', { workspaceId: id });
@@ -245,7 +221,7 @@ export class WorkspaceOverrideService {
           });
 
           // Show last saved workspace info
-          const lastSavedId = getLastSavedWorkspaceId();
+          const lastSavedId = await storageService.getLastSavedWorkspaceId();
           if (lastSavedId) {
             const lastSaved = await this.getSavedWorkspace(lastSavedId);
             if (lastSaved) {

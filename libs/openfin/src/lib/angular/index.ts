@@ -10,6 +10,7 @@ import { DockService as BaseDockService } from '../dock.service';
 import { Dock3Service as BaseDock3Service } from '../dock3.service';
 import { HomeService as BaseHomeService } from '../home.service';
 import { NotificationsService as BaseNotificationsService } from '../notifications.service';
+import { WorkspaceStorageService as BaseWorkspaceStorageService } from '../workspace-storage.service';
 import { WorkspaceOverrideService as BaseWorkspaceOverrideService } from '../workspace-override.service';
 import { PlatformService as BasePlatformService } from '../platform.service';
 import { WorkspaceService as BaseWorkspaceService } from '../workspace.service';
@@ -84,9 +85,13 @@ export class NotificationsService extends BaseNotificationsService {
 }
 
 @Injectable({ providedIn: 'root' })
+export class WorkspaceStorageService extends BaseWorkspaceStorageService {}
+
+@Injectable({ providedIn: 'root' })
 export class WorkspaceOverrideService extends BaseWorkspaceOverrideService {
   constructor() {
-    super();
+    const storageService = inject(WorkspaceStorageService);
+    super(storageService);
   }
 }
 
@@ -107,7 +112,8 @@ export class WorkspaceService extends BaseWorkspaceService {
     const homeService = inject(HomeService);
     const storeService = inject(StoreService);
     const settingsService = inject(SettingsService);
-    super(platformService, dockService, dock3Service, homeService, storeService, settingsService);
+    const storageService = inject(WorkspaceStorageService);
+    super(platformService, dockService, dock3Service, homeService, storeService, settingsService, storageService);
   }
 }
 
