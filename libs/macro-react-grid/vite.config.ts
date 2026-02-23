@@ -17,10 +17,14 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'jsdom',
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    reporters: ['default'],
+    reporters: [
+      'default',
+      ['junit', { outputFile: '../../reports/macro-react-grid-junit.xml' }],
+    ],
     coverage: {
       reportsDirectory: '../../coverage/libs/macro-react-grid',
       provider: 'v8' as const,
+      reporter: ['text-summary', 'lcov'],
     },
   },
 }));

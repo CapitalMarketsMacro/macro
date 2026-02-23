@@ -45,10 +45,14 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    reporters: ['default'],
+    reporters: [
+      'default',
+      ['junit', { outputFile: '../../reports/macro-react-junit.xml' }],
+    ],
     coverage: {
       reportsDirectory: '../../coverage/apps/macro-react',
       provider: 'v8' as const,
+      reporter: ['text-summary', 'lcov'],
     },
   },
 }));
