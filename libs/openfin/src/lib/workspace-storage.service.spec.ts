@@ -1,6 +1,18 @@
 import { WorkspaceStorageService } from './workspace-storage.service';
 import type { Workspace } from '@openfin/workspace-platform';
 
+// Mock @macro/logger
+jest.mock('@macro/logger', () => ({
+  Logger: {
+    getLogger: () => ({
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    }),
+  },
+}));
+
 const STORAGE_KEY = 'workspace-platform-workspaces';
 const LAST_SAVED_KEY = 'workspace-platform-last-saved';
 
@@ -71,6 +83,17 @@ describe('WorkspaceStorageService', () => {
       });
       // Should not throw
       await expect(service.saveWorkspaces([])).resolves.toBeUndefined();
+    });
+
+    it('should overwrite existing workspaces', async () => {
+      const ws1 = [makeWorkspace('1', 'WS1')];
+      const ws2 = [makeWorkspace('2', 'WS2'), makeWorkspace('3', 'WS3')];
+
+      await service.saveWorkspaces(ws1);
+      await service.saveWorkspaces(ws2);
+
+      const result = await service.getWorkspaces();
+      expect(result).toEqual(ws2);
     });
   });
 

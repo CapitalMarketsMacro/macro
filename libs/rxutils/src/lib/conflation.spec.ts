@@ -126,5 +126,59 @@ describe('ConflationSubject', () => {
 
     expect(subscription.closed).toBe(true);
   });
+
+  it('should propagate source errors through conflated$', (done) => {
+    const source$ = new Subject<{ key: string; value: number }>();
+    const conflated$ = conflateByKey(source$, 50);
+
+    conflated$.subscribe({
+      error: (err) => {
+        expect(err.message).toBe('test error');
+        done();
+      },
+    });
+
+    source$.error(new Error('test error'));
+  });
+
+  it('should handle subscribeToConflated with observer object', (done) => {
+    const conflatedSubject = new ConflationSubject<string, number>(50);
+    const results: Array<{ key: string; value: number }> = [];
+
+    conflatedSubject.subscribeToConflated({
+      next: (value) => results.push(value),
+    });
+
+    conflatedSubject.next({ key: 'K1', value: 10 });
+
+    setTimeout(() => {
+      expect(results.length).toBeGreaterThan(0);
+      conflatedSubject.complete();
+      done();
+    }, 100);
+  });
+
+  it('should handle subscribeToConflated with no args', () => {
+    const conflatedSubject = new ConflationSubject<string, number>(100);
+    const sub = conflatedSubject.subscribeToConflated();
+    expect(sub).toBeDefined();
+    expect(sub.closed).toBe(false);
+    conflatedSubject.complete();
+  });
+
+  it('should clean up pipeToSubject subscription via unsubscribeFromConflated', (done) => {
+    const conflatedSubject = new ConflationSubject<string, number>(50);
+    const target = new Subject<{ key: string; value: number }>();
+
+    const pipeSub = conflatedSubject.pipeToSubject(target);
+    expect(pipeSub.closed).toBe(false);
+
+    conflatedSubject.unsubscribeFromConflated();
+    expect(pipeSub.closed).toBe(true);
+
+    conflatedSubject.complete();
+    target.complete();
+    done();
+  });
 });
 
