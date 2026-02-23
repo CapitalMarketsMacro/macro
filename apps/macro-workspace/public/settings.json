@@ -2,7 +2,7 @@
   "platformSettings": {
     "id": "macro-workspace-platform",
     "title": "Macro Workspace Starter",
-    "icon": "http://localhost:4202/favicon.ico"
+    "icon": "http://localhost:4202/icons/platform.svg"
   },
   "customSettings": {
     "apps": [
@@ -15,7 +15,7 @@
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4202/favicon.ico"
+            "src": "http://localhost:4202/icons/view-broadcaster.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -34,7 +34,7 @@
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4202/favicon.ico"
+            "src": "http://localhost:4202/icons/view-listener.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -53,7 +53,7 @@
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4200/favicon.ico"
+            "src": "http://localhost:4202/icons/angular-app.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -72,7 +72,7 @@
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4200/favicon.ico"
+            "src": "http://localhost:4202/icons/fx-market-data.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -91,7 +91,7 @@
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4200/favicon.ico"
+            "src": "http://localhost:4202/icons/treasury-microstructure.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -110,7 +110,7 @@
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4201/favicon.ico"
+            "src": "http://localhost:4202/icons/react-app.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -129,7 +129,7 @@
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4201/favicon.ico"
+            "src": "http://localhost:4202/icons/treasury-market-data.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -148,7 +148,7 @@
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4201/favicon.ico"
+            "src": "http://localhost:4202/icons/commodities-dashboard.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -165,42 +165,42 @@
           "type": "item",
           "id": "fav-macro-angular",
           "label": "Macro Angular",
-          "icon": "http://localhost:4200/favicon.ico",
+          "icon": "http://localhost:4202/icons/angular-app.svg",
           "appId": "macro-angular-view"
         },
         {
           "type": "item",
           "id": "fav-macro-react",
           "label": "Macro React",
-          "icon": "http://localhost:4201/favicon.ico",
+          "icon": "http://localhost:4202/icons/react-app.svg",
           "appId": "macro-react-view"
         },
         {
           "type": "item",
           "id": "fav-fx-market-data",
           "label": "FX Market Data",
-          "icon": "http://localhost:4200/favicon.ico",
+          "icon": "http://localhost:4202/icons/fx-market-data.svg",
           "appId": "macro-angular-fx-market-data"
         },
         {
           "type": "item",
           "id": "fav-treasury-market-data",
           "label": "Treasury Market Data",
-          "icon": "http://localhost:4201/favicon.ico",
+          "icon": "http://localhost:4202/icons/treasury-market-data.svg",
           "appId": "macro-react-treasury-market-data"
         },
         {
           "type": "item",
           "id": "fav-commodities-dashboard",
           "label": "Commodities Dashboard",
-          "icon": "http://localhost:4201/favicon.ico",
+          "icon": "http://localhost:4202/icons/commodities-dashboard.svg",
           "appId": "macro-react-commodities-dashboard"
         },
         {
           "type": "item",
           "id": "fav-treasury-microstructure",
           "label": "Treasury Microstructure",
-          "icon": "http://localhost:4200/favicon.ico",
+          "icon": "http://localhost:4202/icons/treasury-microstructure.svg",
           "appId": "macro-angular-treasury-microstructure"
         }
       ],
@@ -214,21 +214,21 @@
               "type": "item",
               "id": "cm-macro-angular",
               "label": "Macro Angular App",
-              "icon": "http://localhost:4200/favicon.ico",
+              "icon": "http://localhost:4202/icons/angular-app.svg",
               "appId": "macro-angular-view"
             },
             {
               "type": "item",
               "id": "cm-fx-market-data",
               "label": "FX Market Data",
-              "icon": "http://localhost:4200/favicon.ico",
+              "icon": "http://localhost:4202/icons/fx-market-data.svg",
               "appId": "macro-angular-fx-market-data"
             },
             {
               "type": "item",
               "id": "cm-treasury-microstructure",
               "label": "Treasury Microstructure",
-              "icon": "http://localhost:4200/favicon.ico",
+              "icon": "http://localhost:4202/icons/treasury-microstructure.svg",
               "appId": "macro-angular-treasury-microstructure"
             }
           ]
@@ -242,21 +242,21 @@
               "type": "item",
               "id": "cm-macro-react",
               "label": "Macro React App",
-              "icon": "http://localhost:4201/favicon.ico",
+              "icon": "http://localhost:4202/icons/react-app.svg",
               "appId": "macro-react-view"
             },
             {
               "type": "item",
               "id": "cm-treasury-market-data",
               "label": "Treasury Market Data",
-              "icon": "http://localhost:4201/favicon.ico",
+              "icon": "http://localhost:4202/icons/treasury-market-data.svg",
               "appId": "macro-react-treasury-market-data"
             },
             {
               "type": "item",
               "id": "cm-commodities-dashboard",
               "label": "Commodities Dashboard",
-              "icon": "http://localhost:4201/favicon.ico",
+              "icon": "http://localhost:4202/icons/commodities-dashboard.svg",
               "appId": "macro-react-commodities-dashboard"
             }
           ]
@@ -270,14 +270,14 @@
               "type": "item",
               "id": "cm-view1",
               "label": "View 1 (FDC3 Broadcaster)",
-              "icon": "http://localhost:4202/favicon.ico",
+              "icon": "http://localhost:4202/icons/view-broadcaster.svg",
               "appId": "macro-workspace-view1"
             },
             {
               "type": "item",
               "id": "cm-view2",
               "label": "View 2 (FDC3 Listener)",
-              "icon": "http://localhost:4202/favicon.ico",
+              "icon": "http://localhost:4202/icons/view-listener.svg",
               "appId": "macro-workspace-view2"
             }
           ]
@@ -286,4 +286,3 @@
     }
   }
 }
-

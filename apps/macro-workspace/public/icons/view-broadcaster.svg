@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#10141e"/>
+  <!-- Cell tower / broadcast -->
+  <g stroke="#06b6d4" fill="none" stroke-width="2" stroke-linecap="round">
+    <!-- Tower body -->
+    <line x1="32" y1="24" x2="32" y2="52"/>
+    <line x1="26" y1="52" x2="38" y2="52"/>
+    <line x1="28" y1="38" x2="36" y2="38"/>
+    <!-- Broadcast waves -->
+    <path d="M24,20 A10,10 0 0,1 40,20" stroke-width="2"/>
+    <path d="M20,16 A15,15 0 0,1 44,16" stroke-width="2" opacity="0.6"/>
+    <path d="M16,12 A20,20 0 0,1 48,12" stroke-width="2" opacity="0.3"/>
+  </g>
+  <!-- Antenna dot -->
+  <circle cx="32" cy="24" r="3" fill="#06b6d4"/>
+</svg>
