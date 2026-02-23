@@ -1,5 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#10141e"/>
   <!-- Spread/microstructure: two interleaving wave lines (bid/ask spread) -->
   <path d="M10,28 Q18,18 26,28 Q34,38 42,28 Q50,18 56,28"
     fill="none" stroke="#00d4aa" stroke-width="2.5" stroke-linecap="round"/>

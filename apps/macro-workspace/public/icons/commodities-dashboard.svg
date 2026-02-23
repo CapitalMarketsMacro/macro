@@ -1,5 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#10141e"/>
   <!-- Bar chart with varying heights -->
   <g fill="#f59e0b">
     <rect x="12" y="32" width="7" height="18" rx="1.5"/>

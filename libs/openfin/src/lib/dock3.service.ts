@@ -96,6 +96,12 @@ export class Dock3Service {
       config,
       override: (Base) =>
         class extends Base {
+          // Always use fresh config from settings.json instead of stale IndexedDB cache.
+          // This ensures icon URL changes and config updates take effect immediately.
+          override async loadConfig(): Promise<Dock3Config> {
+            return config;
+          }
+
           override async launchEntry(payload: LaunchDockEntryPayload) {
             const { entry } = payload;
             if (entry.type !== 'item') return;
