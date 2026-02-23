@@ -80,7 +80,7 @@ export function App() {
   );
 }
 
-function AppContent() {
+export function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isDark, setIsDark] = useState(getInitialIsDark);

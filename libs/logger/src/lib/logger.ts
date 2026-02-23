@@ -172,8 +172,8 @@ const getBaseLoggerOptions = (level?: number): pino.LoggerOptions => {
     return {
       level: levelString,
       formatters: {
-        level: (label: string) => {
-          return { level: label.toUpperCase() };
+        level: (_label: string, number: number) => {
+          return { level: number };
         },
       },
       timestamp: pino.stdTimeFunctions.isoTime,

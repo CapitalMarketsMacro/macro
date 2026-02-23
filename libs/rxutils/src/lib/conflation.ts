@@ -57,8 +57,12 @@ export function conflateByKey<TKey = string, TValue = unknown>(
     const buffer2 = new Map<TKey, TValue>();
     let currentBuffer = buffer1;
 
-    const sourceSub = source$.subscribe(({ key, value }) => {
-      currentBuffer.set(key, value);
+    const sourceSub = source$.subscribe({
+      next: ({ key, value }) => {
+        currentBuffer.set(key, value);
+      },
+      error: (err) => observer.error(err),
+      complete: () => observer.complete(),
     });
 
     const timerSub = interval(intervalMs).subscribe(() => {
@@ -188,7 +192,9 @@ export class ConflationSubject<TKey = string, TValue = unknown> extends Subject<
    * Unsubscribe and clean up
    */
   override unsubscribe(): void {
-    this.unsubscribeFromConflated();
+    if (!this.isStopped) {
+      this.complete();
+    }
     super.unsubscribe();
   }
 }

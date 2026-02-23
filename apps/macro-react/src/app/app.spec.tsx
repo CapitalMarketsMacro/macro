@@ -1,26 +1,41 @@
 import { render } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 
-import App from './app';
+import { AppContent } from './app';
+
+beforeAll(() => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+});
 
 describe('App', () => {
   it('should render successfully', () => {
     const { baseElement } = render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <MemoryRouter initialEntries={['/treasury-market-data']}>
+        <AppContent />
+      </MemoryRouter>
     );
     expect(baseElement).toBeTruthy();
   });
 
-  it('should have a greeting as the title', () => {
-    const { getAllByText } = render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+  it('should render navigation menu', () => {
+    const { getByText } = render(
+      <MemoryRouter initialEntries={['/treasury-market-data']}>
+        <AppContent />
+      </MemoryRouter>
     );
-    expect(
-      getAllByText(new RegExp('Welcome react-app', 'gi')).length > 0
-    ).toBeTruthy();
+    expect(getByText('Treasury Market Data')).toBeTruthy();
+    expect(getByText('Commodities Dashboard')).toBeTruthy();
   });
 });

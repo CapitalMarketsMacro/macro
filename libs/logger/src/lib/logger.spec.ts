@@ -1,14 +1,17 @@
 import { Logger } from './logger';
 
 describe('Logger', () => {
-  let consoleSpy: jest.SpyInstance;
+  let stdoutSpy: jest.SpyInstance;
+  let stderrSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    consoleSpy = jest.spyOn(console, 'info').mockImplementation();
+    stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
   });
 
   afterEach(() => {
-    consoleSpy.mockRestore();
+    stdoutSpy.mockRestore();
+    stderrSpy.mockRestore();
   });
 
   it('should create logger with context', () => {
@@ -31,33 +34,26 @@ describe('Logger', () => {
   });
 
   it('should log info messages with context', () => {
-    const logger = Logger.getLogger('TestContext');
+    const logger = Logger.getLogger('InfoCtx');
     logger.info('Test message');
-    // Pino will format the message, so we just check that info was called
-    expect(consoleSpy).toHaveBeenCalled();
+    expect(stdoutSpy).toHaveBeenCalled();
   });
 
   it('should log debug messages', () => {
-    const debugSpy = jest.spyOn(console, 'debug').mockImplementation();
-    const logger = Logger.getLogger('TestContext');
+    const logger = Logger.getLogger('DebugCtx');
     logger.debug('Debug message');
-    expect(debugSpy).toHaveBeenCalled();
-    debugSpy.mockRestore();
+    expect(stdoutSpy).toHaveBeenCalled();
   });
 
   it('should log error messages', () => {
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation();
-    const logger = Logger.getLogger('TestContext');
+    const logger = Logger.getLogger('ErrorCtx');
     logger.error('Error message');
-    expect(errorSpy).toHaveBeenCalled();
-    errorSpy.mockRestore();
+    expect(stderrSpy).toHaveBeenCalled();
   });
 
   it('should log warn messages', () => {
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
-    const logger = Logger.getLogger('TestContext');
+    const logger = Logger.getLogger('WarnCtx');
     logger.warn('Warning message');
-    expect(warnSpy).toHaveBeenCalled();
-    warnSpy.mockRestore();
+    expect(stderrSpy).toHaveBeenCalled();
   });
 });
