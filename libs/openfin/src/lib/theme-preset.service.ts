@@ -19,6 +19,8 @@ const PRESETS: ThemePresetInfo[] = [
   { id: 'default', label: 'Default', file: 'default-theme.json' },
   { id: 'carbon-graphite', label: 'Carbon Graphite', file: 'carbon-graphite.json' },
   { id: 'midnight-trader', label: 'Midnight Trader', file: 'midnight-trader.json' },
+  { id: 'executive-blue', label: 'Executive Blue', file: 'executive-blue-theme.json' },
+  { id: 'stagecoach-red', label: 'Stagecoach Red', file: 'stagecoach-red-theme.json' },
 ];
 
 /**
