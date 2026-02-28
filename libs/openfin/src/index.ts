@@ -22,6 +22,8 @@ export { WorkspaceService as BaseWorkspaceService } from './lib/workspace.servic
 export { ThemeService as BaseThemeService } from './lib/theme.service';
 export { ViewStateService as BaseViewStateService } from './lib/view-state.service';
 export type { ViewStateData } from './lib/view-state.service';
+export { ThemePresetService as BaseThemePresetService } from './lib/theme-preset.service';
+export type { ThemePresetPalettes, ThemePresetInfo } from './lib/theme-preset.service';
 
 // Angular wrappers (for Angular applications) - these are the default exports
 export * from './lib/angular';

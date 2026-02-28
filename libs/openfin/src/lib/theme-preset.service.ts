@@ -1,0 +1,72 @@
+import { Logger } from '@macro/logger';
+
+const logger = Logger.getLogger('ThemePresetService');
+
+export interface ThemePresetPalettes {
+  light: Record<string, string>;
+  dark: Record<string, string>;
+}
+
+export interface ThemePresetInfo {
+  id: string;
+  label: string;
+  file: string;
+}
+
+const STORAGE_KEY = 'workspace-theme-preset';
+
+const PRESETS: ThemePresetInfo[] = [
+  { id: 'default', label: 'Default', file: 'default-theme.json' },
+  { id: 'carbon-graphite', label: 'Carbon Graphite', file: 'carbon-graphite.json' },
+  { id: 'midnight-trader', label: 'Midnight Trader', file: 'midnight-trader.json' },
+];
+
+/**
+ * Manages workspace theme presets (color palettes for the OpenFin workspace chrome).
+ *
+ * Theme presets are loaded from JSON files in the app's public directory.
+ * The active preset is stored in localStorage and applied at platform init.
+ * Changing the preset requires a platform restart since OpenFin workspace
+ * palettes are set once during init().
+ */
+export class ThemePresetService {
+  getAvailablePresets(): ThemePresetInfo[] {
+    return PRESETS;
+  }
+
+  getActivePresetId(): string {
+    try {
+      return localStorage.getItem(STORAGE_KEY) ?? 'default';
+    } catch {
+      return 'default';
+    }
+  }
+
+  setActivePresetId(id: string): void {
+    try {
+      localStorage.setItem(STORAGE_KEY, id);
+    } catch (error) {
+      logger.error('Failed to save theme preset preference', error);
+    }
+  }
+
+  async loadPreset(id: string): Promise<ThemePresetPalettes> {
+    const preset = PRESETS.find((p) => p.id === id);
+    if (!preset) {
+      logger.warn(`Unknown preset "${id}", falling back to default`);
+      return this.loadPreset('default');
+    }
+    try {
+      const response = await fetch(`/${preset.file}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      logger.error(`Failed to load theme preset "${id}"`, error);
+      throw error;
+    }
+  }
+
+  async loadActivePreset(): Promise<ThemePresetPalettes> {
+    return this.loadPreset(this.getActivePresetId());
+  }
+}

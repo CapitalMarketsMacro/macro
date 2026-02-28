@@ -7,6 +7,7 @@ import { Dock3Service } from './dock3.service';
 import { HomeService } from './home.service';
 import { StoreService } from './store.service';
 import { WorkspaceStorageService } from './workspace-storage.service';
+import { ThemePresetService } from './theme-preset.service';
 import { getCurrentSync } from '@openfin/workspace-platform';
 import { Logger } from '@macro/logger';
 
@@ -24,6 +25,7 @@ export class WorkspaceService {
   private readonly storeService: StoreService;
   private readonly settingsService: SettingsService;
   private readonly storageService: WorkspaceStorageService;
+  private readonly themePresetService: ThemePresetService;
 
   private readonly status$ = new BehaviorSubject<string>('');
 
@@ -34,7 +36,8 @@ export class WorkspaceService {
     homeService: HomeService,
     storeService: StoreService,
     settingsService: SettingsService,
-    storageService: WorkspaceStorageService
+    storageService: WorkspaceStorageService,
+    themePresetService: ThemePresetService,
   ) {
     this.platformService = platformService;
     this.dockService = dockService;
@@ -43,6 +46,7 @@ export class WorkspaceService {
     this.storeService = storeService;
     this.settingsService = settingsService;
     this.storageService = storageService;
+    this.themePresetService = themePresetService;
   }
 
   init() {
@@ -53,9 +57,12 @@ export class WorkspaceService {
 
     this.status$.next('Workspace platform initializing...');
 
-    return from(this.settingsService.getManifestSettings()).pipe(
-      concatMap((settings) =>
-        this.platformService.initializeWorkspacePlatform(settings.platformSettings).pipe(
+    return forkJoin([
+      from(this.settingsService.getManifestSettings()),
+      from(this.themePresetService.loadActivePreset()),
+    ]).pipe(
+      concatMap(([settings, themePalettes]) =>
+        this.platformService.initializeWorkspacePlatform(settings.platformSettings, themePalettes).pipe(
           concatMap(() => this.awaitPlatformReady()),
           concatMap(() => this.registerComponents(settings)),
           concatMap(() => this.showStartupComponents()),

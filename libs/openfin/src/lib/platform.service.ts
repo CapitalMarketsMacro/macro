@@ -12,6 +12,7 @@ import type { App } from '@openfin/workspace';
 import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
 import { WorkspaceOverrideService } from './workspace-override.service';
+import type { ThemePresetPalettes } from './theme-preset.service';
 import { themeConfig } from '@macro/macro-design';
 import { Logger } from '@macro/logger';
 
@@ -115,7 +116,14 @@ export class PlatformService {
     }
   }
 
-  initializeWorkspacePlatform(platformSettings: PlatformSettings): Observable<void> {
+  initializeWorkspacePlatform(
+    platformSettings: PlatformSettings,
+    themePalettes?: ThemePresetPalettes,
+  ): Observable<void> {
+    // JSON theme presets are loaded dynamically; fall back to compiled themeConfig
+    const dark = themePalettes?.dark ?? themeConfig.dark;
+    const light = themePalettes?.light ?? themeConfig.light;
+
     return from(
       init({
         browser: {
@@ -136,8 +144,9 @@ export class PlatformService {
             label: 'Default',
             default: 'dark',
             palettes: {
-              dark: themeConfig.dark,
-              light: themeConfig.light,
+              // Cast: JSON palettes include all required CustomPaletteSet properties
+              dark: dark as typeof themeConfig.dark,
+              light: light as typeof themeConfig.light,
             },
           },
         ],
