@@ -113,21 +113,24 @@ export class ProviderComponent implements OnInit, OnDestroy {
   }
 
   sendTestNotification(level: 'info' | 'warning' | 'critical'): void {
-    const configs: Record<string, { title: string; body: string; indicator: string }> = {
+    const configs: Record<string, { title: string; body: string; indicator: string; indicatorText: string }> = {
       info: {
         title: 'Info Notification',
         body: 'This is an informational notification from the Macro workspace.',
         indicator: 'blue',
+        indicatorText: 'Workspace',
       },
       warning: {
         title: 'Warning Notification',
         body: 'This is a warning notification. Please review your positions.',
         indicator: 'yellow',
+        indicatorText: 'Workspace',
       },
       critical: {
         title: 'Critical Alert',
         body: 'Critical market event detected. Immediate attention required.',
         indicator: 'red',
+        indicatorText: 'Workspace',
       },
     };
 
@@ -136,7 +139,8 @@ export class ProviderComponent implements OnInit, OnDestroy {
       title: config.title,
       body: config.body,
       icon: 'logo.svg',
-      indicator: { color: config.indicator } as any,
+      indicator: { color: config.indicator, text: config.indicatorText } as any,
+      stream: { id: 'macro-workspace', displayName: 'Macro Workspace', appId: 'macro-workspace' },
       buttons: [
         { title: 'Dismiss', type: 'button', cta: false, onClick: { task: 'dismiss' } } as any,
       ],

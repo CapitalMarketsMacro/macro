@@ -83,6 +83,8 @@ export class View1Component implements OnInit, OnDestroy {
       title: 'Simple Notification',
       body: 'This is a simple notification',
       toast: 'transient',
+      indicator: { color: 'blue', text: 'Angular' } as any,
+      stream: { id: 'macro-workspace', displayName: 'Macro Workspace', appId: 'macro-workspace' },
       buttons: [
         {
           title: 'Click me',

@@ -184,7 +184,8 @@ export function TreasuryMarketDataComponent() {
       title: 'Treasury Market Data',
       body: '11 securities streaming',
       icon: 'logo.svg',
-      indicator: { color: 'blue' },
+      indicator: { color: 'blue', text: 'React' },
+      stream: { id: 'macro-react', displayName: 'Macro React', appId: 'macro-react' },
     } as any);
 
     // Generate initial Treasury securities data

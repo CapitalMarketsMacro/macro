@@ -165,6 +165,8 @@ describe('View1Component', () => {
           title: 'Simple Notification',
           body: 'This is a simple notification',
           toast: 'transient',
+          indicator: { color: 'blue', text: 'Angular' },
+          stream: { id: 'macro-workspace', displayName: 'Macro Workspace', appId: 'macro-workspace' },
           buttons: expect.arrayContaining([
             expect.objectContaining({
               title: 'Click me',
