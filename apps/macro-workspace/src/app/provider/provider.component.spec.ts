@@ -18,13 +18,28 @@ const mockThemeService = {
   stopSyncing: jest.fn(),
 };
 
+const mockThemePresetService = {
+  getAvailablePresets: jest.fn().mockReturnValue([]),
+  getActivePresetId: jest.fn().mockReturnValue('default'),
+  setActivePresetId: jest.fn(),
+};
+
+const mockNotificationsService = {
+  create: jest.fn(),
+  register: jest.fn().mockResolvedValue(undefined),
+  deregister: jest.fn().mockResolvedValue(undefined),
+  observeNotificationActions: jest.fn(),
+};
+
 jest.mock('@macro/openfin', () => ({
   WorkspaceService: jest.fn().mockImplementation(() => mockWorkspaceService),
   ThemeService: jest.fn().mockImplementation(() => mockThemeService),
+  ThemePresetService: jest.fn().mockImplementation(() => mockThemePresetService),
+  NotificationsService: jest.fn().mockImplementation(() => mockNotificationsService),
 }));
 
 // Import after mock
-import { WorkspaceService, ThemeService } from '@macro/openfin';
+import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService } from '@macro/openfin';
 
 describe('ProviderComponent', () => {
   beforeEach(async () => {
@@ -36,6 +51,8 @@ describe('ProviderComponent', () => {
         provideZonelessChangeDetection(),
         { provide: WorkspaceService, useValue: mockWorkspaceService },
         { provide: ThemeService, useValue: mockThemeService },
+        { provide: ThemePresetService, useValue: mockThemePresetService },
+        { provide: NotificationsService, useValue: mockNotificationsService },
       ],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();

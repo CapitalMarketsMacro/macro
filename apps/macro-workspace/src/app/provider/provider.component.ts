@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
-import { WorkspaceService, ThemeService, ThemePresetService } from '@macro/openfin';
+import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService } from '@macro/openfin';
 import type { ThemePresetInfo } from '@macro/openfin';
+import type { NotificationOptions } from '@openfin/workspace/notifications';
 
 @Component({
   selector: 'app-provider',
@@ -35,6 +36,16 @@ import type { ThemePresetInfo } from '@macro/openfin';
                 {{ preset.label }}
               </button>
             }
+          </div>
+        </section>
+
+        <section class="col gap10" style="margin-top: 16px">
+          <h2>Notifications</h2>
+          <p class="hint">Send test notifications to the Notification Center.</p>
+          <div class="row gap10">
+            <button class="theme-btn" (click)="sendTestNotification('info')">Info</button>
+            <button class="theme-btn" (click)="sendTestNotification('warning')">Warning</button>
+            <button class="theme-btn" (click)="sendTestNotification('critical')">Critical</button>
           </div>
         </section>
       </main>
@@ -70,6 +81,7 @@ export class ProviderComponent implements OnInit, OnDestroy {
   private readonly workspaceService = inject(WorkspaceService);
   private readonly themeService = inject(ThemeService);
   private readonly themePresetService = inject(ThemePresetService);
+  private readonly notificationsService = inject(NotificationsService);
   private readonly unsubscribe$ = new Subject<void>();
 
   readonly message$ = this.workspaceService.getStatus$();
@@ -98,6 +110,37 @@ export class ProviderComponent implements OnInit, OnDestroy {
     if (typeof fin !== 'undefined') {
       await fin.Application.getCurrentSync().restart();
     }
+  }
+
+  sendTestNotification(level: 'info' | 'warning' | 'critical'): void {
+    const configs: Record<string, { title: string; body: string; indicator: string }> = {
+      info: {
+        title: 'Info Notification',
+        body: 'This is an informational notification from the Macro workspace.',
+        indicator: 'blue',
+      },
+      warning: {
+        title: 'Warning Notification',
+        body: 'This is a warning notification. Please review your positions.',
+        indicator: 'yellow',
+      },
+      critical: {
+        title: 'Critical Alert',
+        body: 'Critical market event detected. Immediate attention required.',
+        indicator: 'red',
+      },
+    };
+
+    const config = configs[level];
+    this.notificationsService.create({
+      title: config.title,
+      body: config.body,
+      icon: 'logo.svg',
+      indicator: { color: config.indicator } as any,
+      buttons: [
+        { title: 'Dismiss', type: 'button', cta: false, onClick: { task: 'dismiss' } } as any,
+      ],
+    } as NotificationOptions);
   }
 
   ngOnDestroy(): void {

@@ -5,41 +5,41 @@ import {
   deregister as deregisterPlatform,
   register as registerPlatform,
 } from '@openfin/workspace/notifications';
-import { Observable, Subject, takeUntil, tap } from 'rxjs';
-import type { SettingsService } from './settings.service';
+import { Observable } from 'rxjs';
+import type { PlatformSettings } from './types';
 import { Logger } from '@macro/logger';
 
 const logger = Logger.getLogger('NotificationsService');
 
 /**
- * Notifications service for managing OpenFin notifications
- * Framework-agnostic implementation
+ * Notifications service for managing OpenFin notifications.
+ * Framework-agnostic implementation.
+ *
+ * Registration is explicit — call `register(platformSettings)` during
+ * workspace startup rather than auto-registering in the constructor.
  */
 export class NotificationsService {
-  private readonly unsubscribe$ = new Subject<void>();
+  private platformId?: string;
 
-  constructor(private readonly settingsService: SettingsService) {
-    this.register();
-  }
+  async register(platformSettings: PlatformSettings): Promise<void> {
+    if (typeof fin === 'undefined') return;
 
-  private register() {
-    if (typeof fin === 'undefined') {
-      return;
-    }
-
-    this.settingsService
-      .getManifestSettings()
-      .then(({ platformSettings }) => {
-        registerPlatform({
-          notificationsPlatformOptions: platformSettings,
-        });
-      })
-      .catch((error) => {
-        logger.error('Error registering notifications platform', error);
+    this.platformId = platformSettings.id;
+    try {
+      await registerPlatform({
+        notificationsPlatformOptions: {
+          id: platformSettings.id,
+          icon: platformSettings.icon,
+          title: platformSettings.title,
+        },
       });
+      logger.info('Notifications platform registered', { id: platformSettings.id });
+    } catch (error) {
+      logger.error('Error registering notifications platform', error);
+    }
   }
 
-  observeNotificationActions() {
+  observeNotificationActions(): Observable<NotificationActionEvent> {
     if (typeof fin === 'undefined') {
       return new Observable<NotificationActionEvent>((observer) => {
         observer.complete();
@@ -51,20 +51,15 @@ export class NotificationsService {
     });
   }
 
-  async deregister(platformId: string) {
-    if (typeof fin === 'undefined') {
-      return;
-    }
+  async deregister(): Promise<void> {
+    if (typeof fin === 'undefined' || !this.platformId) return;
 
-    this.unsubscribe$.next();
-    this.unsubscribe$.complete();
-    await deregisterPlatform(platformId);
+    await deregisterPlatform(this.platformId);
+    logger.info('Notifications platform deregistered', { id: this.platformId });
   }
 
-  create(config: NotificationOptions) {
-    if (typeof fin === 'undefined') {
-      return;
-    }
+  create(config: NotificationOptions): void {
+    if (typeof fin === 'undefined') return;
 
     createNotification(config);
   }

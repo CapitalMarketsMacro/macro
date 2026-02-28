@@ -121,22 +121,10 @@ describe('View1Component', () => {
   });
 
   describe('ngOnDestroy', () => {
-    it('should not call deregister when fin is undefined', () => {
+    it('should not call deregister on view destroy (deregistration is handled by workspace)', () => {
       const fixture = TestBed.createComponent(View1Component);
       fixture.componentInstance.ngOnDestroy();
       expect(mockNotificationsService.deregister).not.toHaveBeenCalled();
-    });
-
-    it('should call deregister when fin is defined', () => {
-      (globalThis as any).fin = {
-        me: { identity: { uuid: 'test-uuid' } },
-      };
-
-      const fixture = TestBed.createComponent(View1Component);
-      fixture.componentInstance.ngOnDestroy();
-      expect(mockNotificationsService.deregister).toHaveBeenCalledWith(
-        'test-uuid'
-      );
     });
 
     it('should complete the unsubscribe subject on destroy', () => {

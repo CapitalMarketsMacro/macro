@@ -68,9 +68,6 @@ export class View1Component implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.hasFin()) {
-      this.notificationsService.deregister(fin.me.identity.uuid);
-    }
     this.unsubscribe$.next();
     this.unsubscribe$.complete();
   }

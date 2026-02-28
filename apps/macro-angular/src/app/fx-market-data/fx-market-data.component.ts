@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy, inject } from '@angular/core';
 import { Logger } from '@macro/logger';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
-import { ViewStateService } from '@macro/openfin';
+import { ViewStateService, NotificationsService } from '@macro/openfin';
 import { GetRowIdParams, ColDef, CellStyle, GridState } from 'ag-grid-community';
 
 interface CurrencyPair {
@@ -27,6 +27,7 @@ interface CurrencyPair {
 export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
   private logger = Logger.getLogger('FxMarketDataComponent');
   private viewState = inject(ViewStateService);
+  private notifications = inject(NotificationsService);
 
   @ViewChild(MacroAngularGrid) gridComponent!: MacroAngularGrid;
 
@@ -148,7 +149,14 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.logger.info('FX Market Data component initialized');
-    
+
+    this.notifications.create({
+      title: 'FX Market Data',
+      body: '15 G10 currency pairs streaming',
+      icon: 'logo.svg',
+      indicator: { color: 'blue' },
+    } as any);
+
     // Generate initial G10 currency pairs (store in initialData, not rowData)
     this.generateInitialData();
   }

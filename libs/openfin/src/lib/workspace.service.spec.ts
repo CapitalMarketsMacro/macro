@@ -7,6 +7,7 @@ import type { HomeService } from './home.service';
 import type { StoreService } from './store.service';
 import type { SettingsService } from './settings.service';
 import type { WorkspaceStorageService } from './workspace-storage.service';
+import type { NotificationsService } from './notifications.service';
 
 // Mock @macro/logger
 jest.mock('@macro/logger', () => ({
@@ -34,6 +35,7 @@ describe('WorkspaceService', () => {
   let mockStoreService: jest.Mocked<StoreService>;
   let mockSettingsService: jest.Mocked<SettingsService>;
   let mockStorageService: jest.Mocked<WorkspaceStorageService>;
+  let mockNotificationsService: jest.Mocked<NotificationsService>;
 
   /** Helper to install / remove mock fin on globalThis. */
   function setFin(available: boolean) {
@@ -94,6 +96,13 @@ describe('WorkspaceService', () => {
       removeLastSavedWorkspaceId: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<WorkspaceStorageService>;
 
+    mockNotificationsService = {
+      register: jest.fn().mockResolvedValue(undefined),
+      deregister: jest.fn().mockResolvedValue(undefined),
+      create: jest.fn(),
+      observeNotificationActions: jest.fn(),
+    } as unknown as jest.Mocked<NotificationsService>;
+
     service = new WorkspaceService(
       mockPlatformService,
       mockDockService,
@@ -102,6 +111,8 @@ describe('WorkspaceService', () => {
       mockStoreService,
       mockSettingsService,
       mockStorageService,
+      {} as any, // themePresetService
+      mockNotificationsService,
     );
   });
 
@@ -157,7 +168,7 @@ describe('WorkspaceService', () => {
       expect(() => service.quit()).not.toThrow();
     });
 
-    it('should call dock3Service.shutdown and platform.quit when in OpenFin', async () => {
+    it('should call dock3Service.shutdown, notifications.deregister, and platform.quit when in OpenFin', async () => {
       const mockQuit = jest.fn();
       (globalThis as any).fin = {
         me: { isOpenFin: true },
@@ -174,10 +185,11 @@ describe('WorkspaceService', () => {
       await new Promise((r) => setTimeout(r, 0));
 
       expect(mockDock3Service.shutdown).toHaveBeenCalledTimes(1);
+      expect(mockNotificationsService.deregister).toHaveBeenCalledTimes(1);
       expect(mockQuit).toHaveBeenCalledTimes(1);
     });
 
-    it('should call shutdown before quitting the platform', async () => {
+    it('should call shutdown and deregister before quitting the platform', async () => {
       const callOrder: string[] = [];
       const mockQuit = jest.fn(() => callOrder.push('quit'));
       (globalThis as any).fin = {
@@ -191,13 +203,19 @@ describe('WorkspaceService', () => {
       mockDock3Service.shutdown.mockImplementation(async () => {
         callOrder.push('shutdown');
       });
+      mockNotificationsService.deregister.mockImplementation(async () => {
+        callOrder.push('deregister');
+      });
 
       service.quit();
 
       // Wait for the promise chain (.finally) to resolve
       await new Promise((r) => setTimeout(r, 0));
 
-      expect(callOrder).toEqual(['shutdown', 'quit']);
+      // Both shutdown and deregister should complete before quit
+      expect(callOrder).toContain('shutdown');
+      expect(callOrder).toContain('deregister');
+      expect(callOrder[callOrder.length - 1]).toBe('quit');
     });
   });
 });

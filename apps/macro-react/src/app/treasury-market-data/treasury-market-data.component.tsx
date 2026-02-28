@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Logger } from '@macro/logger';
 import { MacroReactGrid, MacroReactGridRef } from '@macro/macro-react-grid';
-import { useViewState } from '@macro/openfin/react';
+import { useViewState, useNotifications } from '@macro/openfin/react';
 import { GetRowIdParams, GridState } from 'ag-grid-community';
 import {
   formatTreasury32nd,
@@ -37,6 +37,7 @@ const logger = Logger.getLogger('TreasuryMarketDataComponent');
 export function TreasuryMarketDataComponent() {
   const gridRef = useRef<MacroReactGridRef>(null);
   const [viewState, savedState, isRestored] = useViewState();
+  const notifications = useNotifications();
 
   // Treasury Market Data state
   const securitiesRef = useRef<Array<{
@@ -178,6 +179,13 @@ export function TreasuryMarketDataComponent() {
     });
 
     logger.info('Treasury Market Data component initialized');
+
+    notifications.create({
+      title: 'Treasury Market Data',
+      body: '11 securities streaming',
+      icon: 'logo.svg',
+      indicator: { color: 'blue' },
+    } as any);
 
     // Generate initial Treasury securities data
     generateInitialData();

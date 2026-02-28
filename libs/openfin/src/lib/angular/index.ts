@@ -78,12 +78,7 @@ export class HomeService extends BaseHomeService {
 }
 
 @Injectable({ providedIn: 'root' })
-export class NotificationsService extends BaseNotificationsService {
-  constructor() {
-    const settingsService = inject(SettingsService);
-    super(settingsService);
-  }
-}
+export class NotificationsService extends BaseNotificationsService {}
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceStorageService extends BaseWorkspaceStorageService {}
@@ -118,7 +113,8 @@ export class WorkspaceService extends BaseWorkspaceService {
     const settingsService = inject(SettingsService);
     const storageService = inject(WorkspaceStorageService);
     const themePresetService = inject(ThemePresetService);
-    super(platformService, dockService, dock3Service, homeService, storeService, settingsService, storageService, themePresetService);
+    const notificationsService = inject(NotificationsService);
+    super(platformService, dockService, dock3Service, homeService, storeService, settingsService, storageService, themePresetService, notificationsService);
   }
 }
 

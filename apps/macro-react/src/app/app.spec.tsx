@@ -47,6 +47,12 @@ vi.mock('@macro/openfin/react', () => ({
     {},
     false,
   ],
+  useNotifications: () => ({
+    create: vi.fn(),
+    register: vi.fn(),
+    deregister: vi.fn(),
+    observeNotificationActions: vi.fn(),
+  }),
 }));
 
 vi.mock('ag-grid-community', () => ({

@@ -6,6 +6,7 @@ import { DockService } from './dock.service';
 import { Dock3Service } from './dock3.service';
 import { HomeService } from './home.service';
 import { StoreService } from './store.service';
+import { NotificationsService } from './notifications.service';
 import { WorkspaceStorageService } from './workspace-storage.service';
 import { ThemePresetService } from './theme-preset.service';
 import { getCurrentSync } from '@openfin/workspace-platform';
@@ -26,6 +27,7 @@ export class WorkspaceService {
   private readonly settingsService: SettingsService;
   private readonly storageService: WorkspaceStorageService;
   private readonly themePresetService: ThemePresetService;
+  private readonly notificationsService: NotificationsService;
 
   private readonly status$ = new BehaviorSubject<string>('');
 
@@ -38,6 +40,7 @@ export class WorkspaceService {
     settingsService: SettingsService,
     storageService: WorkspaceStorageService,
     themePresetService: ThemePresetService,
+    notificationsService: NotificationsService,
   ) {
     this.platformService = platformService;
     this.dockService = dockService;
@@ -47,6 +50,7 @@ export class WorkspaceService {
     this.settingsService = settingsService;
     this.storageService = storageService;
     this.themePresetService = themePresetService;
+    this.notificationsService = notificationsService;
   }
 
   init() {
@@ -164,6 +168,7 @@ export class WorkspaceService {
       ),
       this.homeService.register(platformSettings),
       this.storeService.register(platformSettings),
+      from(this.notificationsService.register(platformSettings)),
     ]);
   }
 
@@ -178,7 +183,10 @@ export class WorkspaceService {
 
   quit() {
     if (this.isOpenFin()) {
-      this.dock3Service.shutdown().finally(() => {
+      Promise.all([
+        this.dock3Service.shutdown(),
+        this.notificationsService.deregister(),
+      ]).finally(() => {
         fin.Platform.getCurrentSync().quit();
       });
     }

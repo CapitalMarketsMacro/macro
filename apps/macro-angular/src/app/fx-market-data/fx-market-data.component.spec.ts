@@ -40,8 +40,16 @@ class MockViewStateService {
   disableAutoSave = mockViewStateInstance.disableAutoSave;
 }
 
+class MockNotificationsService {
+  create = jest.fn();
+  register = jest.fn().mockResolvedValue(undefined);
+  deregister = jest.fn().mockResolvedValue(undefined);
+  observeNotificationActions = jest.fn();
+}
+
 jest.mock('@macro/openfin', () => ({
   ViewStateService: MockViewStateService,
+  NotificationsService: MockNotificationsService,
 }));
 
 // Mock @macro/macro-angular-grid so the import resolves
@@ -65,7 +73,7 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { Subject } from 'rxjs';
 import { FxMarketDataComponent } from './fx-market-data.component';
 import { Logger } from '@macro/logger';
-import { ViewStateService } from '@macro/openfin';
+import { ViewStateService, NotificationsService } from '@macro/openfin';
 
 // Get a reference to the mock logger instance
 const mockLoggerInstance = (Logger as any).__mockInstance;
@@ -79,6 +87,7 @@ describe('FxMarketDataComponent', () => {
       imports: [FxMarketDataComponent],
       providers: [
         { provide: ViewStateService, useValue: new MockViewStateService() },
+        { provide: NotificationsService, useValue: new MockNotificationsService() },
       ],
       schemas: [NO_ERRORS_SCHEMA],
     })

@@ -24,11 +24,16 @@ jest.mock('@macro/logger', () => ({
 }));
 
 import { NotificationsService } from './notifications.service';
-import type { SettingsService } from './settings.service';
+import type { PlatformSettings } from './types';
+
+const platformSettings: PlatformSettings = {
+  id: 'macro-workspace',
+  title: 'Macro Workspace',
+  icon: '',
+};
 
 describe('NotificationsService', () => {
   let service: NotificationsService;
-  let mockSettingsService: SettingsService;
 
   /** Helper to install / remove mock fin on globalThis. */
   function setFin(value: any) {
@@ -42,15 +47,6 @@ describe('NotificationsService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     delete (globalThis as any).fin;
-
-    mockSettingsService = {
-      getManifestSettings: jest.fn().mockResolvedValue({
-        platformSettings: { id: 'macro-workspace', title: 'Macro Workspace', icon: '' },
-        customSettings: {},
-      }),
-      getApps: jest.fn().mockReturnValue([]),
-      getApps$: jest.fn(),
-    } as unknown as SettingsService;
   });
 
   afterEach(() => {
@@ -61,25 +57,25 @@ describe('NotificationsService', () => {
 
   describe('constructor', () => {
     it('should create an instance', () => {
-      service = new NotificationsService(mockSettingsService);
+      service = new NotificationsService();
       expect(service).toBeDefined();
     });
+  });
 
-    it('should not call registerPlatform when fin is not available', () => {
-      service = new NotificationsService(mockSettingsService);
+  // ── register ─────────────────────────────────────────────────
+
+  describe('register', () => {
+    it('should not call registerPlatform when fin is not available', async () => {
+      service = new NotificationsService();
+      await service.register(platformSettings);
       expect(mockRegister).not.toHaveBeenCalled();
     });
 
     it('should register notifications platform when fin is available', async () => {
       setFin({});
-      service = new NotificationsService(mockSettingsService);
+      service = new NotificationsService();
+      await service.register(platformSettings);
 
-      // Wait for the async registration chain to resolve
-      await (mockSettingsService.getManifestSettings as jest.Mock).mock.results[0].value;
-      // Flush microtask queue
-      await Promise.resolve();
-
-      expect(mockSettingsService.getManifestSettings).toHaveBeenCalled();
       expect(mockRegister).toHaveBeenCalledWith({
         notificationsPlatformOptions: {
           id: 'macro-workspace',
@@ -94,7 +90,7 @@ describe('NotificationsService', () => {
 
   describe('observeNotificationActions', () => {
     it('should return an observable that completes immediately when fin is not available', (done) => {
-      service = new NotificationsService(mockSettingsService);
+      service = new NotificationsService();
 
       const emitted: any[] = [];
       service.observeNotificationActions().subscribe({
@@ -108,7 +104,7 @@ describe('NotificationsService', () => {
 
     it('should return an observable that emits notification events when fin is available', () => {
       setFin({});
-      service = new NotificationsService(mockSettingsService);
+      service = new NotificationsService();
 
       const emitted: any[] = [];
       service.observeNotificationActions().subscribe((event) => {
@@ -133,28 +129,34 @@ describe('NotificationsService', () => {
 
   describe('deregister', () => {
     it('should do nothing when fin is not available', async () => {
-      service = new NotificationsService(mockSettingsService);
-      await service.deregister('macro-workspace');
+      service = new NotificationsService();
+      await service.deregister();
 
       expect(mockDeregister).not.toHaveBeenCalled();
     });
 
-    it('should call deregister from notifications module when fin is available', async () => {
+    it('should do nothing when platformId has not been set', async () => {
       setFin({});
-      service = new NotificationsService(mockSettingsService);
-      await service.deregister('macro-workspace');
+      service = new NotificationsService();
+      await service.deregister();
+
+      expect(mockDeregister).not.toHaveBeenCalled();
+    });
+
+    it('should call deregister with stored platformId after registration', async () => {
+      setFin({});
+      service = new NotificationsService();
+      await service.register(platformSettings);
+      await service.deregister();
 
       expect(mockDeregister).toHaveBeenCalledWith('macro-workspace');
     });
 
-    it('should complete the unsubscribe$ subject', async () => {
+    it('should not throw', async () => {
       setFin({});
-      service = new NotificationsService(mockSettingsService);
-
-      // Register for an observable and verify it completes after deregister
-      // Note: we'd need to observe the takeUntil pattern
-      // For now, just ensure deregister doesn't throw
-      await expect(service.deregister('macro-workspace')).resolves.toBeUndefined();
+      service = new NotificationsService();
+      await service.register(platformSettings);
+      await expect(service.deregister()).resolves.toBeUndefined();
     });
   });
 
@@ -162,7 +164,7 @@ describe('NotificationsService', () => {
 
   describe('create', () => {
     it('should do nothing when fin is not available', () => {
-      service = new NotificationsService(mockSettingsService);
+      service = new NotificationsService();
       service.create({ title: 'Test', body: 'Hello' } as any);
 
       expect(mockCreate).not.toHaveBeenCalled();
@@ -170,7 +172,7 @@ describe('NotificationsService', () => {
 
     it('should call create from notifications module when fin is available', () => {
       setFin({});
-      service = new NotificationsService(mockSettingsService);
+      service = new NotificationsService();
 
       const config = { title: 'Test Notification', body: 'Hello World' } as any;
       service.create(config);
