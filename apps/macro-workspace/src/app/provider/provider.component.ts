@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@
 import { Subject, takeUntil } from 'rxjs';
 import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService, FavoritesService, SettingsService } from '@macro/openfin';
 import type { ThemePresetInfo } from '@macro/openfin';
-import type { NotificationOptions } from '@openfin/workspace/notifications';
 
 @Component({
   selector: 'app-provider',
@@ -58,9 +57,11 @@ import type { NotificationOptions } from '@openfin/workspace/notifications';
         <section class="col gap10" style="margin-top: 16px">
           <h2>Notifications</h2>
           <p class="hint">Send test notifications to the Notification Center.</p>
-          <div class="row gap10">
+          <div class="row gap10" style="flex-wrap: wrap">
             <button class="theme-btn" (click)="sendTestNotification('info')">Info</button>
+            <button class="theme-btn" (click)="sendTestNotification('success')">Success</button>
             <button class="theme-btn" (click)="sendTestNotification('warning')">Warning</button>
+            <button class="theme-btn" (click)="sendTestNotification('error')">Error</button>
             <button class="theme-btn" (click)="sendTestNotification('critical')">Critical</button>
           </div>
         </section>
@@ -139,39 +140,17 @@ export class ProviderComponent implements OnInit, OnDestroy {
     this.favoritesService.toggleFavorite(appId);
   }
 
-  sendTestNotification(level: 'info' | 'warning' | 'critical'): void {
-    const configs: Record<string, { title: string; body: string; indicator: string; indicatorText: string }> = {
-      info: {
-        title: 'Info Notification',
-        body: 'This is an informational notification from the Macro workspace.',
-        indicator: 'blue',
-        indicatorText: 'Workspace',
-      },
-      warning: {
-        title: 'Warning Notification',
-        body: 'This is a warning notification. Please review your positions.',
-        indicator: 'yellow',
-        indicatorText: 'Workspace',
-      },
-      critical: {
-        title: 'Critical Alert',
-        body: 'Critical market event detected. Immediate attention required.',
-        indicator: 'red',
-        indicatorText: 'Workspace',
-      },
+  sendTestNotification(level: 'info' | 'success' | 'warning' | 'error' | 'critical'): void {
+    const messages: Record<string, { title: string; body: string }> = {
+      info: { title: 'Info Notification', body: 'This is an informational notification from the Macro workspace.' },
+      success: { title: 'Success Notification', body: 'Operation completed successfully.' },
+      warning: { title: 'Warning Notification', body: 'Please review your positions. Margin threshold approaching.' },
+      error: { title: 'Error Notification', body: 'Failed to connect to market data feed. Retrying...' },
+      critical: { title: 'Critical Alert', body: 'Critical market event detected. Immediate attention required.' },
     };
 
-    const config = configs[level];
-    this.notificationsService.create({
-      title: config.title,
-      body: config.body,
-      icon: 'logo.svg',
-      indicator: { color: config.indicator, text: config.indicatorText } as any,
-      stream: { id: 'macro-workspace', displayName: 'Macro Workspace', appId: 'macro-workspace' },
-      buttons: [
-        { title: 'Dismiss', type: 'button', cta: false, onClick: { task: 'dismiss' } } as any,
-      ],
-    } as NotificationOptions);
+    const { title, body } = messages[level];
+    this.notificationsService[level](title, body);
   }
 
   ngOnDestroy(): void {

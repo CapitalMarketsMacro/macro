@@ -180,4 +180,108 @@ describe('NotificationsService', () => {
       expect(mockCreate).toHaveBeenCalledWith(config);
     });
   });
+
+  // ── notify (level-based) ──────────────────────────────────────
+
+  describe('notify', () => {
+    beforeEach(async () => {
+      setFin({});
+      service = new NotificationsService();
+      await service.register(platformSettings);
+      mockCreate.mockClear();
+    });
+
+    it.each([
+      ['info', 'blue', 'Info'],
+      ['success', 'green', 'Success'],
+      ['warning', 'yellow', 'Warning'],
+      ['error', 'red', 'Error'],
+      ['critical', 'magenta', 'Critical'],
+    ] as const)('should send %s notification with %s indicator', (level, color, label) => {
+      service.notify(level as any, { title: 'Test', body: 'Body' });
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Test',
+          body: 'Body',
+          indicator: { color, text: label },
+        }),
+      );
+    });
+
+    it('should use platform settings for icon and stream', () => {
+      service.info('Title', 'Body');
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          icon: '',
+          stream: { id: 'macro-workspace', displayName: 'Macro Workspace', appId: 'macro-workspace' },
+        }),
+      );
+    });
+
+    it('should allow overriding source and icon', () => {
+      service.warning('Title', 'Body', { source: 'My App', icon: 'custom.svg' });
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          icon: 'custom.svg',
+          stream: expect.objectContaining({ displayName: 'My App' }),
+        }),
+      );
+    });
+  });
+
+  // ── convenience methods ────────────────────────────────────────
+
+  describe('convenience methods', () => {
+    beforeEach(async () => {
+      setFin({});
+      service = new NotificationsService();
+      await service.register(platformSettings);
+      mockCreate.mockClear();
+    });
+
+    it('info() should call notify with info level', () => {
+      service.info('Title', 'Body');
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ indicator: { color: 'blue', text: 'Info' } }),
+      );
+    });
+
+    it('success() should call notify with success level', () => {
+      service.success('Title', 'Body');
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ indicator: { color: 'green', text: 'Success' } }),
+      );
+    });
+
+    it('warning() should call notify with warning level', () => {
+      service.warning('Title', 'Body');
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ indicator: { color: 'yellow', text: 'Warning' } }),
+      );
+    });
+
+    it('error() should call notify with error level', () => {
+      service.error('Title', 'Body');
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ indicator: { color: 'red', text: 'Error' } }),
+      );
+    });
+
+    it('critical() should call notify with critical level', () => {
+      service.critical('Title', 'Body');
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ indicator: { color: 'magenta', text: 'Critical' } }),
+      );
+    });
+
+    it('should do nothing when fin is not available', () => {
+      delete (globalThis as any).fin;
+      service = new NotificationsService();
+      service.info('Title', 'Body');
+      expect(mockCreate).not.toHaveBeenCalled();
+    });
+  });
 });

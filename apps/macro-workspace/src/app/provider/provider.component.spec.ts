@@ -26,6 +26,12 @@ const mockThemePresetService = {
 
 const mockNotificationsService = {
   create: jest.fn(),
+  notify: jest.fn(),
+  info: jest.fn(),
+  success: jest.fn(),
+  warning: jest.fn(),
+  error: jest.fn(),
+  critical: jest.fn(),
   register: jest.fn().mockResolvedValue(undefined),
   deregister: jest.fn().mockResolvedValue(undefined),
   observeNotificationActions: jest.fn(),
@@ -177,7 +183,7 @@ describe('ProviderComponent', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const buttons = compiled.querySelectorAll('button.theme-btn');
-      // 2 app buttons + 3 notification buttons + preset buttons
+      // 2 app buttons + 5 notification buttons + preset buttons
       const allButtonTexts = Array.from(buttons).map(
         (b) => b.textContent?.trim()
       );

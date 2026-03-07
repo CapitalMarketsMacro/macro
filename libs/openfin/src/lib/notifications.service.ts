@@ -1,4 +1,4 @@
-import type { NotificationActionEvent, NotificationOptions } from '@openfin/workspace/notifications';
+import type { NotificationActionEvent, NotificationOptions, IndicatorColor } from '@openfin/workspace/notifications';
 import {
   addEventListener,
   create as createNotification,
@@ -11,6 +11,36 @@ import { Logger } from '@macro/logger';
 
 const logger = Logger.getLogger('NotificationsService');
 
+/** Severity level for convenience notification methods. */
+export type NotificationLevel = 'info' | 'success' | 'warning' | 'error' | 'critical';
+
+/** Options accepted by the level-based convenience methods. */
+export interface LevelNotificationOptions {
+  title: string;
+  body: string;
+  /** Source identifier shown in Notification Center (defaults to platform id). */
+  source?: string;
+  /** Custom icon URL (defaults to platform icon). */
+  icon?: string;
+}
+
+/** Maps severity levels to OpenFin indicator colors. */
+const LEVEL_INDICATOR_COLORS: Record<NotificationLevel, IndicatorColor> = {
+  info: 'blue' as IndicatorColor,
+  success: 'green' as IndicatorColor,
+  warning: 'yellow' as IndicatorColor,
+  error: 'red' as IndicatorColor,
+  critical: 'magenta' as IndicatorColor,
+};
+
+const LEVEL_LABELS: Record<NotificationLevel, string> = {
+  info: 'Info',
+  success: 'Success',
+  warning: 'Warning',
+  error: 'Error',
+  critical: 'Critical',
+};
+
 /**
  * Notifications service for managing OpenFin notifications.
  * Framework-agnostic implementation.
@@ -20,11 +50,15 @@ const logger = Logger.getLogger('NotificationsService');
  */
 export class NotificationsService {
   private platformId?: string;
+  private platformIcon?: string;
+  private platformTitle?: string;
 
   async register(platformSettings: PlatformSettings): Promise<void> {
     if (typeof fin === 'undefined') return;
 
     this.platformId = platformSettings.id;
+    this.platformIcon = platformSettings.icon;
+    this.platformTitle = platformSettings.title;
     try {
       await registerPlatform({
         notificationsPlatformOptions: {
@@ -62,6 +96,48 @@ export class NotificationsService {
     if (typeof fin === 'undefined') return;
 
     createNotification(config);
+  }
+
+  /**
+   * Send a notification with a pre-configured severity level.
+   * Automatically sets the indicator color, label, stream, and icon.
+   */
+  notify(level: NotificationLevel, options: LevelNotificationOptions): void {
+    const source = options.source ?? this.platformTitle ?? 'Workspace';
+    const streamId = this.platformId ?? 'macro-workspace';
+
+    this.create({
+      title: options.title,
+      body: options.body,
+      icon: options.icon ?? this.platformIcon ?? '',
+      indicator: { color: LEVEL_INDICATOR_COLORS[level], text: LEVEL_LABELS[level] },
+      stream: { id: streamId, displayName: source, appId: streamId },
+    } as NotificationOptions);
+  }
+
+  /** Informational notification (blue indicator). */
+  info(title: string, body: string, options?: Partial<LevelNotificationOptions>): void {
+    this.notify('info', { title, body, ...options });
+  }
+
+  /** Success notification (green indicator). */
+  success(title: string, body: string, options?: Partial<LevelNotificationOptions>): void {
+    this.notify('success', { title, body, ...options });
+  }
+
+  /** Warning notification (yellow indicator). */
+  warning(title: string, body: string, options?: Partial<LevelNotificationOptions>): void {
+    this.notify('warning', { title, body, ...options });
+  }
+
+  /** Error notification (red indicator). */
+  error(title: string, body: string, options?: Partial<LevelNotificationOptions>): void {
+    this.notify('error', { title, body, ...options });
+  }
+
+  /** Critical notification (magenta indicator). */
+  critical(title: string, body: string, options?: Partial<LevelNotificationOptions>): void {
+    this.notify('critical', { title, body, ...options });
   }
 }
 
