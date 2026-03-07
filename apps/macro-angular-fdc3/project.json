@@ -1,0 +1,93 @@
+{
+  "name": "macro-angular-fdc3",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "apps/macro-angular-fdc3/src",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/macro-angular-fdc3",
+        "browser": "apps/macro-angular-fdc3/src/main.ts",
+        "polyfills": ["zone.js"],
+        "tsConfig": "apps/macro-angular-fdc3/tsconfig.app.json",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/macro-angular-fdc3/public"
+          }
+        ],
+        "styles": ["apps/macro-angular-fdc3/src/styles.css"]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "5mb",
+              "maximumError": "8mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "options": {
+        "port": 4203
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "macro-angular-fdc3:build:production"
+        },
+        "development": {
+          "buildTarget": "macro-angular-fdc3:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "extract-i18n": {
+      "executor": "@angular/build:extract-i18n",
+      "options": {
+        "buildTarget": "macro-angular-fdc3:build"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/macro-angular-fdc3/jest.config.cts",
+        "tsConfig": "apps/macro-angular-fdc3/tsconfig.spec.json"
+      }
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "macro-angular-fdc3:build",
+        "port": 4203,
+        "staticFilePath": "dist/apps/macro-angular-fdc3/browser",
+        "spa": true
+      }
+    }
+  }
+}

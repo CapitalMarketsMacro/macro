@@ -42,7 +42,12 @@
       "WebFetch(domain:developers.openfin.co)",
       "Bash(base64:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(cd /e/MacroDesktopMFE/macro && npm run test:ci 2>&1)",
+      "Bash(rm -f /e/MacroDesktopMFE/macro/reports/{displayName}-junit.xml && cd /e/MacroDesktopMFE/macro && npm run test:ci 2>&1)",
+      "Bash(ls:*)",
+      "Bash(xargs grep:*)",
+      "Bash(xargs:*)"
     ]
   },
   "enableAllProjectMcpServers": true

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from
 import { Logger, LogLevel } from '@macro/logger';
 import { Menubar, MenubarMenu, MenubarTrigger } from '@/components/ui/menubar';
 import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
+import { onOpenFinThemeChange } from '@macro/openfin/theme-sync';
 import TreasuryMarketDataComponent from './treasury-market-data/treasury-market-data.component';
 import CommoditiesDashboardComponent from './commodities-dashboard/commodities-dashboard.component';
 
@@ -91,6 +92,10 @@ export function AppContent() {
 
   useEffect(() => {
     return onSystemThemeChange((dark) => setIsDark(dark));
+  }, []);
+
+  useEffect(() => {
+    return onOpenFinThemeChange((dark) => setIsDark(dark));
   }, []);
 
   const toggleTheme = () => {

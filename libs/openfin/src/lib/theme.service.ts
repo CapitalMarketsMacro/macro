@@ -2,6 +2,7 @@ import { ColorSchemeOptionType, getCurrentSync } from '@openfin/workspace-platfo
 import { BehaviorSubject, Observable } from 'rxjs';
 import { themeConfig, type ThemePalette } from '@macro/macro-design';
 import { Logger } from '@macro/logger';
+import { THEME_CHANGED_TOPIC } from './workspace-override.service';
 
 const logger = Logger.getLogger('ThemeService');
 
@@ -13,6 +14,7 @@ export class ThemeService {
   private readonly currentTheme$ = new BehaviorSubject<'dark' | 'light'>('dark');
   private readonly currentPalette$ = new BehaviorSubject<ThemePalette>(themeConfig.dark);
   private syncInterval: ReturnType<typeof setInterval> | null = null;
+  private iabHandler?: (payload: { isDark: boolean }) => void;
 
   private readonly document: Document;
   private readonly onThemeChange?: (theme: 'dark' | 'light', palette: ThemePalette) => void;
@@ -140,41 +142,32 @@ export class ThemeService {
   }
 
   /**
-   * Listen to OpenFin theme changes and sync
+   * Listen to OpenFin theme changes and sync.
+   * Subscribes to IAB theme-changed events broadcast by the platform.
    */
   async syncWithOpenFinTheme(): Promise<void> {
     if (typeof fin === 'undefined') {
       return;
     }
 
-    // Clear any existing interval
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval);
-    }
-
     try {
       const workspacePlatform = getCurrentSync();
-      
+
       // Initial sync
       const scheme = await workspacePlatform.Theme.getSelectedScheme();
       const isDarkMode = scheme === ColorSchemeOptionType.Dark;
       this.applyTheme(isDarkMode ? 'dark' : 'light');
-      
-      // Poll for theme changes (OpenFin doesn't have a direct event for theme changes)
-      this.syncInterval = setInterval(async () => {
-        try {
-          const currentScheme = await workspacePlatform.Theme.getSelectedScheme();
-          const isDarkMode = currentScheme === ColorSchemeOptionType.Dark;
-          const currentTheme = this.currentTheme$.getValue();
-          const newTheme = isDarkMode ? 'dark' : 'light';
-          
-          if (currentTheme !== newTheme) {
-            this.applyTheme(newTheme);
-          }
-        } catch {
-          // Silently handle errors during polling
-        }
-      }, 500); // Check every 500ms for more responsive updates
+
+      // Subscribe to theme changes broadcast by the platform override
+      this.iabHandler = (payload: { isDark: boolean }) => {
+        this.applyTheme(payload.isDark ? 'dark' : 'light');
+      };
+
+      await fin.InterApplicationBus.subscribe(
+        { uuid: '*' },
+        THEME_CHANGED_TOPIC,
+        this.iabHandler,
+      );
     } catch (error) {
       logger.error('Error syncing with OpenFin theme', error);
     }
@@ -187,6 +180,13 @@ export class ThemeService {
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
+    }
+
+    if (this.iabHandler && typeof fin !== 'undefined') {
+      fin.InterApplicationBus
+        .unsubscribe({ uuid: '*' }, THEME_CHANGED_TOPIC, this.iabHandler)
+        .catch(() => { /* ignore */ });
+      this.iabHandler = undefined;
     }
   }
 }

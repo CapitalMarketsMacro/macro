@@ -161,6 +161,25 @@
         "tags": ["view", "react", "treasury", "market-data"]
       },
       {
+        "appId": "macro-angular-fdc3-instrument-viewer",
+        "name": "macro-angular-fdc3-instrument-viewer",
+        "title": "FDC3 Instrument Viewer",
+        "description": "Displays FDC3 instrument context from color-linked views",
+        "manifest": "http://localhost:4202/macro-angular-fdc3-instrument-viewer.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/angular-app.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "angular", "fdc3", "instrument"]
+      },
+      {
         "appId": "macro-react-commodities-dashboard",
         "name": "macro-react-commodities-dashboard",
         "title": "Commodities Dashboard",

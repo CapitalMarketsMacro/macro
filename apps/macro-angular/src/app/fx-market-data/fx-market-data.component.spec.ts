@@ -51,9 +51,17 @@ class MockNotificationsService {
   observeNotificationActions = jest.fn();
 }
 
+class MockContextService {
+  broadcast = jest.fn();
+  registerContextListener = jest.fn().mockResolvedValue(undefined);
+  removeListener = jest.fn();
+  context$ = new (jest.requireActual('rxjs').Subject)().asObservable();
+}
+
 jest.mock('@macro/openfin', () => ({
   ViewStateService: MockViewStateService,
   NotificationsService: MockNotificationsService,
+  ContextService: MockContextService,
 }));
 
 // Mock @macro/macro-angular-grid so the import resolves
@@ -77,7 +85,7 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { Subject } from 'rxjs';
 import { FxMarketDataComponent } from './fx-market-data.component';
 import { Logger } from '@macro/logger';
-import { ViewStateService, NotificationsService } from '@macro/openfin';
+import { ViewStateService, NotificationsService, ContextService } from '@macro/openfin';
 
 // Get a reference to the mock logger instance
 const mockLoggerInstance = (Logger as any).__mockInstance;
@@ -92,6 +100,7 @@ describe('FxMarketDataComponent', () => {
       providers: [
         { provide: ViewStateService, useValue: new MockViewStateService() },
         { provide: NotificationsService, useValue: new MockNotificationsService() },
+        { provide: ContextService, useValue: new MockContextService() },
       ],
       schemas: [NO_ERRORS_SCHEMA],
     })

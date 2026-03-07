@@ -69,10 +69,19 @@ describe('ThemeService', () => {
     };
   }
 
+  let mockSubscribe: jest.Mock;
+  let mockUnsubscribe: jest.Mock;
+
   /** Helper to install / remove mock fin on globalThis. */
   function setFin(available: boolean) {
     if (available) {
-      (globalThis as any).fin = { me: { isOpenFin: true } };
+      (globalThis as any).fin = {
+        me: { isOpenFin: true },
+        InterApplicationBus: {
+          subscribe: mockSubscribe,
+          unsubscribe: mockUnsubscribe,
+        },
+      };
     } else {
       delete (globalThis as any).fin;
     }
@@ -80,6 +89,8 @@ describe('ThemeService', () => {
 
   beforeEach(() => {
     delete (globalThis as any).fin;
+    mockSubscribe = jest.fn().mockResolvedValue(undefined);
+    mockUnsubscribe = jest.fn().mockResolvedValue(undefined);
     const { getSelectedScheme, setSelectedScheme } = getMockThemeFns();
     getSelectedScheme.mockReset();
     setSelectedScheme.mockReset();
@@ -374,6 +385,34 @@ describe('ThemeService', () => {
       expect(service.getCurrentTheme()).toBe('light');
     });
 
+    it('should subscribe to IAB theme-changed topic', async () => {
+      setFin(true);
+      getMockThemeFns().getSelectedScheme.mockResolvedValue('dark');
+
+      const service = new ThemeService(mockDocument);
+      await service.syncWithOpenFinTheme();
+
+      expect(mockSubscribe).toHaveBeenCalledWith(
+        { uuid: '*' },
+        'workspace:theme-changed',
+        expect.any(Function),
+      );
+    });
+
+    it('should apply theme when IAB handler is called', async () => {
+      setFin(true);
+      getMockThemeFns().getSelectedScheme.mockResolvedValue('dark');
+
+      const service = new ThemeService(mockDocument);
+      await service.syncWithOpenFinTheme();
+
+      // Get the IAB handler and invoke it
+      const handler = mockSubscribe.mock.calls[0][2];
+      handler({ isDark: false });
+
+      expect(service.getCurrentTheme()).toBe('light');
+    });
+
     it('should not throw on error during sync', async () => {
       setFin(true);
       getMockThemeFns().getSelectedScheme.mockRejectedValue(
@@ -391,6 +430,22 @@ describe('ThemeService', () => {
     it('should be a no-op when no sync is running', () => {
       const service = new ThemeService(mockDocument);
       expect(() => service.stopSyncing()).not.toThrow();
+    });
+
+    it('should unsubscribe from IAB when syncing was active', async () => {
+      setFin(true);
+      getMockThemeFns().getSelectedScheme.mockResolvedValue('dark');
+
+      const service = new ThemeService(mockDocument);
+      await service.syncWithOpenFinTheme();
+
+      service.stopSyncing();
+
+      expect(mockUnsubscribe).toHaveBeenCalledWith(
+        { uuid: '*' },
+        'workspace:theme-changed',
+        expect.any(Function),
+      );
     });
   });
 });

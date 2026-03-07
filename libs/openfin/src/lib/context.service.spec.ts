@@ -26,6 +26,7 @@ describe('ContextService', () => {
   }
 
   beforeEach(() => {
+    jest.useFakeTimers();
     service = new ContextService();
     delete (globalThis as any).fdc3;
   });
@@ -33,6 +34,7 @@ describe('ContextService', () => {
   afterEach(() => {
     service.removeListener();
     delete (globalThis as any).fdc3;
+    jest.useRealTimers();
   });
 
   // ── broadcast ────────────────────────────────────────────────
@@ -123,6 +125,126 @@ describe('ContextService', () => {
 
       expect(unsubscribe).toHaveBeenCalledTimes(1);
       expect(addContextListener).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ── onContext ────────────────────────────────────────────────
+
+  describe('onContext', () => {
+    it('should register listener and return filtered observable', async () => {
+      let capturedHandler: (ctx: any) => void = () => {};
+      const mockListener = { unsubscribe: jest.fn() };
+      const addContextListener = jest.fn().mockImplementation((_type, handler) => {
+        capturedHandler = handler;
+        return Promise.resolve(mockListener);
+      });
+      setFdc3({ addContextListener });
+
+      const received: any[] = [];
+      const sub = service.onContext('fdc3.instrument').subscribe((ctx) => received.push(ctx));
+
+      // Wait for async registerContextListener
+      await Promise.resolve();
+
+      capturedHandler({ type: 'fdc3.instrument', id: { ticker: 'AAPL' } });
+      capturedHandler({ type: 'fdc3.contact', id: { email: 'x@y.com' } });
+      capturedHandler({ type: 'fdc3.instrument', id: { ticker: 'MSFT' } });
+
+      expect(received).toHaveLength(2);
+      expect(received[0].id.ticker).toBe('AAPL');
+      expect(received[1].id.ticker).toBe('MSFT');
+
+      sub.unsubscribe();
+    });
+  });
+
+  // ── currentChannel$ ──────────────────────────────────────────
+
+  describe('currentChannel$', () => {
+    it('should emit null when fdc3 is not available', () => {
+      const values: (string | null)[] = [];
+      const sub = service.currentChannel$.subscribe((v) => values.push(v));
+
+      expect(values).toEqual([null]);
+      sub.unsubscribe();
+    });
+
+    it('should emit channel id from fdc3.getCurrentChannel', async () => {
+      const getCurrentChannel = jest.fn().mockResolvedValue({ id: 'green' });
+      setFdc3({ getCurrentChannel });
+
+      const values: (string | null)[] = [];
+      const sub = service.currentChannel$.subscribe((v) => values.push(v));
+
+      // Let the initial poll resolve
+      await Promise.resolve();
+
+      expect(values).toEqual(['green']);
+      sub.unsubscribe();
+    });
+
+    it('should emit new value when channel changes on poll', async () => {
+      let channelId = 'green';
+      const getCurrentChannel = jest.fn().mockImplementation(() =>
+        Promise.resolve({ id: channelId }),
+      );
+      setFdc3({ getCurrentChannel });
+
+      const values: (string | null)[] = [];
+      const sub = service.currentChannel$.subscribe((v) => values.push(v));
+
+      await Promise.resolve();
+      expect(values).toEqual(['green']);
+
+      channelId = 'red';
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+
+      expect(values).toEqual(['green', 'red']);
+      sub.unsubscribe();
+    });
+
+    it('should not emit duplicate values', async () => {
+      const getCurrentChannel = jest.fn().mockResolvedValue({ id: 'green' });
+      setFdc3({ getCurrentChannel });
+
+      const values: (string | null)[] = [];
+      const sub = service.currentChannel$.subscribe((v) => values.push(v));
+
+      await Promise.resolve();
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+
+      expect(values).toEqual(['green']);
+      sub.unsubscribe();
+    });
+
+    it('should stop polling when all subscribers unsubscribe', async () => {
+      const getCurrentChannel = jest.fn().mockResolvedValue({ id: 'green' });
+      setFdc3({ getCurrentChannel });
+
+      const sub1 = service.currentChannel$.subscribe();
+      const sub2 = service.currentChannel$.subscribe();
+
+      await Promise.resolve();
+      getCurrentChannel.mockClear();
+
+      sub1.unsubscribe();
+
+      // Still one subscriber — polling continues
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+      expect(getCurrentChannel).toHaveBeenCalled();
+
+      getCurrentChannel.mockClear();
+      sub2.unsubscribe();
+
+      // No subscribers — polling should have stopped
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+      expect(getCurrentChannel).not.toHaveBeenCalled();
     });
   });
 

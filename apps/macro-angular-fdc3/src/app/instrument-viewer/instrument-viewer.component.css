@@ -1,0 +1,219 @@
+.instrument-viewer {
+  padding: 1.5rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--foreground);
+}
+
+.channel-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  background: var(--surface-secondary, var(--surface-ground));
+  border: 1px solid var(--border);
+  font-size: 0.8125rem;
+}
+
+.channel-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.channel-label {
+  color: var(--foreground-secondary, var(--text-color-secondary));
+}
+
+.listening-indicator {
+  color: #00CC88;
+  font-weight: 500;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Instrument Card */
+
+.instrument-card {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  background: var(--surface-secondary, var(--surface-ground));
+  margin-bottom: 1.5rem;
+}
+
+.instrument-header {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.ticker-display {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.base-ccy {
+  color: var(--brand-primary, #0A76D3);
+}
+
+.separator {
+  color: var(--foreground-secondary, var(--text-color-secondary));
+  margin: 0 0.125rem;
+}
+
+.quote-ccy {
+  color: var(--foreground);
+}
+
+.instrument-name {
+  margin-top: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--foreground-secondary, var(--text-color-secondary));
+}
+
+.instrument-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-label {
+  font-size: 0.8125rem;
+  color: var(--foreground-secondary, var(--text-color-secondary));
+  text-transform: capitalize;
+}
+
+.detail-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+  font-family: 'Roboto Mono', monospace;
+}
+
+/* Empty State */
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  border: 2px dashed var(--border);
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.empty-icon {
+  color: var(--foreground-secondary, var(--text-color-secondary));
+  opacity: 0.5;
+  margin-bottom: 1rem;
+}
+
+.empty-state h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: var(--foreground);
+}
+
+.empty-state p {
+  font-size: 0.875rem;
+  color: var(--foreground-secondary, var(--text-color-secondary));
+  margin: 0 0 0.25rem;
+}
+
+.empty-state .hint {
+  font-size: 0.75rem;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* History Section */
+
+.history-section {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.history-section h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: var(--surface-secondary, var(--surface-ground));
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.history-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8125rem;
+  transition: background-color 0.15s;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item:hover {
+  background: var(--surface-secondary, var(--surface-ground));
+}
+
+.history-item.latest {
+  background: color-mix(in srgb, var(--brand-primary, #0A76D3) 8%, transparent);
+}
+
+.history-time {
+  color: var(--foreground-secondary, var(--text-color-secondary));
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.history-ticker {
+  font-weight: 600;
+  color: var(--brand-primary, #0A76D3);
+  flex-shrink: 0;
+}
+
+.history-name {
+  color: var(--foreground-secondary, var(--text-color-secondary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

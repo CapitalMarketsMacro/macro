@@ -5,6 +5,7 @@ export { themeConfig } from '@macro/macro-design';
 
 // Utilities
 export { launchApp } from './lib/launch';
+export { onOpenFinThemeChange } from './lib/theme-sync';
 
 // Framework-agnostic base services (exported with 'Base' prefix to avoid conflicts)
 export { SettingsService as BaseSettingsService } from './lib/settings.service';

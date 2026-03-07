@@ -6,6 +6,7 @@ import { Menubar } from 'primeng/menubar';
 import { MenuItem } from 'primeng/api';
 import { filter } from 'rxjs/operators';
 import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
+import { onOpenFinThemeChange } from '@macro/openfin';
 
 @Component({
   selector: 'app-root',
@@ -27,12 +28,17 @@ export class App implements OnInit, OnDestroy {
   // Menu items for PrimeNG MenuBar
   public menuItems: MenuItem[] = [];
   private cleanupSystemListener?: () => void;
+  private cleanupOpenFinListener?: () => void;
 
   constructor() {
     // Initialize theme state
     if (isPlatformBrowser(this.platformId)) {
       this.isDark = getInitialIsDark();
       this.cleanupSystemListener = onSystemThemeChange((isDark) => {
+        this.isDark = isDark;
+        this.applyTheme();
+      });
+      this.cleanupOpenFinListener = onOpenFinThemeChange((isDark) => {
         this.isDark = isDark;
         this.applyTheme();
       });
@@ -117,6 +123,7 @@ export class App implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.cleanupSystemListener?.();
+    this.cleanupOpenFinListener?.();
   }
 
   /**

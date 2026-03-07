@@ -453,6 +453,24 @@ describe('WorkspaceOverrideService', () => {
         await (newProvider as any).setSelectedScheme('light');
         expect(callback).toHaveBeenCalledWith('light');
       });
+
+      it('should broadcast theme-changed via IAB with isDark true for dark scheme', async () => {
+        await provider.setSelectedScheme('dark');
+
+        expect(mockPublish).toHaveBeenCalledWith(
+          'workspace:theme-changed',
+          { isDark: true },
+        );
+      });
+
+      it('should broadcast theme-changed via IAB with isDark false for light scheme', async () => {
+        await provider.setSelectedScheme('light');
+
+        expect(mockPublish).toHaveBeenCalledWith(
+          'workspace:theme-changed',
+          { isDark: false },
+        );
+      });
     });
   });
 });

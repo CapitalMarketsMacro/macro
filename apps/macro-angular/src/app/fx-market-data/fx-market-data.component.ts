@@ -1,8 +1,8 @@
 import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy, inject } from '@angular/core';
 import { Logger } from '@macro/logger';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
-import { ViewStateService, NotificationsService } from '@macro/openfin';
-import { GetRowIdParams, ColDef, CellStyle, GridState } from 'ag-grid-community';
+import { ViewStateService, NotificationsService, ContextService } from '@macro/openfin';
+import { GetRowIdParams, ColDef, CellStyle, GridState, GridOptions, RowClickedEvent } from 'ag-grid-community';
 
 interface CurrencyPair {
   id: string;
@@ -28,6 +28,7 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
   private logger = Logger.getLogger('FxMarketDataComponent');
   private viewState = inject(ViewStateService);
   private notifications = inject(NotificationsService);
+  private contextService = inject(ContextService);
 
   @ViewChild(MacroAngularGrid) gridComponent!: MacroAngularGrid;
 
@@ -144,6 +145,12 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
     ['GBPCHF', 0.0005],
   ]);
 
+  public selectedSymbol: string | null = null;
+
+  public gridOptions: GridOptions = {
+    onRowClicked: (event: RowClickedEvent<CurrencyPair>) => this.onRowClicked(event),
+  };
+
   private previousRates: Map<string, number> = new Map();
   private updateInterval?: number;
 
@@ -191,6 +198,23 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       clearInterval(this.updateInterval);
     }
     this.logger.info('FX Market Data component destroyed');
+  }
+
+  onRowClicked(event: RowClickedEvent<CurrencyPair>): void {
+    if (!event.data) return;
+
+    const pair = event.data;
+    this.selectedSymbol = pair.symbol;
+
+    this.contextService.broadcast({
+      type: 'fdc3.instrument',
+      id: {
+        ticker: pair.symbol,
+      },
+      name: `${pair.base}/${pair.quote}`,
+    });
+
+    this.logger.info('Broadcast FDC3 instrument context', { symbol: pair.symbol });
   }
 
   /**

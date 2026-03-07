@@ -66,6 +66,8 @@ import { WorkspaceStorageService } from './workspace-storage.service';
 const FLUSH_TOPIC = 'workspace:flush-view-state';
 const FLUSH_DELAY_MS = 200;
 
+export const THEME_CHANGED_TOPIC = 'workspace:theme-changed';
+
 export class WorkspaceOverrideService {
   private readonly logger = Logger.getLogger('WorkspaceOverrideService');
   private readonly storageService: WorkspaceStorageService;
@@ -267,6 +269,13 @@ export class WorkspaceOverrideService {
           const callback = getOnThemeChanged();
           if (callback) {
             await callback(schemeType);
+          }
+          // Broadcast theme change to all views
+          try {
+            const isDark = schemeType === ColorSchemeOptionType.Dark;
+            await fin.InterApplicationBus.publish(THEME_CHANGED_TOPIC, { isDark });
+          } catch (err) {
+            logger.warn('Failed to broadcast theme change to views', err);
           }
         }
 

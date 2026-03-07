@@ -23,6 +23,7 @@ export default defineConfig(() => ({
       '@macro/logger': path.resolve(__dirname, '../../libs/logger/src/index.ts'),
       '@macro/macro-react-grid': path.resolve(__dirname, '../../libs/macro-react-grid/src/index.ts'),
       '@macro/macro-design': path.resolve(__dirname, '../../libs/macro-design/src/index.ts'),
+      '@macro/openfin/theme-sync': path.resolve(__dirname, '../../libs/openfin/src/lib/theme-sync.ts'),
       '@macro/openfin/react': path.resolve(__dirname, '../../libs/openfin/src/lib/react.ts'),
       '@macro/openfin': path.resolve(__dirname, '../../libs/openfin/src/index.ts'),
     },

@@ -1,0 +1,78 @@
+<div class="instrument-viewer">
+  <!-- Header -->
+  <div class="header">
+    <h1>FDC3 Instrument Viewer</h1>
+    <div class="channel-badge">
+      <span class="channel-dot" [style.background-color]="getChannelDotColor()"></span>
+      <span class="channel-label">Channel: {{ getChannelDisplayName() }}</span>
+      @if (isListening) {
+        <span class="listening-indicator">Listening</span>
+      }
+    </div>
+  </div>
+
+  <!-- Current Instrument Card -->
+  @if (currentInstrument) {
+    <div class="instrument-card">
+      <div class="instrument-header">
+        <div class="ticker-display">
+          <span class="base-ccy">{{ getBase(currentInstrument.id.ticker) }}</span>
+          <span class="separator">/</span>
+          <span class="quote-ccy">{{ getQuote(currentInstrument.id.ticker) }}</span>
+        </div>
+        @if (currentInstrument.name) {
+          <div class="instrument-name">{{ currentInstrument.name }}</div>
+        }
+      </div>
+
+      <div class="instrument-details">
+        <div class="detail-row">
+          <span class="detail-label">Type</span>
+          <span class="detail-value">{{ currentInstrument.type }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Ticker</span>
+          <span class="detail-value">{{ currentInstrument.id.ticker }}</span>
+        </div>
+        @for (key of currentInstrument.id | keyvalue; track key.key) {
+          @if (key.key !== 'ticker') {
+            <div class="detail-row">
+              <span class="detail-label">{{ key.key }}</span>
+              <span class="detail-value">{{ key.value }}</span>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </div>
+      <h2>Waiting for Instrument Selection</h2>
+      <p>Select a currency pair in the <strong>FX Market Data</strong> view to see it here.</p>
+      <p class="hint">Both views must be on the same color linking channel.</p>
+    </div>
+  }
+
+  <!-- Context History -->
+  @if (contextHistory.length > 0) {
+    <div class="history-section">
+      <h3>Context History</h3>
+      <div class="history-list">
+        @for (entry of contextHistory; track entry.receivedAt.getTime()) {
+          <div class="history-item" [class.latest]="entry === contextHistory[0]">
+            <span class="history-time">{{ formatTime(entry.receivedAt) }}</span>
+            <span class="history-ticker">{{ entry.instrument.id.ticker }}</span>
+            @if (entry.instrument.name) {
+              <span class="history-name">{{ entry.instrument.name }}</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
