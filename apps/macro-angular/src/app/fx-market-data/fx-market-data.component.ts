@@ -36,37 +36,37 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
     { field: 'symbol', headerName: 'Symbol', width: 120, pinned: 'left' },
     { field: 'base', headerName: 'Base', width: 80 },
     { field: 'quote', headerName: 'Quote', width: 80 },
-    { 
-      field: 'bid', 
-      headerName: 'Bid', 
+    {
+      field: 'bid',
+      headerName: 'Bid',
       width: 120,
       valueFormatter: (params: any) => this.formatPrice(params.value, params.data.symbol),
       cellStyle: { textAlign: 'right' }
     },
-    { 
-      field: 'ask', 
-      headerName: 'Ask', 
+    {
+      field: 'ask',
+      headerName: 'Ask',
       width: 120,
       valueFormatter: (params: any) => this.formatPrice(params.value, params.data.symbol),
       cellStyle: { textAlign: 'right' }
     },
-    { 
-      field: 'mid', 
-      headerName: 'Mid', 
+    {
+      field: 'mid',
+      headerName: 'Mid',
       width: 120,
       valueFormatter: (params: any) => this.formatPrice(params.value, params.data.symbol),
       cellStyle: { textAlign: 'right' }
     },
-    { 
-      field: 'spread', 
-      headerName: 'Spread', 
+    {
+      field: 'spread',
+      headerName: 'Spread',
       width: 100,
       valueFormatter: (params: any) => this.formatSpread(params.value, params.data.symbol),
       cellStyle: { textAlign: 'right' }
     },
-    { 
-      field: 'change', 
-      headerName: 'Change', 
+    {
+      field: 'change',
+      headerName: 'Change',
       width: 120,
       valueFormatter: (params: any) => this.formatChange(params.value, params.data.symbol),
       cellStyle: (params: any): CellStyle => {
@@ -79,9 +79,9 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
         return style;
       }
     },
-    { 
-      field: 'changePercent', 
-      headerName: 'Change %', 
+    {
+      field: 'changePercent',
+      headerName: 'Change %',
       width: 120,
       valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}%`,
       cellStyle: (params: any): CellStyle => {
@@ -176,8 +176,8 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       this.logger.info('Restored grid state from workspace snapshot');
     }
 
-    // Auto-save grid state every 5 seconds so workspace save captures it
-    this.viewState.enableAutoSave(() => ({
+    // Save grid state when the workspace is saved
+    this.viewState.setCollector(() => ({
       agGrid: this.gridComponent.getGridState(),
     }));
 
@@ -238,7 +238,7 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
 
-  
+
   /**
    * Update market data for all currency pairs
    */

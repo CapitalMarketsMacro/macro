@@ -66,7 +66,11 @@ export class WorkspaceService {
       from(this.themePresetService.loadActivePreset()),
     ]).pipe(
       concatMap(([settings, themePalettes]) =>
-        this.platformService.initializeWorkspacePlatform(settings.platformSettings, themePalettes).pipe(
+        this.platformService.initializeWorkspacePlatform(
+          settings.platformSettings,
+          themePalettes,
+          this.storeService.getStoreCustomActions(),
+        ).pipe(
           concatMap(() => this.awaitPlatformReady()),
           concatMap(() => this.registerComponents(settings)),
           concatMap(() => this.showStartupComponents()),

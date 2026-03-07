@@ -6,6 +6,7 @@ import { SettingsService as BaseSettingsService } from '../settings.service';
 import { ContextService as BaseContextService } from '../context.service';
 import { ChannelService as BaseChannelService } from '../channel.service';
 import { StoreService as BaseStoreService } from '../store.service';
+import { FavoritesService as BaseFavoritesService } from '../favorites.service';
 import { DockService as BaseDockService } from '../dock.service';
 import { Dock3Service as BaseDock3Service } from '../dock3.service';
 import { HomeService as BaseHomeService } from '../home.service';
@@ -48,10 +49,14 @@ export class ChannelService extends BaseChannelService {
 }
 
 @Injectable({ providedIn: 'root' })
+export class FavoritesService extends BaseFavoritesService {}
+
+@Injectable({ providedIn: 'root' })
 export class StoreService extends BaseStoreService {
   constructor() {
     const settingsService = inject(SettingsService);
-    super(settingsService);
+    const favoritesService = inject(FavoritesService);
+    super(settingsService, favoritesService);
   }
 }
 

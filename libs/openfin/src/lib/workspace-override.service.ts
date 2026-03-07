@@ -63,6 +63,9 @@ import { WorkspaceStorageService } from './workspace-storage.service';
  *   - getLanguage(): Promise<Locale>
  *   - setLanguage(locale: Locale): Promise<void>
  */
+const FLUSH_TOPIC = 'workspace:flush-view-state';
+const FLUSH_DELAY_MS = 200;
+
 export class WorkspaceOverrideService {
   private readonly logger = Logger.getLogger('WorkspaceOverrideService');
   private readonly storageService: WorkspaceStorageService;
@@ -93,6 +96,22 @@ export class WorkspaceOverrideService {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return async (WorkspacePlatformProvider: any) => {
+      /**
+       * Broadcast a flush event to all views so they persist their
+       * current state to view options, then re-capture the platform
+       * snapshot so the workspace includes the freshest data.
+       */
+      async function flushViewStatesAndRecapture(workspace: Workspace): Promise<void> {
+        try {
+          await fin.InterApplicationBus.publish(FLUSH_TOPIC, {});
+          await new Promise((resolve) => setTimeout(resolve, FLUSH_DELAY_MS));
+          const platform = fin.Platform.getCurrentSync();
+          workspace.snapshot = await platform.getSnapshot() as unknown as typeof workspace.snapshot;
+        } catch (err) {
+          logger.warn('Failed to flush view states before workspace save', err);
+        }
+      }
+
       class CustomWorkspacePlatformProvider extends WorkspacePlatformProvider {
         /**
          * Handles analytics events by logging them.
@@ -153,6 +172,7 @@ export class WorkspaceOverrideService {
          * @param req The create workspace request
          */
         async createSavedWorkspace(req: CreateSavedWorkspaceRequest): Promise<void> {
+          await flushViewStatesAndRecapture(req.workspace);
           logger.info('Creating saved workspace', { workspaceId: req.workspace.workspaceId, title: req.workspace.title });
           const workspaces = await storageService.getWorkspaces();
           const existingIndex = workspaces.findIndex((w) => w.workspaceId === req.workspace.workspaceId);
@@ -172,6 +192,7 @@ export class WorkspaceOverrideService {
          * @param req The update workspace request
          */
         async updateSavedWorkspace(req: UpdateSavedWorkspaceRequest): Promise<void> {
+          await flushViewStatesAndRecapture(req.workspace);
           logger.info('Updating saved workspace', { workspaceId: req.workspaceId, title: req.workspace.title });
           const workspaces = await storageService.getWorkspaces();
           const index = workspaces.findIndex((w) => w.workspaceId === req.workspaceId);

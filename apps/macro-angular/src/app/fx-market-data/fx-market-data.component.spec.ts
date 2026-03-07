@@ -25,6 +25,8 @@ jest.mock('@macro/logger', () => {
 const mockViewStateInstance = {
   restoreState: jest.fn().mockResolvedValue({}),
   enableAutoSave: jest.fn(),
+  setCollector: jest.fn(),
+  clearCollector: jest.fn(),
   destroy: jest.fn(),
   saveState: jest.fn(),
   getState: jest.fn(),
@@ -34,6 +36,8 @@ const mockViewStateInstance = {
 class MockViewStateService {
   restoreState = mockViewStateInstance.restoreState;
   enableAutoSave = mockViewStateInstance.enableAutoSave;
+  setCollector = mockViewStateInstance.setCollector;
+  clearCollector = mockViewStateInstance.clearCollector;
   destroy = mockViewStateInstance.destroy;
   saveState = mockViewStateInstance.saveState;
   getState = mockViewStateInstance.getState;

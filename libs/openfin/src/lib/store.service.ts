@@ -1,24 +1,82 @@
-import { Storefront, StorefrontTemplate } from '@openfin/workspace';
-import { from } from 'rxjs';
+import {
+  Storefront,
+  StorefrontTemplate,
+  type StoreButtonConfig,
+  type StoreRegistration,
+  type StorefrontNavigationSection,
+} from '@openfin/workspace';
+import type { StoreCustomButtonActionPayload } from '@openfin/workspace-platform';
+import { from, tap } from 'rxjs';
 import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
 import type { SettingsService } from './settings.service';
+import type { FavoritesService } from './favorites.service';
 
 /**
  * Store service for managing the OpenFin Storefront
  * Framework-agnostic implementation
  */
 export class StoreService {
-  constructor(private readonly settingsService: SettingsService) {}
+  private storeRegistration: StoreRegistration | null = null;
+
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly favoritesService: FavoritesService
+  ) {}
+
+  getStoreCustomActions(): Record<string, (payload: any) => Promise<void>> {
+    return {
+      'toggle-store-favorite': async (event) => {
+        const payload = event as StoreCustomButtonActionPayload;
+        this.favoritesService.toggleFavorite(payload.appId);
+        const isFav = this.favoritesService.isFavorite(payload.appId);
+        if (this.storeRegistration) {
+          await this.storeRegistration.updateAppCardButtons({
+            appId: payload.appId,
+            primaryButton: payload.primaryButton,
+            secondaryButtons: [
+              {
+                title: isFav ? '★ Unfavorite' : '☆ Favorite',
+                action: { id: 'toggle-store-favorite' },
+              },
+            ],
+          });
+        }
+      },
+    };
+  }
 
   register(platformSettings: PlatformSettings) {
     const apps = this.settingsService.getApps();
+    const decoratedApps = (apps ?? []).map((app) => ({
+      ...app,
+      secondaryButtons: [
+        {
+          title: this.favoritesService.isFavorite(app.appId)
+            ? '★ Unfavorite'
+            : '☆ Favorite',
+          action: { id: 'toggle-store-favorite' },
+        },
+      ] as StoreButtonConfig[],
+    }));
 
     return from(
       Storefront.register({
         ...platformSettings,
-        getNavigation: async () => [
-          {
+        getNavigation: async (): Promise<
+          [
+            StorefrontNavigationSection?,
+            StorefrontNavigationSection?,
+            StorefrontNavigationSection?,
+          ]
+        > => {
+          const favoriteIds = this.favoritesService.getFavoriteIds();
+          const favoriteApps =
+            favoriteIds.size > 0
+              ? decoratedApps.filter((a) => favoriteIds.has(a.appId))
+              : [];
+
+          const appsSection: StorefrontNavigationSection = {
             id: 'apps',
             title: 'Apps',
             items: [
@@ -26,13 +84,29 @@ export class StoreService {
                 id: 'all-apps',
                 title: 'All Apps',
                 templateId: StorefrontTemplate.AppGrid,
-                templateData: {
-                  apps: apps ?? [],
-                },
+                templateData: { apps: decoratedApps },
               },
             ],
-          },
-        ],
+          };
+
+          if (favoriteApps.length > 0) {
+            const favSection: StorefrontNavigationSection = {
+              id: 'favorites',
+              title: 'Favorites',
+              items: [
+                {
+                  id: 'favorite-apps',
+                  title: 'Favorite Apps',
+                  templateId: StorefrontTemplate.AppGrid,
+                  templateData: { apps: favoriteApps },
+                },
+              ],
+            };
+            return [favSection, appsSection];
+          }
+
+          return [appsSection];
+        },
         getLandingPage: async () => ({
           topRow: {
             title: 'Featured',
@@ -46,7 +120,7 @@ export class StoreService {
                 },
                 templateId: StorefrontTemplate.AppGrid,
                 templateData: {
-                  apps: apps ?? [],
+                  apps: decoratedApps,
                 },
               },
             ],
@@ -59,10 +133,14 @@ export class StoreService {
           text: platformSettings.title,
           links: [],
         }),
-        getApps: async () => apps ?? [],
+        getApps: async () => decoratedApps,
         launchApp: async (app) => {
           await launchApp(app);
         },
+      }),
+    ).pipe(
+      tap((reg) => {
+        this.storeRegistration = reg;
       }),
     );
   }

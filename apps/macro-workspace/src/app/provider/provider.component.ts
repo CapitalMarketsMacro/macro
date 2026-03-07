@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
-import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService } from '@macro/openfin';
+import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService, FavoritesService, SettingsService } from '@macro/openfin';
 import type { ThemePresetInfo } from '@macro/openfin';
 import type { NotificationOptions } from '@openfin/workspace/notifications';
 
@@ -34,6 +34,22 @@ import type { NotificationOptions } from '@openfin/workspace/notifications';
                 (click)="applyPreset(preset)"
               >
                 {{ preset.label }}
+              </button>
+            }
+          </div>
+        </section>
+
+        <section class="col gap10" style="margin-top: 16px">
+          <h2>Store Favorites</h2>
+          <p class="hint">Star apps to pin them in the Store's Favorites section.</p>
+          <div class="row gap10" style="flex-wrap: wrap">
+            @for (app of storeApps; track app.appId) {
+              <button
+                class="theme-btn"
+                [class.active]="isFavorite(app.appId)"
+                (click)="toggleFavorite(app.appId)"
+              >
+                {{ isFavorite(app.appId) ? '★' : '☆' }} {{ app.title }}
               </button>
             }
           </div>
@@ -82,11 +98,14 @@ export class ProviderComponent implements OnInit, OnDestroy {
   private readonly themeService = inject(ThemeService);
   private readonly themePresetService = inject(ThemePresetService);
   private readonly notificationsService = inject(NotificationsService);
+  private readonly favoritesService = inject(FavoritesService);
+  private readonly settingsService = inject(SettingsService);
   private readonly unsubscribe$ = new Subject<void>();
 
   readonly message$ = this.workspaceService.getStatus$();
   readonly presets: ThemePresetInfo[] = this.themePresetService.getAvailablePresets();
   activePresetId = this.themePresetService.getActivePresetId();
+  readonly storeApps = this.settingsService.getApps();
 
   ngOnInit(): void {
     // Initialize theme service to sync with OpenFin theme
@@ -110,6 +129,14 @@ export class ProviderComponent implements OnInit, OnDestroy {
     if (typeof fin !== 'undefined') {
       await fin.Application.getCurrentSync().restart();
     }
+  }
+
+  isFavorite(appId: string): boolean {
+    return this.favoritesService.isFavorite(appId);
+  }
+
+  toggleFavorite(appId: string): void {
+    this.favoritesService.toggleFavorite(appId);
   }
 
   sendTestNotification(level: 'info' | 'warning' | 'critical'): void {

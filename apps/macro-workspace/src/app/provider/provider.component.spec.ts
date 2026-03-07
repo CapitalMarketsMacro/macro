@@ -31,15 +31,33 @@ const mockNotificationsService = {
   observeNotificationActions: jest.fn(),
 };
 
+const mockFavoritesService = {
+  isFavorite: jest.fn().mockReturnValue(false),
+  toggleFavorite: jest.fn(),
+  getFavoriteIds: jest.fn().mockReturnValue(new Set()),
+  getFavoriteIds$: jest.fn().mockReturnValue(of(new Set())),
+};
+
+const mockSettingsService = {
+  getApps: jest.fn().mockReturnValue([
+    { appId: 'app-1', title: 'App One' },
+    { appId: 'app-2', title: 'App Two' },
+  ]),
+  getManifestSettings: jest.fn(),
+  getApps$: jest.fn(),
+};
+
 jest.mock('@macro/openfin', () => ({
   WorkspaceService: jest.fn().mockImplementation(() => mockWorkspaceService),
   ThemeService: jest.fn().mockImplementation(() => mockThemeService),
   ThemePresetService: jest.fn().mockImplementation(() => mockThemePresetService),
   NotificationsService: jest.fn().mockImplementation(() => mockNotificationsService),
+  FavoritesService: jest.fn().mockImplementation(() => mockFavoritesService),
+  SettingsService: jest.fn().mockImplementation(() => mockSettingsService),
 }));
 
 // Import after mock
-import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService } from '@macro/openfin';
+import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService, FavoritesService, SettingsService } from '@macro/openfin';
 
 describe('ProviderComponent', () => {
   beforeEach(async () => {
@@ -53,6 +71,8 @@ describe('ProviderComponent', () => {
         { provide: ThemeService, useValue: mockThemeService },
         { provide: ThemePresetService, useValue: mockThemePresetService },
         { provide: NotificationsService, useValue: mockNotificationsService },
+        { provide: FavoritesService, useValue: mockFavoritesService },
+        { provide: SettingsService, useValue: mockSettingsService },
       ],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
@@ -125,6 +145,47 @@ describe('ProviderComponent', () => {
     });
   });
 
+  describe('favorites', () => {
+    it('should delegate isFavorite to FavoritesService', () => {
+      const fixture = TestBed.createComponent(ProviderComponent);
+      const component = fixture.componentInstance;
+
+      component.isFavorite('app-1');
+      expect(mockFavoritesService.isFavorite).toHaveBeenCalledWith('app-1');
+    });
+
+    it('should delegate toggleFavorite to FavoritesService', () => {
+      const fixture = TestBed.createComponent(ProviderComponent);
+      const component = fixture.componentInstance;
+
+      component.toggleFavorite('app-1');
+      expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith('app-1');
+    });
+
+    it('should populate storeApps from SettingsService', () => {
+      const fixture = TestBed.createComponent(ProviderComponent);
+      const component = fixture.componentInstance;
+
+      expect(component.storeApps).toEqual([
+        { appId: 'app-1', title: 'App One' },
+        { appId: 'app-2', title: 'App Two' },
+      ]);
+    });
+
+    it('should render favorite toggle buttons for each app', () => {
+      const fixture = TestBed.createComponent(ProviderComponent);
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const buttons = compiled.querySelectorAll('button.theme-btn');
+      // 2 app buttons + 3 notification buttons + preset buttons
+      const allButtonTexts = Array.from(buttons).map(
+        (b) => b.textContent?.trim()
+      );
+      expect(allButtonTexts).toContain('☆ App One');
+      expect(allButtonTexts).toContain('☆ App Two');
+    });
+  });
+
   describe('template', () => {
     it('should render the heading text', () => {
       const fixture = TestBed.createComponent(ProviderComponent);
@@ -159,6 +220,16 @@ describe('ProviderComponent', () => {
       const img = compiled.querySelector('img');
       expect(img).toBeTruthy();
       expect(img?.getAttribute('alt')).toBe('OpenFin');
+    });
+
+    it('should render the Store Favorites heading', () => {
+      const fixture = TestBed.createComponent(ProviderComponent);
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const headings = Array.from(compiled.querySelectorAll('h2')).map(
+        (h) => h.textContent
+      );
+      expect(headings).toContain('Store Favorites');
     });
   });
 });

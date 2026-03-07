@@ -28,6 +28,8 @@ const makeWorkspace = (id: string, title: string): Workspace =>
 describe('WorkspaceOverrideService', () => {
   let service: WorkspaceOverrideService;
   let storageService: jest.Mocked<WorkspaceStorageService>;
+  let mockPublish: jest.Mock;
+  let mockGetSnapshot: jest.Mock;
 
   beforeEach(() => {
     storageService = {
@@ -38,7 +40,21 @@ describe('WorkspaceOverrideService', () => {
       removeLastSavedWorkspaceId: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<WorkspaceStorageService>;
 
+    mockPublish = jest.fn().mockResolvedValue(undefined);
+    mockGetSnapshot = jest.fn().mockResolvedValue({ windows: [] });
+
+    (globalThis as any).fin = {
+      InterApplicationBus: { publish: mockPublish },
+      Platform: {
+        getCurrentSync: () => ({ getSnapshot: mockGetSnapshot }),
+      },
+    };
+
     service = new WorkspaceOverrideService(storageService);
+  });
+
+  afterEach(() => {
+    delete (globalThis as any).fin;
   });
 
   // ── createOverrideCallback ──────────────────────────────────
@@ -256,6 +272,24 @@ describe('WorkspaceOverrideService', () => {
           'ws-99',
         );
       });
+
+      it('should broadcast flush event and re-capture snapshot before saving', async () => {
+        storageService.getWorkspaces.mockResolvedValue([]);
+        const freshSnapshot = { windows: [{ name: 'fresh' }] };
+        mockGetSnapshot.mockResolvedValue(freshSnapshot);
+
+        const ws = makeWorkspace('ws-1', 'WS') as any;
+        ws.snapshot = { windows: [{ name: 'stale' }] };
+
+        await provider.createSavedWorkspace({ workspace: ws });
+
+        expect(mockPublish).toHaveBeenCalledWith(
+          'workspace:flush-view-state',
+          {},
+        );
+        expect(mockGetSnapshot).toHaveBeenCalled();
+        expect(ws.snapshot).toEqual(freshSnapshot);
+      });
     });
 
     // ── updateSavedWorkspace ────────────────────────────────
@@ -287,6 +321,27 @@ describe('WorkspaceOverrideService', () => {
         });
 
         expect(storageService.saveWorkspaces).toHaveBeenCalledWith([ws]);
+      });
+
+      it('should broadcast flush event and re-capture snapshot before saving', async () => {
+        const existing = makeWorkspace('ws-1', 'WS');
+        storageService.getWorkspaces.mockResolvedValue([existing]);
+        const freshSnapshot = { windows: [{ name: 'fresh' }] };
+        mockGetSnapshot.mockResolvedValue(freshSnapshot);
+
+        const updated = makeWorkspace('ws-1', 'Updated') as any;
+        updated.snapshot = { windows: [{ name: 'stale' }] };
+
+        await provider.updateSavedWorkspace({
+          workspaceId: 'ws-1',
+          workspace: updated,
+        });
+
+        expect(mockPublish).toHaveBeenCalledWith(
+          'workspace:flush-view-state',
+          {},
+        );
+        expect(updated.snapshot).toEqual(freshSnapshot);
       });
     });
 

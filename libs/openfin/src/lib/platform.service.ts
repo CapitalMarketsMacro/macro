@@ -119,6 +119,7 @@ export class PlatformService {
   initializeWorkspacePlatform(
     platformSettings: PlatformSettings,
     themePalettes?: ThemePresetPalettes,
+    additionalCustomActions?: Record<string, (payload: any) => Promise<void>>,
   ): Observable<void> {
     // JSON theme presets are loaded dynamically; fall back to compiled themeConfig
     const dark = themePalettes?.dark ?? themeConfig.dark;
@@ -151,6 +152,7 @@ export class PlatformService {
           },
         ],
         customActions: {
+          ...additionalCustomActions,
           'launch-app': async (event): Promise<void> => {
             if (
               event.callerType === CustomActionCallerType.CustomButton ||

@@ -11,6 +11,7 @@ export { SettingsService as BaseSettingsService } from './lib/settings.service';
 export { ContextService as BaseContextService } from './lib/context.service';
 export { ChannelService as BaseChannelService } from './lib/channel.service';
 export { StoreService as BaseStoreService } from './lib/store.service';
+export { FavoritesService as BaseFavoritesService } from './lib/favorites.service';
 export { DockService as BaseDockService } from './lib/dock.service';
 export { Dock3Service as BaseDock3Service } from './lib/dock3.service';
 export { HomeService as BaseHomeService } from './lib/home.service';
