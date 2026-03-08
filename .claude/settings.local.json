@@ -47,7 +47,9 @@
       "Bash(rm -f /e/MacroDesktopMFE/macro/reports/{displayName}-junit.xml && cd /e/MacroDesktopMFE/macro && npm run test:ci 2>&1)",
       "Bash(ls:*)",
       "Bash(xargs grep:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(echo exit: $?:*)",
+      "Bash(rm:*)"
     ]
   },
   "enableAllProjectMcpServers": true
