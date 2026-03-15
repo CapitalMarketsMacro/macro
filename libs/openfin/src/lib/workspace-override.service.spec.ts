@@ -50,7 +50,16 @@ describe('WorkspaceOverrideService', () => {
       },
     };
 
-    service = new WorkspaceOverrideService(storageService);
+    const mockSnapService = {
+      init: jest.fn().mockResolvedValue(undefined),
+      stop: jest.fn().mockResolvedValue(undefined),
+      decorateSnapshot: jest.fn().mockImplementation((s: any) => Promise.resolve(s)),
+      prepareToApplySnapshot: jest.fn().mockResolvedValue(undefined),
+      applySnapshot: jest.fn().mockResolvedValue(undefined),
+      isRunning: false,
+    } as any;
+
+    service = new WorkspaceOverrideService(storageService, mockSnapService);
   });
 
   afterEach(() => {

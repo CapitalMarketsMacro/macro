@@ -9,6 +9,7 @@ import { StoreService } from './store.service';
 import { NotificationsService } from './notifications.service';
 import { WorkspaceStorageService } from './workspace-storage.service';
 import { ThemePresetService } from './theme-preset.service';
+import { SnapService } from './snap.service';
 import { getCurrentSync } from '@openfin/workspace-platform';
 import { Logger } from '@macro/logger';
 
@@ -28,6 +29,7 @@ export class WorkspaceService {
   private readonly storageService: WorkspaceStorageService;
   private readonly themePresetService: ThemePresetService;
   private readonly notificationsService: NotificationsService;
+  private readonly snapService: SnapService;
 
   private readonly status$ = new BehaviorSubject<string>('');
 
@@ -41,6 +43,7 @@ export class WorkspaceService {
     storageService: WorkspaceStorageService,
     themePresetService: ThemePresetService,
     notificationsService: NotificationsService,
+    snapService: SnapService,
   ) {
     this.platformService = platformService;
     this.dockService = dockService;
@@ -51,6 +54,7 @@ export class WorkspaceService {
     this.storageService = storageService;
     this.themePresetService = themePresetService;
     this.notificationsService = notificationsService;
+    this.snapService = snapService;
   }
 
   init() {
@@ -173,6 +177,7 @@ export class WorkspaceService {
       this.homeService.register(platformSettings),
       this.storeService.register(platformSettings),
       from(this.notificationsService.register(platformSettings)),
+      from(this.snapService.init(platformSettings.id, customSettings?.snapProvider)),
     ]);
   }
 
@@ -190,6 +195,7 @@ export class WorkspaceService {
       Promise.all([
         this.dock3Service.shutdown(),
         this.notificationsService.deregister(),
+        this.snapService.stop(),
       ]).finally(() => {
         fin.Platform.getCurrentSync().quit();
       });

@@ -49,7 +49,9 @@
       "Bash(xargs grep:*)",
       "Bash(xargs:*)",
       "Bash(echo exit: $?:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(grep:*)",
+      "Bash(cd:*)"
     ]
   },
   "enableAllProjectMcpServers": true

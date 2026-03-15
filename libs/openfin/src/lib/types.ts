@@ -31,9 +31,23 @@ export interface Dock3Settings {
   contentMenu?: Dock3ContentEntry[];
 }
 
+export interface SnapProviderSettings {
+  enabled?: boolean;
+  serverOptions?: {
+    showDebug?: boolean;
+    disableUserUnstick?: boolean;
+    keyToStick?: boolean | 'ctrl' | 'shift';
+    disableGPUAcceleratedDragging?: boolean;
+    disableBlurDropPreview?: boolean;
+    autoHideClientTaskbarIcons?: boolean;
+    theme?: 'snap-original' | 'snap-light1' | 'snap-dark1';
+  };
+}
+
 export interface CustomSettings {
   apps?: App[];
   dock3?: Dock3Settings;
+  snapProvider?: SnapProviderSettings;
 }
 
 export interface PlatformSettings {

@@ -18,6 +18,7 @@ import { WorkspaceService as BaseWorkspaceService } from '../workspace.service';
 import { ThemeService as BaseThemeService } from '../theme.service';
 import { ViewStateService as BaseViewStateService } from '../view-state.service';
 import { ThemePresetService as BaseThemePresetService } from '../theme-preset.service';
+import { SnapService as BaseSnapService } from '../snap.service';
 
 /**
  * Angular wrapper services for @macro/openfin
@@ -92,10 +93,14 @@ export class WorkspaceStorageService extends BaseWorkspaceStorageService {}
 export class ThemePresetService extends BaseThemePresetService {}
 
 @Injectable({ providedIn: 'root' })
+export class SnapService extends BaseSnapService {}
+
+@Injectable({ providedIn: 'root' })
 export class WorkspaceOverrideService extends BaseWorkspaceOverrideService {
   constructor() {
     const storageService = inject(WorkspaceStorageService);
-    super(storageService);
+    const snapService = inject(SnapService);
+    super(storageService, snapService);
   }
 }
 
@@ -119,7 +124,8 @@ export class WorkspaceService extends BaseWorkspaceService {
     const storageService = inject(WorkspaceStorageService);
     const themePresetService = inject(ThemePresetService);
     const notificationsService = inject(NotificationsService);
-    super(platformService, dockService, dock3Service, homeService, storeService, settingsService, storageService, themePresetService, notificationsService);
+    const snapService = inject(SnapService);
+    super(platformService, dockService, dock3Service, homeService, storeService, settingsService, storageService, themePresetService, notificationsService, snapService);
   }
 }
 

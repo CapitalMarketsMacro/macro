@@ -1,3 +1,4 @@
+import type OpenFin from '@openfin/core';
 import type {
   AnalyticsEvent,
   ApplyWorkspacePayload,
@@ -10,6 +11,7 @@ import type {
 import { ColorSchemeOptionType } from '@openfin/workspace-platform';
 import { Logger } from '@macro/logger';
 import { WorkspaceStorageService } from './workspace-storage.service';
+import { SnapService } from './snap.service';
 
 /**
  * Workspace override service for customizing workspace platform behavior
@@ -71,11 +73,13 @@ export const THEME_CHANGED_TOPIC = 'workspace:theme-changed';
 export class WorkspaceOverrideService {
   private readonly logger = Logger.getLogger('WorkspaceOverrideService');
   private readonly storageService: WorkspaceStorageService;
+  private readonly snapService: SnapService;
 
   private onThemeChanged?: (scheme: ColorSchemeOptionType) => Promise<void>;
 
-  constructor(storageService: WorkspaceStorageService) {
+  constructor(storageService: WorkspaceStorageService, snapService: SnapService) {
     this.storageService = storageService;
+    this.snapService = snapService;
   }
 
   /**
@@ -94,6 +98,7 @@ export class WorkspaceOverrideService {
   createOverrideCallback(): WorkspacePlatformOverrideCallback {
     const logger = this.logger;
     const storageService = this.storageService;
+    const snapService = this.snapService;
     const getOnThemeChanged = () => this.onThemeChanged;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -259,6 +264,23 @@ export class WorkspaceOverrideService {
           const result = await super.applyWorkspace(payload);
           logger.info('Workspace apply result', { workspaceId: payload.workspaceId, result });
           return result;
+        }
+
+        /**
+         * Decorate the platform snapshot with the current snap layout.
+         */
+        async getSnapshot(...args: [undefined, OpenFin.ClientIdentity]): Promise<OpenFin.Snapshot> {
+          const snapshot = await super.getSnapshot(...args);
+          return snapService.decorateSnapshot(snapshot);
+        }
+
+        /**
+         * Apply a snapshot, restoring any snap layout embedded in it.
+         */
+        async applySnapshot(payload: OpenFin.ApplySnapshotPayload, identity?: OpenFin.Identity): Promise<void> {
+          await snapService.prepareToApplySnapshot(payload);
+          await super.applySnapshot(payload, identity);
+          await snapService.applySnapshot(payload.snapshot);
         }
 
         /**

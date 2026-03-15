@@ -27,6 +27,7 @@ export { ViewStateService as BaseViewStateService } from './lib/view-state.servi
 export type { ViewStateData } from './lib/view-state.service';
 export { ThemePresetService as BaseThemePresetService } from './lib/theme-preset.service';
 export type { ThemePresetPalettes, ThemePresetInfo } from './lib/theme-preset.service';
+export { SnapService as BaseSnapService } from './lib/snap.service';
 
 // Angular wrappers (for Angular applications) - these are the default exports
 export * from './lib/angular';

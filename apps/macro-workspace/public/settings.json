@@ -178,6 +178,17 @@
         "tags": ["view", "react", "commodities", "market-data"]
       }
     ],
+    "snapProvider": {
+      "enabled": true,
+      "serverOptions": {
+        "showDebug": true,
+        "disableUserUnstick": false,
+        "keyToStick": false,
+        "disableGPUAcceleratedDragging": false,
+        "disableBlurDropPreview": false,
+        "autoHideClientTaskbarIcons": true
+      }
+    },
     "dock3": {
       "favorites": [
         {

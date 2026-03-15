@@ -53,6 +53,7 @@
     "@angular/router": "~21.1.0",
     "@finos/fdc3": "2.0.3",
     "@openfin/core": "42.103.4",
+    "@openfin/snap-sdk": "^1.5.0",
     "@openfin/workspace": "22.3.29",
     "@openfin/workspace-platform": "22.3.29",
     "@primeuix/themes": "^2.0.3",

@@ -10,8 +10,33 @@
     "icon": "http://localhost:4202/icons/platform.svg",
     "autoShow": true,
     "providerUrl": "http://localhost:4202/provider",
-    "preventQuitOnLastWindowClosed": false
+    "preventQuitOnLastWindowClosed": false,
+    "permissions": {
+      "System": {
+        "launchExternalProcess": {
+          "enabled": true,
+          "assets": {
+            "enabled": true,
+            "srcRules": [
+              {
+                "match": ["https://cdn.openfin.co/release/snap/*"],
+                "behavior": "allow"
+              }
+            ]
+          }
+        },
+        "downloadAsset": true
+      }
+    }
   },
+  "appAssets": [
+    {
+      "src": "https://cdn.openfin.co/release/snap/1.5.0/snap.zip",
+      "alias": "openfin-snap",
+      "version": "1.5.0",
+      "target": "OpenFinSnap.exe"
+    }
+  ],
   "shortcut": {
     "company": "OpenFin",
     "description": "A way of showing examples of what OpenFin can do.",
