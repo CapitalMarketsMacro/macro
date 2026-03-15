@@ -16,6 +16,7 @@ jest.mock('@openfin/snap-sdk', () => ({
     decorateSnapshot: mockDecorateSnapshot,
     prepareToApplySnapshot: mockPrepareToApplySnapshot,
     applySnapshot: mockApplySnapshot,
+    getSnapServerStatus: jest.fn().mockReturnValue('connected'),
   })),
 }));
 
@@ -42,15 +43,12 @@ describe('SnapService', () => {
     it('should start the snap server and enable auto window registration', async () => {
       await service.init('test-platform');
 
-      expect(mockStart).toHaveBeenCalledWith(expect.objectContaining({
-        showDebug: false,
-        autoHideClientTaskbarIcons: true,
-      }));
+      expect(mockStart).toHaveBeenCalledWith({});
       expect(mockEnableAutoWindowRegistration).toHaveBeenCalled();
       expect(service.isRunning).toBe(true);
     });
 
-    it('should apply custom server options from settings', async () => {
+    it('should pass through server options from settings', async () => {
       await service.init('test-platform', {
         serverOptions: {
           showDebug: true,
@@ -59,11 +57,11 @@ describe('SnapService', () => {
         },
       });
 
-      expect(mockStart).toHaveBeenCalledWith(expect.objectContaining({
+      expect(mockStart).toHaveBeenCalledWith({
         showDebug: true,
         keyToStick: 'ctrl',
         theme: 'snap-dark1',
-      }));
+      });
     });
 
     it('should not initialize when disabled', async () => {

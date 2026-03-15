@@ -181,7 +181,7 @@
     "snapProvider": {
       "enabled": true,
       "serverOptions": {
-        "showDebug": true,
+        "showDebug": false,
         "disableUserUnstick": false,
         "keyToStick": false,
         "disableGPUAcceleratedDragging": false,

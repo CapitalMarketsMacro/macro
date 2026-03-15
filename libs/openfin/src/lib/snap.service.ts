@@ -27,19 +27,19 @@ export class SnapService {
 
     try {
       this.server = new SnapServer(platformId);
+
+      // Only pass options that are explicitly set — let the SDK use its own defaults
       const serverOptions: ServerOptions = {
-        showDebug: settings?.serverOptions?.showDebug ?? false,
-        disableUserUnstick: settings?.serverOptions?.disableUserUnstick ?? false,
-        keyToStick: settings?.serverOptions?.keyToStick ?? false,
-        disableGPUAcceleratedDragging: settings?.serverOptions?.disableGPUAcceleratedDragging ?? false,
-        disableBlurDropPreview: settings?.serverOptions?.disableBlurDropPreview ?? false,
-        autoHideClientTaskbarIcons: settings?.serverOptions?.autoHideClientTaskbarIcons ?? true,
-        theme: settings?.serverOptions?.theme,
+        ...settings?.serverOptions,
       };
 
+      logger.info('Starting Snap server', { platformId, serverOptions });
       await this.server.start(serverOptions);
+
+      logger.info('Enabling auto window registration');
       this.disableAutoReg = await this.server.enableAutoWindowRegistration();
-      logger.info('Snap initialized', { platformId });
+
+      logger.info('Snap initialized successfully', { platformId, status: this.server.getSnapServerStatus() });
     } catch (err) {
       logger.error('Error initializing Snap', err);
       this.server = undefined;
@@ -58,7 +58,7 @@ export class SnapService {
    * Called from the workspace override's getSnapshot.
    */
   async decorateSnapshot(snapshot: OpenFin.Snapshot): Promise<OpenFin.Snapshot> {
-    if (!this.server) return snapshot;
+    if (!this.server || this.server.getSnapServerStatus() !== 'connected') return snapshot;
     try {
       return await this.server.decorateSnapshot(snapshot as SnapSnapshot);
     } catch (err) {
@@ -72,7 +72,7 @@ export class SnapService {
    * Called from the workspace override's applySnapshot before super.
    */
   async prepareToApplySnapshot(payload?: OpenFin.ApplySnapshotPayload): Promise<void> {
-    if (!this.server) return;
+    if (!this.server || this.server.getSnapServerStatus() !== 'connected') return;
     try {
       await this.server.prepareToApplySnapshot(payload);
     } catch (err) {
@@ -85,7 +85,7 @@ export class SnapService {
    * Called from the workspace override's applySnapshot after super.
    */
   async applySnapshot(snapshot: OpenFin.Snapshot): Promise<void> {
-    if (!this.server) return;
+    if (!this.server || this.server.getSnapServerStatus() !== 'connected') return;
     try {
       await this.server.applySnapshot(snapshot as SnapSnapshot);
     } catch (err) {
