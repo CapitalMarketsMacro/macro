@@ -137,6 +137,9 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     suppressRowClickSelection: true,
     enableRangeSelection: true,
     suppressCellFocus: true,
+    cellSelection: {
+      enableColumnSelection: true,
+    },
   };
 
   /**

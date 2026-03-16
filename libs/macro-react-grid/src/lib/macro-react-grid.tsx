@@ -113,6 +113,9 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       suppressRowClickSelection: true,
       enableRangeSelection: true,
       suppressCellFocus: true,
+      cellSelection: {
+        enableColumnSelection: true,
+      },
     }),
     []
   );

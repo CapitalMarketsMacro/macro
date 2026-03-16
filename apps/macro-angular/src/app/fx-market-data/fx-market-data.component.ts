@@ -41,6 +41,7 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       field: 'bid',
       headerName: 'Bid',
       width: 120,
+      allowFormula: true,
       valueFormatter: (params: any) => this.formatPrice(params.value, params.data.symbol),
       cellStyle: { textAlign: 'right' }
     },
@@ -48,6 +49,7 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       field: 'ask',
       headerName: 'Ask',
       width: 120,
+      allowFormula: true,
       valueFormatter: (params: any) => this.formatPrice(params.value, params.data.symbol),
       cellStyle: { textAlign: 'right' }
     },
@@ -55,6 +57,7 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       field: 'mid',
       headerName: 'Mid',
       width: 120,
+      allowFormula: true,
       valueFormatter: (params: any) => this.formatPrice(params.value, params.data.symbol),
       cellStyle: { textAlign: 'right' }
     },
@@ -62,6 +65,7 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       field: 'spread',
       headerName: 'Spread',
       width: 100,
+      allowFormula: true,
       valueFormatter: (params: any) => this.formatSpread(params.value, params.data.symbol),
       cellStyle: { textAlign: 'right' }
     },
@@ -78,7 +82,12 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
           style['color'] = 'red';
         }
         return style;
-      }
+      },
+      sortingOrder: [
+        { direction: 'desc', type: 'absolute' },
+        { direction: 'asc', type: 'absolute' },
+        null,
+      ] as any,
     },
     {
       field: 'changePercent',
@@ -93,7 +102,12 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
           style['color'] = 'red';
         }
         return style;
-      }
+      },
+      sortingOrder: [
+        { direction: 'desc', type: 'absolute' },
+        { direction: 'asc', type: 'absolute' },
+        null,
+      ] as any,
     },
   ];
 

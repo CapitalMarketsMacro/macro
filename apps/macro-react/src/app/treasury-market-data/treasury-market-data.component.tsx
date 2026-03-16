@@ -221,6 +221,7 @@ export function TreasuryMarketDataComponent() {
         field: 'price',
         headerName: 'Price',
         width: 120,
+        allowFormula: true,
         valueFormatter: (params: any) => formatTreasury32nd(params.value),
         cellStyle: { textAlign: 'right' }
       },
@@ -228,6 +229,7 @@ export function TreasuryMarketDataComponent() {
         field: 'yield',
         headerName: 'Yield',
         width: 120,
+        allowFormula: true,
         valueFormatter: (params: any) => `${params.value.toFixed(4)}%`,
         cellStyle: { textAlign: 'right' }
       },
@@ -235,6 +237,7 @@ export function TreasuryMarketDataComponent() {
         field: 'bid',
         headerName: 'Bid',
         width: 120,
+        allowFormula: true,
         valueFormatter: (params: any) => formatTreasury32nd(params.value),
         cellStyle: { textAlign: 'right' }
       },
@@ -242,6 +245,7 @@ export function TreasuryMarketDataComponent() {
         field: 'ask',
         headerName: 'Ask',
         width: 120,
+        allowFormula: true,
         valueFormatter: (params: any) => formatTreasury32nd(params.value),
         cellStyle: { textAlign: 'right' }
       },
@@ -249,6 +253,7 @@ export function TreasuryMarketDataComponent() {
         field: 'spread',
         headerName: 'Spread',
         width: 100,
+        allowFormula: true,
         valueFormatter: (params: any) => params.value.toFixed(4),
         cellStyle: { textAlign: 'right' }
       },
@@ -261,7 +266,12 @@ export function TreasuryMarketDataComponent() {
           if (params.value > 0) return { color: 'green', textAlign: 'right' };
           if (params.value < 0) return { color: 'red', textAlign: 'right' };
           return { textAlign: 'right' };
-        }
+        },
+        sortingOrder: [
+          { direction: 'desc', type: 'absolute' },
+          { direction: 'asc', type: 'absolute' },
+          null,
+        ] as any,
       },
       {
         field: 'changePercent',
@@ -272,12 +282,18 @@ export function TreasuryMarketDataComponent() {
           if (params.value > 0) return { color: 'green', textAlign: 'right' };
           if (params.value < 0) return { color: 'red', textAlign: 'right' };
           return { textAlign: 'right' };
-        }
+        },
+        sortingOrder: [
+          { direction: 'desc', type: 'absolute' },
+          { direction: 'asc', type: 'absolute' },
+          null,
+        ] as any,
       },
       {
         field: 'volume',
         headerName: 'Volume',
         width: 120,
+        allowFormula: true,
         valueFormatter: (params: any) => `${params.value.toFixed(2)}M`,
         cellStyle: { textAlign: 'right' }
       },
@@ -285,6 +301,7 @@ export function TreasuryMarketDataComponent() {
         field: 'duration',
         headerName: 'Duration',
         width: 120,
+        allowFormula: true,
         valueFormatter: (params: any) => params.value.toFixed(2),
         cellStyle: { textAlign: 'right' }
       },
@@ -292,6 +309,7 @@ export function TreasuryMarketDataComponent() {
         field: 'convexity',
         headerName: 'Convexity',
         width: 120,
+        allowFormula: true,
         valueFormatter: (params: any) => params.value.toFixed(2),
         cellStyle: { textAlign: 'right' }
       },
