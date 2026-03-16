@@ -453,11 +453,12 @@ npm,version
 @nx/webpack,22.5.1
 @nx/workspace,22.5.1
 @openfin/automation-helpers,1.3.1
-@openfin/core,42.102.4
+@openfin/core,42.103.4
 @openfin/microsoft365,1.0.1
-@openfin/node-adapter,42.102.4
-@openfin/workspace,22.3.25
-@openfin/workspace-platform,22.3.25
+@openfin/node-adapter,42.103.4
+@openfin/snap-sdk,1.5.0
+@openfin/workspace,22.3.29
+@openfin/workspace-platform,22.3.29
 @oxc-project/types,0.106.0
 @oxc-resolver/binding-android-arm-eabi,11.17.1
 @oxc-resolver/binding-android-arm64,11.17.1
@@ -1409,6 +1410,7 @@ jest-environment-node,30.0.0
 jest-environment-node,30.2.0
 jest-haste-map,30.0.0
 jest-haste-map,30.2.0
+jest-junit,16.0.0
 jest-leak-detector,30.0.0
 jest-leak-detector,30.2.0
 jest-matcher-utils,30.0.0
@@ -1577,6 +1579,7 @@ minipass-flush,1.0.5
 minipass-pipeline,1.2.4
 minipass-sized,1.0.3
 minizlib,3.1.0
+mkdirp,1.0.4
 mrmime,2.0.1
 ms,2.0.0
 ms,2.1.2
@@ -1642,7 +1645,7 @@ onetime,7.0.0
 open,10.2.0
 open,8.4.2
 opener,1.5.2
-openfin-notifications,2.12.3
+openfin-notifications,2.12.6
 openfin-service-async,1.0.1
 openfin-service-signal,1.0.0
 optionator,0.9.4
@@ -1755,7 +1758,7 @@ pretty-format,29.7.0
 pretty-format,30.0.0
 pretty-format,30.2.0
 primeicons,7.0.0
-primeng,21.1.1
+primeng,21.1.3
 primereact,11.0.0-alpha.10
 proc-log,6.1.0
 process,0.11.10
@@ -2132,6 +2135,7 @@ ws,7.5.10
 ws,8.18.0
 ws,8.19.0
 wsl-utils,0.1.0
+xml,1.0.1
 xml-name-validator,5.0.0
 xmlchars,2.2.0
 y18n,5.0.8

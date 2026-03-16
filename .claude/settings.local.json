@@ -51,7 +51,8 @@
       "Bash(echo exit: $?:*)",
       "Bash(rm:*)",
       "Bash(grep:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "mcp__ag-mcp__list_versions"
     ]
   },
   "enableAllProjectMcpServers": true
