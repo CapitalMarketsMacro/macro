@@ -9,6 +9,7 @@
     "uuid": "macro-workspace-platform",
     "icon": "http://localhost:4202/icons/platform.svg",
     "autoShow": true,
+    "allowLaunchIntoPlatform": true,
     "providerUrl": "http://localhost:4202/provider",
     "preventQuitOnLastWindowClosed": false,
     "permissions": {
@@ -222,6 +223,25 @@
         "intents": [],
         "images": [],
         "tags": ["view", "react", "commodities", "market-data"]
+      },
+      {
+        "appId": "rates-desktop",
+        "name": "rates-desktop",
+        "title": "Rates E-Trading Desktop",
+        "description": "Rates E-Trading Desktop platform for fixed income trading",
+        "manifest": "http://localhost:8080/assets/openfin/app.platform.fin.json",
+        "manifestType": "manifest",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/platform.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["platform", "rates", "fixed-income"]
       }
     ]
   }
