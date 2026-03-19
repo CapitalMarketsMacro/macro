@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, PLATFORM_ID, inject } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, PLATFORM_ID, inject, ElementRef, ViewChild } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import { Subject, Subscription } from 'rxjs';
 import { isPlatformBrowser, DOCUMENT } from '@angular/common';
@@ -23,13 +23,41 @@ import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
 import { buildAgGridTheme } from '@macro/macro-design';
 
 // Register all ag-Grid modules (Community and Enterprise)
-// This ensures all features are available without requiring registration in the application
 ModuleRegistry.registerModules([
   AllCommunityModule,
   AllEnterpriseModule,
   IntegratedChartsModule.with(AgChartsEnterpriseModule)
-
 ]);
+
+/** User-applied column format types */
+export type FormatType = 'number' | 'percent' | 'bps' | 'currency' | 'compact';
+
+/** Configuration for a user-applied column format */
+export interface ColumnFormatConfig {
+  type: FormatType;
+  decimals: number;
+}
+
+/** Format a numeric value according to user config */
+function applyFormat(value: unknown, config: ColumnFormatConfig): string {
+  if (value == null || typeof value !== 'number' || isNaN(value)) return String(value ?? '');
+  let num = value;
+  let prefix = '';
+  let suffix = '';
+  switch (config.type) {
+    case 'percent': num = value * 100; suffix = '%'; break;
+    case 'bps': num = value * 10000; suffix = ' bps'; break;
+    case 'currency': prefix = '$'; break;
+    case 'compact': {
+      const abs = Math.abs(value);
+      if (abs >= 1e9) return prefix + (value / 1e9).toFixed(config.decimals) + 'B';
+      if (abs >= 1e6) return prefix + (value / 1e6).toFixed(config.decimals) + 'M';
+      if (abs >= 1e3) return prefix + (value / 1e3).toFixed(config.decimals) + 'K';
+      break;
+    }
+  }
+  return prefix + num.toFixed(config.decimals) + suffix;
+}
 
 /**
  * Macro Angular Grid Component
@@ -137,9 +165,6 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     suppressRowClickSelection: true,
     enableRangeSelection: true,
     suppressCellFocus: true,
-    cellSelection: {
-      enableColumnSelection: true,
-    },
   };
 
   /**
@@ -147,7 +172,26 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
    */
   public mergedGridOptions: GridOptions = {};
 
-  theme : Theme | undefined;
+  theme: Theme | undefined;
+
+  @ViewChild('gridContainer', { static: true }) private gridContainerRef!: ElementRef<HTMLElement>;
+
+  // ── Column formatting state ──
+  public formatMode = false;
+  public popover: { colId: string; headerName: string; x: number; y: number } | null = null;
+  public selectedFormatType: FormatType = 'number';
+  public selectedFormatDecimals = 2;
+  private columnFormats = new Map<string, ColumnFormatConfig>();
+  private originalFormatters = new Map<string, any>();
+  private headerClickListener?: (e: MouseEvent) => void;
+
+  public readonly formatTypes: { value: FormatType; label: string }[] = [
+    { value: 'number', label: 'Num' },
+    { value: 'percent', label: '%' },
+    { value: 'bps', label: 'bps' },
+    { value: 'currency', label: '$' },
+    { value: 'compact', label: 'K/M' },
+  ];
 
   ngOnInit(): void {
     this.parseColumns();
@@ -405,29 +449,154 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Get the current grid state (column order, sizing, sort, filter, etc.)
-   * Returns undefined if the grid is not ready.
+   * Get the current grid state including user column formats.
+   * Column formats are stored as `columnFormats` on the returned object.
    */
-  public getGridState(): GridState | undefined {
-    return this.gridApi?.getState();
+  public getGridState(): any {
+    const state = this.gridApi?.getState();
+    if (!state) return undefined;
+    if (this.columnFormats.size > 0) {
+      return { ...state, columnFormats: Object.fromEntries(this.columnFormats) };
+    }
+    return state;
   }
 
   /**
-   * Apply a previously saved grid state.
-   * @param state - GridState object from getGridState()
+   * Apply a previously saved grid state, including any column formats.
    */
-  public applyGridState(state: GridState): void {
+  public applyGridState(state: any): void {
     if (!this.gridApi) {
       this.logger.warn('Cannot apply grid state — grid is not ready');
       return;
     }
-    this.gridApi.setState(state);
+    if (state?.columnFormats) {
+      const { columnFormats, ...gridState } = state;
+      this.restoreColumnFormats(columnFormats);
+      this.gridApi.setState(gridState as GridState);
+    } else {
+      this.gridApi.setState(state as GridState);
+    }
+  }
+
+  // ── Format mode UI methods ──
+
+  toggleFormatMode(): void {
+    this.formatMode = !this.formatMode;
+    this.popover = null;
+    if (this.formatMode) {
+      this.attachHeaderClickListener();
+    } else {
+      this.detachHeaderClickListener();
+    }
+  }
+
+  closePopover(): void {
+    this.popover = null;
+  }
+
+  selectFormatType(type: FormatType): void {
+    this.selectedFormatType = type;
+  }
+
+  adjustDecimals(delta: number): void {
+    this.selectedFormatDecimals = Math.max(0, Math.min(10, this.selectedFormatDecimals + delta));
+  }
+
+  hasColumnFormat(colId: string): boolean {
+    return this.columnFormats.has(colId);
+  }
+
+  getFormattedColumnCount(): number {
+    return this.columnFormats.size;
+  }
+
+  applyAndClose(): void {
+    if (!this.popover || !this.gridApi) return;
+    const config: ColumnFormatConfig = {
+      type: this.selectedFormatType,
+      decimals: this.selectedFormatDecimals,
+    };
+    this.columnFormats.set(this.popover.colId, config);
+    this.applyFormatterToColumn(this.popover.colId, config);
+    this.popover = null;
+  }
+
+  clearColumnFormat(): void {
+    if (!this.popover || !this.gridApi) return;
+    this.columnFormats.delete(this.popover.colId);
+    this.restoreOriginalFormatter(this.popover.colId);
+    this.selectedFormatType = 'number';
+    this.selectedFormatDecimals = 2;
+  }
+
+  private attachHeaderClickListener(): void {
+    this.detachHeaderClickListener();
+    this.headerClickListener = (e: MouseEvent) => {
+      const headerCell = (e.target as HTMLElement).closest('.ag-header-cell') as HTMLElement | null;
+      if (!headerCell) return;
+      if ((e.target as HTMLElement).closest('.ag-header-cell-menu-button, .ag-header-cell-filter-button')) return;
+      const colId = headerCell.getAttribute('col-id');
+      if (!colId) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const col = this.gridApi?.getColumn(colId);
+      if (!col) return;
+      const rect = headerCell.getBoundingClientRect();
+      const existing = this.columnFormats.get(colId);
+      this.selectedFormatType = existing?.type ?? 'number';
+      this.selectedFormatDecimals = existing?.decimals ?? 2;
+      this.popover = {
+        colId,
+        headerName: col.getColDef().headerName ?? colId,
+        x: rect.left,
+        y: rect.bottom + 4,
+      };
+    };
+    this.gridContainerRef.nativeElement.addEventListener('click', this.headerClickListener, true);
+  }
+
+  private detachHeaderClickListener(): void {
+    if (this.headerClickListener) {
+      this.gridContainerRef.nativeElement.removeEventListener('click', this.headerClickListener, true);
+      this.headerClickListener = undefined;
+    }
+  }
+
+  private applyFormatterToColumn(colId: string, config: ColumnFormatConfig): void {
+    const col = this.gridApi?.getColumn(colId);
+    if (!col) return;
+    const colDef = col.getColDef();
+    if (!this.originalFormatters.has(colId)) {
+      this.originalFormatters.set(colId, colDef.valueFormatter);
+    }
+    colDef.valueFormatter = (params: any) => applyFormat(params.value, config);
+    this.gridApi?.refreshCells({ columns: [colId], force: true });
+  }
+
+  private restoreOriginalFormatter(colId: string): void {
+    const col = this.gridApi?.getColumn(colId);
+    if (!col) return;
+    const colDef = col.getColDef();
+    if (this.originalFormatters.has(colId)) {
+      colDef.valueFormatter = this.originalFormatters.get(colId);
+      this.originalFormatters.delete(colId);
+    }
+    this.gridApi?.refreshCells({ columns: [colId], force: true });
+  }
+
+  private restoreColumnFormats(formats: Record<string, ColumnFormatConfig>): void {
+    for (const [colId, config] of Object.entries(formats)) {
+      this.columnFormats.set(colId, config);
+      // Defer formatter application until after grid state is applied
+      setTimeout(() => this.applyFormatterToColumn(colId, config), 0);
+    }
   }
 
   /**
    * Cleanup subscriptions
    */
   ngOnDestroy(): void {
+    this.detachHeaderClickListener();
     this.subscriptions.unsubscribe();
     this.addRows$.complete();
     this.updateRows$.complete();

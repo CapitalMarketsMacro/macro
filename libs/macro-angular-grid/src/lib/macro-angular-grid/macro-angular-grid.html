@@ -1,4 +1,43 @@
-<div style="height: 100%; width: 100%;">
+<div class="macro-grid-container" #gridContainer>
+  <button class="format-trigger" [class.active]="formatMode" (click)="toggleFormatMode()"
+    [title]="formatMode ? 'Exit format mode' : 'Format columns'">
+    Fx
+    @if (getFormattedColumnCount() > 0) {
+      <span class="format-badge">{{ getFormattedColumnCount() }}</span>
+    }
+  </button>
+
+  @if (formatMode && !popover) {
+    <div class="format-hint">Click a column header to format</div>
+  }
+
+  @if (popover) {
+    <div class="format-backdrop" (click)="closePopover()"></div>
+    <div class="format-popover" [style.left.px]="popover.x" [style.top.px]="popover.y" #popoverEl>
+      <div class="fp-header">
+        <span class="fp-title">{{ popover.headerName }}</span>
+        @if (hasColumnFormat(popover.colId)) {
+          <button class="fp-clear-link" (click)="clearColumnFormat()">Reset</button>
+        }
+      </div>
+      <div class="fp-types">
+        @for (ft of formatTypes; track ft.value) {
+          <button class="fp-pill" [class.active]="selectedFormatType === ft.value"
+            (click)="selectFormatType(ft.value)">{{ ft.label }}</button>
+        }
+      </div>
+      <div class="fp-row">
+        <span class="fp-label">Decimals</span>
+        <div class="fp-stepper">
+          <button class="fp-step" (click)="adjustDecimals(-1)" [disabled]="selectedFormatDecimals <= 0">&minus;</button>
+          <span class="fp-step-value">{{ selectedFormatDecimals }}</span>
+          <button class="fp-step" (click)="adjustDecimals(1)" [disabled]="selectedFormatDecimals >= 10">+</button>
+        </div>
+      </div>
+      <button class="fp-apply" (click)="applyAndClose()">Apply</button>
+    </div>
+  }
+
   <ag-grid-angular
     [columnDefs]="columnDefs"
     [theme]="theme"

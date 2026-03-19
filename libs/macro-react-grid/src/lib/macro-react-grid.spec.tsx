@@ -50,14 +50,17 @@ vi.mock('@macro/macro-design', () => ({
 
 let mutationCallback: MutationCallback | undefined;
 let observerDisconnectSpy: Mock;
+let observerObserveSpy: Mock;
 
 class MockMutationObserver {
-  observe = vi.fn();
+  observe: Mock;
   disconnect: Mock;
   takeRecords = vi.fn().mockReturnValue([]);
   constructor(cb: MutationCallback) {
     mutationCallback = cb;
+    this.observe = vi.fn();
     this.disconnect = vi.fn();
+    observerObserveSpy = this.observe;
     observerDisconnectSpy = this.disconnect;
   }
 }
@@ -280,18 +283,16 @@ describe('MacroReactGrid', () => {
       expect(mockBuildTheme).toHaveBeenCalledWith(true);
     });
 
-    it('should ignore MutationObserver mutations that are not class changes', () => {
+    it('should observe only class attribute changes via attributeFilter', () => {
       render(<MacroReactGrid />);
-      mockBuildTheme.mockClear();
 
-      act(() => {
-        mutationCallback!(
-          [{ type: 'attributes', attributeName: 'id' }] as unknown as MutationRecord[],
-          {} as MutationObserver
-        );
-      });
-
-      expect(mockBuildTheme).not.toHaveBeenCalled();
+      // The observer is configured with attributeFilter: ['class'],
+      // so only class mutations are delivered by the browser.
+      // Verify the observer was set up with the correct config.
+      expect(observerObserveSpy).toHaveBeenCalledWith(
+        document.documentElement,
+        expect.objectContaining({ attributes: true, attributeFilter: ['class'] })
+      );
     });
 
     it('should pass theme to AgGridReact', () => {
@@ -340,7 +341,7 @@ describe('MacroReactGrid', () => {
 
       expect(() =>
         ref.current?.applyTransaction({ add: [{ id: 1 }] } as any)
-      ).toThrow('Grid API is not available');
+      ).toThrow('Grid API not available');
     });
 
     it('should expose getGridState that delegates to gridApi.getState', () => {
