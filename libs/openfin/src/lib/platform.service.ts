@@ -15,6 +15,7 @@ import { WorkspaceOverrideService } from './workspace-override.service';
 import type { ThemePresetPalettes } from './theme-preset.service';
 import { themeConfig } from '@macro/macro-design';
 import { Logger } from '@macro/logger';
+import { getAnalyticsNats } from './analytics-nats.service';
 
 const logger = Logger.getLogger('PlatformService');
 
@@ -158,12 +159,25 @@ export class PlatformService {
               event.callerType === CustomActionCallerType.CustomButton ||
               event.callerType === CustomActionCallerType.CustomDropdownItem
             ) {
-              await launchApp(event.customData as App);
+              const app = event.customData as App;
+              getAnalyticsNats().publish({
+                source: 'Platform',
+                type: 'App',
+                action: 'Launch',
+                value: app.title || app.appId,
+                data: { appId: app.appId, manifestType: app.manifestType, callerType: event.callerType },
+              }).catch(() => {});
+              await launchApp(app);
             }
           },
           'toggle-page-tabs': async (event): Promise<void> => {
             if (event.callerType === CustomActionCallerType.CustomButton) {
               this.pageTabsHidden = !this.pageTabsHidden;
+              getAnalyticsNats().publish({
+                source: 'Platform',
+                type: 'Browser',
+                action: this.pageTabsHidden ? 'HidePageTabs' : 'ShowPageTabs',
+              }).catch(() => {});
               const workspacePlatform = getCurrentSync();
               const windows = await workspacePlatform.Browser.getAllWindows();
               for (const window of windows) {
@@ -184,7 +198,12 @@ export class PlatformService {
                 currentScheme === ColorSchemeOptionType.Dark
                   ? ColorSchemeOptionType.Light
                   : ColorSchemeOptionType.Dark;
-              // setSelectedScheme triggers the override which updates toolbar icons
+              getAnalyticsNats().publish({
+                source: 'Platform',
+                type: 'Theme',
+                action: 'Toggle',
+                value: newScheme === ColorSchemeOptionType.Dark ? 'dark' : 'light',
+              }).catch(() => {});
               await workspacePlatform.Theme.setSelectedScheme(newScheme);
             }
           },

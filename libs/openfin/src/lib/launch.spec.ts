@@ -154,6 +154,155 @@ describe('launchApp', () => {
     });
   });
 
+  // ── Manifest (launch content into platform) ────────────────
+
+  describe('manifest type', () => {
+    let mockFetchManifest: jest.Mock;
+    let mockCreateWindow: jest.Mock;
+
+    beforeEach(() => {
+      mockFetchManifest = jest.fn();
+      mockCreateWindow = jest.fn().mockResolvedValue({});
+
+      (getCurrentSync as jest.Mock).mockReturnValue({
+        applySnapshot: mockApplySnapshot,
+        createView: mockCreateView,
+        fetchManifest: mockFetchManifest,
+        Browser: { createWindow: mockCreateWindow },
+      });
+    });
+
+    it('should fetch manifest and create browser window with app title', async () => {
+      mockFetchManifest.mockResolvedValue({});
+
+      const app = makeApp('manifest', 'http://localhost:8080/manifest.json', 'rates-desktop');
+      (app as any).title = 'Rates Desktop';
+
+      await launchApp(app);
+
+      expect(mockFetchManifest).toHaveBeenCalledWith('http://localhost:8080/manifest.json');
+      expect(mockCreateWindow).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workspacePlatform: expect.objectContaining({
+            pages: expect.arrayContaining([
+              expect.objectContaining({
+                title: 'Rates Desktop',
+              }),
+            ]),
+          }),
+        }),
+      );
+    });
+
+    it('should extract views from manifest snapshot', async () => {
+      mockFetchManifest.mockResolvedValue({
+        snapshot: {
+          windows: [
+            {
+              layout: {
+                content: [
+                  {
+                    type: 'stack',
+                    content: [
+                      { type: 'component', componentName: 'view', componentState: { url: 'http://app/view1' } },
+                      { type: 'component', componentName: 'view', componentState: { url: 'http://app/view2' } },
+                    ],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      });
+
+      const app = makeApp('manifest', 'http://host/m.json');
+      (app as any).title = 'Test';
+
+      await launchApp(app);
+
+      const windowArg = mockCreateWindow.mock.calls[0][0];
+      const pageContent = windowArg.workspacePlatform.pages[0].layout.content[0].content;
+      expect(pageContent).toHaveLength(2);
+      expect(pageContent[0].componentState.url).toBe('http://app/view1');
+      expect(pageContent[1].componentState.url).toBe('http://app/view2');
+    });
+
+    it('should extract views from nested layout content', async () => {
+      mockFetchManifest.mockResolvedValue({
+        snapshot: {
+          windows: [
+            {
+              layout: {
+                content: [
+                  {
+                    type: 'row',
+                    content: [
+                      {
+                        type: 'column',
+                        content: [
+                          { type: 'component', componentName: 'view', componentState: { url: 'http://nested/view' } },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      });
+
+      const app = makeApp('manifest', 'http://host/m.json');
+      (app as any).title = 'Nested';
+
+      await launchApp(app);
+
+      const pageContent = mockCreateWindow.mock.calls[0][0].workspacePlatform.pages[0].layout.content[0].content;
+      expect(pageContent).toHaveLength(1);
+      expect(pageContent[0].componentState.url).toBe('http://nested/view');
+    });
+
+    it('should fallback to manifest URL as view when no snapshot views found', async () => {
+      mockFetchManifest.mockResolvedValue({});
+
+      const app = makeApp('manifest', 'http://host/app.json');
+      (app as any).title = 'Empty';
+
+      await launchApp(app);
+
+      const pageContent = mockCreateWindow.mock.calls[0][0].workspacePlatform.pages[0].layout.content[0].content;
+      expect(pageContent).toHaveLength(1);
+      expect(pageContent[0].componentState.url).toBe('http://host/app.json');
+    });
+
+    it('should handle manifest with platform.defaultWindowOptions', async () => {
+      mockFetchManifest.mockResolvedValue({
+        platform: {
+          defaultWindowOptions: {
+            windows: [
+              {
+                layout: {
+                  content: [
+                    { type: 'component', componentName: 'view', componentState: { url: 'http://platform/view' } },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      });
+
+      const app = makeApp('manifest', 'http://host/m.json');
+      (app as any).title = 'Platform';
+
+      await launchApp(app);
+
+      const pageContent = mockCreateWindow.mock.calls[0][0].workspacePlatform.pages[0].layout.content[0].content;
+      expect(pageContent).toHaveLength(1);
+      expect(pageContent[0].componentState.url).toBe('http://platform/view');
+    });
+  });
+
   // ── Default (Application) ──────────────────────────────────
 
   describe('default manifest type (Application)', () => {

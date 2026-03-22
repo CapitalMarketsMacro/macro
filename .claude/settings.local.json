@@ -52,7 +52,10 @@
       "Bash(rm:*)",
       "Bash(grep:*)",
       "Bash(cd:*)",
-      "mcp__ag-mcp__list_versions"
+      "mcp__ag-mcp__list_versions",
+      "Bash(npm uninstall:*)",
+      "WebFetch(domain:resources.here.io)",
+      "Bash(node -e \"const ts = require\\(''./tsconfig.base.json''\\); const paths = ts.compilerOptions.paths; Object.keys\\(paths\\).filter\\(k => k.includes\\(''macro''\\)\\).forEach\\(k => console.log\\(k, ''->'', paths[k][0]\\)\\)\")"
     ]
   },
   "enableAllProjectMcpServers": true

@@ -12,6 +12,7 @@ import { ThemePresetService } from './theme-preset.service';
 import { SnapService } from './snap.service';
 import { getCurrentSync } from '@openfin/workspace-platform';
 import { Logger } from '@macro/logger';
+import { getAnalyticsNats } from './analytics-nats.service';
 
 const logger = Logger.getLogger('WorkspaceService');
 
@@ -64,25 +65,34 @@ export class WorkspaceService {
     }
 
     this.status$.next('Workspace platform initializing...');
+    const nats = getAnalyticsNats();
+    nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'Starting' }).catch(() => {});
 
     return forkJoin([
       from(this.settingsService.getManifestSettings()),
       from(this.themePresetService.loadActivePreset()),
     ]).pipe(
+      tap(() => nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'SettingsLoaded' }).catch(() => {})),
       concatMap(([settings, themePalettes]) =>
         this.platformService.initializeWorkspacePlatform(
           settings.platformSettings,
           themePalettes,
           this.storeService.getStoreCustomActions(),
         ).pipe(
+          tap(() => nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'PlatformCreated' }).catch(() => {})),
           concatMap(() => this.awaitPlatformReady()),
+          tap(() => nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'PlatformReady' }).catch(() => {})),
           concatMap(() => this.registerComponents(settings)),
+          tap(() => nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'ComponentsRegistered',
+            data: { components: ['dock', 'home', 'store', 'notifications', 'snap'] } }).catch(() => {})),
           concatMap(() => this.showStartupComponents()),
           concatMap(() => this.restoreLastSavedWorkspace()),
-          // Update toolbar buttons on all windows after restore (snapshots carry old toolbar config)
           delay(500),
           concatMap(() => from(this.platformService.updateToolbarButtons())),
-          tap(() => this.status$.next('Platform initialized')),
+          tap(() => {
+            this.status$.next('Platform initialized');
+            nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'Initialized' }).catch(() => {});
+          }),
         ),
       ),
       map(() => true),
@@ -90,6 +100,7 @@ export class WorkspaceService {
         const message = error instanceof Error ? error.message : String(error);
         logger.error('Error initializing platform', { message, error });
         this.status$.next(`Error: ${message}`);
+        nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'Error', value: message }).catch(() => {});
         return of(false);
       }),
     );
@@ -112,9 +123,11 @@ export class WorkspaceService {
   }
 
   private async restoreLastSavedWorkspaceAsync(): Promise<void> {
+    const nats = getAnalyticsNats();
     const lastSavedId = await this.storageService.getLastSavedWorkspaceId();
     if (!lastSavedId) {
       this.status$.next('No saved workspace found');
+      nats.publish({ source: 'Platform', type: 'Workspace', action: 'NoSavedWorkspace' }).catch(() => {});
       return;
     }
 
@@ -128,6 +141,12 @@ export class WorkspaceService {
       return;
     }
 
+    nats.publish({
+      source: 'Platform', type: 'Workspace', action: 'Restoring',
+      value: workspace.title,
+      data: { workspaceId: workspace.workspaceId },
+    }).catch(() => {});
+
     const workspacePlatform = getCurrentSync();
     try {
       const result = await workspacePlatform.applyWorkspace(workspace, {
@@ -138,12 +157,21 @@ export class WorkspaceService {
       });
       if (result) {
         this.status$.next(`Restored workspace: ${workspace.title}`);
+        nats.publish({
+          source: 'Platform', type: 'Workspace', action: 'Restored',
+          value: workspace.title,
+          data: { workspaceId: workspace.workspaceId },
+        }).catch(() => {});
       } else {
         this.status$.next('Failed to restore workspace');
+        nats.publish({ source: 'Platform', type: 'Workspace', action: 'RestoreFailed',
+          value: workspace.title }).catch(() => {});
       }
     } catch (error) {
       logger.error('Error restoring workspace', error);
       this.status$.next('Error restoring workspace');
+      nats.publish({ source: 'Platform', type: 'Workspace', action: 'RestoreError',
+        value: String(error) }).catch(() => {});
     }
   }
 
@@ -192,11 +220,17 @@ export class WorkspaceService {
 
   quit() {
     if (this.isOpenFin()) {
+      const nats = getAnalyticsNats();
+      nats.publish({
+        source: 'Platform', type: 'Lifecycle', action: 'Quitting',
+      }).catch(() => {});
       Promise.all([
         this.dock3Service.shutdown(),
         this.notificationsService.deregister(),
         this.snapService.stop(),
-      ]).finally(() => {
+      ]).finally(async () => {
+        await nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'Quit' }).catch(() => {});
+        await nats.disconnect().catch(() => {});
         fin.Platform.getCurrentSync().quit();
       });
     }

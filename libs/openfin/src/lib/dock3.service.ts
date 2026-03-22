@@ -7,6 +7,7 @@ import {
 } from '@openfin/workspace-platform';
 import type { App } from '@openfin/workspace';
 import { Logger } from '@macro/logger';
+import { getAnalyticsNats } from './analytics-nats.service';
 import type {
   PlatformSettings,
   Dock3Settings,
@@ -105,6 +106,11 @@ export class Dock3Service {
           override async launchEntry(payload: LaunchDockEntryPayload) {
             const { entry } = payload;
             if (entry.type !== 'item') return;
+            getAnalyticsNats().publish({
+              source: 'Dock', type: 'App', action: 'Launch',
+              value: entry.label || entry.id,
+              data: { entryId: entry.id, appId: (entry.itemData as any)?.appId },
+            }).catch(() => {});
 
             const appId = entry.itemData?.appId as string | undefined;
             const url = entry.itemData?.url as string | undefined;

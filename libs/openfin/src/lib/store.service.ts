@@ -11,6 +11,7 @@ import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
 import type { SettingsService } from './settings.service';
 import type { FavoritesService } from './favorites.service';
+import { getAnalyticsNats } from './analytics-nats.service';
 
 /**
  * Store service for managing the OpenFin Storefront
@@ -59,6 +60,19 @@ export class StoreService {
         },
       ] as StoreButtonConfig[],
     }));
+
+    // Track Storefront window lifecycle via platform events
+    try {
+      const app = fin.Application.getCurrentSync();
+      app.on('window-created', (event: any) => {
+        if (event.name?.includes('storefront') || event.name?.includes('store')) {
+          getAnalyticsNats().publish({
+            source: 'Store', type: 'Storefront', action: 'Open',
+            data: { windowName: event.name },
+          }).catch(() => {});
+        }
+      });
+    } catch { /* not in OpenFin */ }
 
     return from(
       Storefront.register({
@@ -135,6 +149,11 @@ export class StoreService {
         }),
         getApps: async () => decoratedApps,
         launchApp: async (app) => {
+          getAnalyticsNats().publish({
+            source: 'Store', type: 'App', action: 'Launch',
+            value: app.title || app.appId,
+            data: { appId: app.appId },
+          }).catch(() => {});
           await launchApp(app);
         },
       }),
@@ -146,6 +165,9 @@ export class StoreService {
   }
 
   show() {
+    getAnalyticsNats().publish({
+      source: 'Store', type: 'Storefront', action: 'Show',
+    }).catch(() => {});
     return Storefront.show();
   }
 }

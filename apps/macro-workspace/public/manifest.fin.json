@@ -14,6 +14,7 @@
     "preventQuitOnLastWindowClosed": false,
     "permissions": {
       "System": {
+        "getOSInfo": true,
         "launchExternalProcess": {
           "enabled": true,
           "assets": {
@@ -24,10 +25,48 @@
                 "behavior": "allow"
               }
             ]
+          },
+          "downloads": {
+            "enabled": true
+          },
+          "executables": {
+            "enabled": true
           }
         },
-        "downloadAsset": true
-      }
+        "terminateExternalProcess": true,
+        "downloadAsset": true,
+        "serveAsset": true,
+        "openUrlWithBrowser": {
+          "enabled": true,
+          "protocols": ["http", "https", "mailto"]
+        },
+        "readRegistryValue": true,
+        "registerCustomProtocol": true,
+        "unregisterCustomProtocol": true,
+        "checkCustomProtocolState": true,
+        "launchLogUploader": true
+      },
+      "Application": {
+        "setFileDownloadLocation": true,
+        "getFileDownloadLocation": true
+      },
+      "Clipboard": {
+        "writeText": true,
+        "readText": true,
+        "writeHtml": true,
+        "readHtml": true,
+        "writeRtf": true,
+        "readRtf": true,
+        "writeImage": true,
+        "readImage": true
+      },
+      "webAPIs": [
+        "clipboard-read",
+        "clipboard-sanitized-write",
+        "notifications",
+        "openExternal",
+        "fullscreen"
+      ]
     }
   },
   "appAssets": [

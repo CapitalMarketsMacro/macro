@@ -1,0 +1,37 @@
+{
+  "name": "@macro/nats",
+  "version": "0.0.1",
+  "description": "A TypeScript wrapper library for NATS.js v3 WebSocket client",
+  "keywords": [
+    "nats",
+    "messaging",
+    "pubsub",
+    "websocket",
+    "real-time",
+    "typescript",
+    "browser"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src/**/*",
+    "README.md",
+    "package.json"
+  ],
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "@nats-io/nats-core": "^3.0.0",
+    "rxjs": "^7.0.0"
+  }
+}

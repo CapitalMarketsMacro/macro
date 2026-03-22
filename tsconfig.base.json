@@ -24,6 +24,7 @@
       "@macro/openfin/theme-sync": ["libs/openfin/src/lib/theme-sync.ts"],
       "@macro/openfin/react": ["libs/openfin/src/lib/react.ts"],
       "@macro/solace": ["libs/solace/src/index.ts"],
+      "@macro/nats": ["libs/nats/src/index.ts"],
       "@macro/macro-design": ["libs/macro-design/src/index.ts"]
     }
   },

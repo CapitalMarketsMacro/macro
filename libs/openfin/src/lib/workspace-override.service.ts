@@ -12,6 +12,7 @@ import { ColorSchemeOptionType } from '@openfin/workspace-platform';
 import { Logger } from '@macro/logger';
 import { WorkspaceStorageService } from './workspace-storage.service';
 import { SnapService } from './snap.service';
+import { getAnalyticsNats } from './analytics-nats.service';
 
 /**
  * Workspace override service for customizing workspace platform behavior
@@ -99,6 +100,7 @@ export class WorkspaceOverrideService {
     const logger = this.logger;
     const storageService = this.storageService;
     const snapService = this.snapService;
+    const analyticsNats = getAnalyticsNats();
     const getOnThemeChanged = () => this.onThemeChanged;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -125,7 +127,11 @@ export class WorkspaceOverrideService {
          * @param req Array of analytics events to handle
          */
         async handleAnalytics(req: AnalyticsEvent[]): Promise<void> {
-          logger.info('Analytics events received', { events: req });
+          for (const event of req) {
+            logger.info('Analytics', { type: event.type, source: event.source, action: (event as any).action, entity: (event as any).entityId });
+            console.log('[Analytics]', event.type, event);
+            analyticsNats.publish(event as any).catch(() => {});
+          }
           return super.handleAnalytics(req);
         }
 
@@ -181,6 +187,8 @@ export class WorkspaceOverrideService {
         async createSavedWorkspace(req: CreateSavedWorkspaceRequest): Promise<void> {
           await flushViewStatesAndRecapture(req.workspace);
           logger.info('Creating saved workspace', { workspaceId: req.workspace.workspaceId, title: req.workspace.title });
+          analyticsNats.publish({ source: 'Platform', type: 'Workspace', action: 'Save',
+            value: req.workspace.title, data: { workspaceId: req.workspace.workspaceId } }).catch(() => {});
           const workspaces = await storageService.getWorkspaces();
           const existingIndex = workspaces.findIndex((w) => w.workspaceId === req.workspace.workspaceId);
           if (existingIndex >= 0) {
@@ -222,6 +230,8 @@ export class WorkspaceOverrideService {
          */
         async deleteSavedWorkspace(id: string): Promise<void> {
           logger.info('Deleting saved workspace', { workspaceId: id });
+          analyticsNats.publish({ source: 'Platform', type: 'Workspace', action: 'Delete',
+            data: { workspaceId: id } }).catch(() => {});
           const workspaces = await storageService.getWorkspaces();
           const filtered = workspaces.filter((w) => w.workspaceId !== id);
           if (filtered.length < workspaces.length) {
@@ -288,6 +298,9 @@ export class WorkspaceOverrideService {
          */
         async setSelectedScheme(schemeType: ColorSchemeOptionType): Promise<void> {
           await super.setSelectedScheme(schemeType);
+          const isDark = schemeType === ColorSchemeOptionType.Dark;
+          analyticsNats.publish({ source: 'Platform', type: 'Theme', action: 'Changed',
+            value: isDark ? 'dark' : 'light' }).catch(() => {});
           const callback = getOnThemeChanged();
           if (callback) {
             await callback(schemeType);
