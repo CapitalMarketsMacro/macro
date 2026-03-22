@@ -25,6 +25,9 @@
       "@macro/openfin/react": ["libs/openfin/src/lib/react.ts"],
       "@macro/solace": ["libs/solace/src/index.ts"],
       "@macro/nats": ["libs/nats/src/index.ts"],
+      "@macro/transports": ["libs/transports/src/index.ts"],
+      "@macro/transports/angular": ["libs/transports/src/lib/angular/index.ts"],
+      "@macro/transports/react": ["libs/transports/src/lib/react/index.ts"],
       "@macro/macro-design": ["libs/macro-design/src/index.ts"]
     }
   },

@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
 import { JsonPipe } from '@angular/common';
-import { NatsClient, type NatsMessage } from '@macro/nats';
+import { type TransportClient, type TransportMessage } from '@macro/transports';
+import { NatsTransportService } from '@macro/transports/angular';
 import { ThemeService } from '@macro/openfin';
 import { Logger } from '@macro/logger';
 
@@ -48,7 +49,7 @@ const SOURCE_ICONS: Record<string, string> = {
 })
 export class AnalyticsDashboardComponent implements OnInit, OnDestroy {
   private readonly themeService = inject(ThemeService);
-  private nats = new NatsClient('analytics-dashboard');
+  private readonly transport: TransportClient = inject(NatsTransportService);
   private subId: string | null = null;
   private eventCounter = 0;
 
@@ -99,27 +100,27 @@ export class AnalyticsDashboardComponent implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     this.themeService.syncWithOpenFinTheme();
-    await this.connectToNats();
+    await this.connectTransport();
   }
 
   async ngOnDestroy(): Promise<void> {
     this.themeService.stopSyncing();
     if (this.subId) {
-      await this.nats.unsubscribe(this.subId);
+      await this.transport.unsubscribe(this.subId);
     }
-    await this.nats.disconnect();
+    await this.transport.disconnect();
   }
 
-  async connectToNats(): Promise<void> {
+  async connectTransport(): Promise<void> {
     this.connecting.set(true);
     try {
-      await this.nats.connect({ servers: NATS_WS_URL });
+      await this.transport.connect({ servers: NATS_WS_URL });
       this.connected.set(true);
-      logger.info('Connected to NATS for analytics');
+      logger.info('Connected to analytics transport', { transport: this.transport.transportName });
 
-      this.subId = await this.nats.subscribe((msg) => this.onMessage(msg), ANALYTICS_TOPIC);
+      this.subId = await this.transport.subscribe((msg) => this.onMessage(msg), ANALYTICS_TOPIC);
     } catch (err) {
-      logger.error('Failed to connect to NATS', err);
+      logger.error('Failed to connect analytics transport', err);
     } finally {
       this.connecting.set(false);
     }
@@ -143,7 +144,7 @@ export class AnalyticsDashboardComponent implements OnInit, OnDestroy {
     this.selectedEvent.set(this.selectedEvent()?.id === event.id ? null : event);
   }
 
-  private onMessage(msg: NatsMessage): void {
+  private onMessage(msg: TransportMessage): void {
     if (this.paused()) return;
 
     try {
@@ -160,11 +161,9 @@ export class AnalyticsDashboardComponent implements OnInit, OnDestroy {
         data: data.data,
       };
 
-      // Update events (prepend, cap at MAX)
       const current = this.events();
       this.events.set([event, ...current.slice(0, MAX_EVENTS - 1)]);
 
-      // Track unique users
       const currentUsers = this.users();
       if (!currentUsers.includes(event.user)) {
         this.users.set([...currentUsers, event.user].sort());

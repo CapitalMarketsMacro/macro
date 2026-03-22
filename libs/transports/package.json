@@ -1,0 +1,28 @@
+{
+  "name": "@macro/transports",
+  "version": "0.0.1",
+  "description": "Unified messaging transport library for AMPS, Solace PubSub+, and NATS",
+  "keywords": ["messaging", "transport", "amps", "solace", "nats", "pubsub", "websocket", "rxjs"],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": { "types": "./src/index.d.ts", "default": "./src/index.js" },
+    "./angular": { "types": "./src/lib/angular/index.d.ts", "default": "./src/lib/angular/index.js" },
+    "./react": { "types": "./src/lib/react/index.d.ts", "default": "./src/lib/react/index.js" }
+  },
+  "dependencies": { "tslib": "^2.3.0" },
+  "peerDependencies": {
+    "amps": "*",
+    "solclientjs": "*",
+    "@nats-io/nats-core": "^3.0.0",
+    "rxjs": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "amps": { "optional": true },
+    "solclientjs": { "optional": true },
+    "@nats-io/nats-core": { "optional": true }
+  }
+}

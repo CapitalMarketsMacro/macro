@@ -6,8 +6,8 @@ const mockConnect = jest.fn().mockResolvedValue(undefined);
 const mockPublish = jest.fn();
 const mockDisconnect = jest.fn().mockResolvedValue(undefined);
 
-jest.mock('@macro/nats', () => ({
-  NatsClient: jest.fn().mockImplementation(() => ({
+jest.mock('@macro/transports', () => ({
+  NatsTransport: jest.fn().mockImplementation(() => ({
     connect: mockConnect,
     publish: mockPublish,
     disconnect: mockDisconnect,

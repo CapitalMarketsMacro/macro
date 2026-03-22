@@ -1,4 +1,4 @@
-import { NatsClient } from '@macro/nats';
+import { NatsTransport } from '@macro/transports';
 import { Logger } from '@macro/logger';
 
 const logger = Logger.getLogger('AnalyticsNatsService');
@@ -11,7 +11,7 @@ const TOPIC_PREFIX = 'macro.analytics';
  * Singleton accessor: getAnalyticsNats()
  */
 export class AnalyticsNatsService {
-  private client = new NatsClient('macro-workspace-analytics');
+  private client = new NatsTransport('macro-workspace-analytics');
   private connected = false;
   private connecting = false;
   private username: string | null = null;
