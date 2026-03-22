@@ -1,0 +1,120 @@
+<div class="dashboard">
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <h1 class="title">Analytics</h1>
+      <span class="badge" [class.connected]="connected()" [class.connecting]="connecting()">
+        {{ connected() ? 'Live' : connecting() ? 'Connecting...' : 'Disconnected' }}
+      </span>
+    </div>
+    <div class="header-actions">
+      <span class="event-rate">{{ eventRate() }} evt/min</span>
+      <button class="btn-icon" [class.active]="paused()" (click)="togglePause()" [title]="paused() ? 'Resume' : 'Pause'">
+        {{ paused() ? '▶' : '⏸' }}
+      </button>
+      <button class="btn-icon" (click)="clearEvents()" title="Clear">✕</button>
+    </div>
+  </header>
+
+  <div class="body">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <!-- Users -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Users</div>
+        @for (user of users(); track user) {
+          <button class="user-chip" [class.active]="selectedUser() === user" (click)="selectUser(user)">
+            <span class="user-avatar">{{ user.charAt(0).toUpperCase() }}</span>
+            <span class="user-name">{{ user }}</span>
+          </button>
+        }
+        @if (users().length === 0) {
+          <span class="sidebar-empty">Waiting for events...</span>
+        }
+      </div>
+
+      <!-- Source breakdown -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sources</div>
+        @for (stat of stats(); track stat.source) {
+          <div class="stat-row">
+            <span class="source-dot" [style.background]="stat.color"></span>
+            <span class="stat-name">{{ stat.source }}</span>
+            <span class="stat-count">{{ stat.count }}</span>
+          </div>
+        }
+      </div>
+    </aside>
+
+    <!-- Event feed -->
+    <main class="feed">
+      @for (event of filteredEvents(); track event.id) {
+        <div class="event-row" [class.selected]="selectedEvent()?.id === event.id" (click)="selectEvent(event)">
+          <span class="event-source-icon" [style.background]="getSourceColor(event.source)">
+            {{ getSourceIcon(event.source) }}
+          </span>
+          <div class="event-content">
+            <div class="event-headline">
+              <span class="event-action">{{ event.action }}</span>
+              <span class="event-type">{{ event.source }} · {{ event.type }}</span>
+            </div>
+            @if (event.value) {
+              <div class="event-value">{{ event.value }}</div>
+            }
+          </div>
+          <span class="event-time">{{ event.relativeTime }}</span>
+        </div>
+
+        <!-- Detail panel (inline expand) -->
+        @if (selectedEvent()?.id === event.id) {
+          <div class="event-detail">
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Timestamp</span>
+                <span class="detail-value">{{ event.timestamp }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">User</span>
+                <span class="detail-value">{{ event.user }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Source</span>
+                <span class="detail-value">{{ event.source }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Type</span>
+                <span class="detail-value">{{ event.type }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Action</span>
+                <span class="detail-value">{{ event.action }}</span>
+              </div>
+              @if (event.value) {
+                <div class="detail-item">
+                  <span class="detail-label">Value</span>
+                  <span class="detail-value">{{ event.value }}</span>
+                </div>
+              }
+            </div>
+            @if (event.data) {
+              <div class="detail-data">
+                <span class="detail-label">Data</span>
+                <pre class="detail-json">{{ event.data | json }}</pre>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      @if (filteredEvents().length === 0) {
+        <div class="feed-empty">
+          <div class="feed-empty-icon">📊</div>
+          <div class="feed-empty-text">
+            {{ connected() ? 'Waiting for analytics events...' : 'Connecting to NATS...' }}
+          </div>
+          <div class="feed-empty-hint">Events will appear here in real-time</div>
+        </div>
+      }
+    </main>
+  </div>
+</div>

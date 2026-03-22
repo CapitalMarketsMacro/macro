@@ -178,6 +178,25 @@
         "tags": ["view", "react", "commodities", "market-data"]
       },
       {
+        "appId": "macro-analytics-dashboard",
+        "name": "macro-analytics-dashboard",
+        "title": "Analytics Dashboard",
+        "description": "Real-time analytics dashboard for workspace activity monitoring",
+        "manifest": "http://localhost:4202/analytics-dashboard.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/platform.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "analytics", "monitoring"]
+      },
+      {
         "appId": "rates-desktop",
         "name": "rates-desktop",
         "title": "Rates E-Trading Desktop",
@@ -258,6 +277,13 @@
           "label": "FDC3 Instrument Viewer",
           "icon": "http://localhost:4202/icons/angular-app.svg",
           "appId": "macro-angular-fdc3-instrument-viewer"
+        },
+        {
+          "type": "item",
+          "id": "fav-analytics-dashboard",
+          "label": "Analytics Dashboard",
+          "icon": "http://localhost:4202/icons/platform.svg",
+          "appId": "macro-analytics-dashboard"
         }
       ],
       "contentMenu": [

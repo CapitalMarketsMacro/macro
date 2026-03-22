@@ -13,6 +13,10 @@ export const routes: Routes = [
     path: 'view2',
     loadComponent: () => import('./view2/view2.component').then((m) => m.View2Component),
   },
+  {
+    path: 'analytics',
+    loadComponent: () => import('./analytics-dashboard/analytics-dashboard.component').then((m) => m.AnalyticsDashboardComponent),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'provider' },
   { path: '**', redirectTo: 'provider' },
 ];
