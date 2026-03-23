@@ -237,6 +237,85 @@ export class MyComponent {
 }
 \`\`\``,
 
+  transports: `# @macro/transports API (Unified Transport Library)
+
+**Import:** \`import { NatsTransport, AmpsTransport, SolaceTransport, type TransportClient, type TransportMessage } from '@macro/transports';\`
+**Angular:** \`import { NatsTransportService, AmpsTransportService, SolaceTransportService } from '@macro/transports/angular';\`
+**React:** \`import { useNatsTransport, useAmpsTransport, useSolaceTransport, useTransportSubscription } from '@macro/transports/react';\`
+**Source:** \`libs/transports/src/index.ts\`
+
+## TransportClient interface (all transports implement this)
+- \`readonly transportName: string\`
+- \`connect(options): Promise<void>\`
+- \`disconnect(): Promise<void>\`
+- \`publish(topic: string, data: string | Record<string, unknown>): void\`
+- \`subscribe(handler: MessageHandler, topic: string): Promise<string>\`
+- \`subscribeAsObservable(topic): Promise<{ observable: Observable<TransportMessage>; subscriptionId: string }>\`
+- \`subscribeAsSubject(topic): Promise<{ subject: Subject<TransportMessage>; subscriptionId: string }>\`
+- \`unsubscribe(subscriptionId: string): Promise<void>\`
+- \`readonly isConnected: boolean\`
+- \`onError(handler: ErrorHandler): void\`
+- \`getSubscriptionIds(): string[]\`
+
+## TransportMessage
+- \`topic: string\` — subject/topic
+- \`data: string\` — raw string
+- \`json<T>(): T\` — parse JSON
+- \`reply?: string\` — for request/reply
+- \`raw?: unknown\` — transport-specific raw message
+
+## Connection Options
+- AmpsTransport: \`{ url: 'ws://host:9100/amps/json' }\`
+- SolaceTransport: \`{ hostUrl, vpnName, userName, password }\`
+- NatsTransport: \`{ servers: 'ws://host:8224', name?, maxReconnectAttempts?, reconnectTimeWait? }\`
+
+## Transport-specific extras
+- **AmpsTransport**: \`sow(handler, topic, filter?, options?)\`, \`getClient()\`
+- **SolaceTransport**: \`onEvent(handler)\`, \`getSession()\`
+- **NatsTransport**: \`request(topic, data, timeout?)\`, \`getConnection()\`
+
+## Angular Services (providedIn: 'root')
+\`AmpsTransportService\`, \`SolaceTransportService\`, \`NatsTransportService\` — inject directly
+
+## React Hooks
+- \`useAmpsTransport(name?)\` / \`useSolaceTransport()\` / \`useNatsTransport(name?)\`
+  Returns: \`{ client, connected, connect, disconnect }\`
+- \`useTransportSubscription(client, topic, isConnected, maxMessages?)\`
+  Returns: \`TransportMessage[]\`
+
+## Usage
+\`\`\`typescript
+const client = new NatsTransport('my-app');
+await client.connect({ servers: 'ws://localhost:8224' });
+client.publish('orders.new', { symbol: 'AAPL', qty: 100 });
+const { observable } = await client.subscribeAsObservable('prices.>');
+observable.subscribe(msg => console.log(msg.json()));
+\`\`\``,
+
+  nats: `# @macro/nats API (standalone)
+
+**Import:** \`import { NatsClient, NatsConnectionOptions, NatsMessage } from '@macro/nats';\`
+**Source:** \`libs/nats/src/index.ts\`
+
+## NatsClient class
+- \`constructor(clientName?: string)\`
+- \`connect(options: NatsConnectionOptions): Promise<void>\`
+- \`disconnect(): Promise<void>\`
+- \`publish(subject: string, data: string | Record<string, unknown>): void\`
+- \`subscribe(handler: NatsMessageHandler, subject: string): Promise<string>\`
+- \`subscribeAsObservable(subject): Promise<{ observable, subscriptionId }>\`
+- \`unsubscribe(subscriptionId): Promise<void>\`
+- \`request(subject, data, timeout?): Promise<NatsMessage>\`
+- \`onError(handler: NatsErrorHandler): void\`
+- \`get isConnected: boolean\`
+- \`getConnection(): NatsConnection | null\`
+
+## NatsConnectionOptions
+\`{ servers: string; name?: string; maxReconnectAttempts?: number; reconnectTimeWait?: number }\`
+
+## NatsMessage
+\`{ subject: string; data: string; json<T>(): T; reply?: string }\``,
+
   'macro-react-grid': `# @macro/macro-react-grid API
 
 **Import:** \`import { MacroReactGrid, MacroReactGridRef, MacroReactGridProps } from '@macro/macro-react-grid';\`
@@ -298,6 +377,8 @@ export function registerGetLibraryApi(server: McpServer): void {
       library: z
         .enum([
           'logger',
+          'transports',
+          'nats',
           'amps',
           'solace',
           'rxutils',

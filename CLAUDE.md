@@ -32,12 +32,14 @@ macro/
 ├── libs/
 │   ├── macro-design/           # Shared design tokens, CSS variables, dark mode, AG Grid theme
 │   ├── logger/                 # Pino-based structured logging (@macro/logger)
-│   ├── amps/                   # AMPS message broker client (@macro/amps)
-│   ├── solace/                 # Solace PubSub+ client (@macro/solace)
-│   ├── openfin/                # OpenFin Workspace services + Angular DI (@macro/openfin)
+│   ├── transports/             # Unified messaging: AMPS, Solace, NATS (@macro/transports)
+│   ├── amps/                   # AMPS message broker client (@macro/amps) — standalone
+│   ├── solace/                 # Solace PubSub+ client (@macro/solace) — standalone
+│   ├── nats/                   # NATS.js v3 WebSocket client (@macro/nats) — standalone
+│   ├── openfin/                # OpenFin Workspace services + Angular DI + Snap + Analytics (@macro/openfin)
 │   ├── rxutils/                # RxJS conflation utilities (@macro/rxutils)
-│   ├── macro-angular-grid/     # AG Grid Enterprise Angular wrapper
-│   └── macro-react-grid/       # AG Grid Enterprise React wrapper
+│   ├── macro-angular-grid/     # AG Grid 35 Enterprise Angular wrapper + column formatting
+│   └── macro-react-grid/       # AG Grid 35 Enterprise React wrapper + column formatting
 ├── tsconfig.base.json          # Path aliases: @macro/* -> libs/*/src/index.ts
 ├── nx.json                     # NX config (defaultBase: master)
 └── package.json                # All scripts and dependencies
@@ -51,9 +53,13 @@ All shared libraries are imported via `@macro/*` (defined in `tsconfig.base.json
 
 ```typescript
 import { Logger } from '@macro/logger';
+import { NatsTransport, AmpsTransport, SolaceTransport } from '@macro/transports';
+import { NatsTransportService } from '@macro/transports/angular';
+import { useNatsTransport } from '@macro/transports/react';
 import { AmpsClient } from '@macro/amps';
 import { SolaceClient } from '@macro/solace';
-import { WorkspaceService, ThemeService } from '@macro/openfin';
+import { NatsClient } from '@macro/nats';
+import { WorkspaceService, ThemeService, ContextService, NotificationsService } from '@macro/openfin';
 import { useViewState } from '@macro/openfin/react';
 import { ConflationSubject } from '@macro/rxutils';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
@@ -201,7 +207,8 @@ This repo has 6 MCP servers configured in `.mcp.json`:
 | ------------------------------------------------ | -------------------------------------------- |
 | `tsconfig.base.json`                             | All `@macro/*` path aliases                  |
 | `nx.json`                                        | Build targets, caching, plugins, generators  |
-| `apps/macro-workspace/public/manifest.fin.json`  | OpenFin app registry (9 registered apps)     |
+| `apps/macro-workspace/public/manifest.fin.json`  | OpenFin app registry (11 registered apps)    |
+| `apps/macro-workspace/public/settings.json`      | Apps, dock, snap provider config             |
 | `libs/macro-design/src/lib/css/macro-design.css` | All CSS variables (`:root` + `.dark`)        |
 | `libs/macro-design/src/lib/ag-grid-theme.ts`     | AG Grid theme builder                        |
 | `libs/macro-design/src/lib/dark-mode.ts`         | Dark mode utilities                          |

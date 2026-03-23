@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-const TRANSPORTS = ['amps', 'solace', 'websocket'] as const;
+const TRANSPORTS = ['amps', 'solace', 'nats', 'websocket'] as const;
 
 export function registerAddDataConnectivityPrompt(server: McpServer): void {
   server.prompt(
@@ -265,6 +265,30 @@ ${indent}});`,
 - Example: \`orders/>\` matches all order topics at any depth
 - Supports publish with properties: correlationId, replyTo, userProperties
 - See \`get_library_api\` tool with \`library: "solace"\` for full API reference`,
+      };
+
+    case 'nats':
+      return {
+        imports: "import { NatsTransport } from '@macro/transports';",
+        connection: `${indent}const client = new NatsTransport('${framework}-client');
+${indent}await client.connect({ servers: 'ws://localhost:8224' });
+${indent}${loggerRef}.info('Connected to NATS');
+${indent}const { observable } = await client.subscribeAsObservable('${topic}');
+${indent}${subRef}observable.subscribe((msg) => {
+${indent}  const data = msg.json<Record<string, unknown>>();
+${indent}  ${conflationRef}.next({ key: String(data.id), value: data });
+${indent}})${subEnd};`,
+        cleanup: framework === 'angular'
+          ? '    // client.disconnect();'
+          : '      sub?.unsubscribe();\n      // client.disconnect();',
+        notes: `## NATS Notes
+- Uses @macro/transports unified library (recommended over standalone @macro/nats)
+- Default NATS WebSocket endpoint: \`ws://localhost:8224\`
+- Supports wildcards: \`*\` (single token) and \`>\` (tail match)
+- Supports request/reply: \`client.request(subject, data, timeout)\`
+- Angular DI: \`import { NatsTransportService } from '@macro/transports/angular'\`
+- React hook: \`import { useNatsTransport } from '@macro/transports/react'\`
+- See \`get_library_api\` tool with \`library: "transports"\` for full API reference`,
       };
 
     case 'websocket':
