@@ -61,7 +61,10 @@
       "Bash(node -e \"const v=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\)\\); console.log\\(''''Latest @openfin/core:'''', v.slice\\(-3\\).join\\('''', ''''\\)\\);\")",
       "Bash(node -e \"const v=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\)\\); console.log\\(''''Latest @openfin/node-adapter:'''', v.slice\\(-3\\).join\\('''', ''''\\)\\);\")",
       "Bash(node -e \"const d=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\)\\); Object.entries\\(d||{}\\).forEach\\(\\([k,v]\\) => console.log\\(k + '''': '''' + v\\)\\);\")",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(for f:*)",
+      "Bash(do cp:*)",
+      "Bash(done)"
     ]
   },
   "enableAllProjectMcpServers": true

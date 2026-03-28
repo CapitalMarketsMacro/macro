@@ -1,0 +1,8 @@
+{
+  "url": "https://{{OPENSHIFT_REACT_HOST}}/commodities-dashboard",
+  "fdc3InteropApi": "2.0",
+  "interop": {
+    "currentContextGroup": "green"
+  }
+}
+

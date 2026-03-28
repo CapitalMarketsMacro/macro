@@ -11,7 +11,7 @@
         "name": "macro-workspace-view1",
         "title": "Macro Workspace View 1",
         "description": "Broadcast contexts and notifications from View 1",
-        "manifest": "http://localhost:4202/view1.fin.json",
+        "manifest": "http://localhost:4202/local/view1.fin.json",
         "manifestType": "view",
         "icons": [
           {
@@ -30,7 +30,7 @@
         "name": "macro-workspace-view2",
         "title": "Macro Workspace View 2",
         "description": "Listen for contexts emitted from the workspace",
-        "manifest": "http://localhost:4202/view2.fin.json",
+        "manifest": "http://localhost:4202/local/view2.fin.json",
         "manifestType": "view",
         "icons": [
           {
@@ -49,7 +49,7 @@
         "name": "macro-angular-view",
         "title": "Macro Angular App",
         "description": "Angular market data application",
-        "manifest": "http://localhost:4202/macro-angular-view.fin.json",
+        "manifest": "http://localhost:4202/local/macro-angular-view.fin.json",
         "manifestType": "view",
         "icons": [
           {
@@ -68,7 +68,7 @@
         "name": "macro-angular-fx-market-data",
         "title": "FX Market Data",
         "description": "Real-time foreign exchange market data with G10 currency pairs",
-        "manifest": "http://localhost:4202/macro-angular-fx-market-data.fin.json",
+        "manifest": "http://localhost:4202/local/macro-angular-fx-market-data.fin.json",
         "manifestType": "view",
         "icons": [
           {
@@ -87,7 +87,7 @@
         "name": "macro-angular-treasury-microstructure",
         "title": "Treasury Microstructure",
         "description": "US Treasury E-Trading Market Microstructure analysis",
-        "manifest": "http://localhost:4202/macro-angular-treasury-microstructure.fin.json",
+        "manifest": "http://localhost:4202/local/macro-angular-treasury-microstructure.fin.json",
         "manifestType": "view",
         "icons": [
           {
@@ -106,7 +106,7 @@
         "name": "macro-react-view",
         "title": "Macro React App",
         "description": "React market data application",
-        "manifest": "http://localhost:4202/macro-react-view.fin.json",
+        "manifest": "http://localhost:4202/local/macro-react-view.fin.json",
         "manifestType": "view",
         "icons": [
           {
@@ -125,7 +125,7 @@
         "name": "macro-react-treasury-market-data",
         "title": "Treasury Market Data",
         "description": "US Treasury securities market data",
-        "manifest": "http://localhost:4202/macro-react-treasury-market-data.fin.json",
+        "manifest": "http://localhost:4202/local/macro-react-treasury-market-data.fin.json",
         "manifestType": "view",
         "icons": [
           {
@@ -144,7 +144,7 @@
         "name": "macro-angular-fdc3-instrument-viewer",
         "title": "FDC3 Instrument Viewer",
         "description": "Displays FDC3 instrument context from color-linked views",
-        "manifest": "http://localhost:4202/macro-angular-fdc3-instrument-viewer.fin.json",
+        "manifest": "http://localhost:4202/local/macro-angular-fdc3-instrument-viewer.fin.json",
         "manifestType": "view",
         "icons": [
           {
@@ -163,7 +163,7 @@
         "name": "macro-react-commodities-dashboard",
         "title": "Commodities Dashboard",
         "description": "Commodities market data dashboard",
-        "manifest": "http://localhost:4202/macro-react-commodities-dashboard.fin.json",
+        "manifest": "http://localhost:4202/local/macro-react-commodities-dashboard.fin.json",
         "manifestType": "view",
         "icons": [
           {
@@ -182,7 +182,7 @@
         "name": "macro-analytics-dashboard",
         "title": "Analytics Dashboard",
         "description": "Real-time analytics dashboard for workspace activity monitoring",
-        "manifest": "http://localhost:4202/analytics-dashboard.fin.json",
+        "manifest": "http://localhost:4202/local/analytics-dashboard.fin.json",
         "manifestType": "view",
         "icons": [
           {

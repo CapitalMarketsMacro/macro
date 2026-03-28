@@ -1,0 +1,319 @@
+{
+  "devtools_port": 9090,
+  "licenseKey": "openfin-demo-license-key",
+  "runtime": {
+    "arguments": "--v=1 --inspect",
+    "version": "43.142.101.2"
+  },
+  "platform": {
+    "uuid": "macro-workspace-platform",
+    "icon": "http://localhost:4202/icons/platform.svg",
+    "autoShow": true,
+    "allowLaunchIntoPlatform": true,
+    "providerUrl": "http://localhost:4202/provider?env=local",
+    "preventQuitOnLastWindowClosed": false,
+    "defaultWidth": 240,
+    "defaultHeight": 280,
+    "minWidth": 240,
+    "minHeight": 280,
+    "maxWidth": 240,
+    "maxHeight": 440,
+    "resizable": false,
+    "frame": false,
+    "alwaysOnTop": true,
+    "showTaskbarIcon": false,
+    "cornerRounding": { "width": 12, "height": 12 },
+    "shadow": true,
+    "saveWindowState": false,
+    "permissions": {
+      "System": {
+        "getOSInfo": true,
+        "launchExternalProcess": {
+          "enabled": true,
+          "assets": {
+            "enabled": true,
+            "srcRules": [
+              {
+                "match": ["https://cdn.openfin.co/release/snap/*"],
+                "behavior": "allow"
+              }
+            ]
+          },
+          "downloads": {
+            "enabled": true
+          },
+          "executables": {
+            "enabled": true
+          }
+        },
+        "terminateExternalProcess": true,
+        "downloadAsset": true,
+        "serveAsset": true,
+        "openUrlWithBrowser": {
+          "enabled": true,
+          "protocols": ["http", "https", "mailto"]
+        },
+        "readRegistryValue": true,
+        "registerCustomProtocol": true,
+        "unregisterCustomProtocol": true,
+        "checkCustomProtocolState": true,
+        "launchLogUploader": true
+      },
+      "Application": {
+        "setFileDownloadLocation": true,
+        "getFileDownloadLocation": true
+      },
+      "Clipboard": {
+        "writeText": true,
+        "readText": true,
+        "writeHtml": true,
+        "readHtml": true,
+        "writeRtf": true,
+        "readRtf": true,
+        "writeImage": true,
+        "readImage": true
+      },
+      "webAPIs": [
+        "clipboard-read",
+        "clipboard-sanitized-write",
+        "notifications",
+        "openExternal",
+        "fullscreen"
+      ]
+    }
+  },
+  "appAssets": [
+    {
+      "src": "https://cdn.openfin.co/release/snap/1.5.0/snap.zip",
+      "alias": "openfin-snap",
+      "version": "1.5.0",
+      "target": "OpenFinSnap.exe"
+    }
+  ],
+  "shortcut": {
+    "company": "OpenFin",
+    "description": "A way of showing examples of what OpenFin can do.",
+    "icon": "http://localhost:4202/icons/platform.svg",
+    "name": "Macro Workspace Starter",
+    "target": ["desktop", "start-menu"]
+  },
+  "supportInformation": {
+    "company": "OpenFin",
+    "product": "Workspace Starter - Macro Workspace",
+    "email": "support@openfin.co",
+    "forwardErrorReports": true
+  },
+  "customSettings": {
+    "apps": [
+      {
+        "appId": "macro-workspace-view1",
+        "name": "macro-workspace-view1",
+        "title": "Macro Workspace View 1",
+        "description": "Broadcast contexts and notifications from View 1",
+        "manifest": "http://localhost:4202/local/view1.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/view-broadcaster.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "openfin"]
+      },
+      {
+        "appId": "macro-workspace-view2",
+        "name": "macro-workspace-view2",
+        "title": "Macro Workspace View 2",
+        "description": "Listen for contexts emitted from the workspace",
+        "manifest": "http://localhost:4202/local/view2.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/view-listener.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "openfin"]
+      },
+      {
+        "appId": "macro-angular-view",
+        "name": "macro-angular-view",
+        "title": "Macro Angular App",
+        "description": "Angular market data application",
+        "manifest": "http://localhost:4202/local/macro-angular-view.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/angular-app.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "angular", "market-data"]
+      },
+      {
+        "appId": "macro-angular-fx-market-data",
+        "name": "macro-angular-fx-market-data",
+        "title": "FX Market Data",
+        "description": "Real-time foreign exchange market data with G10 currency pairs",
+        "manifest": "http://localhost:4202/local/macro-angular-fx-market-data.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/fx-market-data.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "angular", "fx", "market-data"]
+      },
+      {
+        "appId": "macro-angular-treasury-microstructure",
+        "name": "macro-angular-treasury-microstructure",
+        "title": "Treasury Microstructure",
+        "description": "US Treasury E-Trading Market Microstructure analysis",
+        "manifest": "http://localhost:4202/local/macro-angular-treasury-microstructure.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/treasury-microstructure.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "angular", "treasury", "market-data"]
+      },
+      {
+        "appId": "macro-react-view",
+        "name": "macro-react-view",
+        "title": "Macro React App",
+        "description": "React market data application",
+        "manifest": "http://localhost:4202/local/macro-react-view.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/react-app.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "react", "market-data"]
+      },
+      {
+        "appId": "macro-react-treasury-market-data",
+        "name": "macro-react-treasury-market-data",
+        "title": "Treasury Market Data",
+        "description": "US Treasury securities market data",
+        "manifest": "http://localhost:4202/local/macro-react-treasury-market-data.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/treasury-market-data.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "react", "treasury", "market-data"]
+      },
+      {
+        "appId": "macro-angular-fdc3-instrument-viewer",
+        "name": "macro-angular-fdc3-instrument-viewer",
+        "title": "FDC3 Instrument Viewer",
+        "description": "Displays FDC3 instrument context from color-linked views",
+        "manifest": "http://localhost:4202/local/macro-angular-fdc3-instrument-viewer.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/angular-app.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "angular", "fdc3", "instrument"]
+      },
+      {
+        "appId": "macro-react-commodities-dashboard",
+        "name": "macro-react-commodities-dashboard",
+        "title": "Commodities Dashboard",
+        "description": "Commodities market data dashboard",
+        "manifest": "http://localhost:4202/local/macro-react-commodities-dashboard.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/commodities-dashboard.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "react", "commodities", "market-data"]
+      },
+      {
+        "appId": "macro-analytics-dashboard",
+        "name": "macro-analytics-dashboard",
+        "title": "Analytics Dashboard",
+        "description": "Real-time analytics dashboard for workspace activity monitoring",
+        "manifest": "http://localhost:4202/local/analytics-dashboard.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/platform.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "analytics", "monitoring"]
+      },
+      {
+        "appId": "rates-desktop",
+        "name": "rates-desktop",
+        "title": "Rates E-Trading Desktop",
+        "description": "Rates E-Trading Desktop platform for fixed income trading",
+        "manifest": "http://localhost:8080/assets/openfin/app.platform.fin.json",
+        "manifestType": "manifest",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/platform.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["platform", "rates", "fixed-income"]
+      }
+    ]
+  }
+}

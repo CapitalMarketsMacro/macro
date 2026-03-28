@@ -36,13 +36,13 @@ describe('SettingsService', () => {
   // ── getManifestSettings ─────────────────────────────────────
 
   describe('getManifestSettings', () => {
-    it('should fetch settings from /settings.json', async () => {
+    it('should fetch settings from /local/settings.json by default', async () => {
       const http = makeMockHttp(defaultResponse);
       const service = new SettingsService(http);
 
       await service.getManifestSettings();
 
-      expect(http.get).toHaveBeenCalledWith('/settings.json');
+      expect(http.get).toHaveBeenCalledWith('/local/settings.json');
     });
 
     it('should return the full response from the HTTP client', async () => {

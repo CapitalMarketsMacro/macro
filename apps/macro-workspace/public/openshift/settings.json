@@ -1,0 +1,377 @@
+{
+  "platformSettings": {
+    "id": "macro-workspace-platform",
+    "title": "Macro Workspace Starter",
+    "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
+  },
+  "customSettings": {
+    "apps": [
+      {
+        "appId": "macro-workspace-view1",
+        "name": "macro-workspace-view1",
+        "title": "Macro Workspace View 1",
+        "description": "Broadcast contexts and notifications from View 1",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/view1.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/view-broadcaster.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "openfin"]
+      },
+      {
+        "appId": "macro-workspace-view2",
+        "name": "macro-workspace-view2",
+        "title": "Macro Workspace View 2",
+        "description": "Listen for contexts emitted from the workspace",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/view2.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/view-listener.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "openfin"]
+      },
+      {
+        "appId": "macro-angular-view",
+        "name": "macro-angular-view",
+        "title": "Macro Angular App",
+        "description": "Angular market data application",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-angular-view.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/angular-app.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "angular", "market-data"]
+      },
+      {
+        "appId": "macro-angular-fx-market-data",
+        "name": "macro-angular-fx-market-data",
+        "title": "FX Market Data",
+        "description": "Real-time foreign exchange market data with G10 currency pairs",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-angular-fx-market-data.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/fx-market-data.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "angular", "fx", "market-data"]
+      },
+      {
+        "appId": "macro-angular-treasury-microstructure",
+        "name": "macro-angular-treasury-microstructure",
+        "title": "Treasury Microstructure",
+        "description": "US Treasury E-Trading Market Microstructure analysis",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-angular-treasury-microstructure.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/treasury-microstructure.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "angular", "treasury", "market-data"]
+      },
+      {
+        "appId": "macro-react-view",
+        "name": "macro-react-view",
+        "title": "Macro React App",
+        "description": "React market data application",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-react-view.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/react-app.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "react", "market-data"]
+      },
+      {
+        "appId": "macro-react-treasury-market-data",
+        "name": "macro-react-treasury-market-data",
+        "title": "Treasury Market Data",
+        "description": "US Treasury securities market data",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-react-treasury-market-data.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/treasury-market-data.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "react", "treasury", "market-data"]
+      },
+      {
+        "appId": "macro-angular-fdc3-instrument-viewer",
+        "name": "macro-angular-fdc3-instrument-viewer",
+        "title": "FDC3 Instrument Viewer",
+        "description": "Displays FDC3 instrument context from color-linked views",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-angular-fdc3-instrument-viewer.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/angular-app.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "angular", "fdc3", "instrument"]
+      },
+      {
+        "appId": "macro-react-commodities-dashboard",
+        "name": "macro-react-commodities-dashboard",
+        "title": "Commodities Dashboard",
+        "description": "Commodities market data dashboard",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-react-commodities-dashboard.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/commodities-dashboard.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "react", "commodities", "market-data"]
+      },
+      {
+        "appId": "macro-analytics-dashboard",
+        "name": "macro-analytics-dashboard",
+        "title": "Analytics Dashboard",
+        "description": "Real-time analytics dashboard for workspace activity monitoring",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/analytics-dashboard.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["view", "analytics", "monitoring"]
+      },
+      {
+        "appId": "rates-desktop",
+        "name": "rates-desktop",
+        "title": "Rates E-Trading Desktop",
+        "description": "Rates E-Trading Desktop platform for fixed income trading",
+        "manifest": "https://{{OPENSHIFT_RATES_HOST}}/assets/openfin/app.platform.fin.json",
+        "manifestType": "manifest",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": ["platform", "rates", "fixed-income"]
+      }
+    ],
+    "snapProvider": {
+      "enabled": true,
+      "serverOptions": {
+        "showDebug": false,
+        "disableUserUnstick": false,
+        "keyToStick": false,
+        "disableGPUAcceleratedDragging": false,
+        "disableBlurDropPreview": false,
+        "autoHideClientTaskbarIcons": true
+      }
+    },
+    "dock3": {
+      "favorites": [
+        {
+          "type": "item",
+          "id": "fav-macro-angular",
+          "label": "Macro Angular",
+          "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/angular-app.svg",
+          "appId": "macro-angular-view"
+        },
+        {
+          "type": "item",
+          "id": "fav-macro-react",
+          "label": "Macro React",
+          "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/react-app.svg",
+          "appId": "macro-react-view"
+        },
+        {
+          "type": "item",
+          "id": "fav-fx-market-data",
+          "label": "FX Market Data",
+          "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/fx-market-data.svg",
+          "appId": "macro-angular-fx-market-data"
+        },
+        {
+          "type": "item",
+          "id": "fav-treasury-market-data",
+          "label": "Treasury Market Data",
+          "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/treasury-market-data.svg",
+          "appId": "macro-react-treasury-market-data"
+        },
+        {
+          "type": "item",
+          "id": "fav-commodities-dashboard",
+          "label": "Commodities Dashboard",
+          "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/commodities-dashboard.svg",
+          "appId": "macro-react-commodities-dashboard"
+        },
+        {
+          "type": "item",
+          "id": "fav-treasury-microstructure",
+          "label": "Treasury Microstructure",
+          "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/treasury-microstructure.svg",
+          "appId": "macro-angular-treasury-microstructure"
+        },
+        {
+          "type": "item",
+          "id": "fav-fdc3-instrument-viewer",
+          "label": "FDC3 Instrument Viewer",
+          "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/angular-app.svg",
+          "appId": "macro-angular-fdc3-instrument-viewer"
+        },
+        {
+          "type": "item",
+          "id": "fav-analytics-dashboard",
+          "label": "Analytics Dashboard",
+          "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg",
+          "appId": "macro-analytics-dashboard"
+        }
+      ],
+      "contentMenu": [
+        {
+          "type": "folder",
+          "id": "angular-apps",
+          "label": "Angular Apps",
+          "children": [
+            {
+              "type": "item",
+              "id": "cm-macro-angular",
+              "label": "Macro Angular App",
+              "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/angular-app.svg",
+              "appId": "macro-angular-view"
+            },
+            {
+              "type": "item",
+              "id": "cm-fx-market-data",
+              "label": "FX Market Data",
+              "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/fx-market-data.svg",
+              "appId": "macro-angular-fx-market-data"
+            },
+            {
+              "type": "item",
+              "id": "cm-treasury-microstructure",
+              "label": "Treasury Microstructure",
+              "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/treasury-microstructure.svg",
+              "appId": "macro-angular-treasury-microstructure"
+            },
+            {
+              "type": "item",
+              "id": "cm-fdc3-instrument-viewer",
+              "label": "FDC3 Instrument Viewer",
+              "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/angular-app.svg",
+              "appId": "macro-angular-fdc3-instrument-viewer"
+            }
+          ]
+        },
+        {
+          "type": "folder",
+          "id": "react-apps",
+          "label": "React Apps",
+          "children": [
+            {
+              "type": "item",
+              "id": "cm-macro-react",
+              "label": "Macro React App",
+              "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/react-app.svg",
+              "appId": "macro-react-view"
+            },
+            {
+              "type": "item",
+              "id": "cm-treasury-market-data",
+              "label": "Treasury Market Data",
+              "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/treasury-market-data.svg",
+              "appId": "macro-react-treasury-market-data"
+            },
+            {
+              "type": "item",
+              "id": "cm-commodities-dashboard",
+              "label": "Commodities Dashboard",
+              "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/commodities-dashboard.svg",
+              "appId": "macro-react-commodities-dashboard"
+            }
+          ]
+        },
+        {
+          "type": "folder",
+          "id": "workspace-views",
+          "label": "Workspace",
+          "children": [
+            {
+              "type": "item",
+              "id": "cm-view1",
+              "label": "View 1 (FDC3 Broadcaster)",
+              "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/view-broadcaster.svg",
+              "appId": "macro-workspace-view1"
+            },
+            {
+              "type": "item",
+              "id": "cm-view2",
+              "label": "View 2 (FDC3 Listener)",
+              "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/view-listener.svg",
+              "appId": "macro-workspace-view2"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

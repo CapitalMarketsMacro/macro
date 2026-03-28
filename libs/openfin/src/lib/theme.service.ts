@@ -19,13 +19,17 @@ export class ThemeService {
   private readonly document: Document;
   private readonly onThemeChange?: (theme: 'dark' | 'light', palette: ThemePalette) => void;
 
+  private initialized = false;
+
   constructor(
     document: Document,
     onThemeChange?: (theme: 'dark' | 'light', palette: ThemePalette) => void
   ) {
     this.document = document;
     this.onThemeChange = onThemeChange;
-    this.initializeTheme();
+    // Apply default dark theme — skip callback since subclass fields aren't ready yet
+    this.applyTheme('dark');
+    this.initialized = true;
   }
 
   /**
@@ -83,8 +87,8 @@ export class ThemeService {
       root.classList.remove('theme-dark');
     }
 
-    // Call optional callback
-    if (this.onThemeChange) {
+    // Call optional callback (skip during constructor — subclass fields not ready yet)
+    if (this.initialized && this.onThemeChange) {
       this.onThemeChange(theme, palette);
     }
   }

@@ -1,0 +1,8 @@
+{
+  "url": "https://{{OPENSHIFT_ANGULAR_HOST}}/treasury-microstructure",
+  "fdc3InteropApi": "2.0",
+  "interop": {
+    "currentContextGroup": "green"
+  }
+}
+

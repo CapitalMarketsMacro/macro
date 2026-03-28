@@ -7,10 +7,10 @@
   },
   "platform": {
     "uuid": "macro-workspace-platform",
-    "icon": "http://localhost:4202/icons/platform.svg",
+    "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg",
     "autoShow": true,
     "allowLaunchIntoPlatform": true,
-    "providerUrl": "http://localhost:4202/provider",
+    "providerUrl": "https://{{OPENSHIFT_WORKSPACE_HOST}}/provider?env=openshift",
     "preventQuitOnLastWindowClosed": false,
     "defaultWidth": 240,
     "defaultHeight": 280,
@@ -93,7 +93,7 @@
   "shortcut": {
     "company": "OpenFin",
     "description": "A way of showing examples of what OpenFin can do.",
-    "icon": "http://localhost:4202/icons/platform.svg",
+    "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg",
     "name": "Macro Workspace Starter",
     "target": ["desktop", "start-menu"]
   },
@@ -110,11 +110,11 @@
         "name": "macro-workspace-view1",
         "title": "Macro Workspace View 1",
         "description": "Broadcast contexts and notifications from View 1",
-        "manifest": "http://localhost:4202/view1.fin.json",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/view1.fin.json",
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4202/icons/view-broadcaster.svg"
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/view-broadcaster.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -129,11 +129,11 @@
         "name": "macro-workspace-view2",
         "title": "Macro Workspace View 2",
         "description": "Listen for contexts emitted from the workspace",
-        "manifest": "http://localhost:4202/view2.fin.json",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/view2.fin.json",
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4202/icons/view-listener.svg"
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/view-listener.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -148,11 +148,11 @@
         "name": "macro-angular-view",
         "title": "Macro Angular App",
         "description": "Angular market data application",
-        "manifest": "http://localhost:4202/macro-angular-view.fin.json",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-angular-view.fin.json",
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4202/icons/angular-app.svg"
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/angular-app.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -167,11 +167,11 @@
         "name": "macro-angular-fx-market-data",
         "title": "FX Market Data",
         "description": "Real-time foreign exchange market data with G10 currency pairs",
-        "manifest": "http://localhost:4202/macro-angular-fx-market-data.fin.json",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-angular-fx-market-data.fin.json",
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4202/icons/fx-market-data.svg"
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/fx-market-data.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -186,11 +186,11 @@
         "name": "macro-angular-treasury-microstructure",
         "title": "Treasury Microstructure",
         "description": "US Treasury E-Trading Market Microstructure analysis",
-        "manifest": "http://localhost:4202/macro-angular-treasury-microstructure.fin.json",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-angular-treasury-microstructure.fin.json",
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4202/icons/treasury-microstructure.svg"
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/treasury-microstructure.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -205,11 +205,11 @@
         "name": "macro-react-view",
         "title": "Macro React App",
         "description": "React market data application",
-        "manifest": "http://localhost:4202/macro-react-view.fin.json",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-react-view.fin.json",
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4202/icons/react-app.svg"
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/react-app.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -224,11 +224,11 @@
         "name": "macro-react-treasury-market-data",
         "title": "Treasury Market Data",
         "description": "US Treasury securities market data",
-        "manifest": "http://localhost:4202/macro-react-treasury-market-data.fin.json",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-react-treasury-market-data.fin.json",
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4202/icons/treasury-market-data.svg"
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/treasury-market-data.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -243,11 +243,11 @@
         "name": "macro-angular-fdc3-instrument-viewer",
         "title": "FDC3 Instrument Viewer",
         "description": "Displays FDC3 instrument context from color-linked views",
-        "manifest": "http://localhost:4202/macro-angular-fdc3-instrument-viewer.fin.json",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-angular-fdc3-instrument-viewer.fin.json",
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4202/icons/angular-app.svg"
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/angular-app.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -262,11 +262,11 @@
         "name": "macro-react-commodities-dashboard",
         "title": "Commodities Dashboard",
         "description": "Commodities market data dashboard",
-        "manifest": "http://localhost:4202/macro-react-commodities-dashboard.fin.json",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-react-commodities-dashboard.fin.json",
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4202/icons/commodities-dashboard.svg"
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/commodities-dashboard.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -281,11 +281,11 @@
         "name": "macro-analytics-dashboard",
         "title": "Analytics Dashboard",
         "description": "Real-time analytics dashboard for workspace activity monitoring",
-        "manifest": "http://localhost:4202/analytics-dashboard.fin.json",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/analytics-dashboard.fin.json",
         "manifestType": "view",
         "icons": [
           {
-            "src": "http://localhost:4202/icons/platform.svg"
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
           }
         ],
         "contactEmail": "contact@example.com",
@@ -300,11 +300,11 @@
         "name": "rates-desktop",
         "title": "Rates E-Trading Desktop",
         "description": "Rates E-Trading Desktop platform for fixed income trading",
-        "manifest": "http://localhost:8080/assets/openfin/app.platform.fin.json",
+        "manifest": "https://{{OPENSHIFT_RATES_HOST}}/assets/openfin/app.platform.fin.json",
         "manifestType": "manifest",
         "icons": [
           {
-            "src": "http://localhost:4202/icons/platform.svg"
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
           }
         ],
         "contactEmail": "contact@example.com",

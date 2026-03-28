@@ -141,24 +141,30 @@ describe('ThemeService', () => {
       expect(service.getCurrentTheme()).toBe('dark');
     });
 
-    it('should fetch scheme from OpenFin and apply light theme', async () => {
+    it('should default to dark in constructor without calling OpenFin', () => {
+      setFin(true);
+      const service = new ThemeService(mockDocument);
+      expect(service.getCurrentTheme()).toBe('dark');
+    });
+
+    it('should fetch scheme from OpenFin when syncWithOpenFinTheme is called', async () => {
       setFin(true);
       getMockThemeFns().getSelectedScheme.mockResolvedValue('light');
 
       const service = new ThemeService(mockDocument);
-      await new Promise((r) => setTimeout(r, 0));
+      await service.syncWithOpenFinTheme();
 
       expect(service.getCurrentTheme()).toBe('light');
     });
 
-    it('should apply dark theme when initializeTheme errors', async () => {
+    it('should keep dark theme when syncWithOpenFinTheme errors', async () => {
       setFin(true);
       getMockThemeFns().getSelectedScheme.mockRejectedValue(
         new Error('Platform not ready'),
       );
 
       const service = new ThemeService(mockDocument);
-      await new Promise((r) => setTimeout(r, 0));
+      await service.syncWithOpenFinTheme();
 
       expect(service.getCurrentTheme()).toBe('dark');
     });

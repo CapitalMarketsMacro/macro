@@ -1,0 +1,8 @@
+{
+  "url": "https://{{OPENSHIFT_REACT_HOST}}",
+  "fdc3InteropApi": "2.0",
+  "interop": {
+    "currentContextGroup": "green"
+  }
+}
+

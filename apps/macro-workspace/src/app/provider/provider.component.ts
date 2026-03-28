@@ -67,8 +67,10 @@ export class ProviderComponent implements OnInit, OnDestroy {
   async launchAnalytics(): Promise<void> {
     if (typeof fin === 'undefined') return;
     try {
+      const env = new URLSearchParams(window.location.search).get('env') || 'local';
+      const manifestUrl = `${window.location.origin}/${env}/analytics-dashboard.fin.json`;
       const platform = fin.Platform.getCurrentSync();
-      await (platform as any).createView({ manifestUrl: 'http://localhost:4202/analytics-dashboard.fin.json' });
+      await (platform as any).createView({ manifestUrl });
     } catch (err) {
       logger.error('Error launching analytics', err);
     }
