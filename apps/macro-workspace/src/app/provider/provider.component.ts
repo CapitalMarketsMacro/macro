@@ -33,7 +33,6 @@ export class ProviderComponent implements OnInit, OnDestroy {
   activePresetId = this.themePresetService.getActivePresetId();
 
   private readonly COLLAPSED_HEIGHT = 280;
-  private readonly EXPANDED_HEIGHT = 440;
 
   async ngOnInit(): Promise<void> {
     this.themeService.syncWithOpenFinTheme();
@@ -143,14 +142,20 @@ export class ProviderComponent implements OnInit, OnDestroy {
     const next = !this.expanded();
     this.expanded.set(next);
     if (typeof fin !== 'undefined') {
-      try {
-        const win = fin.Window.getCurrentSync();
-        const bounds = await win.getBounds();
-        const h = next ? this.EXPANDED_HEIGHT : this.COLLAPSED_HEIGHT;
-        await win.resizeTo(bounds.width, h, 'top-left');
-      } catch (err) {
-        logger.error('Error resizing provider window', err);
-      }
+      // Wait a tick for Angular to render the expanded content, then measure
+      setTimeout(async () => {
+        try {
+          const win = fin.Window.getCurrentSync();
+          const bounds = await win.getBounds();
+          const contentHeight = next
+            ? document.querySelector('.provider')?.scrollHeight ?? 440
+            : this.COLLAPSED_HEIGHT;
+          const h = Math.min(Math.max(contentHeight + 2, this.COLLAPSED_HEIGHT), 600);
+          await win.resizeTo(bounds.width, h, 'top-left');
+        } catch (err) {
+          logger.error('Error resizing provider window', err);
+        }
+      }, 50);
     }
   }
 
