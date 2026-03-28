@@ -1,0 +1,99 @@
+<div class="provider">
+  <!-- Draggable title bar -->
+  <div class="titlebar">
+    <img src="icons/platform.svg" alt="" class="titlebar-icon" />
+    <span class="titlebar-title">Macro Workspace</span>
+    <button class="expand-toggle"
+      (click)="toggleExpand()" [title]="expanded() ? 'Collapse' : 'Settings'">
+      <span class="chevron" [class.up]="expanded()"></span>
+    </button>
+  </div>
+
+  <!-- Status -->
+  <div class="status-row">
+    <span class="status-dot" [class.active]="(message$ | async)?.includes('initialized')"></span>
+    <span class="status-text">{{ message$ | async }}</span>
+  </div>
+
+  <!-- Info -->
+  <div class="info-section">
+    @if (runtimeVersion()) {
+      <div class="info-row">
+        <span class="info-label">Runtime</span>
+        <span class="info-value">{{ runtimeVersion() }}</span>
+      </div>
+    }
+    @if (platformVersion()) {
+      <div class="info-row">
+        <span class="info-label">Workspace</span>
+        <span class="info-value">v{{ platformVersion() }}</span>
+      </div>
+    }
+  </div>
+
+  <!-- Action buttons -->
+  <div class="actions">
+    <button class="action-btn" (click)="launchAnalytics()" title="Analytics Dashboard">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
+      </svg>
+      <span>Analytics</span>
+    </button>
+    <button class="action-btn" (click)="launchProcessManager()" title="Process Manager">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <path d="M8 21h8"/><path d="M12 17v4"/>
+      </svg>
+      <span>Processes</span>
+    </button>
+  </div>
+
+  <!-- Expandable settings panel -->
+  @if (expanded()) {
+    <div class="settings-panel">
+      <!-- Theme presets -->
+      <div class="settings-group">
+        <div class="settings-label">Theme</div>
+        <div class="pill-row">
+          @for (preset of presets; track preset.id) {
+            <button class="pill" [class.active]="preset.id === activePresetId"
+              (click)="applyPreset(preset)">{{ preset.label }}</button>
+          }
+        </div>
+      </div>
+
+      <!-- Test notifications -->
+      <div class="settings-group">
+        <div class="settings-label">Test Notifications</div>
+        <div class="pill-row">
+          <button class="pill pill-info" (click)="sendTestNotification('info')">Info</button>
+          <button class="pill pill-success" (click)="sendTestNotification('success')">OK</button>
+          <button class="pill pill-warning" (click)="sendTestNotification('warning')">Warn</button>
+          <button class="pill pill-error" (click)="sendTestNotification('error')">Err</button>
+          <button class="pill pill-critical" (click)="sendTestNotification('critical')">Crit</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Quit button -->
+  <div class="quit-section">
+    @if (!showQuitConfirm()) {
+      <button class="quit-btn" (click)="requestQuit()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Quit Platform
+      </button>
+    } @else {
+      <div class="quit-confirm">
+        <p class="quit-warn">This will close all workspace windows and views.</p>
+        <div class="quit-confirm-btns">
+          <button class="quit-confirm-yes" (click)="confirmQuit()">Quit</button>
+          <button class="quit-confirm-no" (click)="cancelQuit()">Cancel</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

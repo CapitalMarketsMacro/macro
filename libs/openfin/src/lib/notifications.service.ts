@@ -4,6 +4,8 @@ import {
   create as createNotification,
   deregister as deregisterPlatform,
   register as registerPlatform,
+  setReminder as setNotificationReminder,
+  cancelReminder as cancelNotificationReminder,
 } from '@openfin/workspace/notifications';
 import { Observable } from 'rxjs';
 import type { PlatformSettings } from './types';
@@ -138,6 +140,38 @@ export class NotificationsService {
   /** Critical notification (magenta indicator). */
   critical(title: string, body: string, options?: Partial<LevelNotificationOptions>): void {
     this.notify('critical', { title, body, ...options });
+  }
+
+  /**
+   * Schedule a reminder for an existing notification.
+   * The notification will reappear in the Notification Center at the specified time.
+   * @param notificationId - ID of the notification to set the reminder for
+   * @param reminderDate - When the reminder should fire (must be in the future)
+   * @returns true if the reminder was set successfully
+   */
+  async setReminder(notificationId: string, reminderDate: Date): Promise<boolean> {
+    if (typeof fin === 'undefined') return false;
+    try {
+      return await setNotificationReminder(notificationId, reminderDate);
+    } catch (err) {
+      logger.error('Failed to set notification reminder', { notificationId, err });
+      return false;
+    }
+  }
+
+  /**
+   * Cancel a previously scheduled reminder.
+   * @param notificationId - ID of the notification whose reminder should be cancelled
+   * @returns true if the reminder was cancelled successfully
+   */
+  async cancelReminder(notificationId: string): Promise<boolean> {
+    if (typeof fin === 'undefined') return false;
+    try {
+      return await cancelNotificationReminder(notificationId);
+    } catch (err) {
+      logger.error('Failed to cancel notification reminder', { notificationId, err });
+      return false;
+    }
   }
 }
 

@@ -9,8 +9,9 @@ import { App } from './app';
 // Mocks
 // ---------------------------------------------------------------------------
 
-// Mock @macro/logger
-const mockLoggerInstance = {
+// Mock @macro/logger — use `var` so it's hoisted above jest.mock
+// eslint-disable-next-line no-var
+var mockLoggerInstance: any = {
   info: jest.fn(),
   debug: jest.fn(),
   warn: jest.fn(),
@@ -31,6 +32,11 @@ jest.mock('@macro/logger', () => ({
     WARN: 2,
     ERROR: 3,
   },
+}));
+
+// Mock @macro/openfin (prevents loading @openfin/workspace which bundles lodash)
+jest.mock('@macro/openfin', () => ({
+  onOpenFinThemeChange: jest.fn().mockReturnValue(jest.fn()),
 }));
 
 // Mock @macro/macro-design

@@ -1,241 +1,106 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  provideZonelessChangeDetection,
-  NO_ERRORS_SCHEMA,
-} from '@angular/core';
-import { of, Subject } from 'rxjs';
-import { ProviderComponent } from './provider.component';
+import { provideZonelessChangeDetection, NO_ERRORS_SCHEMA } from '@angular/core';
+import { of } from 'rxjs';
 
-// Mock @macro/openfin Angular services
-const mockWorkspaceService = {
-  getStatus$: jest.fn().mockReturnValue(of('Initializing...')),
-  init: jest.fn().mockReturnValue(of(true)),
-  quit: jest.fn(),
-};
+const _getStatus$ = jest.fn().mockReturnValue(of('Platform initialized'));
+const _init = jest.fn().mockReturnValue(of(true));
+const _quit = jest.fn();
+const _syncWithOpenFinTheme = jest.fn();
+const _stopSyncing = jest.fn();
+const _getApps = jest.fn().mockReturnValue([]);
 
-const mockThemeService = {
-  syncWithOpenFinTheme: jest.fn(),
-  stopSyncing: jest.fn(),
-};
+jest.mock('@macro/openfin', () => {
+  class MockWorkspaceService { getStatus$ = _getStatus$; init = _init; quit = _quit; }
+  class MockThemeService { syncWithOpenFinTheme = _syncWithOpenFinTheme; stopSyncing = _stopSyncing; }
+  class MockThemePresetService { getAvailablePresets = jest.fn().mockReturnValue([]); getActivePresetId = jest.fn().mockReturnValue('default'); setActivePresetId = jest.fn(); }
+  class MockNotificationsService { info = jest.fn(); success = jest.fn(); warning = jest.fn(); error = jest.fn(); critical = jest.fn(); }
+  class MockSettingsService { getApps = _getApps; }
+  return {
+    WorkspaceService: MockWorkspaceService,
+    ThemeService: MockThemeService,
+    ThemePresetService: MockThemePresetService,
+    NotificationsService: MockNotificationsService,
+    SettingsService: MockSettingsService,
+  };
+});
 
-const mockThemePresetService = {
-  getAvailablePresets: jest.fn().mockReturnValue([]),
-  getActivePresetId: jest.fn().mockReturnValue('default'),
-  setActivePresetId: jest.fn(),
-};
-
-const mockNotificationsService = {
-  create: jest.fn(),
-  notify: jest.fn(),
-  info: jest.fn(),
-  success: jest.fn(),
-  warning: jest.fn(),
-  error: jest.fn(),
-  critical: jest.fn(),
-  register: jest.fn().mockResolvedValue(undefined),
-  deregister: jest.fn().mockResolvedValue(undefined),
-  observeNotificationActions: jest.fn(),
-};
-
-const mockFavoritesService = {
-  isFavorite: jest.fn().mockReturnValue(false),
-  toggleFavorite: jest.fn(),
-  getFavoriteIds: jest.fn().mockReturnValue(new Set()),
-  getFavoriteIds$: jest.fn().mockReturnValue(of(new Set())),
-};
-
-const mockSettingsService = {
-  getApps: jest.fn().mockReturnValue([
-    { appId: 'app-1', title: 'App One' },
-    { appId: 'app-2', title: 'App Two' },
-  ]),
-  getManifestSettings: jest.fn(),
-  getApps$: jest.fn(),
-};
-
-jest.mock('@macro/openfin', () => ({
-  WorkspaceService: jest.fn().mockImplementation(() => mockWorkspaceService),
-  ThemeService: jest.fn().mockImplementation(() => mockThemeService),
-  ThemePresetService: jest.fn().mockImplementation(() => mockThemePresetService),
-  NotificationsService: jest.fn().mockImplementation(() => mockNotificationsService),
-  FavoritesService: jest.fn().mockImplementation(() => mockFavoritesService),
-  SettingsService: jest.fn().mockImplementation(() => mockSettingsService),
+jest.mock('@macro/logger', () => ({
+  Logger: { getLogger: () => ({ info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() }) },
 }));
 
-// Import after mock
-import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService, FavoritesService, SettingsService } from '@macro/openfin';
+import { ProviderComponent } from './provider.component';
+import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService, SettingsService } from '@macro/openfin';
 
 describe('ProviderComponent', () => {
+  let component: ProviderComponent;
+
   beforeEach(async () => {
     jest.clearAllMocks();
+    _getStatus$.mockReturnValue(of('Platform initialized'));
+    _init.mockReturnValue(of(true));
 
     await TestBed.configureTestingModule({
       imports: [ProviderComponent],
       providers: [
         provideZonelessChangeDetection(),
-        { provide: WorkspaceService, useValue: mockWorkspaceService },
-        { provide: ThemeService, useValue: mockThemeService },
-        { provide: ThemePresetService, useValue: mockThemePresetService },
-        { provide: NotificationsService, useValue: mockNotificationsService },
-        { provide: FavoritesService, useValue: mockFavoritesService },
-        { provide: SettingsService, useValue: mockSettingsService },
+        { provide: WorkspaceService, useValue: new WorkspaceService() },
+        { provide: ThemeService, useValue: new ThemeService() },
+        { provide: ThemePresetService, useValue: new ThemePresetService() },
+        { provide: NotificationsService, useValue: new NotificationsService() },
+        { provide: SettingsService, useValue: new SettingsService() },
       ],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
+
+    const fixture = TestBed.createComponent(ProviderComponent);
+    component = fixture.componentInstance;
   });
 
-  it('should create the component', () => {
-    const fixture = TestBed.createComponent(ProviderComponent);
-    expect(fixture.componentInstance).toBeTruthy();
+  it('should create', () => {
+    expect(component).toBeTruthy();
   });
 
-  it('should have message$ observable from WorkspaceService', () => {
-    const fixture = TestBed.createComponent(ProviderComponent);
-    const component = fixture.componentInstance;
+  it('should expose message$ observable', () => {
     expect(component.message$).toBeDefined();
   });
 
   describe('ngOnInit', () => {
-    it('should sync theme with OpenFin on init', () => {
-      const fixture = TestBed.createComponent(ProviderComponent);
-      fixture.componentInstance.ngOnInit();
-      expect(mockThemeService.syncWithOpenFinTheme).toHaveBeenCalled();
+    it('should sync theme with OpenFin', () => {
+      component.ngOnInit();
+      expect(_syncWithOpenFinTheme).toHaveBeenCalled();
     });
 
-    it('should call workspaceService.init() and subscribe', () => {
-      const initSubject = new Subject<boolean>();
-      mockWorkspaceService.init.mockReturnValue(initSubject.asObservable());
-
-      const fixture = TestBed.createComponent(ProviderComponent);
-      fixture.componentInstance.ngOnInit();
-
-      expect(mockWorkspaceService.init).toHaveBeenCalled();
-    });
-
-    it('should subscribe to init observable', () => {
-      const initSubject = new Subject<boolean>();
-      mockWorkspaceService.init.mockReturnValue(initSubject.asObservable());
-
-      const fixture = TestBed.createComponent(ProviderComponent);
-      fixture.componentInstance.ngOnInit();
-
-      // Emit value to verify subscription is active
-      expect(() => initSubject.next(true)).not.toThrow();
+    it('should initialize workspace service', () => {
+      component.ngOnInit();
+      expect(_init).toHaveBeenCalled();
     });
   });
 
   describe('ngOnDestroy', () => {
-    it('should stop theme syncing on destroy', () => {
-      const fixture = TestBed.createComponent(ProviderComponent);
-      fixture.componentInstance.ngOnDestroy();
-      expect(mockThemeService.stopSyncing).toHaveBeenCalled();
-    });
-
-    it('should call workspaceService.quit() on destroy', () => {
-      const fixture = TestBed.createComponent(ProviderComponent);
-      fixture.componentInstance.ngOnDestroy();
-      expect(mockWorkspaceService.quit).toHaveBeenCalled();
-    });
-
-    it('should complete the unsubscribe subject on destroy', () => {
-      const initSubject = new Subject<boolean>();
-      mockWorkspaceService.init.mockReturnValue(initSubject.asObservable());
-
-      const fixture = TestBed.createComponent(ProviderComponent);
-      fixture.componentInstance.ngOnInit();
-      fixture.componentInstance.ngOnDestroy();
-
-      // After destroy, init subscription should be unsubscribed via takeUntil
-      // Emitting should not cause errors
-      expect(() => initSubject.next(true)).not.toThrow();
+    it('should stop theme syncing', () => {
+      component.ngOnDestroy();
+      expect(_stopSyncing).toHaveBeenCalled();
     });
   });
 
-  describe('favorites', () => {
-    it('should delegate isFavorite to FavoritesService', () => {
-      const fixture = TestBed.createComponent(ProviderComponent);
-      const component = fixture.componentInstance;
-
-      component.isFavorite('app-1');
-      expect(mockFavoritesService.isFavorite).toHaveBeenCalledWith('app-1');
+  describe('quit flow', () => {
+    it('should show confirmation on requestQuit', () => {
+      expect(component.showQuitConfirm()).toBe(false);
+      component.requestQuit();
+      expect(component.showQuitConfirm()).toBe(true);
     });
 
-    it('should delegate toggleFavorite to FavoritesService', () => {
-      const fixture = TestBed.createComponent(ProviderComponent);
-      const component = fixture.componentInstance;
-
-      component.toggleFavorite('app-1');
-      expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith('app-1');
+    it('should hide confirmation on cancelQuit', () => {
+      component.requestQuit();
+      component.cancelQuit();
+      expect(component.showQuitConfirm()).toBe(false);
     });
 
-    it('should populate storeApps from SettingsService', () => {
-      const fixture = TestBed.createComponent(ProviderComponent);
-      const component = fixture.componentInstance;
-
-      expect(component.storeApps).toEqual([
-        { appId: 'app-1', title: 'App One' },
-        { appId: 'app-2', title: 'App Two' },
-      ]);
-    });
-
-    it('should render favorite toggle buttons for each app', () => {
-      const fixture = TestBed.createComponent(ProviderComponent);
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const buttons = compiled.querySelectorAll('button.theme-btn');
-      // 2 app buttons + 5 notification buttons + preset buttons
-      const allButtonTexts = Array.from(buttons).map(
-        (b) => b.textContent?.trim()
-      );
-      expect(allButtonTexts).toContain('☆ App One');
-      expect(allButtonTexts).toContain('☆ App Two');
-    });
-  });
-
-  describe('template', () => {
-    it('should render the heading text', () => {
-      const fixture = TestBed.createComponent(ProviderComponent);
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('h1')?.textContent).toContain(
-        'OpenFin Platform Window'
-      );
-    });
-
-    it('should render the status message paragraph', () => {
-      const fixture = TestBed.createComponent(ProviderComponent);
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const messageParagraph = compiled.querySelector('.message');
-      expect(messageParagraph).toBeTruthy();
-    });
-
-    it('should render description paragraphs', () => {
-      const fixture = TestBed.createComponent(ProviderComponent);
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const paragraphs = compiled.querySelectorAll('p');
-      // At least the 2 description paragraphs + 1 status message
-      expect(paragraphs.length).toBeGreaterThanOrEqual(3);
-    });
-
-    it('should render the OpenFin logo image', () => {
-      const fixture = TestBed.createComponent(ProviderComponent);
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const img = compiled.querySelector('img');
-      expect(img).toBeTruthy();
-      expect(img?.getAttribute('alt')).toBe('OpenFin');
-    });
-
-    it('should render the Store Favorites heading', () => {
-      const fixture = TestBed.createComponent(ProviderComponent);
-      fixture.detectChanges();
-      const compiled = fixture.nativeElement as HTMLElement;
-      const headings = Array.from(compiled.querySelectorAll('h2')).map(
-        (h) => h.textContent
-      );
-      expect(headings).toContain('Store Favorites');
+    it('should call quit on confirmQuit', () => {
+      component.requestQuit();
+      component.confirmQuit();
+      expect(_quit).toHaveBeenCalled();
+      expect(component.showQuitConfirm()).toBe(false);
     });
   });
 });

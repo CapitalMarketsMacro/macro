@@ -57,7 +57,10 @@
       "WebFetch(domain:resources.here.io)",
       "Bash(node -e \"const ts = require\\(''./tsconfig.base.json''\\); const paths = ts.compilerOptions.paths; Object.keys\\(paths\\).filter\\(k => k.includes\\(''macro''\\)\\).forEach\\(k => console.log\\(k, ''->'', paths[k][0]\\)\\)\")",
       "Bash(node -e \"const ts = require\\(''./tsconfig.base.json''\\); Object.entries\\(ts.compilerOptions.paths\\).forEach\\(\\([k,v]\\) => console.log\\(k, ''->'', v[0]\\)\\)\")",
-      "Bash(node -e \"const m = require\\(''./apps/macro-workspace/public/manifest.fin.json''\\); m.customSettings.apps.forEach\\(a => console.log\\(a.appId, ''-'', a.title, ''\\('' + a.manifestType + ''\\)''\\)\\)\")"
+      "Bash(node -e \"const m = require\\(''./apps/macro-workspace/public/manifest.fin.json''\\); m.customSettings.apps.forEach\\(a => console.log\\(a.appId, ''-'', a.title, ''\\('' + a.manifestType + ''\\)''\\)\\)\")",
+      "Bash(node -e \"const v=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\)\\); console.log\\(''''Latest @openfin/core:'''', v.slice\\(-3\\).join\\('''', ''''\\)\\);\")",
+      "Bash(node -e \"const v=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\)\\); console.log\\(''''Latest @openfin/node-adapter:'''', v.slice\\(-3\\).join\\('''', ''''\\)\\);\")",
+      "Bash(node -e \"const d=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\)\\); Object.entries\\(d||{}\\).forEach\\(\\([k,v]\\) => console.log\\(k + '''': '''' + v\\)\\);\")"
     ]
   },
   "enableAllProjectMcpServers": true

@@ -6,8 +6,8 @@ describe('routes', () => {
     expect(Array.isArray(routes)).toBe(true);
   });
 
-  it('should contain 5 route entries', () => {
-    expect(routes.length).toBe(5);
+  it('should contain 6 route entries', () => {
+    expect(routes.length).toBe(6);
   });
 
   it('should have a provider route with lazy-loaded component', () => {

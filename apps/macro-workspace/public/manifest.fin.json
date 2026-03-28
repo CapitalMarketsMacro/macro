@@ -3,7 +3,7 @@
   "licenseKey": "openfin-demo-license-key",
   "runtime": {
     "arguments": "--v=1 --inspect",
-    "version": "42.138.103.4"
+    "version": "43.142.101.2"
   },
   "platform": {
     "uuid": "macro-workspace-platform",
@@ -12,6 +12,19 @@
     "allowLaunchIntoPlatform": true,
     "providerUrl": "http://localhost:4202/provider",
     "preventQuitOnLastWindowClosed": false,
+    "defaultWidth": 240,
+    "defaultHeight": 280,
+    "minWidth": 240,
+    "minHeight": 280,
+    "maxWidth": 240,
+    "maxHeight": 440,
+    "resizable": false,
+    "frame": false,
+    "alwaysOnTop": true,
+    "showTaskbarIcon": false,
+    "cornerRounding": { "width": 12, "height": 12 },
+    "shadow": true,
+    "saveWindowState": false,
     "permissions": {
       "System": {
         "getOSInfo": true,

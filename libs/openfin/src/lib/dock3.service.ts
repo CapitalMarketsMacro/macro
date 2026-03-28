@@ -85,6 +85,14 @@ export class Dock3Service {
           enableBookmarking: true,
         },
         hideDragHandle: false,
+        moreMenu: {
+          moreMenuCustomOption: {
+            label: 'Tools',
+            options: [
+              { tooltip: 'Analytics Dashboard', iconUrl: platformSettings.icon } as any,
+            ],
+          },
+        },
       },
     };
 
@@ -95,12 +103,38 @@ export class Dock3Service {
 
     this.provider = await Dock.init({
       config,
+      windowOptions: {
+        experimental: {
+          snapZone: {
+            enabled: true,
+            threshold: 40,
+            locationPreference: ['bottom', 'top'],
+          },
+        },
+        contextMenuOptions: {
+          enabled: true,
+          template: ['snapToTop', 'snapToBottom'],
+        },
+      } as any,
       override: (Base) =>
         class extends Base {
           // Always use fresh config from settings.json instead of stale IndexedDB cache.
           // This ensures icon URL changes and config updates take effect immediately.
           override async loadConfig(): Promise<Dock3Config> {
             return config;
+          }
+
+          override async moreMenuCustomOptionClicked(payload: any) {
+            const { label, customData } = payload;
+            logger.info('Dock3 more menu custom option clicked', { label });
+            getAnalyticsNats().publish({
+              source: 'Dock', type: 'MoreMenu', action: 'CustomOption',
+              value: label,
+            }).catch(() => {});
+            if (customData?.manifest) {
+              const platform = getCurrentSync();
+              await platform.createView({ manifestUrl: customData.manifest });
+            }
           }
 
           override async launchEntry(payload: LaunchDockEntryPayload) {
