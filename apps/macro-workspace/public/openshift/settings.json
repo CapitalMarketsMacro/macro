@@ -23,7 +23,10 @@
         "publisher": "OpenFin",
         "intents": [],
         "images": [],
-        "tags": ["view", "openfin"]
+        "tags": [
+          "view",
+          "openfin"
+        ]
       },
       {
         "appId": "macro-workspace-view2",
@@ -42,7 +45,10 @@
         "publisher": "OpenFin",
         "intents": [],
         "images": [],
-        "tags": ["view", "openfin"]
+        "tags": [
+          "view",
+          "openfin"
+        ]
       },
       {
         "appId": "macro-angular-view",
@@ -61,7 +67,11 @@
         "publisher": "OpenFin",
         "intents": [],
         "images": [],
-        "tags": ["view", "angular", "market-data"]
+        "tags": [
+          "view",
+          "angular",
+          "market-data"
+        ]
       },
       {
         "appId": "macro-angular-fx-market-data",
@@ -80,7 +90,12 @@
         "publisher": "OpenFin",
         "intents": [],
         "images": [],
-        "tags": ["view", "angular", "fx", "market-data"]
+        "tags": [
+          "view",
+          "angular",
+          "fx",
+          "market-data"
+        ]
       },
       {
         "appId": "macro-angular-treasury-microstructure",
@@ -99,7 +114,12 @@
         "publisher": "OpenFin",
         "intents": [],
         "images": [],
-        "tags": ["view", "angular", "treasury", "market-data"]
+        "tags": [
+          "view",
+          "angular",
+          "treasury",
+          "market-data"
+        ]
       },
       {
         "appId": "macro-react-view",
@@ -118,7 +138,11 @@
         "publisher": "OpenFin",
         "intents": [],
         "images": [],
-        "tags": ["view", "react", "market-data"]
+        "tags": [
+          "view",
+          "react",
+          "market-data"
+        ]
       },
       {
         "appId": "macro-react-treasury-market-data",
@@ -137,7 +161,12 @@
         "publisher": "OpenFin",
         "intents": [],
         "images": [],
-        "tags": ["view", "react", "treasury", "market-data"]
+        "tags": [
+          "view",
+          "react",
+          "treasury",
+          "market-data"
+        ]
       },
       {
         "appId": "macro-angular-fdc3-instrument-viewer",
@@ -156,7 +185,12 @@
         "publisher": "OpenFin",
         "intents": [],
         "images": [],
-        "tags": ["view", "angular", "fdc3", "instrument"]
+        "tags": [
+          "view",
+          "angular",
+          "fdc3",
+          "instrument"
+        ]
       },
       {
         "appId": "macro-react-commodities-dashboard",
@@ -175,7 +209,12 @@
         "publisher": "OpenFin",
         "intents": [],
         "images": [],
-        "tags": ["view", "react", "commodities", "market-data"]
+        "tags": [
+          "view",
+          "react",
+          "commodities",
+          "market-data"
+        ]
       },
       {
         "appId": "macro-analytics-dashboard",
@@ -194,7 +233,11 @@
         "publisher": "OpenFin",
         "intents": [],
         "images": [],
-        "tags": ["view", "analytics", "monitoring"]
+        "tags": [
+          "view",
+          "analytics",
+          "monitoring"
+        ]
       },
       {
         "appId": "rates-desktop",
@@ -213,7 +256,57 @@
         "publisher": "OpenFin",
         "intents": [],
         "images": [],
-        "tags": ["platform", "rates", "fixed-income"]
+        "tags": [
+          "platform",
+          "rates",
+          "fixed-income"
+        ]
+      },
+      {
+        "appId": "risk-overview",
+        "name": "risk-overview",
+        "title": "Risk Overview",
+        "description": "Sample risk monitoring dashboard",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/risk-overview.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": [
+          "view",
+          "react",
+          "figma-make"
+        ]
+      },
+      {
+        "appId": "rfq-butterfly-ticket",
+        "name": "rfq-butterfly-ticket",
+        "title": "UST RFQ Ticket",
+        "description": "Butterfly RFQ Ticket Design for UST trading",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/rfq-butterfly-ticket.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": [
+          "view",
+          "react",
+          "figma-make"
+        ]
       }
     ],
     "snapProvider": {

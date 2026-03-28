@@ -10,6 +10,7 @@ import { registerMarketDataServer } from './market-data-server.js';
 import { registerTesting } from './testing.js';
 import { registerTechStack } from './tech-stack.js';
 import { registerLobGuide } from './lob-guide.js';
+import { registerFigmaWorkflow } from './figma-workflow.js';
 
 export function registerResources(server: McpServer): void {
   registerArchitecture(server);
@@ -23,4 +24,5 @@ export function registerResources(server: McpServer): void {
   registerTesting(server);
   registerTechStack(server);
   registerLobGuide(server);
+  registerFigmaWorkflow(server);
 }

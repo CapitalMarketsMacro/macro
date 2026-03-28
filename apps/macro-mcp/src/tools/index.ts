@@ -6,6 +6,7 @@ import { registerGetLibraryApi } from './get-library-api.js';
 import { registerGetCommands } from './get-commands.js';
 import { registerScaffoldLibrary } from './scaffold-library.js';
 import { registerRegisterOpenfinApp } from './register-openfin-app.js';
+import { registerImportFigmaApp } from './import-figma-app.js';
 
 export function registerTools(server: McpServer): void {
   registerScaffoldAngularApp(server);
@@ -15,4 +16,5 @@ export function registerTools(server: McpServer): void {
   registerGetCommands(server);
   registerScaffoldLibrary(server);
   registerRegisterOpenfinApp(server);
+  registerImportFigmaApp(server);
 }
