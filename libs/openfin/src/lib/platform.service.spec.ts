@@ -100,7 +100,7 @@ describe('PlatformService', () => {
       const buttons =
         callArg.browser.defaultWindowOptions.workspacePlatform.toolbarOptions
           .buttons;
-      expect(buttons).toHaveLength(7);
+      expect(buttons).toHaveLength(8);
     });
 
     it('should include standard button types', async () => {

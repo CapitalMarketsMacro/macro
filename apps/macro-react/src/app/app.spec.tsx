@@ -304,6 +304,11 @@ describe('App', () => {
 });
 
 describe('App (with BrowserRouter)', () => {
+  beforeEach(() => {
+    // Set URL to match BrowserRouter basename so routes can match
+    window.history.pushState({}, '', '/macro-react/');
+  });
+
   it('should render the full App component with BrowserRouter', () => {
     const { baseElement } = render(<App />);
     expect(baseElement).toBeTruthy();
