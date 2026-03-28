@@ -9,6 +9,8 @@ jest.mock('@openfin/workspace/notifications', () => ({
   create: mockCreate,
   deregister: mockDeregister,
   register: mockRegister,
+  setReminder: jest.fn().mockResolvedValue(true),
+  cancelReminder: jest.fn().mockResolvedValue(true),
 }));
 
 // Silence logger output during tests
@@ -25,6 +27,9 @@ jest.mock('@macro/logger', () => ({
 
 import { NotificationsService } from './notifications.service';
 import type { PlatformSettings } from './types';
+
+/** Flush microtask queue — needed because create() uses dynamic import internally */
+const flush = () => new Promise((r) => setTimeout(r, 0));
 
 const platformSettings: PlatformSettings = {
   id: 'macro-workspace',
@@ -102,7 +107,7 @@ describe('NotificationsService', () => {
       });
     });
 
-    it('should return an observable that emits notification events when fin is available', () => {
+    it('should return an observable that emits notification events when fin is available', async () => {
       setFin({});
       service = new NotificationsService();
 
@@ -110,6 +115,9 @@ describe('NotificationsService', () => {
       service.observeNotificationActions().subscribe((event) => {
         emitted.push(event);
       });
+
+      // addEventListener is called via dynamic import — flush promises
+      await new Promise((r) => setTimeout(r, 0));
 
       expect(mockAddEventListener).toHaveBeenCalledWith(
         'notification-action',
@@ -170,13 +178,15 @@ describe('NotificationsService', () => {
       expect(mockCreate).not.toHaveBeenCalled();
     });
 
-    it('should call create from notifications module when fin is available', () => {
+    it('should call create from notifications module when fin is available', async () => {
       setFin({});
       service = new NotificationsService();
 
       const config = { title: 'Test Notification', body: 'Hello World' } as any;
       service.create(config);
 
+      // create is now async internally (dynamic import)
+      await new Promise((r) => setTimeout(r, 0));
       expect(mockCreate).toHaveBeenCalledWith(config);
     });
   });
@@ -197,8 +207,9 @@ describe('NotificationsService', () => {
       ['warning', 'yellow', 'Warning'],
       ['error', 'red', 'Error'],
       ['critical', 'magenta', 'Critical'],
-    ] as const)('should send %s notification with %s indicator', (level, color, label) => {
+    ] as const)('should send %s notification with %s indicator', async (level, color, label) => {
       service.notify(level as any, { title: 'Test', body: 'Body' });
+      await flush();
 
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -209,8 +220,9 @@ describe('NotificationsService', () => {
       );
     });
 
-    it('should use platform settings for icon and stream', () => {
+    it('should use platform settings for icon and stream', async () => {
       service.info('Title', 'Body');
+      await flush();
 
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -220,8 +232,9 @@ describe('NotificationsService', () => {
       );
     });
 
-    it('should allow overriding source and icon', () => {
+    it('should allow overriding source and icon', async () => {
       service.warning('Title', 'Body', { source: 'My App', icon: 'custom.svg' });
+      await flush();
 
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -242,36 +255,41 @@ describe('NotificationsService', () => {
       mockCreate.mockClear();
     });
 
-    it('info() should call notify with info level', () => {
+    it('info() should call notify with info level', async () => {
       service.info('Title', 'Body');
+      await flush();
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({ indicator: { color: 'blue', text: 'Info' } }),
       );
     });
 
-    it('success() should call notify with success level', () => {
+    it('success() should call notify with success level', async () => {
       service.success('Title', 'Body');
+      await flush();
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({ indicator: { color: 'green', text: 'Success' } }),
       );
     });
 
-    it('warning() should call notify with warning level', () => {
+    it('warning() should call notify with warning level', async () => {
       service.warning('Title', 'Body');
+      await flush();
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({ indicator: { color: 'yellow', text: 'Warning' } }),
       );
     });
 
-    it('error() should call notify with error level', () => {
+    it('error() should call notify with error level', async () => {
       service.error('Title', 'Body');
+      await flush();
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({ indicator: { color: 'red', text: 'Error' } }),
       );
     });
 
-    it('critical() should call notify with critical level', () => {
+    it('critical() should call notify with critical level', async () => {
       service.critical('Title', 'Body');
+      await flush();
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({ indicator: { color: 'magenta', text: 'Critical' } }),
       );
