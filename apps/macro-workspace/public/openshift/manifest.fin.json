@@ -426,6 +426,29 @@
           "react",
           "figma-make"
         ]
+      },
+      {
+        "appId": "capital-markets-themes",
+        "name": "capital-markets-themes",
+        "title": "Capital Markets Theme",
+        "description": "Design Capital Markets Themes showcase",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/capital-markets-themes.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": [
+          "view",
+          "react",
+          "figma-make"
+        ]
       }
     ]
   }

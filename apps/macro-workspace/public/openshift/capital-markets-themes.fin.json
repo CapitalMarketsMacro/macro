@@ -1,0 +1,7 @@
+{
+  "url": "https://{{OPENSHIFT_CAPITAL_MARKETS_THEMES_HOST}}/capital-markets-themes/",
+  "fdc3InteropApi": "2.0",
+  "interop": {
+    "currentContextGroup": "green"
+  }
+}
