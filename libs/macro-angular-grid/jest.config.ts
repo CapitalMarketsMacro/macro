@@ -1,6 +1,7 @@
 export default {
   displayName: 'macro-angular-grid',
   preset: '../../jest.preset.js',
+  maxWorkers: 1,
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   coverageDirectory: '../../coverage/libs/macro-angular-grid',
   transform: {
@@ -8,7 +9,8 @@ export default {
       'jest-preset-angular',
       {
         tsconfig: '<rootDir>/tsconfig.spec.json',
-        stringifyContentPathRegex: '\\.(html|svg)$',
+        stringifyContentPathRegex: '\\.(html|svg|css)$',
+        diagnostics: false,
       },
     ],
   },
