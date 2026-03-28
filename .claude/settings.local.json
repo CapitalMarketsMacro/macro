@@ -64,7 +64,13 @@
       "Bash(npm run:*)",
       "Bash(for f:*)",
       "Bash(do cp:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(sed -i 's|http://localhost:4201/treasury-market-data|http://localhost:4201/macro-react/treasury-market-data|' macro-react-treasury-market-data.fin.json)",
+      "Bash(sed -i 's|http://localhost:4201/commodities-dashboard|http://localhost:4201/macro-react/commodities-dashboard|' macro-react-commodities-dashboard.fin.json)",
+      "Bash(sed -i 's|\"\"url\"\": \"\"http://localhost:4201\"\"|\"\"url\"\": \"\"http://localhost:4201/macro-react\"\"|' macro-react-view.fin.json)",
+      "Bash(sed -i 's|{{OPENSHIFT_REACT_HOST}}/treasury-market-data|{{OPENSHIFT_REACT_HOST}}/macro-react/treasury-market-data|' macro-react-treasury-market-data.fin.json)",
+      "Bash(sed -i 's|{{OPENSHIFT_REACT_HOST}}/commodities-dashboard|{{OPENSHIFT_REACT_HOST}}/macro-react/commodities-dashboard|' macro-react-commodities-dashboard.fin.json)",
+      "Bash(sed -i 's|\"\"url\"\": \"\"https://{{OPENSHIFT_REACT_HOST}}\"\"|\"\"url\"\": \"\"https://{{OPENSHIFT_REACT_HOST}}/macro-react\"\"|' macro-react-view.fin.json)"
     ]
   },
   "enableAllProjectMcpServers": true

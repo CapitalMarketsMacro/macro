@@ -1,5 +1,5 @@
 {
-  "url": "http://localhost:4201/commodities-dashboard",
+  "url": "http://localhost:4201/macro-react/commodities-dashboard",
   "fdc3InteropApi": "2.0",
   "interop": {
     "currentContextGroup": "green"

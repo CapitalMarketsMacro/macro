@@ -1,5 +1,5 @@
 {
-  "url": "http://localhost:4201/treasury-market-data",
+  "url": "http://localhost:4201/macro-react/treasury-market-data",
   "fdc3InteropApi": "2.0",
   "interop": {
     "currentContextGroup": "green"

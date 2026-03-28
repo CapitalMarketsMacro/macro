@@ -1,5 +1,5 @@
 {
-  "url": "https://{{OPENSHIFT_REACT_HOST}}/treasury-market-data",
+  "url": "https://{{OPENSHIFT_REACT_HOST}}/macro-react/treasury-market-data",
   "fdc3InteropApi": "2.0",
   "interop": {
     "currentContextGroup": "green"

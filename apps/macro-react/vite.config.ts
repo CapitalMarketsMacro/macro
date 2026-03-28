@@ -7,6 +7,7 @@ import path from 'path';
 
 export default defineConfig(() => ({
   root: __dirname,
+  base: '/macro-react/',
   cacheDir: '../../node_modules/.vite/apps/macro-react',
   server: {
     port: 4201,

@@ -1,5 +1,5 @@
 {
-  "url": "https://{{OPENSHIFT_REACT_HOST}}",
+  "url": "https://{{OPENSHIFT_REACT_HOST}}/macro-react/",
   "fdc3InteropApi": "2.0",
   "interop": {
     "currentContextGroup": "green"

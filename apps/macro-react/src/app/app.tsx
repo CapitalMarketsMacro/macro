@@ -75,7 +75,7 @@ export function App() {
   }, []);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/macro-react">
       <AppContent />
     </BrowserRouter>
   );
