@@ -1,15 +1,13 @@
 import type { NotificationActionEvent, NotificationOptions, IndicatorColor } from '@openfin/workspace/notifications';
-import {
-  addEventListener,
-  create as createNotification,
-  deregister as deregisterPlatform,
-  register as registerPlatform,
-  setReminder as setNotificationReminder,
-  cancelReminder as cancelNotificationReminder,
-} from '@openfin/workspace/notifications';
 import { Observable } from 'rxjs';
 import type { PlatformSettings } from './types';
 import { Logger } from '@macro/logger';
+
+// Lazy-load the notifications API to avoid crashing in non-OpenFin browser environments.
+// The @openfin/workspace/notifications module reads fin.me.uuid at import time.
+async function getNotificationsApi() {
+  return await import('@openfin/workspace/notifications');
+}
 
 const logger = Logger.getLogger('NotificationsService');
 
@@ -62,6 +60,7 @@ export class NotificationsService {
     this.platformIcon = platformSettings.icon;
     this.platformTitle = platformSettings.title;
     try {
+      const { register: registerPlatform } = await getNotificationsApi();
       await registerPlatform({
         notificationsPlatformOptions: {
           id: platformSettings.id,
@@ -83,13 +82,16 @@ export class NotificationsService {
     }
 
     return new Observable<NotificationActionEvent>((observer) => {
-      addEventListener('notification-action', (event) => observer.next(event));
+      getNotificationsApi().then(({ addEventListener }) => {
+        addEventListener('notification-action', (event) => observer.next(event));
+      });
     });
   }
 
   async deregister(): Promise<void> {
     if (typeof fin === 'undefined' || !this.platformId) return;
 
+    const { deregister: deregisterPlatform } = await getNotificationsApi();
     await deregisterPlatform(this.platformId);
     logger.info('Notifications platform deregistered', { id: this.platformId });
   }
@@ -97,7 +99,7 @@ export class NotificationsService {
   create(config: NotificationOptions): void {
     if (typeof fin === 'undefined') return;
 
-    createNotification(config);
+    getNotificationsApi().then(({ create }) => create(config));
   }
 
   /**
@@ -152,6 +154,7 @@ export class NotificationsService {
   async setReminder(notificationId: string, reminderDate: Date): Promise<boolean> {
     if (typeof fin === 'undefined') return false;
     try {
+      const { setReminder: setNotificationReminder } = await getNotificationsApi();
       return await setNotificationReminder(notificationId, reminderDate);
     } catch (err) {
       logger.error('Failed to set notification reminder', { notificationId, err });
@@ -167,6 +170,7 @@ export class NotificationsService {
   async cancelReminder(notificationId: string): Promise<boolean> {
     if (typeof fin === 'undefined') return false;
     try {
+      const { cancelReminder: cancelNotificationReminder } = await getNotificationsApi();
       return await cancelNotificationReminder(notificationId);
     } catch (err) {
       logger.error('Failed to cancel notification reminder', { notificationId, err });
