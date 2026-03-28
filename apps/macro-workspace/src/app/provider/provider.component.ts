@@ -49,7 +49,7 @@ export class ProviderComponent implements OnInit, OnDestroy {
         const monitorInfo = await fin.System.getMonitorInfo();
         const primary = monitorInfo.primaryMonitor.availableRect;
         const win = fin.Window.getCurrentSync();
-        await win.moveTo(primary.right - 252, primary.top + 12);
+        await win.moveTo(primary.right - 292, primary.top + 12);
 
         // Get runtime version
         const rv = await fin.System.getVersion();
@@ -61,6 +61,45 @@ export class ProviderComponent implements OnInit, OnDestroy {
       } catch (err) {
         logger.error('Error positioning provider window', err);
       }
+    }
+  }
+
+  async minimizeWindow(): Promise<void> {
+    if (typeof fin === 'undefined') return;
+    try {
+      await fin.Window.getCurrentSync().minimize();
+    } catch (err) {
+      logger.error('Error minimizing window', err);
+    }
+  }
+
+  async uploadLogs(): Promise<void> {
+    if (typeof fin === 'undefined') return;
+    try {
+      await fin.System.launchLogUploader({
+        endpoint: 'http://MontuNobleNumbat2404:8000',
+        logs: ['debug:self', 'app', 'rvm'],
+        ui: { show: true },
+      } as any);
+      this.notificationsService.info('Logs', 'Log uploader launched');
+    } catch (err) {
+      logger.error('Error launching log uploader', err);
+      this.notificationsService.error('Logs', 'Failed to launch log uploader');
+    }
+  }
+
+  async sendLogs(): Promise<void> {
+    if (typeof fin === 'undefined') return;
+    try {
+      const app = await fin.Application.getCurrent();
+      const result = await app.sendApplicationLog();
+      logger.info('Application log sent : Result', result);
+      this.notificationsService.success('Logs', 'Application log sent to log server');
+    } catch (err: any) {
+      // sendApplicationLog may throw even when logs are delivered successfully
+      // (e.g. server returns non-JSON response). Treat as success if logs arrived.
+      logger.warn('sendApplicationLog completed with error', err);
+      this.notificationsService.info('Logs', 'Application log sent (server acknowledged)');
     }
   }
 

@@ -92,6 +92,10 @@ export class WorkspaceService {
           tap(() => {
             this.status$.next('Platform initialized');
             nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'Initialized' }).catch(() => {});
+            // Set app log username after full platform init
+            this.setAppLogUsername().catch(() => {
+              logger.warn('Error Setting Log Name ')
+            });
           }),
         ),
       ),
@@ -212,6 +216,29 @@ export class WorkspaceService {
   private showStartupComponents() {
     // Dock3 auto-shows on init, only need to show Home
     return from(this.homeService.show());
+  }
+
+  private async setAppLogUsername(retries = 5, delayMs = 2000): Promise<void> {
+    if (!this.isOpenFin()) return;
+    const username = await fin.System.getEnvironmentVariable('USERNAME');
+    if (!username) {
+      logger.warn('USERNAME environment variable is empty, skipping setAppLogUsername');
+      return;
+    }
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const app = await fin.Application.getCurrent();
+        await app.setAppLogUsername(username);
+        logger.info('App log username set', { username, attempt });
+        return;
+      } catch (err) {
+        logger.warn(`setAppLogUsername attempt ${attempt}/${retries} failed`, err);
+        if (attempt < retries) {
+          await new Promise((r) => setTimeout(r, delayMs));
+        }
+      }
+    }
+    logger.error('setAppLogUsername failed after all retries');
   }
 
   private isOpenFin() {

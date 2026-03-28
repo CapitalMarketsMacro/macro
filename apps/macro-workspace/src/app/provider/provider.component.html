@@ -3,9 +3,11 @@
   <div class="titlebar">
     <img src="icons/platform.svg" alt="" class="titlebar-icon" />
     <span class="titlebar-title">Macro Workspace</span>
-    <button class="expand-toggle"
-      (click)="toggleExpand()" [title]="expanded() ? 'Collapse' : 'Settings'">
+    <button class="titlebar-btn" (click)="toggleExpand()" [title]="expanded() ? 'Collapse' : 'Settings'">
       <span class="chevron" [class.up]="expanded()"></span>
+    </button>
+    <button class="titlebar-btn" (click)="minimizeWindow()" title="Minimize">
+      <span class="minimize-icon"></span>
     </button>
   </div>
 
@@ -45,6 +47,19 @@
         <path d="M8 21h8"/><path d="M12 17v4"/>
       </svg>
       <span>Processes</span>
+    </button>
+    <button class="action-btn" (click)="uploadLogs()" title="Upload Logs">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <span>Logs</span>
+    </button>
+    <button class="action-btn" (click)="sendLogs()" title="Send App Log to Server">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+      </svg>
+      <span>Send</span>
     </button>
   </div>
 

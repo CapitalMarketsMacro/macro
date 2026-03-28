@@ -47,7 +47,7 @@ button, a, input, select, textarea {
   flex: 1;
 }
 
-.expand-toggle {
+.titlebar-btn {
   width: 22px;
   height: 22px;
   border: none;
@@ -60,7 +60,7 @@ button, a, input, select, textarea {
   transition: background 0.15s;
 }
 
-.expand-toggle:hover {
+.titlebar-btn:hover {
   background: var(--background-4, #2f3136);
 }
 
@@ -76,6 +76,18 @@ button, a, input, select, textarea {
 
 .chevron.up {
   transform: rotate(-135deg) translateY(-2px);
+}
+
+.minimize-icon {
+  display: block;
+  width: 10px;
+  height: 0;
+  border-bottom: 2px solid var(--text-help, #c9cbd2);
+}
+
+.titlebar-btn:hover .chevron,
+.titlebar-btn:hover .minimize-icon {
+  border-color: #fff;
 }
 
 .expand-toggle:hover .chevron {

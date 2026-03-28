@@ -44,6 +44,10 @@ export class PlatformService {
   private readonly pageTabsHiddenIcon =
     'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzYjgyZjYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSI0IiB3aWR0aD0iMTgiIGhlaWdodD0iMTYiIHJ4PSIyIi8+PHBhdGggZD0iTTMgOWgxOCIvPjwvc3ZnPg==';
 
+  // Upload logs icon
+  private readonly uploadLogsIcon =
+    'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzYjgyZjYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjEgMTV2NGEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMnYtNCIvPjxwb2x5bGluZSBwb2ludHM9IjE3IDggMTIgMyA3IDgiLz48bGluZSB4MT0iMTIiIHkxPSIzIiB4Mj0iMTIiIHkyPSIxNSIvPjwvc3ZnPg==';
+
   private pageTabsHidden = false;
 
   constructor(workspaceOverrideService: WorkspaceOverrideService) {
@@ -96,6 +100,14 @@ export class PlatformService {
         iconUrl: themeIcon,
         action: {
           id: 'toggle-theme',
+        },
+      } as CustomBrowserButtonConfig,
+      {
+        type: BrowserButtonType.Custom,
+        tooltip: 'Upload Logs',
+        iconUrl: this.uploadLogsIcon,
+        action: {
+          id: 'upload-logs',
         },
       } as CustomBrowserButtonConfig,
     ] as ToolbarButton[];
@@ -205,6 +217,24 @@ export class PlatformService {
                 value: newScheme === ColorSchemeOptionType.Dark ? 'dark' : 'light',
               }).catch(() => {});
               await workspacePlatform.Theme.setSelectedScheme(newScheme);
+            }
+          },
+          'upload-logs': async (event): Promise<void> => {
+            if (event.callerType === CustomActionCallerType.CustomButton) {
+              try {
+                getAnalyticsNats().publish({
+                  source: 'Platform',
+                  type: 'Logs',
+                  action: 'Upload',
+                }).catch(() => {});
+                await fin.System.launchLogUploader({
+                  endpoint: 'http://MontuNobleNumbat2404:8000',
+                  logs: ['debug:self', 'app', 'rvm'],
+                  ui: { show: true },
+                } as any);
+              } catch (err) {
+                logger.error('Error launching log uploader', err);
+              }
             }
           },
         },

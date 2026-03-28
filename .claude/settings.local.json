@@ -70,7 +70,9 @@
       "Bash(sed -i 's|\"\"url\"\": \"\"http://localhost:4201\"\"|\"\"url\"\": \"\"http://localhost:4201/macro-react\"\"|' macro-react-view.fin.json)",
       "Bash(sed -i 's|{{OPENSHIFT_REACT_HOST}}/treasury-market-data|{{OPENSHIFT_REACT_HOST}}/macro-react/treasury-market-data|' macro-react-treasury-market-data.fin.json)",
       "Bash(sed -i 's|{{OPENSHIFT_REACT_HOST}}/commodities-dashboard|{{OPENSHIFT_REACT_HOST}}/macro-react/commodities-dashboard|' macro-react-commodities-dashboard.fin.json)",
-      "Bash(sed -i 's|\"\"url\"\": \"\"https://{{OPENSHIFT_REACT_HOST}}\"\"|\"\"url\"\": \"\"https://{{OPENSHIFT_REACT_HOST}}/macro-react\"\"|' macro-react-view.fin.json)"
+      "Bash(sed -i 's|\"\"url\"\": \"\"https://{{OPENSHIFT_REACT_HOST}}\"\"|\"\"url\"\": \"\"https://{{OPENSHIFT_REACT_HOST}}/macro-react\"\"|' macro-react-view.fin.json)",
+      "WebFetch(domain:openfin.zendesk.com)",
+      "Bash(curl:*)"
     ]
   },
   "enableAllProjectMcpServers": true

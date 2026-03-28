@@ -2,21 +2,29 @@
   "devtools_port": 9090,
   "licenseKey": "openfin-demo-license-key",
   "runtime": {
-    "arguments": "--v=1 --inspect",
+    "arguments": "--v=1 --enable-mesh --security-realm=macro-workspace",
     "version": "43.142.101.2"
   },
   "platform": {
     "uuid": "macro-workspace-platform",
+    "name": "Macro Workspace",
+    "description": "Capital Markets Desktop Workspace Platform",
     "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg",
     "autoShow": true,
     "allowLaunchIntoPlatform": true,
     "providerUrl": "https://{{OPENSHIFT_WORKSPACE_HOST}}/provider?env=openshift",
     "preventQuitOnLastWindowClosed": false,
-    "defaultWidth": 240,
+    "appLogsTimezone": "utc",
+    "enableAppLogging": true,
+    "logManagement": {
+      "enabled": true,
+      "url": "https://{{OPENSHIFT_LOG_SERVER_HOST}}"
+    },
+    "defaultWidth": 280,
     "defaultHeight": 280,
-    "minWidth": 240,
+    "minWidth": 280,
     "minHeight": 280,
-    "maxWidth": 240,
+    "maxWidth": 280,
     "maxHeight": 440,
     "resizable": false,
     "frame": false,
