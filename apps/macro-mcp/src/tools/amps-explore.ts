@@ -131,7 +131,13 @@ export async function exploreAmps(
 
   // Connect to AMPS (skip if no URL and no topic to query)
   let client: any;
+  const origTls = process.env['NODE_TLS_REJECT_UNAUTHORIZED'];
   if (connectUrl && topic) {
+    // Allow self-signed certificates for wss:// connections
+    if (connectUrl.startsWith('wss://') || connectUrl.startsWith('https://')) {
+      process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+    }
+
     try {
       const AmpsClient = getAmpsClient();
       client = new AmpsClient('mcp-explorer');
@@ -143,6 +149,9 @@ export async function exploreAmps(
       result.connected = true;
     } catch (err: any) {
       result.error = `Connection failed to ${connectUrl}: ${err.message}`;
+      // Restore TLS setting
+      if (origTls === undefined) delete process.env['NODE_TLS_REJECT_UNAUTHORIZED'];
+      else process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = origTls;
       return result;
     }
   } else if (!topic) {
@@ -196,8 +205,10 @@ export async function exploreAmps(
     }
   }
 
-  // Disconnect
+  // Disconnect and restore TLS setting
   try { await client.disconnect(); } catch { /* ignore */ }
+  if (origTls === undefined) delete process.env['NODE_TLS_REJECT_UNAUTHORIZED'];
+  else process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = origTls;
 
   return result;
 }
@@ -268,7 +279,8 @@ function parseAmpsConfig(content: string): {
 function fetchUrl(url: string, timeout: number): Promise<string> {
   return new Promise((resolve, reject) => {
     const client = url.startsWith('https') ? https : http;
-    const req = client.get(url, { timeout }, (res) => {
+    const opts: any = { timeout, rejectUnauthorized: false };
+    const req = client.get(url, opts, (res) => {
       if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         fetchUrl(res.headers.location, timeout).then(resolve).catch(reject);
         return;

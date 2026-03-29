@@ -230,13 +230,13 @@ export class ${className} implements OnInit, OnDestroy {
 
   const componentCss = '';
 
-  const appConfig = `import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+  const appConfig = `import { ApplicationConfig, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideZonelessChangeDetection(),
     provideRouter(routes),
   ],
 };
@@ -253,8 +253,9 @@ export const routes: Routes = [
 ];
 `;
 
-  const appTs = `import { Component } from '@angular/core';
+  const appTs = `import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { applyDarkMode } from '@macro/macro-design';
 
 @Component({
   selector: 'app-root',
@@ -262,7 +263,11 @@ import { RouterOutlet } from '@angular/router';
   imports: [RouterOutlet],
   template: '<router-outlet></router-outlet>',
 })
-export class App {}
+export class App implements OnInit {
+  ngOnInit() {
+    applyDarkMode(true);
+  }
+}
 `;
 
   const mainTs = `import { bootstrapApplication } from '@angular/platform-browser';
@@ -317,7 +322,7 @@ function generateReactFiles(
   const appTsx = `import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { MacroReactGrid, MacroReactGridRef } from '@macro/macro-react-grid';
-import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
+import { applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
 import { AmpsTransport, type TransportMessage } from '@macro/transports';
 import { ConflationSubject } from '@macro/rxutils';
 import { Logger } from '@macro/logger';
@@ -424,7 +429,7 @@ function DataGrid() {
 }
 
 export function App() {
-  const [isDark, setIsDark] = useState(getInitialIsDark);
+  const [isDark, setIsDark] = useState(true);
   useEffect(() => { applyDarkMode(isDark); }, [isDark]);
   useEffect(() => onSystemThemeChange((d) => setIsDark(d)), []);
 
