@@ -144,6 +144,7 @@ export class PlatformService {
           overrideCallback: this.workspaceOverrideService.createOverrideCallback(),
           defaultWindowOptions: {
             icon: platformSettings.icon,
+            taskbarIcon: platformSettings.icon.replace(/\/icons\/.*$/, '/favicon.ico'),
             workspacePlatform: {
               pages: [],
               favicon: platformSettings.icon,

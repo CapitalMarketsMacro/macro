@@ -20,6 +20,14 @@
       "enabled": true,
       "url": "https://{{OPENSHIFT_LOG_SERVER_HOST}}"
     },
+    "defaultWindowOptions": {
+      "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg",
+      "taskbarIcon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/favicon.ico",
+      "taskbarIconGroup": "macro-workspace"
+    },
+    "defaultViewOptions": {
+      "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
+    },
     "defaultWidth": 280,
     "defaultHeight": 280,
     "minWidth": 280,

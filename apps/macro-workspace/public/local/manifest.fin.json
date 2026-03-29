@@ -20,6 +20,14 @@
       "enabled": true,
       "url": "http://MontuNobleNumbat2404:8000"
     },
+    "defaultWindowOptions": {
+      "icon": "http://localhost:4202/icons/platform.svg",
+      "taskbarIcon": "http://localhost:4202/favicon.ico",
+      "taskbarIconGroup": "macro-workspace"
+    },
+    "defaultViewOptions": {
+      "icon": "http://localhost:4202/icons/platform.svg"
+    },
     "defaultWidth": 280,
     "defaultHeight": 280,
     "minWidth": 280,

@@ -104,6 +104,8 @@ export class Dock3Service {
     this.provider = await Dock.init({
       config,
       windowOptions: {
+        taskbarIcon: platformSettings.icon.replace(/\/icons\/.*$/, '/favicon.ico'),
+        taskbarIconGroup: 'macro-workspace',
         experimental: {
           snapZone: {
             enabled: true,

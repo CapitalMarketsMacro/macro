@@ -75,7 +75,12 @@
       "Bash(curl:*)",
       "Bash(for file:*)",
       "Bash(do echo:*)",
-      "Read(//e/MacroDesktopMFE/macro/**)"
+      "Read(//e/MacroDesktopMFE/macro/**)",
+      "WebFetch(domain:montunoblenumbat2404)",
+      "WebFetch(domain:crankuptheamps.com)",
+      "WebFetch(domain:devnull.crankuptheamps.com)",
+      "Bash(rm -rf apps/rates-blotter)",
+      "Bash(rm -f apps/macro-workspace/public/local/rates-blotter.fin.json apps/macro-workspace/public/openshift/rates-blotter.fin.json)"
     ]
   },
   "enableAllProjectMcpServers": true

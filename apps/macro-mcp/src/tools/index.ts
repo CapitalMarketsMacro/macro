@@ -7,6 +7,8 @@ import { registerGetCommands } from './get-commands.js';
 import { registerScaffoldLibrary } from './scaffold-library.js';
 import { registerRegisterOpenfinApp } from './register-openfin-app.js';
 import { registerImportFigmaApp } from './import-figma-app.js';
+import { registerAmpsExplore } from './amps-explore.js';
+import { registerAmpsCreateMfe } from './amps-create-mfe.js';
 
 export function registerTools(server: McpServer): void {
   registerScaffoldAngularApp(server);
@@ -17,4 +19,6 @@ export function registerTools(server: McpServer): void {
   registerScaffoldLibrary(server);
   registerRegisterOpenfinApp(server);
   registerImportFigmaApp(server);
+  registerAmpsExplore(server);
+  registerAmpsCreateMfe(server);
 }
