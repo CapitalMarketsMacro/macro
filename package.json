@@ -44,6 +44,7 @@
     "e2e:workspace:debug": "nx e2e macro-workspace-e2e --debug",
     "e2e:workspace:openfin": "nx e2e macro-workspace-e2e --project=openfin",
     "build": "nx run-many --target=build --all",
+    "buildAll": "nx run-many --target=build --all",
     "build:apps": "nx run-many --target=build --projects=macro-angular,macro-react,macro-workspace,macro-angular-fdc3,market-data-server,macro-mcp,risk-overview,rfq-butterfly-ticket,capital-markets-themes,rates-execution-blotter",
     "build:libs": "nx run-many --target=build --projects=logger,amps,solace,nats,transports,openfin,macro-design,macro-angular-grid,macro-react-grid,rxutils",
     "test": "nx run-many --target=test --all",
