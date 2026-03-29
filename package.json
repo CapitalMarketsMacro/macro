@@ -17,7 +17,7 @@
     "build:fdc3": "nx build macro-angular-fdc3",
     "build:logger": "nx build logger",
     "build:mcp": "nx build macro-mcp",
-    "build:mcp-agent": "nx build macro-mcp-agent",
+    "build:mcp-agent": "nx build macro-mcp-agent && node -e \"const f=require('fs'),p=JSON.parse(f.readFileSync('dist/apps/macro-mcp-agent/package.json','utf8'));p.dependencies.amps=JSON.parse(f.readFileSync('node_modules/amps/package.json','utf8')).version;f.writeFileSync('dist/apps/macro-mcp-agent/package.json',JSON.stringify(p,null,2))\"",
     "start:mcp-agent": "nx serve macro-mcp-agent",
     "publish:logger": "npm run build:logger && npm publish --prefix dist/libs/logger",
     "publish:logger:dry-run": "npm run build:logger && npm publish --prefix dist/libs/logger --dry-run",

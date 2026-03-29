@@ -19,7 +19,8 @@
         "generatePackageJson": true,
         "esbuildOptions": {
           "sourcemap": true,
-          "outExtension": { ".js": ".js" }
+          "outExtension": { ".js": ".js" },
+          "external": ["amps"]
         }
       },
       "configurations": {
@@ -27,7 +28,8 @@
         "production": {
           "esbuildOptions": {
             "sourcemap": false,
-            "outExtension": { ".js": ".js" }
+            "outExtension": { ".js": ".js" },
+            "external": ["amps"]
           }
         }
       }
