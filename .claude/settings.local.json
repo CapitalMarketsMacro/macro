@@ -96,7 +96,13 @@
       "Bash(cp apps/macro-mcp/src/tools/amps-explore.ts apps/macro-mcp-agent/src/tools/amps-explore.ts)",
       "Bash(cp apps/macro-mcp/src/tools/amps-create-mfe.ts apps/macro-mcp-agent/src/tools/amps-create-mfe.ts)",
       "Bash(cp apps/macro-mcp/src/tools/mcp-utils.ts apps/macro-mcp-agent/src/tools/mcp-utils.ts)",
-      "Bash(cp apps/macro-mcp/src/tools/index.ts apps/macro-mcp-agent/src/tools/index.ts)"
+      "Bash(cp apps/macro-mcp/src/tools/index.ts apps/macro-mcp-agent/src/tools/index.ts)",
+      "Bash(mkdir -p E:/MacroMCPAgent)",
+      "Bash(cp E:/MacroDesktopMFE/macro/dist/apps/macro-mcp-agent/main.js E:/MacroMCPAgent/)",
+      "Bash(cp E:/MacroDesktopMFE/macro/dist/apps/macro-mcp-agent/package.json E:/MacroMCPAgent/)",
+      "Bash(cp E:/MacroDesktopMFE/macro/dist/apps/macro-mcp-agent/package-lock.json E:/MacroMCPAgent/)",
+      "Read(//e//**)",
+      "Bash(pkill -f MacroMCPAgent/main.js)"
     ]
   },
   "enableAllProjectMcpServers": true
