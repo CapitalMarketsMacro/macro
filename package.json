@@ -17,6 +17,8 @@
     "build:fdc3": "nx build macro-angular-fdc3",
     "build:logger": "nx build logger",
     "build:mcp": "nx build macro-mcp",
+    "build:mcp-agent": "nx build macro-mcp-agent",
+    "start:mcp-agent": "nx serve macro-mcp-agent",
     "publish:logger": "npm run build:logger && npm publish --prefix dist/libs/logger",
     "publish:logger:dry-run": "npm run build:logger && npm publish --prefix dist/libs/logger --dry-run",
     "launch": "node apps/macro-workspace/launch.mjs http://localhost:4202/local/manifest.fin.json",
@@ -42,7 +44,7 @@
     "e2e:workspace:debug": "nx e2e macro-workspace-e2e --debug",
     "e2e:workspace:openfin": "nx e2e macro-workspace-e2e --project=openfin",
     "build": "nx run-many --target=build --all",
-    "build:apps": "nx run-many --target=build --projects=macro-angular,macro-react,macro-workspace,macro-angular-fdc3,market-data-server,macro-mcp,risk-overview,rfq-butterfly-ticket,capital-markets-themes",
+    "build:apps": "nx run-many --target=build --projects=macro-angular,macro-react,macro-workspace,macro-angular-fdc3,market-data-server,macro-mcp,risk-overview,rfq-butterfly-ticket,capital-markets-themes,rates-execution-blotter",
     "build:libs": "nx run-many --target=build --projects=logger,amps,solace,nats,transports,openfin,macro-design,macro-angular-grid,macro-react-grid,rxutils",
     "test": "nx run-many --target=test --all",
     "start:risk-overview": "nx serve risk-overview",
@@ -50,7 +52,9 @@
     "start:rfq-butterfly-ticket": "nx serve rfq-butterfly-ticket",
     "build:rfq-butterfly-ticket": "nx build rfq-butterfly-ticket",
     "start:capital-markets-themes": "nx serve capital-markets-themes",
-    "build:capital-markets-themes": "nx build capital-markets-themes"
+    "build:capital-markets-themes": "nx build capital-markets-themes",
+    "start:rates-execution-blotter": "nx serve rates-execution-blotter",
+    "build:rates-execution-blotter": "nx build rates-execution-blotter"
   },
   "private": true,
   "dependencies": {

@@ -330,6 +330,30 @@
           "react",
           "figma-make"
         ]
+      },
+      {
+        "appId": "rates-execution-blotter",
+        "name": "rates-execution-blotter",
+        "title": "Rates Execution Blotter",
+        "description": "Real-time rates execution blotter displaying trade executions from AMPS",
+        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/rates-execution-blotter.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": [
+          "view",
+          "angular",
+          "amps",
+          "rates"
+        ]
       }
     ],
     "snapProvider": {

@@ -457,6 +457,30 @@
           "react",
           "figma-make"
         ]
+      },
+      {
+        "appId": "rates-execution-blotter",
+        "name": "rates-execution-blotter",
+        "title": "Rates Execution Blotter",
+        "description": "Real-time rates execution blotter displaying trade executions from AMPS",
+        "manifest": "http://localhost:4202/local/rates-execution-blotter.fin.json",
+        "manifestType": "view",
+        "icons": [
+          {
+            "src": "http://localhost:4202/icons/platform.svg"
+          }
+        ],
+        "contactEmail": "contact@example.com",
+        "supportEmail": "support@example.com",
+        "publisher": "OpenFin",
+        "intents": [],
+        "images": [],
+        "tags": [
+          "view",
+          "angular",
+          "amps",
+          "rates"
+        ]
       }
     ]
   }

@@ -1,0 +1,7 @@
+{
+  "url": "https://{{OPENSHIFT_RATES_EXECUTION_BLOTTER_HOST}}/",
+  "fdc3InteropApi": "2.0",
+  "interop": {
+    "currentContextGroup": "green"
+  }
+}
