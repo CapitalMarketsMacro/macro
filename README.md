@@ -1,6 +1,6 @@
 # Macro Desktop MFE
 
-NX 22.5 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace into a unified platform with shared libraries for real-time market data, enterprise messaging, analytics, and FDC3 interoperability.
+NX 22.5 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace (HERE Core UI 23.0.20) into a unified platform with shared libraries for real-time market data, enterprise messaging, analytics, and FDC3 interoperability.
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
@@ -10,32 +10,192 @@ NX 22.5 monorepo for **Capital Markets desktop applications**. Combines Angular 
 
 ```bash
 npm install
-npm start                    # Start all three apps (Angular :4200, React :4201, Workspace :4202)
-npm run launch               # Launch OpenFin (after workspace is serving on 4202)
+npm start                    # Start all apps (Angular :4200, React :4201, Workspace :4202)
+npm run launch               # Launch OpenFin (after workspace is serving)
 ```
 
 ## Applications
 
 | App | Port | Framework | Description |
 |-----|------|-----------|-------------|
-| **macro-angular** | 4200 | Angular 21 (zoneful), PrimeNG 21 | FX Market Data (G10 pairs), Treasury Microstructure charts |
+| **macro-angular** | 4200 | Angular 21, PrimeNG 21 | FX Market Data, Treasury Microstructure charts |
 | **macro-react** | 4201 | React 19, Vite 7, Tailwind 4, Shadcn | Treasury Market Data, Commodities Dashboard |
-| **macro-workspace** | 4202 | Angular 21 (zoneless) | OpenFin Workspace platform shell, Analytics Dashboard |
-| **market-data-server** | 3000 | Node.js WebSocket | Simulated FX + Treasury tick data (1-sec intervals) |
-| **macro-mcp** | - | Node.js | Custom MCP server for scaffolding apps/libs |
+| **macro-workspace** | 4202 | Angular 21 (zoneless) | OpenFin platform shell, Analytics Dashboard, Provider window |
+| **macro-angular-fdc3** | 4203 | Angular 21 | FDC3 Instrument Viewer |
+| **market-data-server** | 3000 | Node.js WebSocket | Simulated FX + Treasury tick data |
+| **macro-mcp** | - | Node.js | Custom MCP server for scaffolding, Figma import |
 
-### Start Commands
+---
 
-```bash
-npm run start:angular        # Angular app only
-npm run start:react          # React app only
-npm run start:workspace      # Workspace platform only
-npx nx serve market-data-server  # WebSocket data server
+## Importing a Figma Make App
+
+The `macro-mcp` server provides a fully automated tool to import React apps designed in Figma Make into this monorepo as OpenFin views.
+
+### From a zip file (most common)
+
+Product manager exports from Figma Make. Developer tells their AI assistant:
+
+```
+Import the Figma app at C:/Downloads/my-dashboard.zip as "my-dashboard"
+with title "My Dashboard" on port 4205
+```
+
+The `import_figma_app` MCP tool automatically:
+1. Extracts the zip
+2. Creates the NX React app with Vite
+3. Copies all Figma source into `src/figma/`
+4. Detects and wires `App.tsx` as root component
+5. Detects Tailwind CSS and creates PostCSS config
+6. Imports Figma CSS chain (`styles/index.css`, `tailwind.css`, `theme.css`)
+7. Creates wrapper `app.tsx` with BrowserRouter basename + theme sync
+8. Creates OpenFin view manifests (local + openshift)
+9. Registers in manifest.fin.json + settings.json
+10. Adds to Dock favorites
+11. Installs missing npm dependencies from Figma's package.json
+12. Updates package.json scripts
+
+### From a folder
+
+```
+Import the Figma app at C:/figma-exports/risk-dashboard as "risk-dashboard"
+with title "Risk Dashboard" on port 4206
+```
+
+### Result
+
+```
+apps/my-dashboard/
+├── src/
+│   ├── app/app.tsx         # Wrapper (BrowserRouter + theme + imports FigmaApp)
+│   ├── figma/              # All Figma Make code — untouched
+│   │   ├── app/App.tsx     # Figma root component
+│   │   ├── app/components/ # All Figma components
+│   │   └── styles/         # Tailwind, fonts, theme CSS
+│   └── main.tsx            # Entry (macro-design CSS + Figma CSS)
+├── vite.config.ts          # Base path + Tailwind + aliases
+├── postcss.config.cjs      # Auto-created if Tailwind detected
+└── index.html
+```
+
+### For your team
+
+Works with **any MCP-compatible AI assistant**: Claude Code, VS Code GitHub Copilot, JetBrains AI.
+
+**Requirements:**
+- Build the MCP server once: `npx nx build macro-mcp`
+- MCP config is in `.mcp.json` (auto-loaded by Claude Code / VS Code)
+
+---
+
+## Unified Transports (`@macro/transports`)
+
+A single library providing a common `TransportClient` interface for AMPS, Solace, and NATS. All transport logic lives here -- the standalone `@macro/amps`, `@macro/solace`, `@macro/nats` packages are thin re-exports for backward compatibility.
+
+### Framework-Agnostic
+
+```typescript
+import { NatsTransport, AmpsTransport, SolaceTransport } from '@macro/transports';
+import type { TransportClient, TransportMessage } from '@macro/transports';
+
+// NATS
+const nats = new NatsTransport('my-app');
+await nats.connect({ servers: 'ws://localhost:8224' });
+nats.publish('orders.new', { symbol: 'AAPL', qty: 100 });
+const { observable } = await nats.subscribeAsObservable('prices.>');
+observable.subscribe(msg => console.log(msg.json()));
+const reply = await nats.request('service.ping', { ts: Date.now() }); // NATS-only
+
+// AMPS
+const amps = new AmpsTransport('my-app');
+await amps.connect({ url: 'ws://localhost:9100/amps/json' });
+await amps.sow(msg => console.log(msg), 'orders', "/status='active'"); // AMPS-only
+
+// Solace
+const solace = new SolaceTransport();
+await solace.connect({ hostUrl: 'ws://localhost:8008', vpnName: 'default', userName: 'user', password: 'pass' });
+solace.onEvent(event => console.log(event)); // Solace-only
+```
+
+### Angular (Injectable Services)
+
+```typescript
+import { NatsTransportService, AmpsTransportService, SolaceTransportService } from '@macro/transports/angular';
+
+@Component({ ... })
+export class MyComponent {
+  private transport = inject(NatsTransportService);
+
+  async ngOnInit() {
+    await this.transport.connect({ servers: 'ws://localhost:8224' });
+    const { observable } = await this.transport.subscribeAsObservable('prices.>');
+    observable.subscribe(msg => this.handleData(msg.json()));
+  }
+}
+```
+
+### React (Hooks)
+
+```typescript
+import { useNatsTransport, useTransportSubscription } from '@macro/transports/react';
+
+function MyComponent() {
+  const { client, connected, connect } = useNatsTransport('my-app');
+
+  useEffect(() => { connect({ servers: 'ws://localhost:8224' }); }, []);
+
+  const messages = useTransportSubscription(client, 'prices.>', connected);
+  return <div>{messages.map(m => <p>{m.json().price}</p>)}</div>;
+}
+```
+
+### Unified TransportClient Interface
+
+All three transports implement:
+
+```typescript
+interface TransportClient {
+  readonly transportName: string;
+  connect(options): Promise<void>;
+  disconnect(): Promise<void>;
+  publish(topic, data): void;
+  subscribe(handler, topic): Promise<string>;
+  subscribeAsObservable(topic): Promise<{ observable, subscriptionId }>;
+  subscribeAsSubject(topic): Promise<{ subject, subscriptionId }>;
+  unsubscribe(subscriptionId): Promise<void>;
+  readonly isConnected: boolean;
+  onError(handler): void;
+  onEvent?(handler): void;      // Solace only
+  getSubscriptionIds(): string[];
+}
+```
+
+### Transport-Specific Extras
+
+| Transport | Extra Methods | Protocol |
+|-----------|--------------|----------|
+| **AMPS** | `sow()`, `getClient()`, `getSubject()`, `getClientName()`, `getCommand()` | WebSocket |
+| **Solace** | `onEvent()`, `getSession()`, `getSolace()`, `getSubject()` | WebSocket |
+| **NATS** | `request()`, `getConnection()` | WebSocket (`@nats-io/nats-core` v3) |
+
+### Backward Compatibility
+
+The standalone packages re-export from transports:
+
+```typescript
+// These still work -- they delegate to @macro/transports
+import { AmpsClient } from '@macro/amps';
+import { SolaceClient } from '@macro/solace';
+import { NatsClient } from '@macro/nats';
+
+// New code should use:
+import { AmpsTransport, SolaceTransport, NatsTransport } from '@macro/transports';
 ```
 
 ---
 
-## Registered OpenFin Views
+## OpenFin Platform
+
+### Registered Views
 
 | App ID | Title | Type |
 |--------|-------|------|
@@ -45,148 +205,61 @@ npx nx serve market-data-server  # WebSocket data server
 | macro-react-commodities-dashboard | Commodities Dashboard | view |
 | macro-angular-fdc3-instrument-viewer | FDC3 Instrument Viewer | view |
 | macro-analytics-dashboard | Analytics Dashboard | view |
-| macro-workspace-view1 | FDC3 Broadcaster | view |
-| macro-workspace-view2 | FDC3 Listener | view |
+| macro-workspace-view1 / view2 | FDC3 Broadcaster / Listener | view |
 | rates-desktop | Rates E-Trading Desktop | manifest |
 
----
+### Platform Window
 
-## Shared Libraries
+Compact 280x280 frameless window positioned top-right with:
+- Runtime version + Workspace version display
+- **Analytics** -- launch Analytics Dashboard
+- **Processes** -- launch OpenFin Process Manager
+- **Logs** -- upload current session logs (`launchLogUploader`)
+- **Send** -- send app log to log server (`sendApplicationLog`)
+- **Expand** -- theme presets + test notifications
+- **Minimize** -- minimize to taskbar
+- **Quit** -- with confirmation dialog ("This will close all workspace windows and views")
 
-### Core
+### Snap (Window Docking)
 
-| Alias | Path | Purpose |
-|-------|------|---------|
-| `@macro/logger` | libs/logger | Pino-based structured logging |
-| `@macro/macro-design` | libs/macro-design | CSS variables, dark mode, AG Grid theme, fonts -- single source of truth |
-| `@macro/rxutils` | libs/rxutils | RxJS conflation utilities (double-buffer, high-frequency data) |
+Powered by `@openfin/snap-sdk` 1.5.0. Drag windows near each other to snap; SHIFT to unstick.
 
-### AG Grid Wrappers
+### Browser Toolbar Buttons
 
-| Alias | Path | Purpose |
-|-------|------|---------|
-| `@macro/macro-angular-grid` | libs/macro-angular-grid | AG Grid 35 Enterprise Angular wrapper |
-| `@macro/macro-react-grid` | libs/macro-react-grid | AG Grid 35 Enterprise React wrapper |
+ShowHideTabs, ColorLinking, PresetLayouts, LockUnlockPage, SaveMenu, Toggle Page Tabs, Toggle Theme, Upload Logs
 
-Both grid wrappers include:
+### Manifest Organization
 
-- AG Grid Enterprise + Integrated Charts (AG Charts Enterprise)
-- Real-time data updates via RxJS `updateRows$` Subject
-- **Column Formatting** -- user-toggleable format mode with floating popover (Number, %, bps, $, K/M/B + configurable decimal places)
-- **Formulas** -- `allowFormula: true` on numeric columns for spreadsheet-style calculations (`=SUM`, `=AVERAGE`)
-- **Absolute Sorting** -- sort Change/Change% columns by magnitude regardless of sign
-- Grid state save/restore (including user column formats)
-
-### Unified Transports (`@macro/transports`)
-
-A single library providing a common `TransportClient` interface across all messaging systems:
-
-| Alias | Entry | Purpose |
-|-------|-------|---------|
-| `@macro/transports` | libs/transports/src/index.ts | Framework-agnostic base: `AmpsTransport`, `SolaceTransport`, `NatsTransport` |
-| `@macro/transports/angular` | libs/transports/src/lib/angular/ | Angular DI services: `AmpsTransportService`, `SolaceTransportService`, `NatsTransportService` |
-| `@macro/transports/react` | libs/transports/src/lib/react/ | React hooks: `useAmpsTransport()`, `useSolaceTransport()`, `useNatsTransport()`, `useTransportSubscription()` |
-
-```typescript
-// Framework-agnostic
-import { NatsTransport } from '@macro/transports';
-const client = new NatsTransport('my-app');
-await client.connect({ servers: 'ws://localhost:8224' });
-client.publish('orders.new', { symbol: 'AAPL', qty: 100 });
-const { observable } = await client.subscribeAsObservable('prices.>');
-
-// Angular -- inject the service
-import { NatsTransportService } from '@macro/transports/angular';
-private nats = inject(NatsTransportService);
-
-// React -- use the hook
-import { useNatsTransport } from '@macro/transports/react';
-const { client, connected, connect } = useNatsTransport('my-app');
+```
+apps/macro-workspace/public/
+├── local/              # localhost URLs -- used by npm run launch
+│   ├── manifest.fin.json
+│   ├── settings.json
+│   └── *.fin.json      # View manifests
+├── openshift/          # {{PLACEHOLDER}} URLs -- for deployment
+│   ├── manifest.fin.json
+│   ├── settings.json
+│   └── *.fin.json
+├── icons/              # Shared static assets
+└── *.json              # Theme preset files
 ```
 
-Transport-specific extras:
-
-| Transport | Extra | Protocol |
-|-----------|-------|----------|
-| **AMPS** | `sow()` State-of-the-World queries | WebSocket |
-| **Solace** | `onEvent()` session lifecycle events | WebSocket |
-| **NATS** | `request()` request/reply pattern | WebSocket (`@nats-io/nats-core` v3) |
-
-### Standalone Transport Libraries (legacy)
-
-The original per-transport libraries remain for backward compatibility:
-
-| Alias | Path | Purpose |
-|-------|------|---------|
-| `@macro/amps` | libs/amps | AMPS (60East) client wrapper |
-| `@macro/solace` | libs/solace | Solace PubSub+ client wrapper |
-| `@macro/nats` | libs/nats | NATS.js v3 WebSocket client wrapper |
-
-### OpenFin Platform (`@macro/openfin`)
-
-| Alias | Path | Purpose |
-|-------|------|---------|
-| `@macro/openfin` | libs/openfin | OpenFin Workspace services + Angular DI wrappers |
-| `@macro/openfin/react` | libs/openfin (react.ts) | React hooks: `useViewState`, `useNotifications` |
-
-Key services:
-
-| Service | Purpose |
-|---------|---------|
-| **WorkspaceService** | Platform init orchestration (settings, theme, dock, home, store, snap, notifications) |
-| **PlatformService** | Workspace platform init, toolbar buttons, custom actions (launch-app, toggle-theme, toggle-page-tabs) |
-| **WorkspaceOverrideService** | Workspace CRUD, snapshot decoration (Snap), analytics publishing, theme override |
-| **ThemeService** | Dark/light theme sync with OpenFin platform scheme |
-| **ContextService** | FDC3 context broadcasting/listening, `currentChannel$` observable, `onContext<T>()` typed filter |
-| **NotificationsService** | Notification Center with level-based API: `info()`, `success()`, `warning()`, `error()`, `critical()` |
-| **SnapService** | OpenFin Snap window snapping/docking, snapshot decoration/restore |
-| **AnalyticsNatsService** | Publishes workspace analytics to NATS (singleton via `getAnalyticsNats()`) |
-| **ViewStateService** | View state persistence via `fin.me` options, auto-save with workspace flush |
-| **Dock3Service** | Next-gen dock: favorites, content menu folders, app launching |
-| **HomeService** | OpenFin Home: registration, search, app launching |
-| **StoreService** | Storefront with favorites support |
-
----
-
-## OpenFin Snap
-
-Window snapping/docking powered by `@openfin/snap-sdk` 1.5.0:
-
-- Auto-registers all platform windows on creation
-- Drag windows near each other to snap; hold **SHIFT** to unstick
-- Snap layout persists in workspace snapshots (decorator pattern on `getSnapshot`/`applySnapshot`)
-- Configurable via `settings.json` under `snapProvider`
+### Log Management
 
 ```json
-{
-  "snapProvider": {
-    "enabled": true,
-    "serverOptions": {
-      "showDebug": false,
-      "keyToStick": false,
-      "autoHideClientTaskbarIcons": true
-    }
-  }
-}
+// In platform manifest:
+"enableAppLogging": true,
+"appLogsTimezone": "utc",
+"logManagement": { "enabled": true, "url": "http://MontuNobleNumbat2404:8000" }
 ```
+
+Log username is set automatically from Windows `USERNAME` environment variable after platform initialization.
 
 ---
 
 ## Analytics
 
-Real-time analytics pipeline: **OpenFin events -> NATS -> Analytics Dashboard**.
-
-### Event Sources
-
-| Source | Events |
-|--------|--------|
-| **Platform** | Lifecycle (Starting, PlatformCreated, PlatformReady, ComponentsRegistered, Initialized, Quitting, Quit, Error) |
-| **Platform** | Workspace (Save, Delete, Restoring, Restored, RestoreFailed) |
-| **Platform** | Theme (Toggle, Changed), App Launch, Browser (ShowPageTabs, HidePageTabs) |
-| **Browser** | All OpenFin internal analytics (via `handleAnalytics` override) |
-| **Dock** | App Launch (entry label + appId) |
-| **Home** | Show, Open, Search Query, App Launch |
-| **Store** | Storefront Show, Open, App Launch |
+Real-time pipeline: **OpenFin events -> NATS -> Analytics Dashboard**.
 
 ### NATS Topic Topology
 
@@ -197,146 +270,126 @@ macro.analytics.<user>.<source>.<type>.<action>
 ```bash
 nats subscribe "macro.analytics.>"             # All events
 nats subscribe "macro.analytics.mruda.>"       # Single user
-nats subscribe "macro.analytics.*.platform.>"  # All users, platform events
 ```
 
-Payload: `{ timestamp, user, source, type, action, value, entityId, data }`
+### Event Sources
+
+Platform (Lifecycle, Workspace, Theme), Browser (internal analytics), Dock (App Launch), Home (Search, Launch), Store (Show, Launch)
 
 ### Analytics Dashboard
 
-Angular component in macro-workspace (`/analytics` route), registered as OpenFin view `macro-analytics-dashboard`:
+Angular view (`/analytics`) with real-time NATS subscription, user filtering, source breakdown, live event feed, pause/resume.
 
-- Real-time NATS subscription to `macro.analytics.>`
-- User selector sidebar for filtering activity per user
-- Source breakdown with color-coded stats (Platform, Browser, Dock, Home, Store)
-- Live event feed with click-to-expand detail panels (JSON data)
-- Pause/resume, clear, event rate counter (evt/min)
-- Theme-aware -- syncs with OpenFin dark/light via `ThemeService`
-- Uses `NatsTransportService` from `@macro/transports/angular`
+---
+
+## AG Grid 35 Features
+
+Both Angular and React grid wrappers include:
+- **Formulas** -- `allowFormula: true` on numeric columns
+- **Absolute Sorting** -- sort by magnitude on Change/Change% columns
+- **Column Formatting** -- user-toggled Fx popover (Number, %, bps, $, K/M/B + decimals)
+- **Integrated Charts** -- AG Charts Enterprise
+- Grid state save/restore (including user column formats)
+
+---
+
+## Shared Libraries
+
+| Alias | Purpose |
+|-------|---------|
+| `@macro/transports` | Unified AMPS/Solace/NATS transport (primary) |
+| `@macro/transports/angular` | Angular DI services |
+| `@macro/transports/react` | React hooks |
+| `@macro/amps` | AMPS re-export (backward compat) |
+| `@macro/solace` | Solace re-export (backward compat) |
+| `@macro/nats` | NATS re-export (backward compat) |
+| `@macro/openfin` | OpenFin services + Angular DI |
+| `@macro/openfin/react` | React hooks (useViewState, useNotifications) |
+| `@macro/logger` | Pino structured logging |
+| `@macro/macro-design` | CSS variables, dark mode, AG Grid theme |
+| `@macro/rxutils` | RxJS conflation (high-frequency data) |
+| `@macro/macro-angular-grid` | AG Grid 35 Angular wrapper |
+| `@macro/macro-react-grid` | AG Grid 35 React wrapper |
 
 ---
 
 ## FDC3 Interoperability
 
-- FDC3 2.0 with `currentContextGroup: "green"` on all views
-- `ContextService` provides `currentChannel$` observable and `onContext<T>()` typed method
-- FX Market Data grid broadcasts `fdc3.instrument` on row click
-- FDC3 Instrument Viewer displays received instrument context with history
+FDC3 2.0 with `currentContextGroup: "green"`. `ContextService` provides `currentChannel$` observable and `onContext<T>()`.
 
 ---
 
 ## Theming
 
-`@macro/macro-design` is the single source of truth for all design tokens.
-
-- **CSS variables**: `:root` + `.dark` in `macro-design.css` (oklch color space)
-- **Fonts**: Noto Sans, Roboto, Roboto Mono, Ubuntu
-- **AG Grid**: `buildAgGridTheme(isDark)` from `@macro/macro-design`
-- **Dark mode**: class-based (`.dark` on `<html>`), synced via `ThemeService.syncWithOpenFinTheme()`
-- **PrimeNG/PrimeReact**: `darkModeSelector: '.dark'`
-- **Tailwind**: `@custom-variant dark (&:is(.dark *))`
-- **OpenFin**: theme palettes in `themeConfig` or loaded from JSON presets
+`@macro/macro-design` is the single source of truth. OKLCH color space. Class-based `.dark` selector. Synced via `ThemeService.syncWithOpenFinTheme()`.
 
 ---
 
-## Repository Structure
+## MCP Servers
 
-```
-macro/
-├── apps/
-│   ├── macro-angular/              # Angular market data app
-│   ├── macro-react/                # React market data app
-│   ├── macro-workspace/            # OpenFin Workspace platform shell + Analytics Dashboard
-│   │   └── public/
-│   │       ├── manifest.fin.json   # Platform manifest (11 registered apps)
-│   │       ├── settings.json       # Apps, dock, snap provider config
-│   │       └── *.fin.json          # View manifests
-│   ├── market-data-server/         # WebSocket data server
-│   ├── macro-mcp/                  # Custom MCP scaffolding server
-│   └── *-e2e/                      # Playwright E2E tests
-├── libs/
-│   ├── macro-design/               # Design tokens, CSS variables, themes
-│   ├── logger/                     # Pino structured logging
-│   ├── transports/                 # Unified messaging transports
-│   │   ├── src/lib/amps/           #   AMPS adapter
-│   │   ├── src/lib/solace/         #   Solace adapter
-│   │   ├── src/lib/nats/           #   NATS adapter
-│   │   ├── src/lib/angular/        #   Angular DI services
-│   │   └── src/lib/react/          #   React hooks
-│   ├── amps/                       # Standalone AMPS client
-│   ├── solace/                     # Standalone Solace client
-│   ├── nats/                       # Standalone NATS client
-│   ├── openfin/                    # OpenFin services + Angular DI
-│   ├── rxutils/                    # RxJS conflation
-│   ├── macro-angular-grid/         # AG Grid 35 Angular wrapper
-│   └── macro-react-grid/           # AG Grid 35 React wrapper
-├── tsconfig.base.json              # Path aliases (@macro/*)
-├── nx.json                         # NX config (defaultBase: master)
-└── package.json                    # Scripts and dependencies
-```
+7 MCP servers configured in `.mcp.json`:
+
+| Server | Purpose |
+|--------|---------|
+| **macro-mcp** | Custom scaffolding, Figma import, library API docs |
+| **ag-mcp** | AG Grid documentation |
+| **primeng** | PrimeNG components |
+| **angular-cli** | Angular CLI + best practices |
+| **tailwindcss** | Tailwind CSS utilities |
+| **nx-mcp** | NX workspace commands |
+| **figma-remote-mcp** | Figma design fetch (optional, needs API key) |
+
+### macro-mcp Tools
+
+| Tool | Description |
+|------|-------------|
+| `import_figma_app` | Import Figma Make React project -- creates NX app, wires everything, registers in OpenFin |
+| `scaffold_react_app` | Generate a new React app with @macro/* integration |
+| `scaffold_angular_app` | Generate a new Angular app |
+| `scaffold_library` | Generate a new shared library |
+| `register_openfin_app` | Register an app in OpenFin manifest |
+| `get_library_api` | Get full API docs for any @macro/* library |
+| `list_libraries` | List all available libraries |
+
+### macro-mcp Resources
+
+| Resource | Content |
+|----------|---------|
+| `macro://libraries` | All @macro/* library APIs |
+| `macro://data-connectivity` | Transport usage with examples |
+| `macro://openfin` | OpenFin integration guide |
+| `macro://figma-workflow` | Figma Make import workflow |
+| `macro://architecture` | Monorepo architecture |
+| `macro://theming` | Theme system |
 
 ---
 
-## Testing
+## Scripts
 
 ```bash
-npx nx run-many --target=test --all           # All unit tests
-npx nx test <project-name>                    # Single project
-npx nx test openfin                           # OpenFin services (323 tests)
-npx nx test nats                              # NATS client (32 tests)
-npx nx test macro-angular-grid                # Angular grid (54 tests)
-npx nx test macro-react-grid                  # React grid
-npm run e2e:angular                           # Playwright E2E
-npm run e2e:react
-npm run e2e:workspace
+npm start                    # All apps concurrently
+npm run launch               # Launch OpenFin
+npm run build                # Build everything
+npm run build:apps           # Build all apps
+npm run build:libs           # Build all libs
+npm run test                 # Test everything
+npm run start:<app>          # Start individual app
+npm run build:<app>          # Build individual app
 ```
-
-## Building
-
-```bash
-npm run build:angular
-npm run build:react
-npm run build:workspace
-npx nx run-many --target=build --all
-```
-
-Output: `dist/` directory.
 
 ---
 
 ## Key Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| Angular | 21 | Framework (macro-angular, macro-workspace) |
-| React | 19 | Framework (macro-react) |
-| AG Grid Enterprise | 35.1.0 | Data grids with formulas, absolute sorting |
-| AG Charts Enterprise | 13.1.0 | Integrated charts |
-| PrimeNG | 21.1.3 | Angular UI components |
-| PrimeReact | 11.0.0-alpha.10 | React UI components |
-| Tailwind CSS | 4 | Utility styling (React) |
-| @openfin/workspace-platform | 22.3.29 | OpenFin Workspace shell |
-| @openfin/snap-sdk | 1.5.0 | Window snapping/docking |
-| @nats-io/nats-core | 3.3.1 | NATS WebSocket client |
-| RxJS | 7.x | Reactive streams |
-| NX | 22.5 | Monorepo tooling |
-
-## OpenFin Manifest Permissions
-
-The platform manifest includes comprehensive permissions:
-
-- **System**: `getOSInfo`, `launchExternalProcess` (assets + downloads + executables), `terminateExternalProcess`, `downloadAsset`, `serveAsset`, `openUrlWithBrowser`, `readRegistryValue`, `registerCustomProtocol`, `unregisterCustomProtocol`, `checkCustomProtocolState`, `launchLogUploader`
-- **Application**: `setFileDownloadLocation`, `getFileDownloadLocation`
-- **Clipboard**: read/write for text, HTML, RTF, images
-- **Web APIs**: `clipboard-read`, `clipboard-sanitized-write`, `notifications`, `openExternal`, `fullscreen`
-
-## MCP Servers
-
-6 MCP servers configured in `.mcp.json`:
-
-- **ag-mcp** -- AG Grid documentation search
-- **primeng** -- PrimeNG component documentation
-- **nx-mcp** -- NX workspace commands
-- **angular-cli** -- Angular CLI tools, best practices, documentation
-- **tailwindcss** -- Tailwind CSS utilities and docs
-- **macro-mcp** -- Custom scaffolding for new apps/libs in this monorepo
+| Package | Version |
+|---------|---------|
+| Angular | 21 |
+| React | 19 |
+| AG Grid Enterprise | 35.1.0 |
+| AG Charts Enterprise | 13.1.0 |
+| PrimeNG | 21.1.3 |
+| @openfin/workspace-platform | 23.0.20 |
+| @openfin/snap-sdk | 1.5.0 |
+| @nats-io/nats-core | 3.3.1 |
+| Runtime | 43.142.101.2 |
+| NX | 22.5 |
