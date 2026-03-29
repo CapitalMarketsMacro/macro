@@ -1,12 +1,15 @@
-export * from './lib/amps';
+/**
+ * @macro/amps — now re-exports from @macro/transports for backward compatibility.
+ * New code should import directly from '@macro/transports'.
+ */
 export {
-  AmpsClient,
-  type AmpsMessage,
+  AmpsTransport as AmpsClient,
+  type AmpsConnectionOptions,
   type AmpsSowOptions,
-  type AmpsMessageHandler,
-  type AmpsErrorHandler,
-} from './lib/amps';
+  type TransportMessage as AmpsMessage,
+  type MessageHandler as AmpsMessageHandler,
+  type ErrorHandler as AmpsErrorHandler,
+} from '@macro/transports';
 
 // Re-export AMPS types for convenience
 export { Client, Command } from 'amps';
-

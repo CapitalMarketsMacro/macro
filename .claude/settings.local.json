@@ -72,7 +72,10 @@
       "Bash(sed -i 's|{{OPENSHIFT_REACT_HOST}}/commodities-dashboard|{{OPENSHIFT_REACT_HOST}}/macro-react/commodities-dashboard|' macro-react-commodities-dashboard.fin.json)",
       "Bash(sed -i 's|\"\"url\"\": \"\"https://{{OPENSHIFT_REACT_HOST}}\"\"|\"\"url\"\": \"\"https://{{OPENSHIFT_REACT_HOST}}/macro-react\"\"|' macro-react-view.fin.json)",
       "WebFetch(domain:openfin.zendesk.com)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(for file:*)",
+      "Bash(do echo:*)",
+      "Read(//e/MacroDesktopMFE/macro/**)"
     ]
   },
   "enableAllProjectMcpServers": true

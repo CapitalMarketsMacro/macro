@@ -1,11 +1,13 @@
-export * from './lib/solace';
+/**
+ * @macro/solace — now re-exports from @macro/transports for backward compatibility.
+ * New code should import directly from '@macro/transports'.
+ */
 export {
-  SolaceClient,
-  type SolaceMessage,
-  type SolaceConnectionProperties,
-  type SolaceSubscriptionProperties,
-  type SolaceMessageHandler,
-  type SolaceErrorHandler,
-  type SolaceEventHandler,
-} from './lib/solace';
-
+  SolaceTransport as SolaceClient,
+  type SolaceConnectionOptions as SolaceConnectionProperties,
+  type SolacePublishOptions,
+  type TransportMessage as SolaceMessage,
+  type MessageHandler as SolaceMessageHandler,
+  type ErrorHandler as SolaceErrorHandler,
+  type EventHandler as SolaceEventHandler,
+} from '@macro/transports';

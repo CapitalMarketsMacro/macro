@@ -173,6 +173,16 @@ export class SolaceTransport implements TransportClient {
     return this.session;
   }
 
+  /** Get the solclientjs module for advanced usage */
+  getSolace(): typeof solace {
+    return solace;
+  }
+
+  /** Get the RxJS Subject for a given subscription ID */
+  getSubject(subscriptionId: string): Subject<TransportMessage> | undefined {
+    return this.subscriptionMap.get(subscriptionId)?.subject;
+  }
+
   private wrapMessage(msg: solace.Message, topic: string): TransportMessage {
     const data = msg.getBinaryAttachment()?.toString() || '';
     return {

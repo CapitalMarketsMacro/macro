@@ -111,6 +111,16 @@ export class AmpsTransport implements TransportClient {
     return Array.from(this.subscriptionMap.keys());
   }
 
+  /** Get the RxJS Subject for a given subscription ID */
+  getSubject(subscriptionId: string): Subject<TransportMessage> | undefined {
+    return this.subscriptionMap.get(subscriptionId);
+  }
+
+  /** Get the client name */
+  getClientName(): string {
+    return this.clientName;
+  }
+
   /** AMPS-specific: State-of-the-World query */
   async sow(handler: MessageHandler, topic: string, filter?: string, options?: AmpsSowOptions): Promise<void> {
     if (!this.client) throw new Error('Not connected to AMPS.');
