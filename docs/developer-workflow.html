@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Macro Desktop MFE — Developer Workflows</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0a0a1a; color: #e0e0e8; overflow: hidden; }
+
+  .slide { width: 100vw; height: 100vh; display: none; flex-direction: column; justify-content: center; padding: 60px 80px; position: relative; }
+  .slide.active { display: flex; }
+  .slide::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #00d4aa, #3b82f6, #8b5cf6); }
+
+  h1 { font-size: 42px; font-weight: 700; margin-bottom: 12px; background: linear-gradient(135deg, #00d4aa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  h2 { font-size: 32px; font-weight: 600; margin-bottom: 24px; color: #fff; }
+  h3 { font-size: 22px; font-weight: 600; margin-bottom: 16px; color: #00d4aa; }
+  p, li { font-size: 20px; line-height: 1.6; color: #b0b4c0; }
+  .subtitle { font-size: 24px; color: #8b8fa3; margin-bottom: 40px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 20px; }
+
+  .card { background: #141428; border: 1px solid #2a2a4a; border-radius: 12px; padding: 28px; }
+  .card h3 { margin-bottom: 12px; }
+  .card p { font-size: 16px; }
+
+  .step { display: flex; gap: 20px; margin-bottom: 24px; align-items: flex-start; }
+  .step-num { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #00d4aa, #3b82f6); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; flex-shrink: 0; }
+  .step-content { flex: 1; }
+  .step-content h3 { font-size: 20px; margin-bottom: 4px; color: #fff; }
+  .step-content p { font-size: 17px; }
+
+  code { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; background: #1a1a3a; padding: 2px 8px; border-radius: 4px; font-size: 16px; color: #00d4aa; }
+  pre { background: #0d0d20; border: 1px solid #2a2a4a; border-radius: 10px; padding: 20px; font-family: 'Cascadia Code', monospace; font-size: 15px; line-height: 1.5; overflow-x: auto; margin: 16px 0; color: #c0c4d0; }
+  pre .comment { color: #5a5a8a; }
+  pre .keyword { color: #8b5cf6; }
+  pre .string { color: #00d4aa; }
+  pre .arrow { color: #f59e0b; }
+
+  .tag { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin: 2px; }
+  .tag-green { background: rgba(0,212,170,0.15); color: #00d4aa; }
+  .tag-blue { background: rgba(59,130,246,0.15); color: #3b82f6; }
+  .tag-purple { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+  .tag-yellow { background: rgba(245,158,11,0.15); color: #f59e0b; }
+
+  .flow { display: flex; align-items: center; gap: 16px; margin: 20px 0; flex-wrap: wrap; }
+  .flow-box { background: #141428; border: 1px solid #2a2a4a; border-radius: 10px; padding: 14px 20px; text-align: center; }
+  .flow-box strong { display: block; font-size: 15px; color: #fff; }
+  .flow-box span { font-size: 13px; color: #8b8fa3; }
+  .flow-arrow { font-size: 24px; color: #00d4aa; }
+
+  .footer { position: absolute; bottom: 24px; left: 80px; right: 80px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #5a5a7a; }
+  .page-num { font-variant-numeric: tabular-nums; }
+
+  .highlight-box { background: linear-gradient(135deg, rgba(0,212,170,0.08), rgba(59,130,246,0.08)); border: 1px solid rgba(0,212,170,0.2); border-radius: 12px; padding: 24px; margin: 16px 0; }
+
+  ul { list-style: none; padding: 0; }
+  ul li { padding: 6px 0; padding-left: 24px; position: relative; }
+  ul li::before { content: ''; position: absolute; left: 0; top: 14px; width: 8px; height: 8px; border-radius: 50%; background: #00d4aa; }
+
+  .two-col { display: flex; gap: 40px; }
+  .two-col > div { flex: 1; }
+
+  /* Navigation */
+  .nav { position: fixed; bottom: 20px; right: 30px; z-index: 100; display: flex; gap: 8px; }
+  .nav button { width: 44px; height: 44px; border: 1px solid #3a3a5a; border-radius: 8px; background: #141428; color: #fff; font-size: 18px; cursor: pointer; transition: background 0.15s; }
+  .nav button:hover { background: #2a2a4a; }
+</style>
+</head>
+<body>
+
+<!-- Slide 1: Title -->
+<div class="slide active" id="s1">
+  <div style="text-align: center;">
+    <h1 style="font-size: 56px; margin-bottom: 8px;">Macro Desktop MFE</h1>
+    <p class="subtitle" style="font-size: 28px;">Developer Automation Workflows</p>
+    <div style="margin: 40px 0;">
+      <span class="tag tag-green">Figma Make Import</span>
+      <span class="tag tag-blue">AMPS Data Explorer</span>
+      <span class="tag tag-purple">OpenFin Workspace</span>
+      <span class="tag tag-yellow">AG Grid 35</span>
+    </div>
+    <p style="color: #5a5a7a; font-size: 18px; margin-top: 60px;">Powered by MCP (Model Context Protocol) — works with Claude Code, VS Code Copilot, WebStorm AI</p>
+  </div>
+  <div class="footer"><span>Macro Desktop MFE</span><span class="page-num">1 / 10</span></div>
+</div>
+
+<!-- Slide 2: The Problem -->
+<div class="slide" id="s2">
+  <h2>The Problem</h2>
+  <p class="subtitle">Creating a new MFE today takes too many manual steps</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Figma Make Export</h3>
+      <ul>
+        <li>Designer exports React app as zip</li>
+        <li>Developer manually creates NX app</li>
+        <li>Copies components, fixes imports</li>
+        <li>Wires up Tailwind, PostCSS, themes</li>
+        <li>Creates OpenFin manifests</li>
+        <li>Registers in dock, store, home</li>
+      </ul>
+      <p style="color: #ef4444; margin-top: 12px; font-weight: 600;">~2 hours of boilerplate</p>
+    </div>
+    <div class="card">
+      <h3>AMPS Data View</h3>
+      <ul>
+        <li>Connect to AMPS, eyeball message structure</li>
+        <li>Manually define AG Grid columns</li>
+        <li>Wire SOW + subscribe + conflation</li>
+        <li>Handle group_begin/group_end</li>
+        <li>Create NX app, configure routing</li>
+        <li>Register in OpenFin workspace</li>
+      </ul>
+      <p style="color: #ef4444; margin-top: 12px; font-weight: 600;">~3 hours per topic</p>
+    </div>
+  </div>
+  <div class="footer"><span>Macro Desktop MFE</span><span class="page-num">2 / 10</span></div>
+</div>
+
+<!-- Slide 3: The Solution -->
+<div class="slide" id="s3">
+  <h2>The Solution: MCP Automation</h2>
+  <p class="subtitle">One command to your AI assistant does everything</p>
+  <div class="highlight-box">
+    <p style="font-size: 22px; color: #fff; text-align: center;">
+      <code style="font-size: 20px; background: none; color: #f59e0b;">macro-mcp</code> &mdash; MCP server with executing tools that create files, modify configs, register apps
+    </p>
+  </div>
+  <div class="grid-3" style="margin-top: 30px;">
+    <div class="card" style="border-color: #00d4aa30;">
+      <h3 style="color: #00d4aa;">import_figma_app</h3>
+      <p>Import Figma Make zip &rarr; running OpenFin view</p>
+      <p style="color: #00d4aa; font-weight: 600; margin-top: 8px;">~30 seconds</p>
+    </div>
+    <div class="card" style="border-color: #3b82f630;">
+      <h3 style="color: #3b82f6;">amps_explore</h3>
+      <p>Connect to AMPS, detect schema, show sample data</p>
+      <p style="color: #3b82f6; font-weight: 600; margin-top: 8px;">~5 seconds</p>
+    </div>
+    <div class="card" style="border-color: #8b5cf630;">
+      <h3 style="color: #8b5cf6;">amps_create_mfe</h3>
+      <p>AMPS topic &rarr; AG Grid MFE with live data</p>
+      <p style="color: #8b5cf6; font-weight: 600; margin-top: 8px;">~30 seconds</p>
+    </div>
+  </div>
+  <div class="footer"><span>Macro Desktop MFE</span><span class="page-num">3 / 10</span></div>
+</div>
+
+<!-- Slide 4: Figma Workflow -->
+<div class="slide" id="s4">
+  <h2>Workflow 1: Figma Make Import</h2>
+  <div class="flow">
+    <div class="flow-box"><strong>Designer</strong><span>Figma Make</span></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box"><strong>Export zip</strong><span>Full React app</span></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box"><strong>Developer</strong><span>"Import this zip"</span></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box" style="border-color: #00d4aa;"><strong>MCP Tool</strong><span>import_figma_app</span></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box"><strong>OpenFin View</strong><span>Running in Dock</span></div>
+  </div>
+  <pre>
+<span class="comment">// Developer says to AI assistant:</span>
+<span class="string">"Import the Figma app at C:/Downloads/risk-dashboard.zip</span>
+<span class="string"> as risk-dashboard with title Risk Dashboard on port 4205"</span>
+
+<span class="comment">// Tool automatically:</span>
+ 1. Extracts zip
+ 2. Creates NX React app
+ 3. Copies all Figma source into src/figma/
+ 4. Detects App.tsx root component
+ 5. Detects Tailwind CSS, creates PostCSS config
+ 6. Imports Figma CSS chain
+ 7. Creates BrowserRouter wrapper + dark theme
+ 8. Creates OpenFin view manifests (local + openshift)
+ 9. Registers in manifest.fin.json + settings.json + dock
+10. Installs missing npm dependencies
+11. Updates package.json scripts
+</pre>
+  <div class="footer"><span>Macro Desktop MFE</span><span class="page-num">4 / 10</span></div>
+</div>
+
+<!-- Slide 5: Figma Result -->
+<div class="slide" id="s5">
+  <h2>Figma Import: What Gets Created</h2>
+  <div class="two-col">
+    <div>
+      <pre style="font-size: 14px;">
+apps/risk-dashboard/
+├── src/
+│   ├── app/
+│   │   └── app.tsx        <span class="comment"># BrowserRouter + theme</span>
+│   ├── figma/             <span class="comment"># All Figma code untouched</span>
+│   │   ├── app/
+│   │   │   ├── App.tsx    <span class="comment"># Figma root component</span>
+│   │   │   └── components/
+│   │   └── styles/
+│   │       ├── index.css
+│   │       ├── tailwind.css
+│   │       └── theme.css
+│   └── main.tsx           <span class="comment"># CSS imports</span>
+├── vite.config.ts         <span class="comment"># Base path + Tailwind</span>
+├── postcss.config.cjs     <span class="comment"># Auto-created</span>
+└── index.html</pre>
+    </div>
+    <div>
+      <h3>Key Features</h3>
+      <ul>
+        <li>Figma source preserved in <code>src/figma/</code></li>
+        <li>Tailwind CSS auto-detected and configured</li>
+        <li>Dark mode enabled by default</li>
+        <li>@macro/* library aliases pre-configured</li>
+        <li>Missing npm deps auto-installed</li>
+        <li>OpenFin registered (Home, Store, Dock)</li>
+        <li>Both local + OpenShift manifests created</li>
+      </ul>
+      <div class="highlight-box" style="margin-top: 20px;">
+        <p style="font-size: 16px;"><strong style="color: #00d4aa;">To run:</strong></p>
+        <code>npm run start:risk-dashboard</code><br>
+        <code>npm run launch</code>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>Macro Desktop MFE</span><span class="page-num">5 / 10</span></div>
+</div>
+
+<!-- Slide 6: AMPS Explore -->
+<div class="slide" id="s6">
+  <h2>Workflow 2: AMPS Data Explorer</h2>
+  <p class="subtitle">Step 1 — Understand the data</p>
+  <div class="flow">
+    <div class="flow-box"><strong>AMPS Config URL</strong><span>Galvanometer</span></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box" style="border-color: #3b82f6;"><strong>amps_explore</strong><span>MCP Tool</span></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box"><strong>Schema</strong><span>Fields, types, keys</span></div>
+  </div>
+  <pre>
+<span class="comment">// Developer says:</span>
+<span class="string">"Explore AMPS config at http://amps:8085/amps/instance/config.xml,</span>
+<span class="string"> topic rates/executions"</span>
+
+<span class="comment">// Returns:</span>
+Instance: AMPS-Sample
+WebSocket: ws://amps:9008/amps/json  <span class="comment">(auto-detected)</span>
+
+SOW Topics:
+  - rates/marketData  [key: /MarketId+/Id]
+  - rates/executions  [key: /ExecutionIdString]
+
+Schema (12 fields):
+  ExecutionIdString  string   "EXEC-001", "EXEC-002"
+  Price              number   99.5625 (4 decimals)
+  Quantity           number   1000000 (0 decimals)
+  Side               string   "BUY", "SELL"
+  ...
+</pre>
+  <div class="footer"><span>Macro Desktop MFE</span><span class="page-num">6 / 10</span></div>
+</div>
+
+<!-- Slide 7: AMPS Create MFE -->
+<div class="slide" id="s7">
+  <h2>Workflow 2: AMPS Create MFE</h2>
+  <p class="subtitle">Step 2 — Generate the app</p>
+  <div class="flow">
+    <div class="flow-box"><strong>AMPS Topic</strong><span>rates/executions</span></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box" style="border-color: #8b5cf6;"><strong>amps_create_mfe</strong><span>MCP Tool</span></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box"><strong>Angular/React App</strong><span>AG Grid + Live Data</span></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box"><strong>OpenFin View</strong><span>In Dock</span></div>
+  </div>
+  <pre>
+<span class="comment">// Developer says:</span>
+<span class="string">"Create an Angular app called execution-blotter from AMPS topic</span>
+<span class="string"> rates/executions on port 4208, config at http://amps:8085/..."</span>
+
+<span class="comment">// Tool automatically:</span>
+ 1. Connects to AMPS, SOWs sample data
+ 2. Detects 12 fields, composite key /ExecutionIdString
+ 3. Generates NX Angular app (zoneless)
+ 4. Auto-generates AG Grid columns:
+    - Numbers <span class="arrow">→</span> right-align, toFixed(N), allowFormula
+    - Change fields <span class="arrow">→</span> red/green cellStyle
+    - First field <span class="arrow">→</span> pinned left
+ 5. Wires sowAndSubscribe + ConflationSubject + updateRows$
+ 6. Registers in OpenFin (Home, Store, Dock)
+</pre>
+  <div class="footer"><span>Macro Desktop MFE</span><span class="page-num">7 / 10</span></div>
+</div>
+
+<!-- Slide 8: Generated Architecture -->
+<div class="slide" id="s8">
+  <h2>Generated App Architecture</h2>
+  <div class="two-col">
+    <div>
+      <h3>Data Flow</h3>
+      <div class="flow" style="flex-direction: column; align-items: flex-start;">
+        <div class="flow-box" style="width: 100%;"><strong>AMPS Server</strong><span>ws://amps:9008/amps/json</span></div>
+        <span class="flow-arrow" style="align-self: center;">&darr;</span>
+        <div class="flow-box" style="width: 100%; border-color: #3b82f6;"><strong>AmpsTransportService</strong><span>@macro/transports/angular</span></div>
+        <span class="flow-arrow" style="align-self: center;">&darr; sowAndSubscribe(topic)</span>
+        <div class="flow-box" style="width: 100%; border-color: #f59e0b;"><strong>ConflationSubject</strong><span>@macro/rxutils — 100ms batching</span></div>
+        <span class="flow-arrow" style="align-self: center;">&darr; updateRows$.next(batch)</span>
+        <div class="flow-box" style="width: 100%; border-color: #00d4aa;"><strong>MacroAngularGrid</strong><span>@macro/macro-angular-grid — AG Grid 35</span></div>
+      </div>
+    </div>
+    <div>
+      <h3>Key Patterns</h3>
+      <ul>
+        <li><code>sowAndSubscribe()</code> — atomic SOW + live updates</li>
+        <li><code>sowComplete</code> promise — know when initial batch done</li>
+        <li>Transport handles group_begin/end internally</li>
+        <li>Composite keys auto-detected from config</li>
+        <li>Signals for reactive state (Angular 21)</li>
+        <li>Zoneless change detection</li>
+        <li>Dark mode by default</li>
+      </ul>
+      <h3 style="margin-top: 20px;">AMPS Transport Features</h3>
+      <ul>
+        <li><code>sow()</code> returns clean <code>Promise&lt;[]&gt;</code></li>
+        <li><code>deltaSubscribe()</code> for bandwidth efficiency</li>
+        <li><code>sowDelete()</code> / <code>sowDeleteByKeys()</code></li>
+        <li>Self-signed cert support (wss://)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>Macro Desktop MFE</span><span class="page-num">8 / 10</span></div>
+</div>
+
+<!-- Slide 9: How to Use -->
+<div class="slide" id="s9">
+  <h2>Getting Started</h2>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h3>Build the MCP server</h3>
+      <p><code>npx nx build macro-mcp</code> &mdash; builds once, tools are ready</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h3>MCP config is automatic</h3>
+      <p><code>.mcp.json</code> in repo root configures Claude Code / VS Code. For remote: <code>macro-mcp-agent</code> on any server.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h3>Talk to your AI assistant</h3>
+      <p><em>"Import the Figma app at C:/Downloads/my-app.zip as my-app on port 4205"</em></p>
+      <p><em>"Explore AMPS at http://amps:8085/amps/instance/config.xml, topic rates/marketData"</em></p>
+      <p><em>"Create a React app called fx-blotter from AMPS topic fx-rates on port 4207"</em></p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <h3>Run and launch</h3>
+      <p><code>npm run start:my-app</code> then <code>npm run launch</code> &mdash; app appears in OpenFin</p>
+    </div>
+  </div>
+  <div class="highlight-box" style="margin-top: 16px;">
+    <p style="font-size: 17px; text-align: center;">Works with <strong>Claude Code</strong>, <strong>VS Code GitHub Copilot</strong>, <strong>WebStorm AI</strong> — any MCP-compatible client</p>
+  </div>
+  <div class="footer"><span>Macro Desktop MFE</span><span class="page-num">9 / 10</span></div>
+</div>
+
+<!-- Slide 10: Summary -->
+<div class="slide" id="s10">
+  <h2>Summary</h2>
+  <div class="grid-2">
+    <div>
+      <h3>MCP Tools Available</h3>
+      <table style="width: 100%; font-size: 16px; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid #2a2a4a;"><td style="padding: 8px; color: #00d4aa; font-weight: 600;">import_figma_app</td><td style="padding: 8px;">Figma zip &rarr; OpenFin view</td></tr>
+        <tr style="border-bottom: 1px solid #2a2a4a;"><td style="padding: 8px; color: #3b82f6; font-weight: 600;">amps_explore</td><td style="padding: 8px;">Inspect AMPS topics + schema</td></tr>
+        <tr style="border-bottom: 1px solid #2a2a4a;"><td style="padding: 8px; color: #8b5cf6; font-weight: 600;">amps_create_mfe</td><td style="padding: 8px;">AMPS &rarr; AG Grid MFE</td></tr>
+        <tr style="border-bottom: 1px solid #2a2a4a;"><td style="padding: 8px; color: #f59e0b; font-weight: 600;">scaffold_react_app</td><td style="padding: 8px;">New React app</td></tr>
+        <tr style="border-bottom: 1px solid #2a2a4a;"><td style="padding: 8px; color: #f59e0b; font-weight: 600;">scaffold_angular_app</td><td style="padding: 8px;">New Angular app</td></tr>
+        <tr><td style="padding: 8px; color: #f59e0b; font-weight: 600;">register_openfin_app</td><td style="padding: 8px;">Register in OpenFin</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Tech Stack</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px;">
+        <span class="tag tag-green">Angular 21</span>
+        <span class="tag tag-blue">React 19</span>
+        <span class="tag tag-purple">AG Grid 35</span>
+        <span class="tag tag-yellow">OpenFin 23</span>
+        <span class="tag tag-green">AMPS</span>
+        <span class="tag tag-blue">Solace</span>
+        <span class="tag tag-purple">NATS</span>
+        <span class="tag tag-yellow">Tailwind 4</span>
+        <span class="tag tag-green">NX 22.5</span>
+        <span class="tag tag-blue">Vite 7</span>
+      </div>
+      <h3>Deployment</h3>
+      <ul>
+        <li><strong>macro-mcp</strong> — stdio, runs in monorepo (Claude Code)</li>
+        <li><strong>macro-mcp-agent</strong> — HTTP/SSE, deploy anywhere (WebStorm, VS Code remote)</li>
+        <li><strong>OpenShift</strong> — local + openshift manifest folders</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>Macro Desktop MFE</span><span class="page-num">10 / 10</span></div>
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+  <button onclick="navigate(-1)" title="Previous">&larr;</button>
+  <button onclick="navigate(1)" title="Next">&rarr;</button>
+</div>
+
+<script>
+  let current = 1;
+  const total = 10;
+
+  function showSlide(n) {
+    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+    document.getElementById('s' + n).classList.add('active');
+    current = n;
+  }
+
+  function navigate(dir) {
+    const next = current + dir;
+    if (next >= 1 && next <= total) showSlide(next);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); navigate(1); }
+    if (e.key === 'ArrowLeft' || e.key === 'Backspace') { e.preventDefault(); navigate(-1); }
+    if (e.key === 'Home') showSlide(1);
+    if (e.key === 'End') showSlide(total);
+  });
+</script>
+</body>
+</html>
