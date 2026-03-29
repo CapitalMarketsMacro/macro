@@ -65,17 +65,47 @@ function importFigmaApp(
       }
     }
 
-    // ── Generate NX React app ──
+    // ── Try NX generator, but don't depend on it ──
     try {
       execSync(
         `npx nx g @nx/react:app ${appName} --directory=apps/${appName} --style=css --bundler=vite --routing=false --e2eTestRunner=none --skipFormat`,
         { cwd: root, stdio: 'pipe', timeout: 120000 }
       );
-      steps.push(`Generated NX React app: apps/${appName}`);
-    } catch (err: any) {
-      steps.push(`NX generator note: ${err.message?.slice(0, 80)}. Creating structure manually.`);
-      fs.mkdirSync(path.join(appDir, 'src/app'), { recursive: true });
+      steps.push(`NX generator succeeded`);
+    } catch {
+      steps.push('NX generator failed — creating project files manually');
     }
+    fs.mkdirSync(path.join(appDir, 'src/app'), { recursive: true });
+
+    // Always write project.json + tsconfig (ensures NX recognizes the project)
+    if (!fs.existsSync(path.join(appDir, 'project.json'))) {
+      fs.writeFileSync(path.join(appDir, 'project.json'), JSON.stringify({
+        name: appName,
+        $schema: '../../node_modules/nx/schemas/project-schema.json',
+        sourceRoot: `apps/${appName}/src`,
+        projectType: 'application',
+        targets: {
+          build: { executor: '@nx/vite:build', outputs: ['{options.outputPath}'], options: { outputPath: `dist/apps/${appName}` } },
+          serve: { executor: '@nx/vite:dev-server', options: { buildTarget: `${appName}:build`, port } },
+        },
+        tags: [],
+      }, null, 2));
+    }
+    if (!fs.existsSync(path.join(appDir, 'tsconfig.json'))) {
+      fs.writeFileSync(path.join(appDir, 'tsconfig.json'), JSON.stringify({
+        extends: '../../tsconfig.base.json',
+        compilerOptions: { jsx: 'react-jsx', strict: true, esModuleInterop: true, allowSyntheticDefaultImports: true },
+        files: [], include: [], references: [{ path: './tsconfig.app.json' }],
+      }, null, 2));
+    }
+    if (!fs.existsSync(path.join(appDir, 'tsconfig.app.json'))) {
+      fs.writeFileSync(path.join(appDir, 'tsconfig.app.json'), JSON.stringify({
+        extends: './tsconfig.json',
+        compilerOptions: { outDir: '../../dist/out-tsc', types: ['node', 'vite/client'] },
+        include: ['src/**/*.ts', 'src/**/*.tsx'], exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
+      }, null, 2));
+    }
+    steps.push('Project config verified');
 
     // ── Copy Figma Make source files ──
     // Figma Make exports a full React app: package.json, src/App.tsx, src/components/, tailwind, etc.

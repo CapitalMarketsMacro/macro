@@ -493,8 +493,155 @@ export default defineConfig(() => ({
   return {
     'src/app/app.tsx': appTsx,
     'src/main.tsx': mainTsx,
-    'vite.config.ts': viteConfig,
     'index.html': indexHtml,
+  };
+}
+
+// ── NX Project Config Generators ──
+
+function generateAngularProjectFiles(appName: string, port: number): Record<string, string> {
+  return {
+    'project.json': JSON.stringify({
+      name: appName,
+      $schema: '../../node_modules/nx/schemas/project-schema.json',
+      sourceRoot: `apps/${appName}/src`,
+      projectType: 'application',
+      prefix: 'app',
+      targets: {
+        build: {
+          executor: '@angular-devkit/build-angular:application',
+          outputs: ['{options.outputPath}'],
+          options: {
+            outputPath: `dist/apps/${appName}`,
+            index: `apps/${appName}/src/index.html`,
+            browser: `apps/${appName}/src/main.ts`,
+            tsConfig: `apps/${appName}/tsconfig.app.json`,
+            styles: [`apps/${appName}/src/styles.css`],
+            scripts: [],
+          },
+        },
+        serve: {
+          executor: '@angular-devkit/build-angular:dev-server',
+          options: { buildTarget: `${appName}:build`, port },
+          configurations: {
+            production: { buildTarget: `${appName}:build:production` },
+          },
+        },
+        test: {
+          executor: '@nx/jest:jest',
+          options: { jestConfig: `apps/${appName}/jest.config.ts` },
+        },
+      },
+      tags: [],
+    }, null, 2),
+
+    'tsconfig.json': JSON.stringify({
+      extends: '../../tsconfig.base.json',
+      compilerOptions: {
+        target: 'es2022',
+        module: 'es2022',
+        moduleResolution: 'bundler',
+        strict: true,
+      },
+      angularCompilerOptions: {
+        enableI18nLegacyMessageIdFormat: false,
+        strictInjectionParameters: true,
+        strictTemplates: true,
+      },
+      files: [],
+      include: [],
+      references: [{ path: './tsconfig.app.json' }],
+    }, null, 2),
+
+    'tsconfig.app.json': JSON.stringify({
+      extends: './tsconfig.json',
+      compilerOptions: { outDir: '../../dist/out-tsc', types: [] },
+      files: ['src/main.ts'],
+      include: ['src/**/*.d.ts', 'src/**/*.ts'],
+      exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
+    }, null, 2),
+  };
+}
+
+function generateReactProjectFiles(appName: string, port: number): Record<string, string> {
+  const basePath = `/${appName}/`;
+  return {
+    'project.json': JSON.stringify({
+      name: appName,
+      $schema: '../../node_modules/nx/schemas/project-schema.json',
+      sourceRoot: `apps/${appName}/src`,
+      projectType: 'application',
+      targets: {
+        build: {
+          executor: '@nx/vite:build',
+          outputs: ['{options.outputPath}'],
+          options: {
+            outputPath: `dist/apps/${appName}`,
+          },
+        },
+        serve: {
+          executor: '@nx/vite:dev-server',
+          options: { buildTarget: `${appName}:build`, port },
+        },
+        test: {
+          executor: '@nx/vite:test',
+          options: {},
+        },
+      },
+      tags: [],
+    }, null, 2),
+
+    'tsconfig.json': JSON.stringify({
+      extends: '../../tsconfig.base.json',
+      compilerOptions: {
+        jsx: 'react-jsx',
+        allowJs: false,
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+        strict: true,
+      },
+      files: [],
+      include: [],
+      references: [{ path: './tsconfig.app.json' }],
+    }, null, 2),
+
+    'tsconfig.app.json': JSON.stringify({
+      extends: './tsconfig.json',
+      compilerOptions: { outDir: '../../dist/out-tsc', types: ['node', 'vite/client'] },
+      include: ['src/**/*.ts', 'src/**/*.tsx'],
+      exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts', 'src/**/*.spec.tsx', 'src/**/*.test.tsx'],
+    }, null, 2),
+
+    'vite.config.ts': `import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+import path from 'path';
+
+export default defineConfig(() => ({
+  root: __dirname,
+  base: '${basePath}',
+  server: { port: ${port}, host: 'localhost' },
+  preview: { port: ${port}, host: 'localhost' },
+  plugins: [react(), nxViteTsPaths()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@macro/logger': path.resolve(__dirname, '../../libs/logger/src/index.ts'),
+      '@macro/macro-design': path.resolve(__dirname, '../../libs/macro-design/src/index.ts'),
+      '@macro/macro-react-grid': path.resolve(__dirname, '../../libs/macro-react-grid/src/index.ts'),
+      '@macro/transports': path.resolve(__dirname, '../../libs/transports/src/index.ts'),
+      '@macro/transports/react': path.resolve(__dirname, '../../libs/transports/src/lib/react/index.ts'),
+      '@macro/rxutils': path.resolve(__dirname, '../../libs/rxutils/src/index.ts'),
+    },
+  },
+  build: {
+    outDir: '../../dist/apps/${appName}',
+    emptyOutDir: true,
+    reportCompressedSize: true,
+    commonjsOptions: { transformMixedEsModules: true },
+  },
+}));
+`,
   };
 }
 
@@ -532,31 +679,40 @@ async function createAmpsMfeAsync(
     const keys = getKeyFields(compositeKey || explore.compositeKey, explore.detectedKeys);
     steps.push(`Schema: ${schema.length} fields, ${explore.messageCount} samples, keys: [${keys.join(', ')}]`);
 
-    // ── Generate NX app ──
-    const generator = framework === 'angular'
-      ? `npx nx g @nx/angular:app ${appName} --directory=apps/${appName} --style=css --routing=true --e2eTestRunner=none --skipFormat`
-      : `npx nx g @nx/react:app ${appName} --directory=apps/${appName} --style=css --bundler=vite --routing=false --e2eTestRunner=none --skipFormat`;
-
+    // ── Try NX generator, but don't depend on it ──
+    let nxGenerated = false;
     try {
+      const generator = framework === 'angular'
+        ? `npx nx g @nx/angular:app ${appName} --directory=apps/${appName} --style=css --routing=true --e2eTestRunner=none --skipFormat`
+        : `npx nx g @nx/react:app ${appName} --directory=apps/${appName} --style=css --bundler=vite --routing=false --e2eTestRunner=none --skipFormat`;
       execSync(generator, { cwd: root, stdio: 'pipe', timeout: 120000 });
-      steps.push(`Generated NX ${framework} app`);
+      nxGenerated = true;
+      steps.push(`NX generator succeeded`);
     } catch {
-      fs.mkdirSync(path.join(appDir, 'src/app'), { recursive: true });
-      steps.push('Created app structure manually');
+      steps.push('NX generator failed — creating all files manually');
     }
 
-    // ── Generate code ──
-    const files = framework === 'angular'
+    // ── Generate ALL files (overwrites NX scaffold with our robust versions) ──
+    fs.mkdirSync(path.join(appDir, 'src/app'), { recursive: true });
+
+    const codeFiles = framework === 'angular'
       ? generateAngularFiles(appName, topic, effectiveUrl, schema, keys, conflationMs, filter)
       : generateReactFiles(appName, topic, effectiveUrl, basePath, schema, keys, conflationMs, filter);
 
-    for (const [relPath, content] of Object.entries(files)) {
+    // Add NX project config files (always write — ensures they exist even if NX gen failed)
+    const projectFiles = framework === 'angular'
+      ? generateAngularProjectFiles(appName, port)
+      : generateReactProjectFiles(appName, port);
+
+    const allFiles = { ...codeFiles, ...projectFiles };
+
+    for (const [relPath, content] of Object.entries(allFiles)) {
       const fullPath = path.join(appDir, relPath);
       fs.mkdirSync(path.dirname(fullPath), { recursive: true });
       const finalContent = content.replace(/\$\{PORT\}/g, String(port));
       fs.writeFileSync(fullPath, finalContent);
     }
-    steps.push(`Generated ${framework} component with AMPS sowAndSubscribe + conflation + AG Grid`);
+    steps.push(`Generated ${framework} component + project config`);
 
     // ── OpenFin registration ──
     const localView = { url: `http://localhost:${port}${framework === 'react' ? basePath : '/'}`, fdc3InteropApi: '2.0', interop: { currentContextGroup: 'green' } };
