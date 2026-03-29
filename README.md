@@ -331,7 +331,7 @@ FDC3 2.0 with `currentContextGroup: "green"`. `ContextService` provides `current
 
 | Server | Purpose |
 |--------|---------|
-| **macro-mcp** | Custom scaffolding, Figma import, library API docs |
+| **macro-mcp** | Scaffolding, Figma import, AMPS data explorer, library docs |
 | **ag-mcp** | AG Grid documentation |
 | **primeng** | PrimeNG components |
 | **angular-cli** | Angular CLI + best practices |
@@ -343,13 +343,90 @@ FDC3 2.0 with `currentContextGroup: "green"`. `ContextService` provides `current
 
 | Tool | Description |
 |------|-------------|
-| `import_figma_app` | Import Figma Make React project -- creates NX app, wires everything, registers in OpenFin |
+| `amps_explore` | Connect to AMPS, inspect topics, detect schema and composite keys |
+| `amps_create_mfe` | Create Angular/React MFE from AMPS topic with auto-generated AG Grid |
+| `import_figma_app` | Import Figma Make React project into the monorepo |
 | `scaffold_react_app` | Generate a new React app with @macro/* integration |
 | `scaffold_angular_app` | Generate a new Angular app |
 | `scaffold_library` | Generate a new shared library |
 | `register_openfin_app` | Register an app in OpenFin manifest |
 | `get_library_api` | Get full API docs for any @macro/* library |
 | `list_libraries` | List all available libraries |
+
+### AMPS Data Explorer
+
+Inspect a live AMPS instance, understand message structure, and auto-generate MFE apps.
+
+**Step 1 — Explore the AMPS instance:**
+
+```
+Explore AMPS config at http://amps-server:8085/amps/instance/config.xml
+```
+
+Returns instance name, transports (with WebSocket port), SOW topics with composite keys. Auto-detects the WebSocket URL.
+
+**Step 2 — Inspect a specific topic:**
+
+```
+Explore AMPS config at http://amps-server:8085/amps/instance/config.xml, topic "rates/marketData"
+```
+
+Connects to AMPS via the detected WebSocket transport, SOWs sample data, returns:
+- Field names, types, decimal precision
+- Composite keys (e.g., `/MarketId+/Id`)
+- Sample JSON data
+
+**Step 3 — Create an MFE from the topic:**
+
+```
+Create an Angular app called "rates-blotter" from AMPS topic "rates/marketData"
+on port 4207, config at http://amps-server:8085/amps/instance/config.xml
+```
+
+The `amps_create_mfe` tool automatically:
+1. Connects to AMPS and detects the message schema
+2. Generates the NX app (Angular or React)
+3. Auto-generates AG Grid ColDef[] with proper formatters and decimal precision
+4. Wires `sowAndSubscribe()` for atomic initial snapshot + live updates
+5. Adds `ConflationSubject` for high-frequency batching
+6. Handles composite keys via `getRowId`
+7. Creates OpenFin view manifests (local + openshift)
+8. Registers in manifest.fin.json, settings.json, and dock
+9. Updates package.json scripts
+
+**Generated Angular architecture:**
+```
+apps/rates-blotter/
+├── src/app/
+│   ├── app.ts                          # Root component
+│   ├── app.config.ts                   # provideZoneChangeDetection + router
+│   ├── app.routes.ts                   # Lazy-loaded data component
+│   └── rates-blotter/
+│       ├── rates-blotter.component.ts  # Grid + AMPS transport + conflation
+│       ├── rates-blotter.component.html
+│       └── rates-blotter.component.css
+├── src/main.ts                         # Bootstrap
+└── src/styles.css                      # @macro/macro-design imports
+```
+
+**Generated code uses:**
+- `AmpsTransportService` from `@macro/transports/angular` (Angular DI)
+- `transport.sowAndSubscribe(topic)` — returns `{ observable, subscriptionId, sowComplete }`
+- `sowComplete` promise — resolves when initial SOW batch finishes
+- `ConflationSubject` from `@macro/rxutils` — batches high-frequency updates
+- `MacroAngularGrid` from `@macro/macro-angular-grid` — AG Grid Enterprise wrapper
+- Angular signals for reactive state (`connected`, `messageCount`, `error`)
+- Transport handles `group_begin`/`group_end` internally — clean data only
+
+**AMPS Transport key methods used:**
+
+| Method | What it does |
+|--------|-------------|
+| `sowAndSubscribe(topic, filter?)` | Atomic SOW + subscribe. Returns observable + `sowComplete` promise. |
+| `sow(topic, filter?)` | Returns `Promise<TransportMessage[]>` — clean array, no group messages. |
+| `subscribe(handler, topic, filter?)` | Live updates only. Data messages only. |
+| `deltaSubscribe(topic)` | Live deltas (changed fields only). |
+| `sowAndDeltaSubscribe(topic)` | SOW snapshot then delta updates. |
 
 ### macro-mcp Resources
 
