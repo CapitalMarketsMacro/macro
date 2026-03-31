@@ -71,6 +71,31 @@ const FLUSH_DELAY_MS = 200;
 
 export const THEME_CHANGED_TOPIC = 'workspace:theme-changed';
 
+const VIEW_TITLES_KEY = 'macro:view-titles';
+
+function loadViewTitles(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(VIEW_TITLES_KEY) || '{}');
+  } catch { return {}; }
+}
+
+function saveViewTitles(titles: Record<string, string>): void {
+  localStorage.setItem(VIEW_TITLES_KEY, JSON.stringify(titles));
+}
+
+/** Called by the rename-view action to register a custom title. */
+export function setViewTitle(viewName: string, title: string): void {
+  const titles = loadViewTitles();
+  titles[viewName] = title;
+  saveViewTitles(titles);
+  console.log('[setViewTitle] SET', viewName, '→', title, 'all:', titles);
+}
+
+/** Get all custom view titles. */
+export function getViewTitles(): Record<string, string> {
+  return loadViewTitles();
+}
+
 export class WorkspaceOverrideService {
   private readonly logger = Logger.getLogger('WorkspaceOverrideService');
   private readonly storageService: WorkspaceStorageService;
@@ -118,6 +143,94 @@ export class WorkspaceOverrideService {
           workspace.snapshot = await platform.getSnapshot() as unknown as typeof workspace.snapshot;
         } catch (err) {
           logger.warn('Failed to flush view states before workspace save', err);
+        }
+      }
+
+      /**
+       * Recursively walk a golden-layout content tree and patch view customData
+       * with the latest runtime values (e.g. viewTitle from rename).
+       */
+      /**
+       * Patch a workspace's snapshot with custom view titles from localStorage.
+       */
+      function patchWorkspaceWithTitles(workspace: Workspace): void {
+        try {
+          const titles = getViewTitles();
+          const titleEntries = Object.entries(titles);
+          console.log('[patchWorkspace] titles from localStorage:', titles);
+          if (titleEntries.length === 0) return;
+          const snap = workspace.snapshot as any;
+          if (snap?.windows) {
+            const titleMap = new Map(titleEntries);
+            for (const win of snap.windows) {
+              if (win?.layout?.content) {
+                patchLayoutContent(win.layout.content, titleMap);
+              }
+            }
+          }
+        } catch (err) {
+          logger.warn('Failed to patch workspace with view titles', err);
+        }
+      }
+
+      /**
+       * Collect values from layout components in tree-walk order.
+       * extractor returns the value to collect, or undefined to skip.
+       */
+      function collectFromLayout<T>(items: any[], extractor: (cs: any) => T | undefined, result: T[]): void {
+        for (const item of items) {
+          if (item.type === 'component' && item.componentState) {
+            const val = extractor(item.componentState);
+            if (val !== undefined) {
+              result.push(val);
+            }
+          }
+          if (item.content) {
+            collectFromLayout(item.content, extractor, result);
+          }
+        }
+      }
+
+      function collectUrlTitlesFromLayout(items: any[], result: Map<string, string[]>): void {
+        for (const item of items) {
+          if (item.type === 'component' && item.componentState?.customData?.viewTitle && item.componentState?.url) {
+            const url = item.componentState.url;
+            if (!result.has(url)) result.set(url, []);
+            result.get(url)!.push(item.componentState.customData.viewTitle);
+          }
+          if (item.content) {
+            collectUrlTitlesFromLayout(item.content, result);
+          }
+        }
+      }
+
+      function collectTitlesFromLayout(items: any[], result: Map<string, string>): void {
+        for (const item of items) {
+          if (item.type === 'component' && item.componentState?.name && item.componentState?.customData?.viewTitle) {
+            result.set(item.componentState.name, item.componentState.customData.viewTitle);
+          }
+          if (item.content) {
+            collectTitlesFromLayout(item.content, result);
+          }
+        }
+      }
+
+      function patchLayoutContent(items: any[], titleMap: Map<string, string>): void {
+        for (const item of items) {
+          console.log('[patchLayout] item type:', item.type, 'componentState?.name:', item.componentState?.name, 'keys:', Object.keys(item));
+          if (item.type === 'component' && item.componentState?.name) {
+            const title = titleMap.get(item.componentState.name);
+            console.log('[patchLayout] lookup', item.componentState.name, '→', title, 'mapKeys:', [...titleMap.keys()]);
+            if (title) {
+              item.title = title;
+              item.componentState.title = title;
+              item.componentState.customData = { ...item.componentState.customData, viewTitle: title };
+              console.log('[patchLayout] PATCHED', item.componentState.name, '→', title);
+            }
+          }
+          if (item.content) {
+            patchLayoutContent(item.content, titleMap);
+          }
         }
       }
 
@@ -186,6 +299,7 @@ export class WorkspaceOverrideService {
          */
         async createSavedWorkspace(req: CreateSavedWorkspaceRequest): Promise<void> {
           await flushViewStatesAndRecapture(req.workspace);
+          patchWorkspaceWithTitles(req.workspace);
           logger.info('Creating saved workspace', { workspaceId: req.workspace.workspaceId, title: req.workspace.title });
           analyticsNats.publish({ source: 'Platform', type: 'Workspace', action: 'Save',
             value: req.workspace.title, data: { workspaceId: req.workspace.workspaceId } }).catch(() => {});
@@ -207,7 +321,31 @@ export class WorkspaceOverrideService {
          * @param req The update workspace request
          */
         async updateSavedWorkspace(req: UpdateSavedWorkspaceRequest): Promise<void> {
+          console.log('[updateSavedWorkspace] BUILD_V3 - starting');
           await flushViewStatesAndRecapture(req.workspace);
+          console.log('[updateSavedWorkspace] BUILD_V3 - flush done');
+          try {
+            const raw = localStorage.getItem('macro:view-titles');
+            console.log('[updateSavedWorkspace] raw localStorage:', raw);
+            const titles = JSON.parse(raw || '{}');
+            const entries = Object.entries(titles);
+            console.log('[updateSavedWorkspace] titles count:', entries.length);
+            if (entries.length > 0) {
+              const snap = req.workspace.snapshot as any;
+              console.log('[updateSavedWorkspace] snapshot type:', typeof snap, 'keys:', snap ? Object.keys(snap) : 'null');
+              console.log('[updateSavedWorkspace] snapshot windows:', snap?.windows?.length, 'snapshotDetails:', snap?.snapshotDetails ? Object.keys(snap.snapshotDetails) : 'none');
+              if (snap?.windows) {
+                const titleMap = new Map<string, string>(entries as [string, string][]);
+                for (const win of snap.windows) {
+                  if (win?.layout?.content) {
+                    patchLayoutContent(win.layout.content, titleMap);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error('[updateSavedWorkspace] patch error:', e);
+          }
           logger.info('Updating saved workspace', { workspaceId: req.workspaceId, title: req.workspace.title });
           const workspaces = await storageService.getWorkspaces();
           const index = workspaces.findIndex((w) => w.workspaceId === req.workspaceId);
@@ -277,20 +415,76 @@ export class WorkspaceOverrideService {
         }
 
         /**
-         * Decorate the platform snapshot with the current snap layout.
-         */
-        async getSnapshot(...args: [undefined, OpenFin.ClientIdentity]): Promise<OpenFin.Snapshot> {
-          const snapshot = await super.getSnapshot(...args);
-          return snapService.decorateSnapshot(snapshot);
-        }
-
-        /**
          * Apply a snapshot, restoring any snap layout embedded in it.
          */
         async applySnapshot(payload: OpenFin.ApplySnapshotPayload, identity?: OpenFin.Identity): Promise<void> {
+          // Extract custom titles from the snapshot BEFORE applying
+          const titlesByName = new Map<string, string>();
+          try {
+            const snap = payload.snapshot as any;
+            if (snap?.windows) {
+              for (const win of snap.windows) {
+                if (win?.layout?.content) {
+                  collectTitlesFromLayout(win.layout.content, titlesByName);
+                }
+              }
+            }
+            console.log('[applySnapshot] titles from snapshot:', [...titlesByName.entries()]);
+          } catch (e) { console.warn('[applySnapshot] error reading titles', e); }
+
           await snapService.prepareToApplySnapshot(payload);
           await super.applySnapshot(payload, identity);
           await snapService.applySnapshot(payload.snapshot);
+
+          // After snapshot applied, match titles by tree-walk position
+          if (titlesByName.size > 0) {
+            // Collect titles in tree-walk order from the SNAPSHOT (has customData.viewTitle)
+            const orderedTitles: (string | null)[] = [];
+            try {
+              const snap = payload.snapshot as any;
+              if (snap?.windows) {
+                for (const win of snap.windows) {
+                  if (win?.layout?.content) {
+                    collectFromLayout(win.layout.content, (cs) => cs.customData?.viewTitle || null, orderedTitles);
+                  }
+                }
+              }
+            } catch { /* ignore */ }
+            console.log('[applySnapshot] orderedTitles from snapshot:', orderedTitles);
+
+            setTimeout(async () => {
+              try {
+                // Collect NEW view names in the same tree-walk order from the LIVE layout
+                const orderedViewNames: string[] = [];
+                const appWindows = await fin.Application.getCurrentSync().getChildWindows();
+                for (const win of appWindows) {
+                  try {
+                    const layout = fin.Platform.Layout.wrapSync(win.identity);
+                    const config = await layout.getConfig() as any;
+                    if (config?.content) {
+                      collectFromLayout(config.content, (cs) => cs.name, orderedViewNames);
+                    }
+                  } catch (e) { console.warn('[applySnapshot] layout error', e); }
+                }
+                console.log('[applySnapshot] orderedViewNames from live:', orderedViewNames);
+
+                // Match by position and apply
+                const len = Math.min(orderedTitles.length, orderedViewNames.length);
+                for (let i = 0; i < len; i++) {
+                  const title = orderedTitles[i];
+                  const viewName = orderedViewNames[i];
+                  if (title && viewName) {
+                    try {
+                      const viewObj = fin.View.wrapSync({ uuid: fin.me.uuid, name: viewName });
+                      await viewObj.executeJavaScript(`document.title = ${JSON.stringify(title)}`);
+                      setViewTitle(viewName, title);
+                      console.log('[applySnapshot] RESTORED', viewName, '→', title);
+                    } catch (e) { console.warn('[applySnapshot] failed', viewName, e); }
+                  }
+                }
+              } catch (e) { console.warn('[applySnapshot] error restoring titles', e); }
+            }, 3000);
+          }
         }
 
         /**
@@ -314,76 +508,114 @@ export class WorkspaceOverrideService {
           }
         }
 
-        // ============================================
-        // ADDITIONAL OVERRIDE METHODS (Examples)
-        // Uncomment and customize as needed
-        // ============================================
+        /**
+         * Override view creation to restore custom view titles from saved workspace.
+         * The custom title is stored in view customData.viewTitle.
+         */
+        async createView(payload: any, callerIdentity: any): Promise<any> {
+          console.log('[createView] customData:', payload?.opts?.customData, 'url:', payload?.opts?.url, 'name:', payload?.opts?.name,
+            'target.customData:', payload?.target?.customData,
+            'interop:', payload?.opts?.interop,
+            'allOptsKeys:', payload?.opts ? Object.keys(payload.opts) : 'none');
+          const view = await super.createView(payload, callerIdentity);
+          try {
+            const viewTitle = payload?.opts?.customData?.viewTitle
+              || payload?.target?.customData?.viewTitle;
+            const viewName = view?.identity?.name || view?.name || payload?.opts?.name || payload?.target?.name;
+            const viewUuid = view?.identity?.uuid || view?.uuid || fin.me.uuid;
+            console.log('[createView] viewTitle:', viewTitle, 'viewName:', viewName);
+            if (viewTitle && viewName) {
+              logger.info('Restoring custom view title', { viewTitle, viewName });
+              setViewTitle(viewName, viewTitle);
+              const viewObj = fin.View.wrapSync({ uuid: viewUuid, name: viewName });
+              let done = false;
+              const setTitle = async () => {
+                if (done) return;
+                try {
+                  await viewObj.executeJavaScript(`document.title = ${JSON.stringify(viewTitle)}`);
+                  console.log('[createView] Set document.title to', viewTitle);
+                  done = true;
+                } catch (e) { console.warn('[createView] Failed to set title', e); }
+              };
+              viewObj.once('page-title-updated' as any, () => setTimeout(setTitle, 50));
+              setTimeout(setTitle, 1000);
+              setTimeout(setTitle, 3000);
+            }
+          } catch (e) { console.warn('[createView] Error restoring title', e); }
+          return view;
+        }
 
         /**
-         * Override to customize page save behavior
-         * Example: Save pages to a remote API instead of localStorage
+         * Override getSnapshot to ensure custom view titles are captured in the snapshot.
+         * OpenFin snapshots may not include runtime-updated customData from updateOptions,
+         * so we re-read each view's current options and patch the snapshot.
          */
-        // async createSavedPage(req: CreateSavedPageRequest): Promise<void> {
-        //   logger.info('Creating saved page', { pageId: req.page.pageId });
-        //   // Custom implementation here (e.g., save to API)
-        //   return super.createSavedPage(req);
-        // }
+        async getSnapshot(...args: [undefined, OpenFin.ClientIdentity]): Promise<OpenFin.Snapshot> {
+          const snapshot = await super.getSnapshot(...args);
+          try {
+            // Read the LIVE title of every view and build a name→title map
+            const liveTitles = new Map<string, string>();
+            const customTitles = getViewTitles();
+            const app = fin.Application.getCurrentSync();
+            const appWindows = await app.getChildWindows();
+            console.log('[getSnapshot] childWindows count:', appWindows.length);
+            for (const win of appWindows) {
+              try {
+                const views = await win.getCurrentViews();
+                console.log('[getSnapshot] window', win.identity.name, 'views:', views.length);
+                for (const v of views) {
+                  try {
+                    const info = await v.getInfo() as any;
+                    const name = v.identity.name;
+                    const stored = customTitles[name];
+                    console.log('[getSnapshot] view', name, 'title:', info.title, 'stored:', stored);
+                    if (stored) {
+                      liveTitles.set(name, stored);
+                    } else if (info.title) {
+                      liveTitles.set(name, info.title);
+                    }
+                  } catch (e) { console.warn('[getSnapshot] view error', e); }
+                }
+              } catch (e) { console.warn('[getSnapshot] window error', e); }
+            }
+            console.log('[getSnapshot] liveTitles', [...liveTitles.entries()]);
+            if (liveTitles.size > 0 && snapshot?.windows) {
+              for (const win of snapshot.windows as any[]) {
+                const layouts = win?.layout?.content;
+                if (layouts) {
+                  patchLayoutContent(layouts, liveTitles);
+                }
+              }
+            }
+          } catch (err) {
+            logger.warn('Failed to patch snapshot with custom view titles', err);
+          }
+          return snapService.decorateSnapshot(snapshot);
+        }
 
         /**
-         * Override to customize context menu behavior
-         * Example: Add custom menu items to the global context menu
+         * Add "Rename View" to the view tab right-click context menu.
+         * The custom name is stored in view customData and persists across workspace save/restore.
          */
-        // async openGlobalContextMenu(
-        //   req: OpenGlobalContextMenuPayload,
-        //   callerIdentity: OpenFin.Identity
-        // ): Promise<void> {
-        //   logger.debug('Opening global context menu', { callerIdentity });
-        //   // Add custom menu items to req.template before calling super
-        //   return super.openGlobalContextMenu(req, callerIdentity);
-        // }
+        async openViewTabContextMenu(req: any, callerIdentity: any): Promise<void> {
+          const renameItem = {
+            type: 'normal',
+            label: 'Rename View',
+            data: {
+              type: 'Custom',
+              action: { id: 'rename-view' },
+            },
+          };
 
-        /**
-         * Override to customize view creation
-         * Example: Add custom properties or modify view options
-         */
-        // async createView(
-        //   payload: BrowserCreateViewPayload,
-        //   callerIdentity: OpenFin.Identity
-        // ): Promise<OpenFin.View> {
-        //   logger.info('Creating view', { callerIdentity });
-        //   // Modify payload if needed
-        //   return super.createView(payload, callerIdentity);
-        // }
-
-        /**
-         * Override to customize page close behavior
-         * Example: Show custom confirmation dialog
-         */
-        // async shouldPageClose(payload: ShouldPageClosePayload): Promise<ShouldPageCloseResult> {
-        //   logger.debug('Checking if page should close', { pageId: payload.page.pageId });
-        //   // Custom logic to determine if page should close
-        //   return super.shouldPageClose(payload);
-        // }
-
-        /**
-         * Override to customize theme selection
-         * Example: Persist theme preference to backend
-         */
-        // async setSelectedScheme(schemeType: ColorSchemeOptionType): Promise<void> {
-        //   logger.info('Setting theme scheme', { schemeType });
-        //   // Save to backend or custom storage
-        //   return super.setSelectedScheme(schemeType);
-        // }
-
-        /**
-         * Override to customize language/locale
-         * Example: Sync language with user preferences
-         */
-        // async setLanguage(locale: Locale): Promise<void> {
-        //   logger.info('Setting language', { locale });
-        //   // Save language preference
-        //   return super.setLanguage(locale);
-        // }
+          return super.openViewTabContextMenu({
+            ...req,
+            template: [
+              renameItem,
+              { type: 'separator' },
+              ...req.template,
+            ],
+          }, callerIdentity);
+        }
       }
       return new CustomWorkspacePlatformProvider() as WorkspacePlatformProvider;
     };

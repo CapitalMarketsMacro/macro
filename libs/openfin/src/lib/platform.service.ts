@@ -11,7 +11,7 @@ import { from, map, type Observable } from 'rxjs';
 import type { App } from '@openfin/workspace';
 import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
-import { WorkspaceOverrideService } from './workspace-override.service';
+import { WorkspaceOverrideService, setViewTitle } from './workspace-override.service';
 import type { ThemePresetPalettes } from './theme-preset.service';
 import { themeConfig } from '@macro/macro-design';
 import { Logger } from '@macro/logger';
@@ -236,6 +236,54 @@ export class PlatformService {
               } catch (err) {
                 logger.error('Error launching log uploader', err);
               }
+            }
+          },
+          'rename-view': async (event): Promise<void> => {
+            // Triggered from view tab context menu "Rename View"
+            const payload = event as any;
+            const selectedViews: Array<{ uuid: string; name: string }> = payload.selectedViews || [];
+            if (selectedViews.length === 0) return;
+
+            const viewIdentity = selectedViews[0];
+            try {
+              const view = fin.View.wrapSync(viewIdentity);
+              const currentInfo = await view.getInfo();
+              const currentTitle = (currentInfo as any).title || '';
+
+              // Detect dark mode for popup styling
+              let isDark = false;
+              try {
+                isDark = document.documentElement.classList.contains('dark');
+              } catch { /* default to light */ }
+
+              const encodedTitle = encodeURIComponent(currentTitle);
+              const popupUrl = `http://localhost:4202/rename-view.html?title=${encodedTitle}&dark=${isDark ? '1' : '0'}`;
+
+              // Show a popup window for renaming
+              const win = fin.Window.wrapSync(payload.windowIdentity || { uuid: fin.me.uuid, name: fin.me.name });
+              const result = await win.showPopupWindow({
+                name: `rename-view-${Date.now()}`,
+                url: popupUrl,
+                width: 280,
+                height: 130,
+                x: payload.x ?? 200,
+                y: payload.y ?? 200,
+                blurBehavior: 'close',
+                resultDispatchBehavior: 'close',
+              } as any);
+
+              console.log('[RenameView] popup result:', JSON.stringify(result), 'type:', typeof result.data, 'result.result:', result.result);
+              const newTitle = (typeof result.data === 'string' ? result.data : typeof result.result === 'string' ? result.result : String(result.data ?? result.result ?? '')).trim();
+              if (newTitle) {
+                // Track the title in our in-memory map (OpenFin updateOptions doesn't reliably persist customData)
+                setViewTitle(viewIdentity.name, newTitle);
+                // Set the document title in the view (updates the tab immediately)
+                await view.executeJavaScript(`document.title = ${JSON.stringify(newTitle)}`);
+                console.log('[RenameView] Saved', { viewName: viewIdentity.name, newTitle });
+                logger.info('View renamed', { view: viewIdentity.name, newTitle });
+              }
+            } catch (err) {
+              logger.error('Error renaming view', err);
             }
           },
         },
