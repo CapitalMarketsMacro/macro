@@ -77,6 +77,8 @@ export class StoreService {
     return from(
       Storefront.register({
         ...platformSettings,
+        // v24: Click app card to launch directly instead of showing details panel
+        cardClickBehavior: 'perform-primary-button-action' as any,
         getNavigation: async (): Promise<
           [
             StorefrontNavigationSection?,

@@ -122,6 +122,21 @@ export class ThemeService {
   }
 
   /**
+   * v24: Get the platform's generated palettes (light + dark) from the theme engine.
+   * Replaces the deprecated `getThemes()` API.
+   */
+  async getGeneratedPalettes(): Promise<{ dark: Record<string, string>; light: Record<string, string> } | null> {
+    if (typeof fin === 'undefined') return null;
+    try {
+      const workspacePlatform = getCurrentSync();
+      return await workspacePlatform.Theme.getGeneratedPalettes();
+    } catch (error) {
+      logger.error('Error getting generated palettes', error);
+      return null;
+    }
+  }
+
+  /**
    * Toggle between dark and light theme
    */
   async toggleTheme(): Promise<void> {

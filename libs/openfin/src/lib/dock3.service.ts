@@ -78,6 +78,7 @@ export class Dock3Service {
         'store',
         'notifications',
         'switchWorkspace',
+        'manageWorkspaces',
         'contentMenu',
       ],
       uiConfig: {
@@ -199,6 +200,8 @@ export class Dock3Service {
         id: fav.id,
         label: fav.label,
         icon: fav.icon || app?.icons?.[0]?.src || defaultIcon,
+        // v24: Enable right-click "Remove" option on dock favorites
+        contextMenu: { removeOption: true },
         itemData: {
           appId: fav.appId,
           url: app?.manifest,

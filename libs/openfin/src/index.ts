@@ -17,7 +17,7 @@ export { DockService as BaseDockService } from './lib/dock.service';
 export { Dock3Service as BaseDock3Service } from './lib/dock3.service';
 export { HomeService as BaseHomeService } from './lib/home.service';
 export { NotificationsService as BaseNotificationsService } from './lib/notifications.service';
-export type { NotificationLevel, LevelNotificationOptions } from './lib/notifications.service';
+export type { NotificationLevel, LevelNotificationOptions, NotificationToastMode } from './lib/notifications.service';
 export { WorkspaceStorageService as BaseWorkspaceStorageService } from './lib/workspace-storage.service';
 export { WorkspaceOverrideService as BaseWorkspaceOverrideService } from './lib/workspace-override.service';
 export { PlatformService as BasePlatformService } from './lib/platform.service';

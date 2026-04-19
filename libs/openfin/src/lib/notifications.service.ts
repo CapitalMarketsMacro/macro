@@ -14,6 +14,9 @@ const logger = Logger.getLogger('NotificationsService');
 /** Severity level for convenience notification methods. */
 export type NotificationLevel = 'info' | 'success' | 'warning' | 'error' | 'critical';
 
+/** v24 toast display mode. */
+export type NotificationToastMode = 'sticky' | 'transient' | 'none';
+
 /** Options accepted by the level-based convenience methods. */
 export interface LevelNotificationOptions {
   title: string;
@@ -22,6 +25,12 @@ export interface LevelNotificationOptions {
   source?: string;
   /** Custom icon URL (defaults to platform icon). */
   icon?: string;
+  /** v24: Toast display mode — 'sticky' persists, 'transient' auto-dismisses, 'none' goes straight to center. */
+  toast?: NotificationToastMode;
+  /** v24: Priority 1 (highest) to 4 (lowest) — affects ordering in Notification Center. */
+  priority?: 1 | 2 | 3 | 4;
+  /** v24: Sound mode — 'default' plays sound, 'silent' suppresses it. */
+  sound?: 'default' | 'silent';
 }
 
 /** Maps severity levels to OpenFin indicator colors. */
@@ -116,6 +125,10 @@ export class NotificationsService {
       icon: options.icon ?? this.platformIcon ?? '',
       indicator: { color: LEVEL_INDICATOR_COLORS[level], text: LEVEL_LABELS[level] },
       stream: { id: streamId, displayName: source, appId: streamId },
+      // v24: Toast display mode, priority, and sound options
+      ...(options.toast && { toast: options.toast }),
+      ...(options.priority && { priority: options.priority }),
+      ...(options.sound && { soundOptions: { mode: options.sound } }),
     } as NotificationOptions);
   }
 

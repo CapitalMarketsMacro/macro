@@ -83,6 +83,7 @@ describe('Dock3Service', () => {
         'store',
         'notifications',
         'switchWorkspace',
+        'manageWorkspaces',
         'contentMenu',
       ]);
     });
@@ -172,6 +173,7 @@ describe('Dock3Service', () => {
         id: 'fav-1',
         label: 'Fav One',
         icon: 'app1.png',
+        contextMenu: { removeOption: true },
         itemData: { appId: 'app-1', url: 'manifest.json' },
       });
     });

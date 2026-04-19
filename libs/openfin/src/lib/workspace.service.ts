@@ -110,6 +110,10 @@ export class WorkspaceService {
     );
   }
 
+  /**
+   * Restore last saved workspace using the v24 built-in API.
+   * Returns 'success', 'not-saved-workspace', or 'user-declined'.
+   */
   private restoreLastSavedWorkspace(): Observable<void> {
     return new Observable<void>((observer) => {
       this.restoreLastSavedWorkspaceAsync()
@@ -128,48 +132,34 @@ export class WorkspaceService {
 
   private async restoreLastSavedWorkspaceAsync(): Promise<void> {
     const nats = getAnalyticsNats();
-    const lastSavedId = await this.storageService.getLastSavedWorkspaceId();
-    if (!lastSavedId) {
-      this.status$.next('No saved workspace found');
-      nats.publish({ source: 'Platform', type: 'Workspace', action: 'NoSavedWorkspace' }).catch(() => {});
-      return;
-    }
-
     this.status$.next('Restoring last saved workspace...');
-
-    const workspaces = await this.storageService.getWorkspaces();
-    const workspace = workspaces.find((w) => w.workspaceId === lastSavedId);
-
-    if (!workspace) {
-      this.status$.next('Last saved workspace not found');
-      return;
-    }
-
-    nats.publish({
-      source: 'Platform', type: 'Workspace', action: 'Restoring',
-      value: workspace.title,
-      data: { workspaceId: workspace.workspaceId },
-    }).catch(() => {});
 
     const workspacePlatform = getCurrentSync();
     try {
-      const result = await workspacePlatform.applyWorkspace(workspace, {
+      // v24: Use built-in restoreLastSavedWorkspace() instead of manual lookup + apply
+      const result = await workspacePlatform.restoreLastSavedWorkspace({
         skipPrompt: true,
         applySnapshotOptions: {
           closeExistingWindows: true,
         },
       });
-      if (result) {
-        this.status$.next(`Restored workspace: ${workspace.title}`);
-        nats.publish({
-          source: 'Platform', type: 'Workspace', action: 'Restored',
-          value: workspace.title,
-          data: { workspaceId: workspace.workspaceId },
-        }).catch(() => {});
-      } else {
-        this.status$.next('Failed to restore workspace');
-        nats.publish({ source: 'Platform', type: 'Workspace', action: 'RestoreFailed',
-          value: workspace.title }).catch(() => {});
+
+      switch (result) {
+        case 'success':
+          this.status$.next('Restored last saved workspace');
+          nats.publish({ source: 'Platform', type: 'Workspace', action: 'Restored' }).catch(() => {});
+          break;
+        case 'not-saved-workspace':
+          this.status$.next('No saved workspace found');
+          nats.publish({ source: 'Platform', type: 'Workspace', action: 'NoSavedWorkspace' }).catch(() => {});
+          break;
+        case 'user-declined':
+          this.status$.next('Workspace restore declined');
+          nats.publish({ source: 'Platform', type: 'Workspace', action: 'RestoreDeclined' }).catch(() => {});
+          break;
+        default:
+          this.status$.next('Workspace restore completed');
+          break;
       }
     } catch (error) {
       logger.error('Error restoring workspace', error);
