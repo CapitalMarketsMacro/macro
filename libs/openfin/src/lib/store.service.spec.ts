@@ -416,21 +416,18 @@ describe('StoreService', () => {
   // ── show ────────────────────────────────────────────────────
 
   describe('show', () => {
-    it('should call Storefront.show()', () => {
+    it('should call Storefront.show()', async () => {
       (Storefront.show as jest.Mock).mockResolvedValue(undefined);
 
-      service.show();
+      await service.show();
 
       expect(Storefront.show).toHaveBeenCalledTimes(1);
     });
 
-    it('should return the result of Storefront.show()', () => {
-      const expected = Promise.resolve('shown');
-      (Storefront.show as jest.Mock).mockReturnValue(expected);
+    it('should resolve after Storefront.show() completes', async () => {
+      (Storefront.show as jest.Mock).mockResolvedValue(undefined);
 
-      const result = service.show();
-
-      expect(result).toBe(expected);
+      await expect(service.show()).resolves.toBeUndefined();
     });
   });
 });

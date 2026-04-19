@@ -5,7 +5,7 @@ import {
   type StoreRegistration,
   type StorefrontNavigationSection,
 } from '@openfin/workspace';
-import type { StoreCustomButtonActionPayload } from '@openfin/workspace-platform';
+import { getCurrentSync, type StoreCustomButtonActionPayload } from '@openfin/workspace-platform';
 import { from, tap } from 'rxjs';
 import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
@@ -61,7 +61,10 @@ export class StoreService {
       ] as StoreButtonConfig[],
     }));
 
-    // Track Storefront window lifecycle via platform events
+    // Track Storefront window lifecycle and enforce theme on creation.
+    // The Store window is created lazily — it doesn't exist until the user
+    // opens it via Dock/Home. When it appears, re-apply the current scheme
+    // so it renders dark (OpenFin defaults to light for new windows).
     try {
       const app = fin.Application.getCurrentSync();
       app.on('window-created', (event: any) => {
@@ -70,6 +73,13 @@ export class StoreService {
             source: 'Store', type: 'Storefront', action: 'Open',
             data: { windowName: event.name },
           }).catch(() => {});
+          // Re-apply current scheme to the newly created Store window
+          try {
+            const platform = getCurrentSync();
+            platform.Theme.getSelectedScheme().then((scheme) => {
+              platform.Theme.setSelectedScheme(scheme);
+            });
+          } catch { /* ignore */ }
         }
       });
     } catch { /* not in OpenFin */ }
@@ -166,11 +176,19 @@ export class StoreService {
     );
   }
 
-  show() {
+  async show() {
     getAnalyticsNats().publish({
       source: 'Store', type: 'Storefront', action: 'Show',
     }).catch(() => {});
-    return Storefront.show();
+    await Storefront.show();
+    // The Storefront window is created lazily on first show.
+    // Re-apply the current scheme so the newly created window picks it up —
+    // without this, the Store renders with OpenFin's default light theme.
+    try {
+      const platform = getCurrentSync();
+      const scheme = await platform.Theme.getSelectedScheme();
+      await platform.Theme.setSelectedScheme(scheme);
+    } catch { /* ignore if not in OpenFin */ }
   }
 }
 

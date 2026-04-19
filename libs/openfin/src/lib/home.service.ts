@@ -8,6 +8,7 @@ import {
   type HomeSearchListenerResponse,
   type HomeSearchResult,
 } from '@openfin/workspace';
+import { getCurrentSync } from '@openfin/workspace-platform';
 import { from } from 'rxjs';
 import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
@@ -52,7 +53,7 @@ export class HomeService {
       },
     };
 
-    // Track Home window lifecycle via platform events
+    // Track Home window lifecycle and enforce theme on creation
     try {
       const app = fin.Application.getCurrentSync();
       app.on('window-created', (event: any) => {
@@ -61,6 +62,13 @@ export class HomeService {
             source: 'Home', type: 'Home', action: 'Open',
             data: { windowName: event.name },
           }).catch(() => {});
+          // Re-apply current scheme to the newly created Home window
+          try {
+            const platform = getCurrentSync();
+            platform.Theme.getSelectedScheme().then((scheme) => {
+              platform.Theme.setSelectedScheme(scheme);
+            });
+          } catch { /* ignore */ }
         }
       });
     } catch { /* not in OpenFin */ }
