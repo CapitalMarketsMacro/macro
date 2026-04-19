@@ -15,14 +15,21 @@ Use the \`import_figma_app\` tool from \`macro-mcp\`:
 \`\`\`
 Tool: import_figma_app
 Parameters:
-  appName: "risk-dashboard"
-  title: "Risk Dashboard"
-  description: "Real-time risk monitoring dashboard"
-  port: 4205
-  figmaSourcePath: "C:/Users/me/figma-exports/risk-dashboard"
+  appName: "risk-dashboard"           # kebab-case name
+  sourcePath: "/path/to/figma.zip"    # zip file or extracted folder
+  title: "Risk Dashboard"             # optional (auto-detected from package.json)
+  description: ""                     # optional (auto-detected)
+  port: 4205                          # optional (auto-detected: scans existing apps)
 \`\`\`
 
-This generates complete step-by-step instructions covering all 11 steps below.
+The tool handles everything automatically:
+- Extracts .zip files (handles nested root folders common in Figma Make exports)
+- Auto-detects title/description from Figma's package.json
+- Auto-detects next available port by scanning existing apps
+- Detects Tailwind CSS and configures PostCSS
+- Wires OpenFin theme sync (responds to workspace dark/light toggle)
+- Installs missing Figma dependencies into the monorepo
+- Creates Vite 8 compatible config with \`import.meta.dirname\`
 
 ### Approach 2: Figma MCP Server (Direct from Figma URL)
 If you have the Figma MCP server configured, you can:
@@ -43,7 +50,7 @@ If you have the Figma MCP server configured, you can:
 |------|---------|
 | \`apps/<name>/\` | NX React app with Vite |
 | \`apps/<name>/src/app/app.tsx\` | Root component with BrowserRouter basename, theme sync |
-| \`apps/<name>/vite.config.ts\` | Vite config with base path + @macro/* aliases |
+| \`apps/<name>/vite.config.mts\` | Vite 8 config with base path + @macro/* aliases |
 | \`apps/macro-workspace/public/local/<name>.fin.json\` | OpenFin view manifest (local) |
 | \`apps/macro-workspace/public/openshift/<name>.fin.json\` | OpenFin view manifest (openshift) |
 | Entry in \`local/manifest.fin.json\` | App registration in platform manifest |
