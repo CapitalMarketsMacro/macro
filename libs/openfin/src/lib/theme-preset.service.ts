@@ -1,4 +1,5 @@
 import { Logger } from '@macro/logger';
+import { themeConfig } from '@macro/macro-design';
 
 const logger = Logger.getLogger('ThemePresetService');
 
@@ -41,7 +42,7 @@ export class ThemePresetService {
     try {
       return localStorage.getItem(STORAGE_KEY) ?? 'macro-etrading';
     } catch {
-      return 'default';
+      return 'macro-etrading';
     }
   }
 
@@ -56,20 +57,28 @@ export class ThemePresetService {
   async loadPreset(id: string): Promise<ThemePresetPalettes> {
     const preset = PRESETS.find((p) => p.id === id);
     if (!preset) {
-      logger.warn(`Unknown preset "${id}", falling back to default`);
-      return this.loadPreset('macro-etrading');
+      logger.warn(`Unknown preset "${id}", using compiled themeConfig`);
+      return this.getCompiledFallback();
     }
     try {
       const response = await fetch(`/${preset.file}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return await response.json();
     } catch (error) {
-      logger.error(`Failed to load theme preset "${id}"`, error);
-      throw error;
+      logger.error(`Failed to load theme preset "${id}", using compiled themeConfig`, error);
+      return this.getCompiledFallback();
     }
   }
 
   async loadActivePreset(): Promise<ThemePresetPalettes> {
     return this.loadPreset(this.getActivePresetId());
+  }
+
+  /** Compiled fallback — never fails, uses themeConfig from @macro/macro-design. */
+  private getCompiledFallback(): ThemePresetPalettes {
+    return {
+      dark: themeConfig.dark as unknown as Record<string, string>,
+      light: themeConfig.light as unknown as Record<string, string>,
+    };
   }
 }
