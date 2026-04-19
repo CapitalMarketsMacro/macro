@@ -190,24 +190,33 @@ export class WorkspaceService {
     customSettings?: CustomSettings;
   }) {
     this.status$.next('Registering workspace components...');
+    // Register Home, Store, Notifications, Snap first — the Dock's workspace
+    // buttons (home, store, notifications) only render if those providers are
+    // already registered. Then init Dock3 so it discovers all providers.
     return forkJoin([
-      from(
-        this.dock3Service.init(
-          platformSettings,
-          customSettings?.apps,
-          customSettings?.dock3
-        )
-      ),
       this.homeService.register(platformSettings),
       this.storeService.register(platformSettings),
       from(this.notificationsService.register(platformSettings)),
       from(this.snapService.init(platformSettings.id, customSettings?.snapProvider)),
-    ]);
+    ]).pipe(
+      concatMap(() =>
+        from(
+          this.dock3Service.init(
+            platformSettings,
+            customSettings?.apps,
+            customSettings?.dock3
+          )
+        )
+      ),
+    );
   }
 
   private showStartupComponents() {
-    // Dock3 auto-shows on init, only need to show Home
-    return from(this.homeService.show());
+    // Dock3 auto-shows on init; also show Home and Store at startup
+    return forkJoin([
+      from(this.homeService.show()),
+      from(this.storeService.show()),
+    ]).pipe(map(() => undefined));
   }
 
   private async setAppLogUsername(retries = 5, delayMs = 2000): Promise<void> {
