@@ -9,6 +9,7 @@ import { registerRegisterOpenfinApp } from './register-openfin-app.js';
 import { registerImportFigmaApp } from './import-figma-app.js';
 import { registerAmpsExplore } from './amps-explore.js';
 import { registerAmpsCreateMfe } from './amps-create-mfe.js';
+import { registerListIcons } from './list-icons.js';
 
 export function registerTools(server: McpServer): void {
   registerScaffoldAngularApp(server);
@@ -21,4 +22,5 @@ export function registerTools(server: McpServer): void {
   registerImportFigmaApp(server);
   registerAmpsExplore(server);
   registerAmpsCreateMfe(server);
+  registerListIcons(server);
 }

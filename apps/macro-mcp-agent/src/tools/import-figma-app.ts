@@ -70,6 +70,114 @@ function findNextAvailablePort(root: string): number {
   return port;
 }
 
+/** Keyword → Material Icon mapping for auto-suggesting icons based on app name/title. */
+const ICON_KEYWORDS: Record<string, string[]> = {
+  // Financial & Trading
+  candlestick_chart: ['candlestick', 'ohlc', 'forex', 'fx'],
+  show_chart: ['chart', 'line', 'timeseries', 'price'],
+  bar_chart: ['bar', 'histogram'],
+  trending_up: ['trending', 'growth', 'performance', 'pnl', 'profit'],
+  trending_down: ['loss', 'decline', 'drawdown'],
+  account_balance: ['bank', 'institution', 'treasury', 'fixed-income', 'rates'],
+  payments: ['payment', 'settlement', 'transfer', 'wire'],
+  currency_exchange: ['currency', 'exchange', 'swap', 'conversion'],
+  attach_money: ['money', 'dollar', 'usd', 'cash', 'fund'],
+  savings: ['savings', 'deposit', 'yield'],
+  credit_card: ['credit', 'card', 'charge'],
+  price_check: ['price', 'quote', 'valuation', 'mark'],
+  request_quote: ['rfq', 'request', 'quote', 'ticket', 'order'],
+  receipt_long: ['receipt', 'confirm', 'fill', 'execution'],
+
+  // Analytics & Dashboards
+  dashboard: ['dashboard', 'overview', 'summary', 'home'],
+  analytics: ['analytics', 'analysis', 'stats', 'statistics'],
+  assessment: ['assessment', 'report', 'review', 'audit'],
+  insights: ['insights', 'intelligence', 'signal'],
+  monitoring: ['monitor', 'surveillance', 'watch', 'alert'],
+  pie_chart: ['pie', 'allocation', 'breakdown', 'composition'],
+  leaderboard: ['leaderboard', 'ranking', 'top', 'best'],
+  area_chart: ['area', 'cumulative', 'filled'],
+
+  // Data & Grids
+  table_chart: ['table', 'grid', 'blotter', 'spreadsheet', 'data'],
+  grid_view: ['grid', 'tile', 'card', 'gallery'],
+  view_list: ['list', 'log', 'feed', 'stream'],
+  dataset: ['dataset', 'catalog', 'reference'],
+  database: ['database', 'store', 'warehouse'],
+
+  // Risk & Compliance
+  security: ['security', 'secure', 'protection'],
+  shield: ['shield', 'guard', 'defense'],
+  verified_user: ['verified', 'compliant', 'approved'],
+  policy: ['policy', 'compliance', 'regulation', 'rule'],
+  health_and_safety: ['risk', 'safety', 'health', 'var', 'exposure'],
+
+  // Execution & Orders
+  swap_horiz: ['swap', 'trade', 'exchange', 'bilateral'],
+  bolt: ['bolt', 'fast', 'quick', 'instant', 'real-time', 'realtime'],
+  speed: ['speed', 'latency', 'performance', 'benchmark'],
+  timer: ['timer', 'countdown', 'expiry', 'maturity'],
+
+  // Communication
+  notifications: ['notification', 'alert', 'alarm', 'event'],
+  mail: ['mail', 'email', 'message', 'inbox'],
+  campaign: ['campaign', 'broadcast', 'announce'],
+
+  // Documents & Reports
+  article: ['article', 'news', 'commentary', 'research'],
+  description: ['description', 'document', 'spec', 'detail'],
+  assignment: ['assignment', 'task', 'action', 'workflow'],
+  summarize: ['summarize', 'digest', 'brief', 'tldr'],
+  inventory: ['inventory', 'position', 'holding', 'portfolio'],
+
+  // Business
+  business: ['business', 'office', 'enterprise'],
+  corporate_fare: ['corporate', 'org', 'team', 'desk'],
+  groups: ['group', 'team', 'people', 'user', 'client'],
+  manage_accounts: ['account', 'manage', 'admin', 'client'],
+
+  // General
+  settings: ['settings', 'config', 'preference'],
+  explore: ['explore', 'discover', 'browse', 'navigate'],
+  palette: ['palette', 'theme', 'design', 'style', 'color', 'ui'],
+  rocket_launch: ['launch', 'start', 'deploy', 'new'],
+  star: ['star', 'favorite', 'important'],
+  apps: ['app', 'application', 'module', 'tool'],
+  widgets: ['widget', 'component', 'panel'],
+  extension: ['extension', 'plugin', 'addon'],
+};
+
+/**
+ * Auto-suggest an icon based on app name and title keywords.
+ * Returns the material icon name or 'apps' as fallback.
+ */
+function suggestIcon(appName: string, title: string): string {
+  const text = `${appName} ${title}`.toLowerCase();
+  let bestIcon = 'apps';
+  let bestScore = 0;
+
+  for (const [icon, keywords] of Object.entries(ICON_KEYWORDS)) {
+    for (const kw of keywords) {
+      if (text.includes(kw) && kw.length > bestScore) {
+        bestIcon = icon;
+        bestScore = kw.length;
+      }
+    }
+  }
+  return bestIcon;
+}
+
+/**
+ * Get the list of available material icons from the index.
+ */
+function getAvailableIcons(root: string): string[] {
+  const indexPath = path.join(root, 'apps/macro-workspace/public/icons/material/index.json');
+  if (!fs.existsSync(indexPath)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(indexPath, 'utf8')).icons ?? [];
+  } catch { return []; }
+}
+
 /**
  * Extract a .zip file using the system `unzip` command.
  * Handles nested root folders (common in Figma Make exports).
@@ -108,6 +216,7 @@ function importFigmaApp(
   description: string,
   port: number | undefined,
   sourcePath: string,
+  icon?: string,
 ): { success: boolean; summary: string; steps: string[] } {
   const root = findWorkspaceRoot();
   const appDir = path.join(root, 'apps', appName);
@@ -158,6 +267,22 @@ function importFigmaApp(
     }
     if (!autoTitle) autoTitle = appName.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
     if (!autoDescription) autoDescription = `${autoTitle} imported from Figma Make`;
+
+    // ── Resolve icon ──
+    const availableIcons = getAvailableIcons(root);
+    let resolvedIcon: string;
+    if (icon && availableIcons.includes(icon)) {
+      resolvedIcon = icon;
+    } else if (icon) {
+      // User provided an icon name not in our set — try it anyway (may be a custom file)
+      resolvedIcon = icon;
+      steps.push(`Warning: icon "${icon}" not found in material icons set, using as-is`);
+    } else {
+      resolvedIcon = suggestIcon(appName, autoTitle);
+      steps.push(`Auto-selected icon: ${resolvedIcon} (based on app name/title)`);
+    }
+    const iconUrl = `http://localhost:4202/icons/material/${resolvedIcon}.svg`;
+    const osIconUrl = `https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/material/${resolvedIcon}.svg`;
 
     // ── Create project structure (skip NX generator — manual is more reliable) ──
     fs.mkdirSync(path.join(appDir, 'src/app'), { recursive: true });
@@ -459,7 +584,7 @@ ${tailwindCssBlock}  resolve: {
       appId: appName, name: appName, title: autoTitle, description: autoDescription,
       manifest: `http://localhost:4202/local/${appName}.fin.json`,
       manifestType: 'view',
-      icons: [{ src: 'http://localhost:4202/icons/platform.svg' }],
+      icons: [{ src: iconUrl }],
       contactEmail: 'contact@example.com', supportEmail: 'support@example.com',
       publisher: 'OpenFin', intents: [], images: [],
       tags: ['view', 'react', 'figma-make'],
@@ -467,7 +592,7 @@ ${tailwindCssBlock}  resolve: {
     const osAppEntry = {
       ...localAppEntry,
       manifest: `https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/${appName}.fin.json`,
-      icons: [{ src: 'https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg' }],
+      icons: [{ src: osIconUrl }],
     };
 
     addAppToJsonFile(path.join(publicLocal, 'manifest.fin.json'), localAppEntry);
@@ -479,7 +604,7 @@ ${tailwindCssBlock}  resolve: {
     // ── Add to Dock favorites ──
     addDockFavorite(path.join(publicLocal, 'settings.json'), {
       type: 'item', id: `fav-${appName}`, label: autoTitle,
-      icon: 'http://localhost:4202/icons/platform.svg', appId: appName,
+      icon: iconUrl, appId: appName,
     });
     steps.push('Added to Dock favorites');
 
@@ -614,9 +739,10 @@ Works with Claude Code, VS Code Copilot, GitHub Copilot, or any MCP client.`,
       description: z.string().default('').describe('Short description (auto-detected from Figma package.json if empty)'),
       port: z.number().optional().describe('Dev server port (auto-detected if omitted — scans existing apps to find next available port starting from 4204)'),
       sourcePath: z.string().describe('Path to Figma Make export folder or .zip file'),
+      icon: z.string().optional().describe('Material icon name for OpenFin Home/Store/Dock (e.g., "dashboard", "candlestick_chart", "table_chart"). Auto-suggested from app name if omitted. See all 115 icons at apps/macro-workspace/public/icons/material/'),
     },
-    async ({ appName, title, description, port, sourcePath }) => {
-      const result = importFigmaApp(appName, title, description, port, sourcePath);
+    async ({ appName, title, description, port, sourcePath, icon }) => {
+      const result = importFigmaApp(appName, title, description, port, sourcePath, icon);
       const text = result.success
         ? `${result.summary}\n\nCompleted steps:\n${result.steps.map((s, i) => `  ${i + 1}. ${s}`).join('\n')}`
         : `ERROR: ${result.summary}\n\nCompleted before failure:\n${result.steps.map((s, i) => `  ${i + 1}. ${s}`).join('\n')}`;
