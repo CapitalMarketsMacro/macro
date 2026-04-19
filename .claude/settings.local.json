@@ -103,7 +103,10 @@
       "Bash(cp E:/MacroDesktopMFE/macro/dist/apps/macro-mcp-agent/package-lock.json E:/MacroMCPAgent/)",
       "Read(//e//**)",
       "Bash(pkill -f MacroMCPAgent/main.js)",
-      "Bash(cp apps/macro-mcp/src/tools/import-figma-app.ts apps/macro-mcp-agent/src/tools/import-figma-app.ts)"
+      "Bash(cp apps/macro-mcp/src/tools/import-figma-app.ts apps/macro-mcp-agent/src/tools/import-figma-app.ts)",
+      "Bash(awk '{print $NF}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('name','?'\\), d.get\\('version','?'\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('name',''\\), d.get\\('version',''\\)\\)\")"
     ]
   },
   "enableAllProjectMcpServers": true

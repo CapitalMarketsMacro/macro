@@ -2,14 +2,14 @@
 
 ## Project Overview
 
-NX 22.5 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace into a unified platform with shared libraries for real-time market data, enterprise messaging, and FDC3 interoperability.
+NX 22.6 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace into a unified platform with shared libraries for real-time market data, enterprise messaging, and FDC3 interoperability.
 
 ## Quick Reference
 
 | App                | Port | Framework             | Command                           |
 | ------------------ | ---- | --------------------- | --------------------------------- |
 | macro-angular      | 4200 | Angular 21 (zoneful)  | `npm run start:angular`           |
-| macro-react        | 4201 | React 19 + Vite 7     | `npm run start:react`             |
+| macro-react        | 4201 | React 19 + Vite 8     | `npm run start:react`             |
 | macro-workspace    | 4202 | Angular 21 (zoneless) | `npm run start:workspace`         |
 | market-data-server | 3000 | Node.js WebSocket     | `npx nx serve market-data-server` |
 | All three apps     | -    | -                     | `npm start`                       |
@@ -100,7 +100,7 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 
 **React (macro-react):**
 
-- React 19 + Vite 7
+- React 19 + Vite 8
 - React Router DOM 6.x for routing
 - Shadcn UI (Radix primitives) for navigation components
 - PrimeReact 11 with Aura theme preset
@@ -133,7 +133,7 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 - **Prettier**: single quotes (`"singleQuote": true`), default everything else
 - **EditorConfig**: UTF-8, 2-space indentation, LF newlines, final newline
 - **ESLint**: NX flat config with `@nx/enforce-module-boundaries` enabled
-- **TypeScript**: 5.9, strict-ish (skipLibCheck, experimentalDecorators)
+- **TypeScript**: 5.9.3, strict-ish (skipLibCheck, experimentalDecorators)
 
 ## Testing
 

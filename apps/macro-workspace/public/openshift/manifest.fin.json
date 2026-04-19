@@ -3,7 +3,7 @@
   "licenseKey": "openfin-demo-license-key",
   "runtime": {
     "arguments": "--v=1 --enable-mesh --security-realm=macro-workspace",
-    "version": "43.142.101.2"
+    "version": "44.146.100.109"
   },
   "platform": {
     "uuid": "macro-workspace-platform",
