@@ -10,7 +10,7 @@ import { NotificationsService } from './notifications.service';
 import { WorkspaceStorageService } from './workspace-storage.service';
 import { ThemePresetService } from './theme-preset.service';
 import { SnapService } from './snap.service';
-import { getCurrentSync, ColorSchemeOptionType } from '@openfin/workspace-platform';
+import { getCurrentSync } from '@openfin/workspace-platform';
 import { Logger } from '@macro/logger';
 import { getAnalyticsNats } from './analytics-nats.service';
 
@@ -82,8 +82,6 @@ export class WorkspaceService {
           tap(() => nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'PlatformCreated' }).catch(() => {})),
           concatMap(() => this.awaitPlatformReady()),
           tap(() => nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'PlatformReady' }).catch(() => {})),
-          // Enforce dark scheme — OpenFin may cache a stale 'light' preference from a prior session
-          concatMap(() => from(this.ensureDarkScheme())),
           concatMap(() => this.registerComponents(settings)),
           tap(() => nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'ComponentsRegistered',
             data: { components: ['dock', 'home', 'store', 'notifications', 'snap'] } }).catch(() => {})),
@@ -240,24 +238,6 @@ export class WorkspaceService {
       }
     }
     logger.error('setAppLogUsername failed after all retries');
-  }
-
-  /**
-   * Ensure dark scheme is active after platform init.
-   * OpenFin may cache a stale scheme from a prior session, causing workspace
-   * components (Home, Store, Dock) to render in light mode unexpectedly.
-   */
-  private async ensureDarkScheme(): Promise<void> {
-    try {
-      const workspacePlatform = getCurrentSync();
-      const currentScheme = await workspacePlatform.Theme.getSelectedScheme();
-      if (currentScheme !== ColorSchemeOptionType.Dark) {
-        logger.info('Enforcing dark scheme (was: ' + currentScheme + ')');
-        await workspacePlatform.Theme.setSelectedScheme(ColorSchemeOptionType.Dark);
-      }
-    } catch (error) {
-      logger.warn('Failed to enforce dark scheme', error);
-    }
   }
 
   private isOpenFin() {
