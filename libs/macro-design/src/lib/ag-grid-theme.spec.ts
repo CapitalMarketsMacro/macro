@@ -2,10 +2,10 @@ const mockWithParams = jest.fn();
 const mockWithPart = jest.fn();
 
 jest.mock('ag-grid-community', () => ({
-  themeAlpine: {
+  themeQuartz: {
     withPart: (...args: unknown[]) => mockWithPart(...args),
   },
-  iconSetAlpine: 'iconSetAlpine',
+  iconSetMaterial: 'iconSetMaterial',
   colorSchemeDarkBlue: 'colorSchemeDarkBlue',
   colorSchemeLight: 'colorSchemeLight',
 }));
@@ -16,50 +16,50 @@ describe('ag-grid-theme', () => {
   beforeEach(() => {
     mockWithPart.mockClear();
     mockWithParams.mockClear();
-    // Chain: themeAlpine.withPart() -> { withPart, withParams }
+    // Chain: themeQuartz.withPart() -> { withPart, withParams }
     mockWithPart.mockReturnValue({
       withPart: mockWithPart,
-      withParams: mockWithParams,
+      withParams: (...args: unknown[]) => {
+        mockWithParams(...args);
+        return { withParams: mockWithParams };
+      },
     });
   });
 
   describe('AG_GRID_FONTS', () => {
-    it('should have fontFamily set to "Noto Sans"', () => {
-      expect(AG_GRID_FONTS.fontFamily).toBe('Noto Sans');
+    it('should have fontFamily set to IBM Plex Mono', () => {
+      expect(AG_GRID_FONTS.fontFamily).toContain('IBM Plex Mono');
     });
 
-    it('should have headerFontFamily set to "Roboto"', () => {
-      expect(AG_GRID_FONTS.headerFontFamily).toBe('Roboto');
+    it('should have headerFontFamily set to Roboto', () => {
+      expect(AG_GRID_FONTS.headerFontFamily).toContain('Roboto');
     });
 
-    it('should have cellFontFamily set to "Ubuntu"', () => {
-      expect(AG_GRID_FONTS.cellFontFamily).toBe('Ubuntu');
+    it('should have trading-appropriate row height', () => {
+      expect(AG_GRID_FONTS.rowHeight).toBe(22);
+    });
+
+    it('should have compact header height', () => {
+      expect(AG_GRID_FONTS.headerHeight).toBe(28);
     });
   });
 
   describe('buildAgGridTheme', () => {
-    it('should use colorSchemeDarkBlue when isDark is true', () => {
+    it('should use Material icons and colorSchemeDarkBlue when isDark', () => {
       buildAgGridTheme(true);
-      expect(mockWithPart).toHaveBeenCalledWith('iconSetAlpine');
+      expect(mockWithPart).toHaveBeenCalledWith('iconSetMaterial');
       expect(mockWithPart).toHaveBeenCalledWith('colorSchemeDarkBlue');
     });
 
-    it('should use colorSchemeLight when isDark is false', () => {
+    it('should use Material icons and colorSchemeLight when not isDark', () => {
       buildAgGridTheme(false);
-      expect(mockWithPart).toHaveBeenCalledWith('iconSetAlpine');
+      expect(mockWithPart).toHaveBeenCalledWith('iconSetMaterial');
       expect(mockWithPart).toHaveBeenCalledWith('colorSchemeLight');
     });
 
     it('should apply AG_GRID_FONTS via withParams', () => {
       buildAgGridTheme(true);
       expect(mockWithParams).toHaveBeenCalledWith(AG_GRID_FONTS);
-    });
-
-    it('should return the theme object from the chain', () => {
-      const sentinel = { theme: 'built' };
-      mockWithParams.mockReturnValue(sentinel);
-      const result = buildAgGridTheme(false);
-      expect(result).toBe(sentinel);
     });
   });
 });

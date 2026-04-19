@@ -492,6 +492,7 @@ export default App;
     fs.writeFileSync(path.join(appDir, 'src/main.tsx'), `import * as ReactDOM from 'react-dom/client';
 import App from './app/app';
 import '../../../libs/macro-design/src/lib/css/fonts.css';
+import '../../../libs/macro-design/src/lib/css/macro-etrading.css';
 import '../../../libs/macro-design/src/lib/css/macro-design.css';
 ${figmaCssImports.join('\n')}
 

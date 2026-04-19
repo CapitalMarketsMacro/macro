@@ -16,6 +16,7 @@ export interface ThemePresetInfo {
 const STORAGE_KEY = 'workspace-theme-preset';
 
 const PRESETS: ThemePresetInfo[] = [
+  { id: 'macro-etrading', label: 'Macro E-Trading', file: 'macro-etrading-theme.json' },
   { id: 'default', label: 'Default', file: 'default-theme.json' },
   { id: 'carbon-graphite', label: 'Carbon Graphite', file: 'carbon-graphite.json' },
   { id: 'midnight-trader', label: 'Midnight Trader', file: 'midnight-trader.json' },
@@ -38,7 +39,7 @@ export class ThemePresetService {
 
   getActivePresetId(): string {
     try {
-      return localStorage.getItem(STORAGE_KEY) ?? 'default';
+      return localStorage.getItem(STORAGE_KEY) ?? 'macro-etrading';
     } catch {
       return 'default';
     }
@@ -56,7 +57,7 @@ export class ThemePresetService {
     const preset = PRESETS.find((p) => p.id === id);
     if (!preset) {
       logger.warn(`Unknown preset "${id}", falling back to default`);
-      return this.loadPreset('default');
+      return this.loadPreset('macro-etrading');
     }
     try {
       const response = await fetch(`/${preset.file}`);

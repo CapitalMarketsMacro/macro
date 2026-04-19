@@ -26,15 +26,15 @@ describe('theme.config', () => {
     });
 
     it('should have brandPrimary set', () => {
-      expect(themeConfig.dark.brandPrimary).toBe('#0A76D3');
+      expect(themeConfig.dark.brandPrimary).toBe('#2AA6E6');
     });
 
     it('should have backgroundPrimary set', () => {
-      expect(themeConfig.dark.backgroundPrimary).toBe('#1E1F23');
+      expect(themeConfig.dark.backgroundPrimary).toBe('#0B0D12');
     });
 
     it('should have textDefault set', () => {
-      expect(themeConfig.dark.textDefault).toBe('#FFFFFF');
+      expect(themeConfig.dark.textDefault).toBe('#E6E8EC');
     });
 
     it('should have status colors defined', () => {
@@ -60,12 +60,12 @@ describe('theme.config', () => {
       }
     });
 
-    it('should have backgroundPrimary set to white', () => {
-      expect(themeConfig.light.backgroundPrimary).toBe('#FFFFFF');
+    it('should have backgroundPrimary set', () => {
+      expect(themeConfig.light.backgroundPrimary).toBe('#ECEEF2');
     });
 
     it('should have textDefault set to dark color', () => {
-      expect(themeConfig.light.textDefault).toBe('#111827');
+      expect(themeConfig.light.textDefault).toBe('#12141A');
     });
 
     it('should have status colors defined', () => {
@@ -85,8 +85,9 @@ describe('theme.config', () => {
       expect(themeConfig.dark.textDefault).not.toBe(themeConfig.light.textDefault);
     });
 
-    it('should share the same brandPrimary', () => {
-      expect(themeConfig.dark.brandPrimary).toBe(themeConfig.light.brandPrimary);
+    it('should have different brandPrimary for dark and light', () => {
+      // Macro E-Trading uses lighter cerulean in dark mode, darker in light for contrast
+      expect(themeConfig.dark.brandPrimary).not.toBe(themeConfig.light.brandPrimary);
     });
   });
 });

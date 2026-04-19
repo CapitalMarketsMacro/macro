@@ -1,0 +1,375 @@
+/*!
+ * Macro E-Trading Design System v1.0.0
+ * Trading-optimized design tokens, PrimeNG/PrimeReact (Aura) overrides,
+ * AG Grid companion styles (tick-flash, density, directional cells),
+ * and OpenFin integration hooks.
+ *
+ * Dark-default. Light mode via .theme-light or removal of .dark class.
+ * Designed by Claude Design for capital markets desktop applications.
+ */
+
+/* ==========================================================================
+   1. CORE PALETTE (raw colors — never use directly in components)
+   ========================================================================== */
+:root {
+  /* Neutrals — cool, slightly blue-tinted slate for long-session readability */
+  --slate-50:  #f6f7f9;
+  --slate-100: #eceef2;
+  --slate-200: #d6dae2;
+  --slate-300: #aeb4c1;
+  --slate-400: #7b8392;
+  --slate-500: #565d6b;
+  --slate-600: #3b414c;
+  --slate-700: #2a2f39;
+  --slate-800: #1e222a;
+  --slate-850: #181b22;
+  --slate-900: #12141a;
+  --slate-950: #0b0d12;
+
+  /* Brand — "Macro Cerulean". Cool steel blue. */
+  --cerulean-50:  #e7f4fd;
+  --cerulean-100: #c2e4fb;
+  --cerulean-200: #8ecdf6;
+  --cerulean-300: #55b2ee;
+  --cerulean-400: #2aa6e6;
+  --cerulean-500: #1685c2;
+  --cerulean-600: #0f6497;
+  --cerulean-700: #0a476c;
+
+  /* Semantic — directional (bid/ask, up/down) */
+  --green-300: #6ee7a8;
+  --green-400: #34d97a;
+  --green-500: #16a85c;
+  --green-600: #0f7f45;
+  --green-700: #0a5c32;
+  --green-900: #08281a;
+
+  --red-300:   #ff9a95;
+  --red-400:   #ff6b64;
+  --red-500:   #e84038;
+  --red-600:   #b82c25;
+  --red-700:   #861e19;
+  --red-900:   #3a0f0c;
+
+  --yellow-300: #ffd96a;
+  --yellow-400: #f5c13a;
+  --yellow-500: #c79306;
+
+  --blue-300:  #8fb5ff;
+  --blue-400:  #5b8def;
+  --blue-500:  #3566d9;
+  --blue-600:  #234aa6;
+  --blue-900:  #0f1d3f;
+
+  --purple-400: #a88cf2;
+  --purple-500: #7a5cd9;
+}
+
+/* ==========================================================================
+   2. SEMANTIC TOKENS — Dark mode (default for .dark class)
+   ========================================================================== */
+.dark {
+  /* Surfaces */
+  --bg-app:        var(--slate-950);
+  --bg-canvas:     var(--slate-900);
+  --bg-panel:      var(--slate-850);
+  --bg-raised:     var(--slate-800);
+  --bg-overlay:    rgba(6, 8, 12, 0.72);
+  --bg-grid-row:   var(--slate-900);
+  --bg-grid-alt:   var(--slate-850);
+  --bg-grid-hover: #22262f;
+  --bg-grid-selected: #1a2a3f;
+
+  /* Foregrounds */
+  --fg-1: #e6e8ec;
+  --fg-2: #a8afbd;
+  --fg-3: #6f7687;
+  --fg-4: #4a5060;
+  --fg-inverse: #0b0d12;
+
+  /* Borders */
+  --border-1: #2a2f39;
+  --border-2: #363c48;
+  --border-3: #4a5060;
+  --border-grid: #1c2029;
+
+  /* Brand */
+  --brand:         var(--cerulean-400);
+  --brand-hover:   var(--cerulean-300);
+  --brand-press:   var(--cerulean-500);
+  --brand-soft:    rgba(42, 166, 230, 0.14);
+  --on-brand:      #041a26;
+
+  /* Market directional */
+  --mkt-up:        var(--green-400);
+  --mkt-up-bg:     rgba(52, 217, 122, 0.14);
+  --mkt-up-bg-flash: rgba(52, 217, 122, 0.42);
+  --mkt-down:      var(--red-400);
+  --mkt-down-bg:   rgba(255, 107, 100, 0.14);
+  --mkt-down-bg-flash: rgba(255, 107, 100, 0.42);
+  --mkt-neutral:   var(--fg-2);
+  --bid:           var(--green-400);
+  --bid-bg:        rgba(52, 217, 122, 0.10);
+  --ask:           var(--red-400);
+  --ask-bg:        rgba(255, 107, 100, 0.10);
+
+  /* Status */
+  --status-info:    var(--blue-400);
+  --status-info-bg: rgba(91, 141, 239, 0.14);
+  --status-warn:    var(--yellow-400);
+  --status-warn-bg: rgba(245, 193, 58, 0.14);
+  --status-error:   var(--red-400);
+  --status-error-bg:rgba(255, 107, 100, 0.14);
+  --status-ok:      var(--green-400);
+  --status-ok-bg:   rgba(52, 217, 122, 0.14);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--cerulean-400);
+}
+
+/* ==========================================================================
+   3. SEMANTIC TOKENS — Light mode
+   ========================================================================== */
+:root:not(.dark) {
+  --bg-app:        #eceef2;
+  --bg-canvas:     #ffffff;
+  --bg-panel:      #f6f7f9;
+  --bg-raised:     #ffffff;
+  --bg-overlay:    rgba(20, 24, 32, 0.48);
+  --bg-grid-row:   #ffffff;
+  --bg-grid-alt:   #f6f7f9;
+  --bg-grid-hover: #eef1f6;
+  --bg-grid-selected: #e2ecff;
+
+  --fg-1: #12141a;
+  --fg-2: #3b414c;
+  --fg-3: #7b8392;
+  --fg-4: #aeb4c1;
+  --fg-inverse: #ffffff;
+
+  --border-1: #e1e4ea;
+  --border-2: #cdd2db;
+  --border-3: #7b8392;
+  --border-grid: #edeff3;
+
+  --brand:       #1685c2;
+  --brand-hover: #2aa6e6;
+  --brand-press: #0f6497;
+  --brand-soft:  rgba(22, 133, 194, 0.10);
+  --on-brand:    #ffffff;
+
+  --mkt-up: #0f7f45;
+  --mkt-up-bg: rgba(16, 168, 92, 0.12);
+  --mkt-up-bg-flash: rgba(16, 168, 92, 0.32);
+  --mkt-down: #b82c25;
+  --mkt-down-bg: rgba(232, 64, 56, 0.12);
+  --mkt-down-bg-flash: rgba(232, 64, 56, 0.32);
+  --mkt-neutral: var(--fg-2);
+  --bid: #0f7f45;
+  --bid-bg: rgba(16, 168, 92, 0.08);
+  --ask: #b82c25;
+  --ask-bg: rgba(232, 64, 56, 0.08);
+
+  --status-info: var(--blue-500);
+  --status-warn: var(--yellow-500);
+  --status-error: var(--red-500);
+  --status-ok: var(--green-500);
+
+  --focus-ring: 0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--cerulean-500);
+}
+
+/* ==========================================================================
+   4. TYPOGRAPHY TOKENS
+   ========================================================================== */
+:root {
+  --font-sans: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", "Menlo", "Consolas", monospace;
+  --numeric-feature: "tnum" 1, "lnum" 1, "zero" 1;
+
+  --fs-10: 10px;  --fs-11: 11px;  --fs-12: 12px;  --fs-13: 13px;
+  --fs-14: 14px;  --fs-16: 16px;  --fs-20: 20px;  --fs-24: 24px;
+  --fs-32: 32px;  --fs-48: 48px;
+
+  --lh-tight:  1.15;
+  --lh-snug:   1.3;
+  --lh-normal: 1.5;
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold:600;
+  --fw-bold:    700;
+
+  --ls-tight:   -0.01em;
+  --ls-normal:   0;
+  --ls-wide:    0.02em;
+  --ls-allcaps: 0.06em;
+}
+
+/* ==========================================================================
+   5. SPACING, RADII, SHADOWS, MOTION
+   ========================================================================== */
+:root {
+  --space-1: 2px;  --space-2: 4px;  --space-3: 6px;  --space-4: 8px;
+  --space-5: 12px; --space-6: 16px; --space-7: 20px; --space-8: 24px;
+  --space-9: 32px; --space-10: 48px;
+
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-round: 999px;
+
+  --shadow-0: none;
+  --shadow-1: 0 1px 0 rgba(0,0,0,0.35), 0 0 0 1px var(--border-1);
+  --shadow-2: 0 4px 12px rgba(0,0,0,0.45), 0 0 0 1px var(--border-1);
+  --shadow-3: 0 12px 32px rgba(0,0,0,0.55), 0 0 0 1px var(--border-2);
+
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-instant: 80ms;
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+  --dur-flash: 600ms;
+
+  --h-grid-row: 22px;
+  --h-grid-header: 26px;
+  --h-control-sm: 24px;
+  --h-control-md: 28px;
+  --h-control-lg: 32px;
+}
+
+/* ==========================================================================
+   6. BASE ELEMENT STYLES
+   ========================================================================== */
+html, body {
+  background: var(--bg-app);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: var(--fs-13);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.up    { color: var(--mkt-up); }
+.down  { color: var(--mkt-down); }
+.bid   { color: var(--bid); }
+.ask   { color: var(--ask); }
+.muted { color: var(--fg-3); }
+
+.mono, code, kbd, .num {
+  font-family: var(--font-mono);
+  font-feature-settings: var(--numeric-feature);
+}
+.num { font-variant-numeric: tabular-nums; }
+
+::selection { background: var(--brand-soft); color: var(--fg-1); }
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--slate-700); border-radius: var(--radius-sm); border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--slate-600); border: 2px solid transparent; background-clip: padding-box; }
+
+/* ==========================================================================
+   7. PRIMENG / PRIMEREACT (AURA) OVERRIDES
+   ========================================================================== */
+:root, .p-component, body {
+  --surface-0:    var(--bg-app);
+  --surface-50:   var(--bg-canvas);
+  --surface-100:  var(--bg-panel);
+  --surface-200:  var(--bg-raised);
+  --surface-300:  var(--slate-700);
+  --surface-400:  var(--slate-600);
+  --surface-500:  var(--slate-500);
+  --surface-600:  var(--slate-400);
+  --surface-700:  var(--slate-300);
+  --surface-ground:  var(--bg-app);
+  --surface-section: var(--bg-canvas);
+  --surface-card:    var(--bg-panel);
+  --surface-overlay: var(--bg-raised);
+  --surface-border:  var(--border-1);
+  --surface-hover:   var(--bg-grid-hover);
+
+  --primary-color:        var(--brand);
+  --primary-color-text:   var(--on-brand);
+  --primary-hover-color:  var(--brand-hover);
+  --primary-active-color: var(--brand-press);
+  --highlight-bg:         var(--bg-grid-selected);
+  --highlight-text-color: var(--fg-1);
+  --text-color:           var(--fg-1);
+  --text-color-secondary: var(--fg-2);
+  --text-muted-color:     var(--fg-3);
+}
+
+/* Bid / Ask directional buttons */
+.p-button.macro-bid {
+  background: var(--bid-bg); border: 1px solid var(--green-700); color: var(--green-300);
+}
+.p-button.macro-bid:hover { background: rgba(52,217,122,0.20); }
+.p-button.macro-ask {
+  background: var(--ask-bg); border: 1px solid var(--red-700); color: var(--red-300);
+}
+.p-button.macro-ask:hover { background: rgba(255,107,100,0.20); }
+
+/* Status tags */
+.p-tag.p-tag-success { background: var(--status-ok-bg); color: var(--green-300); border: 1px solid var(--green-700); }
+.p-tag.p-tag-info    { background: var(--status-info-bg); color: var(--blue-300); border: 1px solid var(--blue-600); }
+.p-tag.p-tag-warning { background: var(--status-warn-bg); color: var(--yellow-300); border: 1px solid #7a5a04; }
+.p-tag.p-tag-danger  { background: var(--status-error-bg); color: var(--red-300); border: 1px solid var(--red-700); }
+
+/* Toast severity borders */
+.p-toast .p-toast-message { background: var(--bg-raised); border: 1px solid var(--border-2); border-left-width: 3px; }
+.p-toast .p-toast-message-success { border-left-color: var(--status-ok); }
+.p-toast .p-toast-message-info    { border-left-color: var(--status-info); }
+.p-toast .p-toast-message-warn    { border-left-color: var(--status-warn); }
+.p-toast .p-toast-message-error   { border-left-color: var(--status-error); }
+
+/* ==========================================================================
+   8. AG GRID COMPANION STYLES
+   ========================================================================== */
+/* Directional cells */
+.ag-cell.mkt-num   { font-variant-numeric: tabular-nums; text-align: right; }
+.ag-cell.mkt-up    { color: var(--mkt-up); }
+.ag-cell.mkt-down  { color: var(--mkt-down); }
+
+/* Tick flash */
+.ag-cell.mkt-flash-up    { animation: mkt-flash-up   var(--dur-flash) linear; }
+.ag-cell.mkt-flash-down  { animation: mkt-flash-down var(--dur-flash) linear; }
+.ag-cell-data-changed    { background: var(--mkt-up-bg-flash) !important; }
+.ag-cell-data-changed-animation { transition: background var(--dur-flash) linear; }
+
+/* Pinned rows */
+.ag-pinned-top .ag-row, .ag-pinned-bottom .ag-row {
+  background: var(--bg-raised) !important;
+  border-top: 1px solid var(--border-2);
+  font-weight: 500;
+}
+
+/* Sort icons */
+.ag-header-cell-sorted-asc .ag-sort-ascending-icon,
+.ag-header-cell-sorted-desc .ag-sort-descending-icon { color: var(--brand); }
+
+/* Selection stripe */
+.ag-row-selected::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 2px; background: var(--brand); pointer-events: none;
+}
+
+/* Density toggle */
+[data-density="tight"] .ag-theme-quartz { --ag-row-height: 20px; --ag-header-height: 24px; --ag-font-size: 11px; }
+[data-density="cozy"] .ag-theme-quartz  { --ag-row-height: 32px; --ag-header-height: 36px; --ag-font-size: 13px; }
+
+/* Keyframes */
+@keyframes mkt-flash-up   { 0% { background: var(--mkt-up-bg-flash); }   100% { background: transparent; } }
+@keyframes mkt-flash-down { 0% { background: var(--mkt-down-bg-flash); } 100% { background: transparent; } }
+
+/* ==========================================================================
+   9. OPENFIN HOOKS
+   ========================================================================== */
+html.openfin body { border: 1px solid var(--border-2); }
+html.openfin .macro-titlebar { -webkit-app-region: drag; }
+html.openfin .macro-titlebar button, html.openfin .macro-titlebar input { -webkit-app-region: no-drag; }
+html.openfin .ag-header, html.openfin .ag-root-wrapper { -webkit-app-region: no-drag; }
