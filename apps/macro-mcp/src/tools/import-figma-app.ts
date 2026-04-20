@@ -70,90 +70,182 @@ function findNextAvailablePort(root: string): number {
   return port;
 }
 
-/** Keyword → Material Icon mapping for auto-suggesting icons based on app name/title. */
+/**
+ * Keyword → Capital Markets Icon mapping for auto-suggesting icons based on app name/title.
+ * All icon names must exist in apps/macro-workspace/public/icons/capital-markets/{dark,light}/.
+ */
 const ICON_KEYWORDS: Record<string, string[]> = {
   // Financial & Trading
   candlestick_chart: ['candlestick', 'ohlc', 'forex', 'fx'],
   show_chart: ['chart', 'line', 'timeseries', 'price'],
   bar_chart: ['bar', 'histogram'],
-  trending_up: ['trending', 'growth', 'performance', 'pnl', 'profit'],
-  trending_down: ['loss', 'decline', 'drawdown'],
-  account_balance: ['bank', 'institution', 'treasury', 'fixed-income', 'rates'],
-  payments: ['payment', 'settlement', 'transfer', 'wire'],
-  currency_exchange: ['currency', 'exchange', 'swap', 'conversion'],
-  attach_money: ['money', 'dollar', 'usd', 'cash', 'fund'],
-  savings: ['savings', 'deposit', 'yield'],
-  credit_card: ['credit', 'card', 'charge'],
-  price_check: ['price', 'quote', 'valuation', 'mark'],
+  trending_up: ['trending', 'growth', 'performance', 'pnl', 'profit', 'up'],
+  trending_down: ['loss', 'decline', 'drawdown', 'down'],
+  trending_flat: ['flat', 'unchanged', 'neutral'],
+  account_balance: ['bank', 'institution', 'treasury', 'fixed-income', 'rates', 'bond'],
+  account_balance_wallet: ['wallet', 'balance', 'account'],
+  payments: ['payment', 'settlement', 'transfer', 'wire', 'pay'],
+  currency_exchange: ['currency', 'exchange', 'swap', 'conversion', 'forex-rate'],
+  savings: ['savings', 'deposit', 'yield', 'money', 'fund'],
+  price_change: ['price', 'quote', 'valuation', 'mark', 'change'],
   request_quote: ['rfq', 'request', 'quote', 'ticket', 'order'],
-  receipt_long: ['receipt', 'confirm', 'fill', 'execution'],
+  receipt_long: ['receipt', 'confirm', 'fill', 'execution', 'trade-confirm'],
+  handshake: ['deal', 'agreement', 'counterparty', 'partnership'],
+  real_estate_agent: ['broker', 'agent', 'dealer'],
 
   // Analytics & Dashboards
   dashboard: ['dashboard', 'overview', 'summary', 'home'],
   analytics: ['analytics', 'analysis', 'stats', 'statistics'],
-  assessment: ['assessment', 'report', 'review', 'audit'],
-  insights: ['insights', 'intelligence', 'signal'],
-  monitoring: ['monitor', 'surveillance', 'watch', 'alert'],
+  monitoring: ['monitor', 'surveillance', 'watch', 'observability'],
+  monitor_heart: ['health', 'status', 'pulse', 'heartbeat', 'uptime'],
   pie_chart: ['pie', 'allocation', 'breakdown', 'composition'],
+  donut_large: ['donut', 'ring', 'progress-ring'],
   leaderboard: ['leaderboard', 'ranking', 'top', 'best'],
   area_chart: ['area', 'cumulative', 'filled'],
+  bubble_chart: ['bubble', 'scatter-bubble'],
+  scatter_plot: ['scatter', 'correlation', 'distribution'],
+  stacked_line_chart: ['stacked', 'multi-line', 'layers'],
+  waterfall_chart: ['waterfall', 'cascade'],
+  ssid_chart: ['ssid', 'signal-chart'],
+  insert_chart: ['insert-chart', 'report-chart'],
+  query_stats: ['query', 'search-stats', 'investigation'],
+  auto_graph: ['auto-graph', 'smart-chart'],
+  timeline: ['timeline', 'events', 'sequence'],
+  data_thresholding: ['threshold', 'limits', 'bands'],
 
   // Data & Grids
-  table_chart: ['table', 'grid', 'blotter', 'spreadsheet', 'data'],
-  grid_view: ['grid', 'tile', 'card', 'gallery'],
-  view_list: ['list', 'log', 'feed', 'stream'],
-  dataset: ['dataset', 'catalog', 'reference'],
-  database: ['database', 'store', 'warehouse'],
+  grid_view: ['grid', 'table', 'blotter', 'spreadsheet', 'data', 'tile'],
+  view_column: ['column', 'columns', 'columnar'],
+  splitscreen: ['split', 'compare-view', 'side-by-side'],
+  filter_list: ['filter', 'refine', 'narrow'],
+  sort: ['sort', 'order', 'arrange'],
+  manage_search: ['search-manage', 'advanced-search'],
+  search: ['search', 'find', 'lookup'],
+  folder_open: ['folder', 'directory', 'catalog'],
 
   // Risk & Compliance
-  security: ['security', 'secure', 'protection'],
   shield: ['shield', 'guard', 'defense'],
-  verified_user: ['verified', 'compliant', 'approved'],
-  policy: ['policy', 'compliance', 'regulation', 'rule'],
-  health_and_safety: ['risk', 'safety', 'health', 'var', 'exposure'],
+  verified_user: ['verified', 'compliant', 'approved', 'certified'],
+  policy: ['policy', 'compliance', 'regulation'],
+  rule: ['rule', 'ruleset'],
+  gavel: ['legal', 'gavel', 'ruling', 'court'],
+  health_and_safety: ['risk', 'safety', 'var', 'exposure'],
+  gpp_maybe: ['risk-maybe', 'possible-threat', 'warning-shield'],
+  privacy_tip: ['privacy', 'tip', 'sensitive'],
+  assured_workload: ['workload', 'assured', 'compliance-workload'],
+  balance: ['balance', 'equilibrium', 'justice'],
+  fact_check: ['verify', 'validate', 'check-fact'],
+  approval: ['approve', 'approval', 'review'],
+  block: ['block', 'deny', 'restrict'],
+  warning: ['warning', 'caution', 'alert-sign'],
+  error: ['error', 'failure', 'fault'],
+  crisis_alert: ['crisis', 'urgent', 'emergency'],
 
   // Execution & Orders
-  swap_horiz: ['swap', 'trade', 'exchange', 'bilateral'],
+  swap_horiz: ['swap', 'trade', 'bilateral'],
+  swap_vert: ['swap-vertical', 'flip'],
+  swap_calls: ['swap-calls', 'route-swap'],
+  compare_arrows: ['compare', 'arrows-compare', 'vs'],
   bolt: ['bolt', 'fast', 'quick', 'instant', 'real-time', 'realtime'],
-  speed: ['speed', 'latency', 'performance', 'benchmark'],
+  speed: ['speed', 'latency', 'velocity', 'benchmark'],
   timer: ['timer', 'countdown', 'expiry', 'maturity'],
+  schedule_send: ['schedule', 'send-later', 'scheduled'],
+  update: ['update', 'refresh-update'],
+  refresh: ['refresh', 'reload'],
+  sync_alt: ['sync', 'synchronize'],
+  cloud_sync: ['cloud-sync', 'cloud-replication'],
+  published_with_changes: ['publish', 'republish', 'sync-published'],
+  pending_actions: ['pending', 'awaiting', 'queued'],
+  priority_high: ['priority', 'urgent', 'high'],
+  low_priority: ['low-priority', 'deprioritize'],
+  send: ['send', 'submit', 'dispatch'],
 
-  // Communication
-  notifications: ['notification', 'alert', 'alarm', 'event'],
+  // Communication & Events
+  notifications: ['notification', 'alert', 'alarm'],
   mail: ['mail', 'email', 'message', 'inbox'],
-  campaign: ['campaign', 'broadcast', 'announce'],
+  mark_email_read: ['read', 'seen', 'email-read'],
+  chat: ['chat', 'conversation', 'discuss'],
+  comment: ['comment', 'note', 'annotation'],
+  rss_feed: ['feed', 'news', 'stream-feed'],
+  stream: ['stream', 'live-feed'],
+  event_available: ['event', 'available', 'scheduled'],
+  event_repeat: ['recurring', 'repeat', 'schedule-repeat'],
 
   // Documents & Reports
-  article: ['article', 'news', 'commentary', 'research'],
   description: ['description', 'document', 'spec', 'detail'],
   assignment: ['assignment', 'task', 'action', 'workflow'],
+  assignment_late: ['overdue', 'late', 'missed'],
+  assignment_turned_in: ['completed', 'done', 'submitted'],
+  assignment_return: ['returned', 'sent-back'],
   summarize: ['summarize', 'digest', 'brief', 'tldr'],
+  note_add: ['note', 'add-note', 'new-doc'],
+  edit_note: ['edit', 'modify-note'],
+  grading: ['grading', 'score', 'rate'],
+  checklist: ['checklist', 'todo', 'list-check'],
+  checklist_rtl: ['checklist-rtl'],
+  playlist_add_check: ['playlist-check', 'batch-check'],
+  report: ['report', 'flag-report'],
+  difference: ['difference', 'diff', 'delta'],
+  content_paste_search: ['paste-search', 'analyze-content'],
+
+  // Business & Accounts
+  person: ['person', 'user', 'client', 'trader'],
+  group: ['group', 'team', 'desk', 'people'],
   inventory: ['inventory', 'position', 'holding', 'portfolio'],
+  inventory_2: ['storage', 'vault', 'repository'],
+  warehouse: ['warehouse', 'data-warehouse', 'archive'],
+  local_shipping: ['delivery', 'shipment', 'logistics'],
+  confirmation_number: ['ticket', 'confirmation', 'number'],
+  storefront: ['store', 'marketplace', 'shop', 'venue', 'exchange'],
 
-  // Business
-  business: ['business', 'office', 'enterprise'],
-  corporate_fare: ['corporate', 'org', 'team', 'desk'],
-  groups: ['group', 'team', 'people', 'user', 'client'],
-  manage_accounts: ['account', 'manage', 'admin', 'client'],
+  // Network & Infrastructure
+  hub: ['hub', 'center', 'gateway'],
+  lan: ['lan', 'network-lan'],
+  cable: ['cable', 'wire', 'connection'],
+  wifi: ['wifi', 'wireless'],
+  wifi_off: ['offline', 'disconnected'],
+  cell_tower: ['cell', 'tower', 'broadcast'],
+  electrical_services: ['electrical', 'power', 'services'],
+  sensors: ['sensors', 'telemetry'],
+  route: ['route', 'path', 'routing'],
+  developer_board: ['developer', 'board', 'hardware'],
+  memory: ['memory', 'ram', 'cache'],
+  thermostat: ['temperature', 'thermostat', 'heat'],
+  track_changes: ['track', 'changes', 'audit'],
 
-  // General
+  // General & UI
   settings: ['settings', 'config', 'preference'],
-  explore: ['explore', 'discover', 'browse', 'navigate'],
-  palette: ['palette', 'theme', 'design', 'style', 'color', 'ui'],
-  rocket_launch: ['launch', 'start', 'deploy', 'new'],
-  star: ['star', 'favorite', 'important'],
-  apps: ['app', 'application', 'module', 'tool'],
-  widgets: ['widget', 'component', 'panel'],
-  extension: ['extension', 'plugin', 'addon'],
+  tune: ['tune', 'tuning', 'parameters'],
+  calculate: ['calculate', 'calculation', 'math'],
+  functions: ['functions', 'formulas', 'expressions'],
+  exposure: ['exposure', 'brightness'],
+  auto_mode: ['auto', 'automation', 'auto-mode'],
+  smart_toy: ['ai', 'bot', 'assistant', 'smart'],
+  history: ['history', 'past', 'archive'],
+  bookmark: ['bookmark', 'favorite-mark', 'saved'],
+  label: ['label', 'tag', 'categorize'],
+  tab: ['tab', 'section'],
+  picture_in_picture: ['pip', 'picture-in-picture'],
+  fullscreen: ['fullscreen', 'expand', 'maximize'],
+  open_in_new: ['external', 'new-window', 'open-new'],
+  download: ['download', 'export', 'save-file'],
+  upload: ['upload', 'import-file', 'publish-file'],
+  print: ['print', 'printer'],
+  attach_file: ['attach', 'attachment', 'file'],
+  help: ['help', 'support', 'faq'],
+  check_circle: ['check', 'success', 'complete'],
+  cancel: ['cancel', 'close', 'dismiss'],
+  task_alt: ['task-done', 'completed-task'],
+  moving: ['moving', 'transfer', 'migration'],
 };
 
 /**
  * Auto-suggest an icon based on app name and title keywords.
- * Returns the material icon name or 'apps' as fallback.
+ * Returns the Capital Markets icon name. Falls back to 'dashboard' (always in the set).
  */
 function suggestIcon(appName: string, title: string): string {
   const text = `${appName} ${title}`.toLowerCase();
-  let bestIcon = 'apps';
+  let bestIcon = 'dashboard';
   let bestScore = 0;
 
   for (const [icon, keywords] of Object.entries(ICON_KEYWORDS)) {
@@ -168,37 +260,95 @@ function suggestIcon(appName: string, title: string): string {
 }
 
 /**
- * Get the list of available material icons from the index.
+ * Get the list of available Capital Markets icons from the index.
+ * Falls back to a directory scan (and auto-copies from CapitalMarketsIcons/
+ * if the public folder is missing — keeps the tool robust).
  */
 function getAvailableIcons(root: string): string[] {
-  const indexPath = path.join(root, 'apps/macro-workspace/public/icons/material/index.json');
-  if (!fs.existsSync(indexPath)) return [];
-  try {
-    return JSON.parse(fs.readFileSync(indexPath, 'utf8')).icons ?? [];
-  } catch { return []; }
+  ensureCapitalMarketsIcons(root);
+  const dir = path.join(root, 'apps/macro-workspace/public/icons/capital-markets/dark');
+  const indexPath = path.join(root, 'apps/macro-workspace/public/icons/capital-markets/index.json');
+  if (fs.existsSync(indexPath)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
+      if (Array.isArray(parsed.icons) && parsed.icons.length > 0) return parsed.icons;
+    } catch { /* fall through to dir scan */ }
+  }
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir)
+    .filter(f => f.endsWith('.svg'))
+    .map(f => f.replace(/\.svg$/, ''))
+    .sort();
 }
 
 /**
- * Extract a .zip file using the system `unzip` command.
+ * Ensure Capital Markets icons are present in the public folder.
+ * Copies from CapitalMarketsIcons/ at repo root if the destination is missing/empty.
+ * Idempotent — only copies when needed.
+ */
+function ensureCapitalMarketsIcons(root: string): void {
+  const dstDark = path.join(root, 'apps/macro-workspace/public/icons/capital-markets/dark');
+  const dstLight = path.join(root, 'apps/macro-workspace/public/icons/capital-markets/light');
+  const srcDark = path.join(root, 'CapitalMarketsIcons/dark/svg');
+  const srcLight = path.join(root, 'CapitalMarketsIcons/light/svg');
+
+  const needsCopy = (dst: string): boolean => {
+    if (!fs.existsSync(dst)) return true;
+    try { return fs.readdirSync(dst).filter(f => f.endsWith('.svg')).length === 0; }
+    catch { return true; }
+  };
+
+  if (fs.existsSync(srcDark) && needsCopy(dstDark)) {
+    fs.mkdirSync(dstDark, { recursive: true });
+    copyDirRecursive(srcDark, dstDark);
+  }
+  if (fs.existsSync(srcLight) && needsCopy(dstLight)) {
+    fs.mkdirSync(dstLight, { recursive: true });
+    copyDirRecursive(srcLight, dstLight);
+  }
+
+  // Regenerate index.json if missing
+  const indexPath = path.join(root, 'apps/macro-workspace/public/icons/capital-markets/index.json');
+  if (!fs.existsSync(indexPath) && fs.existsSync(dstDark)) {
+    const icons = fs.readdirSync(dstDark)
+      .filter(f => f.endsWith('.svg'))
+      .map(f => f.replace(/\.svg$/, ''))
+      .sort();
+    fs.writeFileSync(indexPath, JSON.stringify({ icons, count: icons.length }, null, 2) + '\n');
+  }
+}
+
+/**
+ * Extract a .zip file across platforms.
+ * Tries (in order): unzip (Linux/macOS), PowerShell Expand-Archive (Windows), python3 zipfile (universal).
  * Handles nested root folders (common in Figma Make exports).
  * Returns the path to the actual source root inside the extraction.
  */
 function extractZip(zipPath: string, extractDir: string): string {
   fs.mkdirSync(extractDir, { recursive: true });
 
-  // Use unzip (available on macOS/Linux). Fall back to tar for .tar.gz.
-  try {
-    execSync(`unzip -o -q "${zipPath}" -d "${extractDir}"`, { stdio: 'pipe', timeout: 60000 });
-  } catch {
-    // Fallback: try python3 zipfile module (always available on macOS)
+  const attempts: Array<{ cmd: string; name: string }> = [
+    { name: 'unzip', cmd: `unzip -o -q "${zipPath}" -d "${extractDir}"` },
+    { name: 'PowerShell Expand-Archive',
+      cmd: `powershell -NoProfile -Command "Expand-Archive -LiteralPath '${zipPath.replace(/'/g, "''")}' -DestinationPath '${extractDir.replace(/'/g, "''")}' -Force"` },
+    { name: 'python3 zipfile',
+      cmd: `python3 -c "import zipfile,sys; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" "${zipPath}" "${extractDir}"` },
+    { name: 'python zipfile',
+      cmd: `python -c "import zipfile,sys; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" "${zipPath}" "${extractDir}"` },
+  ];
+
+  let lastErr: unknown = null;
+  for (const a of attempts) {
     try {
-      execSync(
-        `python3 -c "import zipfile,sys; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" "${zipPath}" "${extractDir}"`,
-        { stdio: 'pipe', timeout: 60000 }
-      );
-    } catch {
-      throw new Error(`Failed to extract zip: ${zipPath}. Ensure 'unzip' or 'python3' is available.`);
+      execSync(a.cmd, { stdio: 'pipe', timeout: 120000 });
+      lastErr = null;
+      break;
+    } catch (e) {
+      lastErr = e;
     }
+  }
+  if (lastErr) {
+    throw new Error(`Failed to extract zip: ${zipPath}. Tried unzip, PowerShell, and python — all failed. Last error: ${(lastErr as Error).message}`);
   }
 
   // Handle nested root folder: if extraction produced a single directory, descend into it
@@ -268,21 +418,30 @@ function importFigmaApp(
     if (!autoTitle) autoTitle = appName.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
     if (!autoDescription) autoDescription = `${autoTitle} imported from Figma Make`;
 
-    // ── Resolve icon ──
+    // ── Resolve icon (Capital Markets icons with dark/light variants) ──
     const availableIcons = getAvailableIcons(root);
     let resolvedIcon: string;
     if (icon && availableIcons.includes(icon)) {
       resolvedIcon = icon;
+      steps.push(`Using icon: ${resolvedIcon}`);
     } else if (icon) {
-      // User provided an icon name not in our set — try it anyway (may be a custom file)
+      steps.push(`Warning: icon "${icon}" not in Capital Markets icon set (${availableIcons.length} available) — using as-is`);
       resolvedIcon = icon;
-      steps.push(`Warning: icon "${icon}" not found in material icons set, using as-is`);
     } else {
       resolvedIcon = suggestIcon(appName, autoTitle);
+      // Fall back to 'apps' → 'dashboard' → first icon available if the suggested one is missing
+      if (!availableIcons.includes(resolvedIcon)) {
+        resolvedIcon = availableIcons.includes('dashboard') ? 'dashboard' : (availableIcons[0] ?? 'dashboard');
+      }
       steps.push(`Auto-selected icon: ${resolvedIcon} (based on app name/title)`);
     }
-    const iconUrl = `http://localhost:4202/icons/material/${resolvedIcon}.svg`;
-    const osIconUrl = `https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/material/${resolvedIcon}.svg`;
+    // Dark variant is used as the primary icon URL (our default theme is dark)
+    const iconDarkUrl = `http://localhost:4202/icons/capital-markets/dark/${resolvedIcon}.svg`;
+    const iconLightUrl = `http://localhost:4202/icons/capital-markets/light/${resolvedIcon}.svg`;
+    const iconUrl = iconDarkUrl; // single-URL fallback for app.icons[].src
+    const osIconDarkUrl = `https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/capital-markets/dark/${resolvedIcon}.svg`;
+    const osIconLightUrl = `https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/capital-markets/light/${resolvedIcon}.svg`;
+    const osIconUrl = osIconDarkUrl;
 
     // ── Create project structure (skip NX generator — manual is more reliable) ──
     fs.mkdirSync(path.join(appDir, 'src/app'), { recursive: true });
@@ -602,12 +761,18 @@ ${tailwindCssBlock}  resolve: {
     addAppToJsonFile(path.join(publicOpenshift, 'settings.json'), osAppEntry);
     steps.push('Registered in manifest.fin.json + settings.json (local + openshift)');
 
-    // ── Add to Dock favorites ──
+    // ── Add to Dock favorites (with dark/light icon variants) ──
     addDockFavorite(path.join(publicLocal, 'settings.json'), {
       type: 'item', id: `fav-${appName}`, label: autoTitle,
-      icon: iconUrl, appId: appName,
+      icon: { dark: iconDarkUrl, light: iconLightUrl },
+      appId: appName,
     });
-    steps.push('Added to Dock favorites');
+    addDockFavorite(path.join(publicOpenshift, 'settings.json'), {
+      type: 'item', id: `fav-${appName}`, label: autoTitle,
+      icon: { dark: osIconDarkUrl, light: osIconLightUrl },
+      appId: appName,
+    });
+    steps.push('Added to Dock favorites (dark/light icon variants)');
 
     // ── Update root package.json ──
     const pkgPath = path.join(root, 'package.json');
@@ -652,7 +817,21 @@ To customize:
     if (tmpDir) {
       try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
     }
-    return { success: false, summary: `Import failed: ${err.message}`, steps };
+    // Remove partially-created appDir so re-runs can use the same name
+    if (fs.existsSync(appDir)) {
+      try {
+        fs.rmSync(appDir, { recursive: true, force: true });
+        steps.push(`Cleaned up partial app directory apps/${appName}`);
+      } catch { /* ignore */ }
+    }
+    // Remove partial manifest files
+    for (const p of [
+      path.join(publicLocal, `${appName}.fin.json`),
+      path.join(publicOpenshift, `${appName}.fin.json`),
+    ]) {
+      if (fs.existsSync(p)) { try { fs.unlinkSync(p); } catch { /* ignore */ } }
+    }
+    return { success: false, summary: `Import failed: ${err?.message ?? err}`, steps };
   }
 }
 
