@@ -454,14 +454,44 @@ function importFigmaApp(
     // ── Create project structure (skip NX generator — manual is more reliable) ──
     fs.mkdirSync(path.join(appDir, 'src/app'), { recursive: true });
 
-    // project.json — empty targets so NX Vite plugin auto-infers from vite.config
+    // project.json — explicit serve/build targets with the resolved port
+    // so the port is consistent across NX, Vite, package.json, and manifests.
     fs.writeFileSync(path.join(appDir, 'project.json'), JSON.stringify({
       name: appName,
       $schema: '../../node_modules/nx/schemas/project-schema.json',
       sourceRoot: `apps/${appName}/src`,
       projectType: 'application',
       tags: [],
-      targets: {},
+      targets: {
+        build: {
+          executor: '@nx/vite:build',
+          outputs: ['{options.outputPath}'],
+          defaultConfiguration: 'production',
+          options: { outputPath: `dist/apps/${appName}` },
+          configurations: {
+            development: { mode: 'development' },
+            production: { mode: 'production' },
+          },
+        },
+        serve: {
+          executor: '@nx/vite:dev-server',
+          defaultConfiguration: 'development',
+          options: { buildTarget: `${appName}:build`, port: resolvedPort, host: 'localhost' },
+          configurations: {
+            development: { buildTarget: `${appName}:build:development`, hmr: true },
+            production: { buildTarget: `${appName}:build:production`, hmr: false },
+          },
+        },
+        preview: {
+          executor: '@nx/vite:preview-server',
+          defaultConfiguration: 'development',
+          options: { buildTarget: `${appName}:build`, port: resolvedPort },
+          configurations: {
+            development: { buildTarget: `${appName}:build:development` },
+            production: { buildTarget: `${appName}:build:production` },
+          },
+        },
+      },
     }, null, 2) + '\n');
 
     fs.writeFileSync(path.join(appDir, 'tsconfig.json'), JSON.stringify({
@@ -786,9 +816,11 @@ ${tailwindCssBlock}  resolve: {
     steps.push('Added to Dock favorites');
 
     // ── Update root package.json ──
+    // Script explicitly passes --port so the port shown in package.json matches
+    // the one in project.json, vite.config.mts, and the .fin.json view manifest.
     const pkgPath = path.join(root, 'package.json');
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-    pkg.scripts[`start:${appName}`] = `nx serve ${appName}`;
+    pkg.scripts[`start:${appName}`] = `nx serve ${appName} --port=${resolvedPort}`;
     pkg.scripts[`build:${appName}`] = `nx build ${appName}`;
     if (pkg.scripts['build:apps'] && !pkg.scripts['build:apps'].includes(appName)) {
       pkg.scripts['build:apps'] = pkg.scripts['build:apps'].replace(
@@ -796,7 +828,7 @@ ${tailwindCssBlock}  resolve: {
       );
     }
     fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-    steps.push('Updated package.json (start, build, build:apps scripts)');
+    steps.push(`Updated package.json (start:${appName} --port=${resolvedPort}, build:${appName}, build:apps)`);
 
     // ── Clean up temporary extraction directory ──
     if (tmpDir) {
