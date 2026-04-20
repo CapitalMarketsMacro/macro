@@ -27,8 +27,26 @@ function findWorkspaceRoot(): string {
 }
 
 /**
+ * Read the workspace app's serve port from apps/macro-workspace/project.json.
+ * The workspace serves static view manifests, icons, and settings, so we need
+ * the correct port when referencing those from other apps.
+ */
+function getWorkspacePort(root: string): number {
+  const projPath = path.join(root, 'apps/macro-workspace/project.json');
+  if (fs.existsSync(projPath)) {
+    try {
+      const proj = JSON.parse(fs.readFileSync(projPath, 'utf8'));
+      const port = proj.targets?.serve?.options?.port ?? proj.targets?.['serve-static']?.options?.port;
+      if (typeof port === 'number') return port;
+    } catch { /* fall through */ }
+  }
+  return 4202;
+}
+
+/**
  * Scan all apps' vite configs and project.json files to find used ports,
- * then return the next available port starting from 4204.
+ * then return the next available port starting from 4204. Always skips the
+ * workspace port so the app and workspace never collide.
  */
 function findNextAvailablePort(root: string): number {
   const usedPorts = new Set<number>();
@@ -62,8 +80,9 @@ function findNextAvailablePort(root: string): number {
     }
   }
 
-  // Also check root package.json for well-known ports
-  [4200, 4201, 4202, 4203, 3000].forEach(p => usedPorts.add(p));
+  // Reserve well-known ports: Angular default (4200), React dev (4201),
+  // workspace (4202), angular-fdc3 (4203), market-data-server (3000).
+  [4200, 4201, 4202, 4203, 3000, getWorkspacePort(root)].forEach(p => usedPorts.add(p));
 
   let port = 4204;
   while (usedPorts.has(port)) port++;
@@ -392,9 +411,15 @@ function importFigmaApp(
       return { success: false, summary: `Source path not found: ${sourcePath}`, steps };
     }
 
-    // ── Auto-detect port if not provided ──
+    // ── Auto-detect ports ──
+    // workspacePort: serves static view manifests + icons + settings.json (e.g. 4202).
+    // resolvedPort: the app's own dev server port (e.g. 4204+), distinct from workspace.
+    const workspacePort = getWorkspacePort(root);
     const resolvedPort = port ?? findNextAvailablePort(root);
-    steps.push(`Using port ${resolvedPort}${port ? '' : ' (auto-detected)'}`);
+    if (resolvedPort === workspacePort) {
+      return { success: false, summary: `Requested port ${resolvedPort} conflicts with the workspace port. Choose a different port.`, steps };
+    }
+    steps.push(`Workspace port ${workspacePort} (serves view manifests + icons), app port ${resolvedPort}${port ? '' : ' (auto-detected)'}`);
 
     // ── Handle zip files ──
     let actualSourcePath = sourcePath;
@@ -444,8 +469,8 @@ function importFigmaApp(
       steps.push(`Auto-selected icon: ${resolvedIcon} (based on app name/title)`);
     }
     // Dark variant is used as the primary icon URL (our default theme is dark)
-    const iconDarkUrl = `http://localhost:4202/icons/capital-markets/dark/${resolvedIcon}.svg`;
-    const iconLightUrl = `http://localhost:4202/icons/capital-markets/light/${resolvedIcon}.svg`;
+    const iconDarkUrl = `http://localhost:${workspacePort}/icons/capital-markets/dark/${resolvedIcon}.svg`;
+    const iconLightUrl = `http://localhost:${workspacePort}/icons/capital-markets/light/${resolvedIcon}.svg`;
     const iconUrl = iconDarkUrl; // single-URL fallback for app.icons[].src
     const osIconDarkUrl = `https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/capital-markets/dark/${resolvedIcon}.svg`;
     const osIconLightUrl = `https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/capital-markets/light/${resolvedIcon}.svg`;
@@ -780,7 +805,7 @@ ${tailwindCssBlock}  resolve: {
     // ── Register in manifests + settings ──
     const localAppEntry = {
       appId: appName, name: appName, title: autoTitle, description: autoDescription,
-      manifest: `http://localhost:4202/local/${appName}.fin.json`,
+      manifest: `http://localhost:${workspacePort}/local/${appName}.fin.json`,
       manifestType: 'view',
       icons: [{ src: iconUrl }],
       contactEmail: 'contact@example.com', supportEmail: 'support@example.com',
@@ -843,9 +868,11 @@ ${tailwindCssBlock}  resolve: {
       steps,
       summary: `Successfully imported "${autoTitle}" as apps/${appName}
 
-  Port:      ${resolvedPort}
-  Base path: ${basePath}
-  URL:       http://localhost:${resolvedPort}${basePath}
+  App port:       ${resolvedPort}       (dev server serving the app)
+  Workspace port: ${workspacePort}       (serves view manifest + icons + settings)
+  Base path:      ${basePath}
+  App URL:        http://localhost:${resolvedPort}${basePath}
+  Manifest URL:   http://localhost:${workspacePort}/local/${appName}.fin.json
 
 To run:
   npm run start:${appName}    # Start the dev server
