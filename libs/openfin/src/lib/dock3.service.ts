@@ -78,7 +78,6 @@ export class Dock3Service {
         'store',
         'notifications',
         'switchWorkspace',
-        'manageWorkspaces',
         'contentMenu',
       ],
       uiConfig: {
@@ -86,14 +85,6 @@ export class Dock3Service {
           enableBookmarking: true,
         },
         hideDragHandle: false,
-        moreMenu: {
-          moreMenuCustomOption: {
-            label: 'Tools',
-            options: [
-              { tooltip: 'Analytics Dashboard', iconUrl: platformSettings.icon } as any,
-            ],
-          },
-        },
       },
     };
 
@@ -125,19 +116,6 @@ export class Dock3Service {
           // This ensures icon URL changes and config updates take effect immediately.
           override async loadConfig(): Promise<Dock3Config> {
             return config;
-          }
-
-          override async moreMenuCustomOptionClicked(payload: any) {
-            const { label, customData } = payload;
-            logger.info('Dock3 more menu custom option clicked', { label });
-            getAnalyticsNats().publish({
-              source: 'Dock', type: 'MoreMenu', action: 'CustomOption',
-              value: label,
-            }).catch(() => {});
-            if (customData?.manifest) {
-              const platform = getCurrentSync();
-              await platform.createView({ manifestUrl: customData.manifest });
-            }
           }
 
           override async launchEntry(payload: LaunchDockEntryPayload) {
@@ -200,8 +178,6 @@ export class Dock3Service {
         id: fav.id,
         label: fav.label,
         icon: fav.icon || app?.icons?.[0]?.src || defaultIcon,
-        // v24: Enable right-click "Remove" option on dock favorites
-        contextMenu: { removeOption: true },
         itemData: {
           appId: fav.appId,
           url: app?.manifest,

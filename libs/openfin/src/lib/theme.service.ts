@@ -129,7 +129,9 @@ export class ThemeService {
     if (typeof fin === 'undefined') return null;
     try {
       const workspacePlatform = getCurrentSync();
-      return await workspacePlatform.Theme.getGeneratedPalettes();
+      const themeApi = workspacePlatform.Theme as any;
+      if (typeof themeApi.getGeneratedPalettes !== 'function') return null;
+      return await themeApi.getGeneratedPalettes();
     } catch (error) {
       logger.error('Error getting generated palettes', error);
       return null;

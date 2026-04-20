@@ -167,8 +167,12 @@ export class NotificationsService {
   async setReminder(notificationId: string, reminderDate: Date): Promise<boolean> {
     if (typeof fin === 'undefined') return false;
     try {
-      const { setReminder: setNotificationReminder } = await getNotificationsApi();
-      return await setNotificationReminder(notificationId, reminderDate);
+      const api = await getNotificationsApi() as any;
+      if (typeof api.setReminder !== 'function') {
+        logger.warn('setReminder not supported by this workspace version');
+        return false;
+      }
+      return await api.setReminder(notificationId, reminderDate);
     } catch (err) {
       logger.error('Failed to set notification reminder', { notificationId, err });
       return false;
@@ -183,8 +187,12 @@ export class NotificationsService {
   async cancelReminder(notificationId: string): Promise<boolean> {
     if (typeof fin === 'undefined') return false;
     try {
-      const { cancelReminder: cancelNotificationReminder } = await getNotificationsApi();
-      return await cancelNotificationReminder(notificationId);
+      const api = await getNotificationsApi() as any;
+      if (typeof api.cancelReminder !== 'function') {
+        logger.warn('cancelReminder not supported by this workspace version');
+        return false;
+      }
+      return await api.cancelReminder(notificationId);
     } catch (err) {
       logger.error('Failed to cancel notification reminder', { notificationId, err });
       return false;
