@@ -4,6 +4,8 @@
   "license": "MIT",
   "scripts": {
     "start": "concurrently -n workspace,angular,react,fdc3 -c blue,green,yellow,magenta \"nx serve macro-workspace\" \"nx serve macro-angular\" \"nx serve macro-react\" \"nx serve macro-angular-fdc3\"",
+    "stop": "node scripts/stop.mjs",
+    "stop:all": "node scripts/stop.mjs --with-openfin",
     "start:workspace": "nx serve macro-workspace",
     "start:angular": "nx serve macro-angular",
     "start:react": "nx serve macro-react",
