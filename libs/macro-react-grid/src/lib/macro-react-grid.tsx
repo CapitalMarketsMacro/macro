@@ -75,7 +75,7 @@ export interface MacroReactGridRef {
 /* ── Styles ── */
 
 const css = {
-  container: { height: '100%', width: '100%', position: 'relative' as const },
+  container: { height: '100%', width: '100%', position: 'relative' as const, display: 'flex', flexDirection: 'column' as const },
   trigger: (active: boolean): React.CSSProperties => ({
     position: 'absolute', top: 6, right: 6, zIndex: 3,
     width: 28, height: 22, padding: 0, fontSize: 11, fontWeight: 600, lineHeight: '20px',
@@ -350,7 +350,7 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
           </>
         )}
 
-        <div style={{ flex: 1, height: '100%' }}>
+        <div style={{ flex: 1, minHeight: 0 }}>
           <AgGridReact theme={theme} columnDefs={columnDefs} enableCharts rowData={rowData}
             gridOptions={mergedGridOptions} getRowId={getRowId}
             onGridReady={(e: GridReadyEvent) => setGridApi(e.api)} />

@@ -344,9 +344,9 @@ export function TreasuryMarketDataComponent() {
   }, [rowData.length]);
 
   return (
-    <>
-      <h1 className="text-2xl font-bold mb-4">On-The-Run Treasury Market Data</h1>
-      <div style={{ height: 'calc(100vh - 100px)', width: '100%' }}>
+    <div className="flex flex-col flex-1 min-h-0">
+      <h1 className="text-2xl font-bold mb-2 shrink-0">On-The-Run Treasury Market Data</h1>
+      <div className="flex-1 min-h-0 w-full">
         <MacroReactGrid
           ref={gridRef}
           columns={columns}
@@ -354,7 +354,7 @@ export function TreasuryMarketDataComponent() {
           getRowId={getRowId}
         />
       </div>
-    </>
+    </div>
   );
 }
 

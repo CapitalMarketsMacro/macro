@@ -173,7 +173,7 @@ export function AppContent() {
             )}
           </button>
         </div>
-        <div className="flex-1 p-4 overflow-auto">
+        <div className="flex-1 min-h-0 p-4 flex flex-col">
           <Routes>
             <Route path="/treasury-market-data" element={<TreasuryMarketDataComponent />} />
             <Route path="/commodities-dashboard" element={<CommoditiesDashboardComponent />} />
