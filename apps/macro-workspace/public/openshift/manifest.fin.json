@@ -390,52 +390,6 @@
         ]
       },
       {
-        "appId": "risk-overview",
-        "name": "risk-overview",
-        "title": "Risk Overview",
-        "description": "Sample risk monitoring dashboard",
-        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/risk-overview.fin.json",
-        "manifestType": "view",
-        "icons": [
-          {
-            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
-          }
-        ],
-        "contactEmail": "contact@example.com",
-        "supportEmail": "support@example.com",
-        "publisher": "OpenFin",
-        "intents": [],
-        "images": [],
-        "tags": [
-          "view",
-          "react",
-          "figma-make"
-        ]
-      },
-      {
-        "appId": "rfq-butterfly-ticket",
-        "name": "rfq-butterfly-ticket",
-        "title": "UST RFQ Ticket",
-        "description": "Butterfly RFQ Ticket Design for UST trading",
-        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/rfq-butterfly-ticket.fin.json",
-        "manifestType": "view",
-        "icons": [
-          {
-            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
-          }
-        ],
-        "contactEmail": "contact@example.com",
-        "supportEmail": "support@example.com",
-        "publisher": "OpenFin",
-        "intents": [],
-        "images": [],
-        "tags": [
-          "view",
-          "react",
-          "figma-make"
-        ]
-      },
-      {
         "appId": "capital-markets-themes",
         "name": "capital-markets-themes",
         "title": "Capital Markets Theme",
@@ -456,30 +410,6 @@
           "view",
           "react",
           "figma-make"
-        ]
-      },
-      {
-        "appId": "rates-execution-blotter",
-        "name": "rates-execution-blotter",
-        "title": "Rates Execution Blotter",
-        "description": "Real-time rates execution blotter displaying trade executions from AMPS",
-        "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/rates-execution-blotter.fin.json",
-        "manifestType": "view",
-        "icons": [
-          {
-            "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
-          }
-        ],
-        "contactEmail": "contact@example.com",
-        "supportEmail": "support@example.com",
-        "publisher": "OpenFin",
-        "intents": [],
-        "images": [],
-        "tags": [
-          "view",
-          "angular",
-          "amps",
-          "rates"
         ]
       }
     ]

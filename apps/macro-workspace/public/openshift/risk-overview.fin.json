@@ -1,7 +1,0 @@
-{
-  "url": "https://{{OPENSHIFT_RISK_OVERVIEW_HOST}}/risk-overview/",
-  "fdc3InteropApi": "2.0",
-  "interop": {
-    "currentContextGroup": "green"
-  }
-}

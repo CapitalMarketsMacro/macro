@@ -1,7 +1,0 @@
-{
-  "url": "https://{{OPENSHIFT_RFQ_BUTTERFLY_TICKET_HOST}}/rfq-butterfly-ticket/",
-  "fdc3InteropApi": "2.0",
-  "interop": {
-    "currentContextGroup": "green"
-  }
-}
