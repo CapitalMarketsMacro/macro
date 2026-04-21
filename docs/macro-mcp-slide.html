@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Macro MCP Server — Capabilities</title>
+<style>
+  @page { size: 13.333in 7.5in; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 13.333in;
+    height: 7.5in;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    color: #e2e8f0;
+    overflow: hidden;
+  }
+  .slide {
+    width: 100%;
+    height: 100%;
+    padding: 0.5in 0.6in;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  /* Accent bar */
+  .slide::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 8px;
+    background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+  }
+  /* Header */
+  .header { margin-bottom: 0.25in; }
+  .title-row { display: flex; align-items: baseline; gap: 18px; margin-bottom: 6px; }
+  h1 {
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, #60a5fa 0%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .tagline {
+    font-size: 18px;
+    color: #cbd5e1;
+    font-weight: 300;
+    line-height: 1.3;
+  }
+  .tagline strong { color: #f8fafc; font-weight: 500; }
+
+  /* 3-column grid */
+  .columns {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 0.15in;
+  }
+  .col {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .col::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+  }
+  .col.tools::before    { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+  .col.resources::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+  .col.prompts::before  { background: linear-gradient(90deg, #ec4899, #f472b6); }
+
+  .col-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .col-icon {
+    font-size: 22px;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tools .col-icon    { background: rgba(59, 130, 246, 0.18); }
+  .resources .col-icon { background: rgba(139, 92, 246, 0.18); }
+  .prompts .col-icon  { background: rgba(236, 72, 153, 0.18); }
+  .col-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #f1f5f9;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .col-count {
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .tools .col-count    { color: #60a5fa; }
+  .resources .col-count { color: #a78bfa; }
+  .prompts .col-count  { color: #f472b6; }
+  .col-sub {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 1px;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  ul { list-style: none; }
+  li {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #cbd5e1;
+    padding: 2px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+  }
+  li::before {
+    content: '▸';
+    color: #475569;
+    font-size: 10px;
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+  li code {
+    background: rgba(15, 23, 42, 0.6);
+    color: #93c5fd;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11.5px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    white-space: nowrap;
+    word-break: keep-all;
+  }
+  li { word-break: normal; overflow-wrap: break-word; }
+  .resources li code { color: #c4b5fd; border-color: rgba(139, 92, 246, 0.15); }
+  .prompts li code  { color: #f9a8d4; border-color: rgba(236, 72, 153, 0.15); }
+  li strong { color: #f1f5f9; font-weight: 600; }
+
+  /* Footer band */
+  .footer {
+    margin-top: 0.2in;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 10px;
+    padding: 12px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .pitch {
+    font-size: 14px;
+    color: #f1f5f9;
+    line-height: 1.4;
+  }
+  .pitch strong {
+    background: linear-gradient(90deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 700;
+  }
+  .clients {
+    font-size: 11px;
+    color: #94a3b8;
+    white-space: nowrap;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+  }
+  .clients span { color: #cbd5e1; margin: 0 3px; }
+
+  /* Stats strip */
+  .stats {
+    position: absolute;
+    top: 0.5in;
+    right: 0.6in;
+    display: flex;
+    gap: 14px;
+  }
+  .stat {
+    text-align: center;
+    padding: 6px 12px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 8px;
+    min-width: 60px;
+  }
+  .stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    background: linear-gradient(90deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .stat-label {
+    font-size: 9px;
+    color: #94a3b8;
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <div class="slide">
+    <div class="stats">
+      <div class="stat"><div class="stat-value">144</div><div class="stat-label">Icons</div></div>
+      <div class="stat"><div class="stat-value">1</div><div class="stat-label">Tool Call</div></div>
+      <div class="stat"><div class="stat-value">0</div><div class="stat-label">Manual Steps</div></div>
+    </div>
+
+    <div class="header">
+      <div class="title-row">
+        <h1>Macro MCP Server</h1>
+        <span class="badge">Model Context Protocol</span>
+      </div>
+      <div class="tagline">AI agents that <strong>scaffold, import, and explore</strong> the Macro Desktop monorepo — without asking you how it works.</div>
+    </div>
+
+    <div class="columns">
+      <!-- TOOLS -->
+      <div class="col tools">
+        <div class="col-header">
+          <div class="col-icon">🛠</div>
+          <div>
+            <div class="col-title"><span class="col-count">11</span>&nbsp;Tools</div>
+            <div class="col-sub">Do things</div>
+          </div>
+        </div>
+        <ul>
+          <li><strong><code>import_figma_app</code></strong> — zip → OpenFin-registered React app</li>
+          <li><strong><code>amps_create_mfe</code></strong> — live AMPS topic → Angular/React MFE + AG Grid</li>
+          <li><code>amps_explore</code> — topics, SOW queries, schema</li>
+          <li><code>scaffold_angular_app</code> / <code>scaffold_react_app</code></li>
+          <li><code>scaffold_library</code> — new shared lib + path alias</li>
+          <li><code>register_openfin_app</code> — Home + Dock + Store</li>
+          <li><code>list_icons</code> · <code>list_libraries</code> · <code>get_library_api</code></li>
+          <li><code>get_commands</code> — all npm / nx scripts</li>
+        </ul>
+      </div>
+
+      <!-- RESOURCES -->
+      <div class="col resources">
+        <div class="col-header">
+          <div class="col-icon">📚</div>
+          <div>
+            <div class="col-title"><span class="col-count">12</span>&nbsp;Resources</div>
+            <div class="col-sub">Know things (macro://)</div>
+          </div>
+        </div>
+        <ul>
+          <li><code>architecture</code> — monorepo layout &amp; data flow</li>
+          <li><code>tech-stack</code> — NX 22, Angular 21, React 19, AG Grid 35</li>
+          <li><code>libraries</code> — catalog of <code>@macro/*</code> libs</li>
+          <li><code>theming</code> — single-source-of-truth theming rules</li>
+          <li><code>openfin</code> — manifest + FDC3 conventions</li>
+          <li><code>data-connectivity</code> — AMPS / Solace / NATS</li>
+          <li><code>market-data-server</code> — mock WS endpoints</li>
+          <li><code>testing</code> — Jest · Vitest · Playwright</li>
+          <li><code>lob-guide</code> · <code>figma-workflow</code></li>
+          <li><code>templates/angular</code> · <code>templates/react</code></li>
+        </ul>
+      </div>
+
+      <!-- PROMPTS -->
+      <div class="col prompts">
+        <div class="col-header">
+          <div class="col-icon">✨</div>
+          <div>
+            <div class="col-title"><span class="col-count">6</span>&nbsp;Prompts</div>
+            <div class="col-sub">Start things</div>
+          </div>
+        </div>
+        <ul>
+          <li><code>create-angular-app</code> — new Angular LOB, end-to-end</li>
+          <li><code>create-react-app</code> — new React LOB, end-to-end</li>
+          <li><code>add-grid-component</code> — AG Grid + ColDefs + updateRows$</li>
+          <li><code>add-fdc3-context</code> — broadcast + listen wiring</li>
+          <li><code>add-theme-support</code> — dark/light via macro-design</li>
+          <li><code>add-data-connectivity</code> — transports + conflation</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="pitch">
+        <strong>From "Figma zip" → running OpenFin view in a single tool call.</strong>
+        &nbsp;Port wired · deps installed · Home/Dock/Store registered · icon auto-picked · start script added.
+      </div>
+      <div class="clients">
+        <span>Claude Code</span>·<span>Cursor</span>·<span>Copilot</span>·<span>JetBrains</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
