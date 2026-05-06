@@ -1,3 +1,23 @@
-[mcp_servers.nx-mcp]
+personality = "friendly"
+
+[mcp_servers]
+
+[mcp_servers.ag-mcp]
 command = "npx"
-args = [ "nx-mcp@latest", "--minimal" ]
+args = ["ag-mcp"]
+
+[mcp_servers.primeng]
+command = "npx"
+args = ["-y", "@primeng/mcp"]
+
+[mcp_servers.angular-cli]
+command = "npx"
+args = ["-y", "@angular/cli", "mcp"]
+
+[mcp_servers.tailwindcss]
+command = "npx"
+args = ["-y", "tailwindcss-mcp-server"]
+
+[mcp_servers.macro-mcp]
+command = "node"
+args = ["E:/MacroDesktopMFE/macro/dist/apps/macro-mcp/main.js"]
