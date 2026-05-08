@@ -106,7 +106,13 @@
       "Bash(cp apps/macro-mcp/src/tools/import-figma-app.ts apps/macro-mcp-agent/src/tools/import-figma-app.ts)",
       "Bash(awk '{print $NF}')",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('name','?'\\), d.get\\('version','?'\\)\\)\")",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('name',''\\), d.get\\('version',''\\)\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('name',''\\), d.get\\('version',''\\)\\)\")",
+      "Bash(cp -r CapitalMarketsIcons/dark/svg/* apps/macro-workspace/public/icons/capital-markets/dark/)",
+      "Bash(cp -r CapitalMarketsIcons/light/svg/* apps/macro-workspace/public/icons/capital-markets/light/)",
+      "Read(//c/Program Files/Google/Chrome/Application/**)",
+      "Read(//c/Program Files \\(x86\\)/Microsoft/Edge/Application/**)",
+      "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless --disable-gpu --no-pdf-header-footer --print-to-pdf=\"E:/MacroDesktopMFE/macro/docs/macro-mcp-slide.pdf\" --no-margins --disable-web-security \"file:///E:/MacroDesktopMFE/macro/docs/macro-mcp-slide.html\")",
+      "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless --disable-gpu --no-pdf-header-footer --print-to-pdf=\"E:/MacroDesktopMFE/macro/docs/macro-mcp-slide.pdf\" --no-margins \"file:///E:/MacroDesktopMFE/macro/docs/macro-mcp-slide.html\")"
     ]
   },
   "enableAllProjectMcpServers": true
