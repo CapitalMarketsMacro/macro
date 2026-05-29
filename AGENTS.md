@@ -101,7 +101,7 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 **React (macro-react):**
 
 - React 19 + Vite 8
-- React Router DOM 6.x for routing
+- React Router DOM 7.x for routing
 - Shadcn UI (Radix primitives) for navigation components
 - PrimeReact 11 with Aura theme preset
 - Tailwind CSS 4 for utility styling
@@ -133,7 +133,7 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 - **Prettier**: single quotes (`"singleQuote": true`), default everything else
 - **EditorConfig**: UTF-8, 2-space indentation, LF newlines, final newline
 - **ESLint**: NX flat config with `@nx/enforce-module-boundaries` enabled
-- **TypeScript**: 5.9.3, strict-ish (skipLibCheck, experimentalDecorators)
+- **TypeScript**: 6.0.3, strict-ish (skipLibCheck, experimentalDecorators)
 
 ## Testing
 
