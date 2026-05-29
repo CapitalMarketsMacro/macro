@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-NX 22.6 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace into a unified platform with shared libraries for real-time market data, enterprise messaging, and FDC3 interoperability.
+NX 22.7 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace into a unified platform with shared libraries for real-time market data, enterprise messaging, and FDC3 interoperability.
 
 ## Quick Reference
 
