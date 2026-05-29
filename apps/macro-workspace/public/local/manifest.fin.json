@@ -3,7 +3,7 @@
   "licenseKey": "openfin-demo-license-key",
   "runtime": {
     "arguments": "--v=1 --inspect --enable-mesh --security-realm=macro-workspace",
-    "version": "42.138.103.4"
+    "version": "stable-v43"
   },
   "platform": {
     "uuid": "macro-workspace-platform",
@@ -109,9 +109,9 @@
   },
   "appAssets": [
     {
-      "src": "https://cdn.openfin.co/release/snap/1.5.0/snap.zip",
+      "src": "https://cdn.openfin.co/release/snap/1.6.0/snap.zip",
       "alias": "openfin-snap",
-      "version": "1.5.0",
+      "version": "1.6.0",
       "target": "OpenFinSnap.exe"
     }
   ],
