@@ -51,6 +51,7 @@ describe('NotificationsService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useRealTimers();
     delete (globalThis as any).fin;
   });
 
@@ -188,6 +189,70 @@ describe('NotificationsService', () => {
       // create is now async internally (dynamic import)
       await new Promise((r) => setTimeout(r, 0));
       expect(mockCreate).toHaveBeenCalledWith(config);
+    });
+
+    it('should initialize the client environment (register with no platform options) before dispatching', async () => {
+      setFin({});
+      service = new NotificationsService();
+
+      service.create({ title: 'Test', body: 'Hello' } as any);
+      await flush();
+
+      // register() with no args initializes this window's environment without
+      // overriding the provider's platform configuration.
+      expect(mockRegister).toHaveBeenCalledWith();
+      expect(mockCreate).toHaveBeenCalled();
+    });
+
+    it('should only initialize the client environment once across multiple creates', async () => {
+      setFin({});
+      service = new NotificationsService();
+
+      service.create({ title: 'One', body: 'a' } as any);
+      await flush();
+      service.create({ title: 'Two', body: 'b' } as any);
+      await flush();
+
+      expect(mockRegister).toHaveBeenCalledTimes(1);
+      expect(mockCreate).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not re-initialize the client when the platform was already registered in this window', async () => {
+      setFin({});
+      service = new NotificationsService();
+      await service.register(platformSettings);
+      mockRegister.mockClear();
+
+      service.create({ title: 'Test', body: 'Hello' } as any);
+      await flush();
+
+      // register() already initialized the environment; create() must not call it again.
+      expect(mockRegister).not.toHaveBeenCalled();
+      expect(mockCreate).toHaveBeenCalled();
+    });
+
+    it('should retry create when environment is not initialized yet', async () => {
+      jest.useFakeTimers();
+      try {
+        setFin({});
+        service = new NotificationsService();
+        mockCreate
+          .mockRejectedValueOnce(new Error('Environment is not initialized.'))
+          .mockResolvedValueOnce(undefined);
+
+        const config = { title: 'Retry Notification', body: 'Retry Body' } as any;
+        service.create(config);
+
+        await Promise.resolve();
+        await jest.advanceTimersByTimeAsync(200);
+        await Promise.resolve();
+
+        expect(mockCreate).toHaveBeenCalledTimes(2);
+        expect(mockCreate).toHaveBeenNthCalledWith(1, config);
+        expect(mockCreate).toHaveBeenNthCalledWith(2, config);
+      } finally {
+        jest.useRealTimers();
+      }
     });
   });
 

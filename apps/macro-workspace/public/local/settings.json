@@ -2,7 +2,7 @@
   "platformSettings": {
     "id": "macro-workspace-platform",
     "title": "Macro Workspace Starter",
-    "icon": "http://localhost:4202/icons/platform.svg"
+    "icon": "http://localhost:4202/MacroThemeCondensed/assets/favicon.svg"
   },
   "customSettings": {
     "apps": [

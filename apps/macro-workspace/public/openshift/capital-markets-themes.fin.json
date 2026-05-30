@@ -1,5 +1,5 @@
 {
-  "url": "https://{{OPENSHIFT_CAPITAL_MARKETS_THEMES_HOST}}/capital-markets-themes/",
+  "url": "https://{{OPENSHIFT_WORKSPACE_HOST}}/MacroThemeCondensed/workspace.html",
   "fdc3InteropApi": "2.0",
   "interop": {
     "currentContextGroup": "green"

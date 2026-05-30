@@ -9,7 +9,7 @@
     "uuid": "macro-workspace-platform",
     "name": "Macro Workspace",
     "description": "Capital Markets Desktop Workspace Platform",
-    "icon": "http://localhost:4202/icons/platform.svg",
+    "icon": "http://localhost:4202/MacroThemeCondensed/assets/favicon.svg",
     "autoShow": true,
     "allowLaunchIntoPlatform": true,
     "providerUrl": "http://localhost:4202/provider?env=local",
@@ -21,12 +21,12 @@
       "url": "http://MontuNobleNumbat2404:8000"
     },
     "defaultWindowOptions": {
-      "icon": "http://localhost:4202/icons/platform.svg",
-      "taskbarIcon": "http://localhost:4202/favicon.ico",
+      "icon": "http://localhost:4202/MacroThemeCondensed/assets/favicon.svg",
+      "taskbarIcon": "http://localhost:4202/MacroThemeCondensed/assets/favicon.svg",
       "taskbarIconGroup": "macro-workspace"
     },
     "defaultViewOptions": {
-      "icon": "http://localhost:4202/icons/platform.svg"
+      "icon": "http://localhost:4202/MacroThemeCondensed/assets/favicon.svg"
     },
     "defaultWidth": 280,
     "defaultHeight": 280,
@@ -118,7 +118,7 @@
   "shortcut": {
     "company": "OpenFin",
     "description": "A way of showing examples of what OpenFin can do.",
-    "icon": "http://localhost:4202/icons/platform.svg",
+    "icon": "http://localhost:4202/MacroThemeCondensed/assets/favicon.svg",
     "name": "Macro Workspace Starter",
     "target": [
       "desktop",

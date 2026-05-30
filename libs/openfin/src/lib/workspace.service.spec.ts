@@ -1,4 +1,5 @@
 import { firstValueFrom } from 'rxjs';
+import { getCurrentSync } from '@openfin/workspace-platform';
 import { WorkspaceService } from './workspace.service';
 import type { PlatformService } from './platform.service';
 import type { DockService } from './dock.service';
@@ -226,6 +227,73 @@ describe('WorkspaceService', () => {
       expect(callOrder).toContain('shutdown');
       expect(callOrder).toContain('deregister');
       expect(callOrder[callOrder.length - 1]).toBe('quit');
+    });
+  });
+
+  // ── restore last saved workspace ────────────────────────────
+
+  describe('restoreLastSavedWorkspaceAsync', () => {
+    let mockApplyWorkspace: jest.Mock;
+
+    beforeEach(() => {
+      mockApplyWorkspace = jest.fn().mockResolvedValue(true);
+      (getCurrentSync as jest.Mock).mockReturnValue({ applyWorkspace: mockApplyWorkspace });
+    });
+
+    /** Invoke the private restore method directly. */
+    const restore = () => (service as any).restoreLastSavedWorkspaceAsync();
+
+    it('should do nothing and not apply when no last saved workspace id is stored', async () => {
+      mockStorageService.getLastSavedWorkspaceId.mockResolvedValue(null);
+
+      const statuses: string[] = [];
+      service.getStatus$().subscribe((s) => statuses.push(s));
+
+      await restore();
+
+      expect(mockApplyWorkspace).not.toHaveBeenCalled();
+      expect(statuses).toContain('No saved workspace found');
+    });
+
+    it('should apply the tracked last saved workspace, closing existing windows', async () => {
+      const workspace = { workspaceId: 'ws-1', title: 'My Workspace', snapshot: { windows: [] } } as any;
+      mockStorageService.getLastSavedWorkspaceId.mockResolvedValue('ws-1');
+      mockStorageService.getWorkspaces.mockResolvedValue([workspace]);
+
+      const statuses: string[] = [];
+      service.getStatus$().subscribe((s) => statuses.push(s));
+
+      await restore();
+
+      expect(mockApplyWorkspace).toHaveBeenCalledWith(workspace, {
+        skipPrompt: true,
+        applySnapshotOptions: { closeExistingWindows: true },
+      });
+      expect(statuses).toContain('Restored last saved workspace');
+    });
+
+    it('should clear a dangling last saved id when the workspace is missing from storage', async () => {
+      mockStorageService.getLastSavedWorkspaceId.mockResolvedValue('ws-missing');
+      mockStorageService.getWorkspaces.mockResolvedValue([]);
+
+      await restore();
+
+      expect(mockStorageService.removeLastSavedWorkspaceId).toHaveBeenCalledTimes(1);
+      expect(mockApplyWorkspace).not.toHaveBeenCalled();
+    });
+
+    it('should not throw if applyWorkspace rejects', async () => {
+      mockStorageService.getLastSavedWorkspaceId.mockResolvedValue('ws-1');
+      mockStorageService.getWorkspaces.mockResolvedValue([
+        { workspaceId: 'ws-1', title: 'My Workspace', snapshot: {} } as any,
+      ]);
+      mockApplyWorkspace.mockRejectedValue(new Error('apply failed'));
+
+      const statuses: string[] = [];
+      service.getStatus$().subscribe((s) => statuses.push(s));
+
+      await expect(restore()).resolves.toBeUndefined();
+      expect(statuses).toContain('Error restoring workspace');
     });
   });
 });

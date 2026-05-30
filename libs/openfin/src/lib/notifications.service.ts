@@ -11,6 +11,17 @@ async function getNotificationsApi() {
 
 const logger = Logger.getLogger('NotificationsService');
 
+/**
+ * Serialize an error for structured logging. `Error` objects have no enumerable
+ * own properties, so logging them directly yields `{}` and hides the message.
+ */
+function serializeError(error: unknown): unknown {
+  if (error instanceof Error) {
+    return { name: error.name, message: error.message, stack: error.stack };
+  }
+  return error;
+}
+
 /** Severity level for convenience notification methods. */
 export type NotificationLevel = 'info' | 'success' | 'warning' | 'error' | 'critical';
 
@@ -58,9 +69,19 @@ const LEVEL_LABELS: Record<NotificationLevel, string> = {
  * workspace startup rather than auto-registering in the constructor.
  */
 export class NotificationsService {
+  private readonly MAX_CREATE_ATTEMPTS = 5;
+  private readonly CREATE_RETRY_DELAY_MS = 200;
   private platformId?: string;
   private platformIcon?: string;
   private platformTitle?: string;
+  /**
+   * The notifications client environment is initialized per-window (per JS realm).
+   * The provider window initializes it via `register()`; views/child windows that
+   * only send notifications must initialize their own environment before `create()`
+   * or every dispatch throws "Environment is not initialized..".
+   */
+  private clientInitialized = false;
+  private clientInitPromise?: Promise<void>;
 
   async register(platformSettings: PlatformSettings): Promise<void> {
     if (typeof fin === 'undefined') return;
@@ -77,9 +98,37 @@ export class NotificationsService {
           title: platformSettings.title,
         },
       });
+      // register() also initializes the client environment in this window.
+      this.clientInitialized = true;
       logger.info('Notifications platform registered', { id: platformSettings.id });
     } catch (error) {
-      logger.error('Error registering notifications platform', error);
+      logger.error('Error registering notifications platform', { error: serializeError(error) });
+    }
+  }
+
+  /**
+   * Ensure the notifications client environment is initialized in the current window.
+   *
+   * Views and other child windows that only *send* notifications (never register the
+   * platform) still need their own client environment. Calling the notifications
+   * `register()` with no platform options initializes the environment without
+   * overriding the configuration set by the provider. Idempotent — initializes once.
+   */
+  async ensureClientInitialized(): Promise<void> {
+    if (typeof fin === 'undefined' || this.clientInitialized) return;
+    if (this.clientInitPromise) return this.clientInitPromise;
+
+    this.clientInitPromise = (async () => {
+      const { register: registerPlatform } = await getNotificationsApi();
+      await registerPlatform();
+      this.clientInitialized = true;
+      logger.info('Notifications client environment initialized');
+    })();
+
+    try {
+      await this.clientInitPromise;
+    } finally {
+      this.clientInitPromise = undefined;
     }
   }
 
@@ -91,9 +140,14 @@ export class NotificationsService {
     }
 
     return new Observable<NotificationActionEvent>((observer) => {
-      getNotificationsApi().then(({ addEventListener }) => {
-        addEventListener('notification-action', (event) => observer.next(event));
-      });
+      getNotificationsApi()
+        .then(({ addEventListener }) => {
+          addEventListener('notification-action', (event) => observer.next(event));
+        })
+        .catch((error) => {
+          logger.error('Unable to attach notification action listener', error);
+          observer.complete();
+        });
     });
   }
 
@@ -108,7 +162,41 @@ export class NotificationsService {
   create(config: NotificationOptions): void {
     if (typeof fin === 'undefined') return;
 
-    getNotificationsApi().then(({ create }) => create(config));
+    void this.createWithRetry(config);
+  }
+
+  private async createWithRetry(config: NotificationOptions, attempt = 1): Promise<void> {
+    try {
+      // Initialize this window's notifications environment before dispatching.
+      // Without this, create() from a view throws "Environment is not initialized..".
+      await this.ensureClientInitialized();
+      const { create } = await getNotificationsApi();
+      await create(config);
+    } catch (error) {
+      if (this.isEnvironmentNotInitializedError(error) && attempt < this.MAX_CREATE_ATTEMPTS) {
+        logger.warn('Notifications environment not initialized yet; retrying create', {
+          attempt,
+          nextAttempt: attempt + 1,
+        });
+        // The environment failed to initialize on this attempt; force a re-init next try.
+        this.clientInitialized = false;
+        await new Promise((resolve) => setTimeout(resolve, this.CREATE_RETRY_DELAY_MS));
+        await this.createWithRetry(config, attempt + 1);
+        return;
+      }
+      logger.error('Error creating notification', {
+        attempt,
+        title: config.title,
+        error: serializeError(error),
+      });
+    }
+  }
+
+  private isEnvironmentNotInitializedError(error: unknown): boolean {
+    if (error instanceof Error) {
+      return error.message.includes('Environment is not initialized');
+    }
+    return String(error).includes('Environment is not initialized');
   }
 
   /**

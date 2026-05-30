@@ -2,7 +2,7 @@
   "platformSettings": {
     "id": "macro-workspace-platform",
     "title": "Macro Workspace Starter",
-    "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg"
+    "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/MacroThemeCondensed/assets/favicon.svg"
   },
   "customSettings": {
     "apps": [
