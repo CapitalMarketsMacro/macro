@@ -8,16 +8,20 @@ const LIBRARIES = [
     keyExports: ['Logger', 'LogLevel'],
   },
   {
-    name: '@macro/amps',
-    importPath: '@macro/amps',
-    description: 'AMPS (60East) pub/sub client wrapper with RxJS Observable/Subject support.',
-    keyExports: ['AmpsClient', 'AmpsMessage', 'AmpsSowOptions', 'AmpsMessageHandler', 'AmpsErrorHandler'],
-  },
-  {
-    name: '@macro/solace',
-    importPath: '@macro/solace',
-    description: 'Solace PubSub+ client wrapper with RxJS Observable/Subject support.',
-    keyExports: ['SolaceClient', 'SolaceMessage', 'SolaceConnectionProperties', 'SolaceMessageHandler', 'SolaceErrorHandler'],
+    name: '@macro/transports',
+    importPath: '@macro/transports',
+    description:
+      'Unified messaging transport library for AMPS, Solace, and NATS with a common TransportClient interface and RxJS Observable/Subject support. Angular DI via @macro/transports/angular, React hooks via @macro/transports/react.',
+    keyExports: [
+      'AmpsTransport',
+      'SolaceTransport',
+      'NatsTransport',
+      'AmpsClient',
+      'SolaceClient',
+      'NatsClient',
+      'TransportClient',
+      'TransportMessage',
+    ],
   },
   {
     name: '@macro/rxutils',

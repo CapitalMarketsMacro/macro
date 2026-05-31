@@ -1,4 +1,4 @@
-import { NatsClient } from './nats';
+import { NatsTransport as NatsClient } from './nats-transport';
 
 // ── Mocks ────────────────────────────────────────────────────────────
 
@@ -18,7 +18,7 @@ const mockPublish = jest.fn();
 const mockDrain = jest.fn().mockResolvedValue(undefined);
 const mockRequest = jest.fn();
 // Default: never-resolving promise (connection stays open)
-const mockClosed = jest.fn().mockReturnValue(new Promise(() => {}));
+const mockClosed = jest.fn().mockReturnValue(new Promise(() => undefined));
 const mockSubscribe = jest.fn();
 
 jest.mock('@nats-io/nats-core', () => ({
@@ -45,7 +45,7 @@ function createMockSubscription(messages: any[] = []) {
         if (index < messages.length) {
           return Promise.resolve({ value: messages[index++], done: false });
         }
-        return new Promise(() => {});
+        return new Promise(() => undefined);
       },
     }),
   };
@@ -245,8 +245,9 @@ describe('NatsClient', () => {
       // Let the async iterator process
       await new Promise((r) => setTimeout(r, 10));
 
+      // Unified TransportMessage exposes the subject as `topic`.
       expect(handler).toHaveBeenCalledWith(expect.objectContaining({
-        subject: 'test.1',
+        topic: 'test.1',
         data: '{"a":1}',
       }));
     });
@@ -377,8 +378,9 @@ describe('NatsClient', () => {
 
       await new Promise((r) => setTimeout(r, 10));
 
+      // Unified TransportMessage exposes the subject as `topic`.
       expect(handler).toHaveBeenCalledWith(expect.objectContaining({
-        subject: 'bin',
+        topic: 'bin',
         data: '{"binary":true}',
         reply: 'inbox.1',
       }));

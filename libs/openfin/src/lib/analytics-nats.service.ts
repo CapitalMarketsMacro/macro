@@ -7,7 +7,7 @@ const NATS_WS_URL = 'ws://MontuNobleNumbat2404:8224';
 const TOPIC_PREFIX = 'macro.analytics';
 
 /**
- * Publishes OpenFin Workspace analytics events to NATS via @macro/nats.
+ * Publishes OpenFin Workspace analytics events to NATS via @macro/transports.
  * Singleton accessor: getAnalyticsNats()
  */
 export class AnalyticsNatsService {

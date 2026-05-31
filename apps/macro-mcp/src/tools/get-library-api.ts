@@ -32,10 +32,10 @@ logger.info('User data', { userId: 123, name: 'John' });
 logger.error('Request failed', { statusCode: 500, endpoint: '/api' });
 \`\`\``,
 
-  amps: `# @macro/amps API
+  amps: `# @macro/transports API
 
-**Import:** \`import { AmpsClient, AmpsMessage, AmpsSowOptions } from '@macro/amps';\`
-**Source:** \`libs/amps/src/index.ts\`
+**Import:** \`import { AmpsClient, AmpsMessage, AmpsSowOptions } from '@macro/transports';\`
+**Source:** \`libs/transports/src/index.ts\`
 
 ## AmpsClient class
 - \`constructor(clientName?: string)\` — default: 'amps-client'
@@ -68,10 +68,10 @@ observable.subscribe(msg => console.log(msg.data));
 client.publish('orders', { symbol: 'AAPL', qty: 100 });
 \`\`\``,
 
-  solace: `# @macro/solace API
+  solace: `# @macro/transports API
 
-**Import:** \`import { SolaceClient, SolaceConnectionProperties, SolaceMessage } from '@macro/solace';\`
-**Source:** \`libs/solace/src/index.ts\`
+**Import:** \`import { SolaceClient, SolaceConnectionProperties, SolaceMessage } from '@macro/transports';\`
+**Source:** \`libs/transports/src/index.ts\`
 
 ## SolaceClient class
 - \`constructor(options?: { logLevel?: 'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'FATAL' })\`
@@ -292,10 +292,10 @@ const { observable } = await client.subscribeAsObservable('prices.>');
 observable.subscribe(msg => console.log(msg.json()));
 \`\`\``,
 
-  nats: `# @macro/nats API (standalone)
+  nats: `# @macro/transports API (standalone)
 
-**Import:** \`import { NatsClient, NatsConnectionOptions, NatsMessage } from '@macro/nats';\`
-**Source:** \`libs/nats/src/index.ts\`
+**Import:** \`import { NatsClient, NatsConnectionOptions, NatsMessage } from '@macro/transports';\`
+**Source:** \`libs/transports/src/index.ts\`
 
 ## NatsClient class
 - \`constructor(clientName?: string)\`

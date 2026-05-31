@@ -108,7 +108,7 @@ export const MyComponent = forwardRef<MyComponentRef, Props>((props, ref) => {
 
 - Framework-agnostic: works with both Angular and React
 - Uses \`tsc\` bundler (simple and reliable)
-- Follow the same patterns as \`@macro/logger\`, \`@macro/amps\`, \`@macro/solace\`
+- Follow the same patterns as \`@macro/logger\`, \`@macro/transports\`, \`@macro/transports\`
 - Keep dependencies minimal — shared libs should be lightweight
 
 \`\`\`typescript

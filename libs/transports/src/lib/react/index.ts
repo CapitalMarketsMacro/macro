@@ -30,7 +30,7 @@ function useTransport<T extends TransportClient>(
 
   useEffect(() => {
     return () => {
-      clientRef.current.disconnect().catch(() => {});
+      clientRef.current.disconnect().catch(() => undefined);
     };
   }, []);
 
@@ -113,7 +113,7 @@ export function useTransportSubscription(
     return () => {
       cancelled = true;
       if (subIdRef.current) {
-        client.unsubscribe(subIdRef.current).catch(() => {});
+        client.unsubscribe(subIdRef.current).catch(() => undefined);
         subIdRef.current = null;
       }
     };

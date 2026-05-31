@@ -217,7 +217,7 @@ export function DataGrid() {
     output += `
 ## AMPS Integration
 \`\`\`typescript
-import { AmpsClient } from '@macro/amps';
+import { AmpsClient } from '@macro/transports';
 ${hasConflation ? "import { ConflationSubject } from '@macro/rxutils';" : ''}
 
 const ampsClient = new AmpsClient('${appName}');
@@ -243,7 +243,7 @@ conflated.subscribeToConflated(({ value }) => {
     output += `
 ## Solace Integration
 \`\`\`typescript
-import { SolaceClient } from '@macro/solace';
+import { SolaceClient } from '@macro/transports';
 ${hasConflation ? "import { ConflationSubject } from '@macro/rxutils';" : ''}
 
 const solaceClient = new SolaceClient();

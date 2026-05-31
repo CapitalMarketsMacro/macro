@@ -92,12 +92,12 @@ npx nx g @nx/react:app ${appName} --style=css --routing --bundler=vite
 - Set \`getRowId\` for row identity tracking
 
 ## Step 8: Wire up data connectivity
-${ds === 'amps' ? `- Import \`AmpsClient\` from \`@macro/amps\`
+${ds === 'amps' ? `- Import \`AmpsClient\` from \`@macro/transports\`
 - Connect in a useEffect: \`await client.connect('ws://localhost:9100/amps/json')\`
 - Subscribe: \`const { observable } = await client.subscribeAsObservable('your-topic')\`
 - Use \`ConflationSubject\` from \`@macro/rxutils\` to conflate updates
 - Pipe to \`gridRef.current?.updateRows$.next([value])\`` :
-ds === 'solace' ? `- Import \`SolaceClient\` from \`@macro/solace\`
+ds === 'solace' ? `- Import \`SolaceClient\` from \`@macro/transports\`
 - Connect in a useEffect with \`SolaceConnectionProperties\`
 - Subscribe: \`const { observable } = await client.subscribeAsObservable('your/topic')\`
 - Use \`ConflationSubject\` from \`@macro/rxutils\` to conflate updates

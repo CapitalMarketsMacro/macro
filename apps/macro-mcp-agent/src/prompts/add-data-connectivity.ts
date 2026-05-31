@@ -218,7 +218,7 @@ function getTransportSetup(transport: string, topic: string, framework: string):
   switch (transport) {
     case 'amps':
       return {
-        imports: "import { AmpsClient } from '@macro/amps';",
+        imports: "import { AmpsClient } from '@macro/transports';",
         connection: `${indent}const client = new AmpsClient('${framework}-client');
 ${indent}client.connect('ws://localhost:9100/amps/json').then(() => {
 ${indent}  ${loggerRef}.info('Connected to AMPS');
@@ -241,7 +241,7 @@ ${framework === 'angular' ? `${indent}// Store client reference for cleanup` : '
 
     case 'solace':
       return {
-        imports: "import { SolaceClient } from '@macro/solace';",
+        imports: "import { SolaceClient } from '@macro/transports';",
         connection: `${indent}const client = new SolaceClient('${framework}-client');
 ${indent}client.connect({
 ${indent}  hostUrl: 'ws://localhost:8008',
@@ -282,7 +282,7 @@ ${indent}})${subEnd};`,
           ? '    // client.disconnect();'
           : '      sub?.unsubscribe();\n      // client.disconnect();',
         notes: `## NATS Notes
-- Uses @macro/transports unified library (recommended over standalone @macro/nats)
+- Uses @macro/transports unified library (recommended over standalone @macro/transports)
 - Default NATS WebSocket endpoint: \`ws://localhost:8224\`
 - Supports wildcards: \`*\` (single token) and \`>\` (tail match)
 - Supports request/reply: \`client.request(subject, data, timeout)\`

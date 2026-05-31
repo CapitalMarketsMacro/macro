@@ -21,9 +21,6 @@
       "@macro/logger": [
         "libs/logger/src/index.ts"
       ],
-      "@macro/amps": [
-        "libs/amps/src/index.ts"
-      ],
       "@macro/rxutils": [
         "libs/rxutils/src/index.ts"
       ],
@@ -41,12 +38,6 @@
       ],
       "@macro/openfin/react": [
         "libs/openfin/src/lib/react.ts"
-      ],
-      "@macro/solace": [
-        "libs/solace/src/index.ts"
-      ],
-      "@macro/nats": [
-        "libs/nats/src/index.ts"
       ],
       "@macro/transports": [
         "libs/transports/src/index.ts"
