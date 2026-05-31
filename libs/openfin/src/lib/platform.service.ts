@@ -235,7 +235,7 @@ export class PlatformService {
                   action: 'Upload',
                 }).catch(() => {});
                 await fin.System.launchLogUploader({
-                  endpoint: 'http://MontuNobleNumbat2404:8000',
+                  endpoint: 'http://MontyUbuntu2604:8000',
                   logs: ['debug:self', 'app', 'rvm'],
                   ui: { show: true },
                 } as any);

@@ -18,7 +18,7 @@
     "enableAppLogging": true,
     "logManagement": {
       "enabled": true,
-      "url": "http://MontuNobleNumbat2404:8000"
+      "url": "http://MontyUbuntu2604:8000"
     },
     "defaultWindowOptions": {
       "icon": "http://localhost:4202/favicon.ico",

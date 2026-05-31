@@ -51,7 +51,7 @@ describe('AnalyticsNatsService', () => {
     it('should connect to NATS', async () => {
       await service.connect();
       expect(mockConnect).toHaveBeenCalledWith({
-        servers: 'ws://MontuNobleNumbat2404:8224',
+        servers: 'ws://MontyUbuntu2604:8224',
       });
     });
 

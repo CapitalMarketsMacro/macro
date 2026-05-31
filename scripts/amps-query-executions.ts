@@ -4,7 +4,7 @@
  */
 import { Client } from 'amps';
 
-const AMPS_URL = 'ws://montunoblenumbat2404:9008/amps/json';
+const AMPS_URL = 'ws://MontyUbuntu2604:9008/amps/json';
 const TOPIC = 'rates/executions';
 const CLIENT_NAME = 'query-executions';
 const TOP_N = 10;

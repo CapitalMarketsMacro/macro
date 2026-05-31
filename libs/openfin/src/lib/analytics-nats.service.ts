@@ -3,7 +3,7 @@ import { Logger } from '@macro/logger';
 
 const logger = Logger.getLogger('AnalyticsNatsService');
 
-const NATS_WS_URL = 'ws://MontuNobleNumbat2404:8224';
+const NATS_WS_URL = 'ws://MontyUbuntu2604:8224';
 const TOPIC_PREFIX = 'macro.analytics';
 
 /**

@@ -7,7 +7,7 @@ import { Logger } from '@macro/logger';
 
 const logger = Logger.getLogger('AnalyticsDashboard');
 
-const NATS_WS_URL = 'ws://MontuNobleNumbat2404:8224';
+const NATS_WS_URL = 'ws://MontyUbuntu2604:8224';
 const ANALYTICS_TOPIC = 'macro.analytics.>';
 const MAX_EVENTS = 200;
 

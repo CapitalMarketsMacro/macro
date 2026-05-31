@@ -249,7 +249,7 @@ apps/macro-workspace/public/
 // In platform manifest:
 "enableAppLogging": true,
 "appLogsTimezone": "utc",
-"logManagement": { "enabled": true, "url": "http://MontuNobleNumbat2404:8000" }
+"logManagement": { "enabled": true, "url": "http://MontyUbuntu2604:8000" }
 ```
 
 Log username is set automatically from Windows `USERNAME` environment variable after platform initialization.
