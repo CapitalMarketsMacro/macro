@@ -9,7 +9,7 @@
     "uuid": "macro-workspace-platform",
     "name": "Macro Workspace",
     "description": "Capital Markets Desktop Workspace Platform",
-    "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/MacroThemeCondensed/assets/favicon.svg",
+    "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/favicon.ico",
     "autoShow": true,
     "allowLaunchIntoPlatform": true,
     "providerUrl": "https://{{OPENSHIFT_WORKSPACE_HOST}}/provider?env=openshift",
@@ -21,8 +21,8 @@
       "url": "https://{{OPENSHIFT_LOG_SERVER_HOST}}"
     },
     "defaultWindowOptions": {
-      "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/MacroThemeCondensed/assets/favicon.svg",
-      "taskbarIcon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/MacroThemeCondensed/assets/favicon.svg",
+      "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/favicon.ico",
+      "taskbarIcon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/favicon.ico",
       "taskbarIconGroup": "macro-workspace"
     },
     "defaultViewOptions": {
@@ -118,7 +118,7 @@
   "shortcut": {
     "company": "OpenFin",
     "description": "A way of showing examples of what OpenFin can do.",
-    "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/MacroThemeCondensed/assets/favicon.svg",
+    "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/favicon.ico",
     "name": "Macro Workspace Starter",
     "target": [
       "desktop",

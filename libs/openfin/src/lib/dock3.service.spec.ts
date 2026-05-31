@@ -31,6 +31,7 @@ import { Dock } from '@openfin/workspace-platform';
 describe('Dock3Service', () => {
   let service: Dock3Service;
   let mockProviderShutdown: jest.Mock;
+  let mockUpdateOptions: jest.Mock;
 
   const platformSettings: PlatformSettings = {
     id: 'macro-workspace',
@@ -53,10 +54,12 @@ describe('Dock3Service', () => {
 
   beforeEach(() => {
     mockProviderShutdown = jest.fn().mockResolvedValue(undefined);
+    mockUpdateOptions = jest.fn().mockResolvedValue(undefined);
     (Dock.init as jest.Mock).mockReset();
     (Dock.init as jest.Mock).mockResolvedValue({
       ready: Promise.resolve(),
       shutdown: mockProviderShutdown,
+      getWindowSync: () => ({ updateOptions: mockUpdateOptions }),
     });
 
     service = new Dock3Service();
@@ -71,7 +74,16 @@ describe('Dock3Service', () => {
       expect(Dock.init).toHaveBeenCalledTimes(1);
       const callArg = (Dock.init as jest.Mock).mock.calls[0][0];
       expect(callArg.config.title).toBe('Macro Workspace');
-      expect(callArg.config.icon).toBe('default-icon.png');
+      // Provider icon is resolved to the raster favicon.ico for the taskbar.
+      expect(callArg.config.icon).toBe('favicon.ico');
+    });
+
+    it('sets the dock window icon to the raster favicon for the taskbar', async () => {
+      await service.init(platformSettings);
+
+      // The dock window's taskbar entry falls back to its `icon` (no taskbarIcon
+      // is allowed on the dock); we override it at runtime with the brand .ico.
+      expect(mockUpdateOptions).toHaveBeenCalledWith({ icon: 'favicon.ico' });
     });
 
     it('should pass default dock buttons', async () => {

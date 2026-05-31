@@ -14,6 +14,7 @@ import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
 import type { SettingsService } from './settings.service';
 import { getAnalyticsNats } from './analytics-nats.service';
+import { toTaskbarIcon } from './icon-utils';
 
 /**
  * Home service for managing the OpenFin Home
@@ -25,6 +26,8 @@ export class HomeService {
   register(platformSettings: PlatformSettings) {
     const homeProvider: HomeProvider = {
       ...platformSettings,
+      // Taskbar icon for the Home window — raster favicon.ico, not the SVG.
+      icon: toTaskbarIcon(platformSettings.icon),
       onUserInput: async (request: HomeSearchListenerRequest, response: HomeSearchListenerResponse) => {
         const query = request.query.toLowerCase();
         if (query.length > 0) {

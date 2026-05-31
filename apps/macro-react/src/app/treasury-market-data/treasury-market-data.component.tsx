@@ -183,7 +183,7 @@ export function TreasuryMarketDataComponent() {
     notifications.create({
       title: 'Treasury Market Data',
       body: '11 securities streaming',
-      icon: 'logo.svg',
+      icon: 'favicon.svg',
       indicator: { color: 'blue', text: 'React' },
       stream: { id: 'macro-react', displayName: 'Macro React', appId: 'macro-react' },
     } as any);

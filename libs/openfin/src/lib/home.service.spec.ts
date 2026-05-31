@@ -103,7 +103,8 @@ describe('HomeService', () => {
       const provider = (Home.register as jest.Mock).mock.calls[0][0];
       expect(provider.id).toBe('macro-workspace');
       expect(provider.title).toBe('Macro Workspace');
-      expect(provider.icon).toBe('icon.png');
+      // Provider icon is resolved to the raster favicon.ico for the taskbar.
+      expect(provider.icon).toBe('favicon.ico');
     });
 
     it('should provide onUserInput handler', async () => {

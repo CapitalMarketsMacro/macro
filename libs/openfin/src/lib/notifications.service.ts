@@ -2,6 +2,7 @@ import type { NotificationActionEvent, NotificationOptions, IndicatorColor } fro
 import { Observable } from 'rxjs';
 import type { PlatformSettings } from './types';
 import { Logger } from '@macro/logger';
+import { toTaskbarIcon } from './icon-utils';
 
 // Lazy-load the notifications API to avoid crashing in non-OpenFin browser environments.
 // The @openfin/workspace/notifications module reads fin.me.uuid at import time.
@@ -94,7 +95,7 @@ export class NotificationsService {
       await registerPlatform({
         notificationsPlatformOptions: {
           id: platformSettings.id,
-          icon: platformSettings.icon,
+          icon: toTaskbarIcon(platformSettings.icon),
           title: platformSettings.title,
         },
       });
