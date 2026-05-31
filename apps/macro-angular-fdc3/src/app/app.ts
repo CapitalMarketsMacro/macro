@@ -1,9 +1,7 @@
-import { Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Logger, LogLevel } from '@macro/logger';
-import { isPlatformBrowser } from '@angular/common';
-import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
-import { onOpenFinThemeChange } from '@macro/openfin/theme-sync';
+import { ThemeService } from '@macro/macro-design/angular';
 
 @Component({
   selector: 'app-root',
@@ -12,43 +10,15 @@ import { onOpenFinThemeChange } from '@macro/openfin/theme-sync';
   standalone: true,
   imports: [RouterOutlet],
 })
-export class App implements OnInit, OnDestroy {
+export class App implements OnInit {
   private logger = Logger.getLogger('AngularFdc3App');
-  private platformId = inject(PLATFORM_ID);
 
-  public isDark = false;
-  private cleanupSystemListener?: () => void;
-  private cleanupOpenFinListener?: () => void;
-
-  constructor() {
-    if (isPlatformBrowser(this.platformId)) {
-      this.isDark = getInitialIsDark();
-      this.cleanupSystemListener = onSystemThemeChange((isDark) => {
-        this.isDark = isDark;
-        this.applyTheme();
-      });
-      this.cleanupOpenFinListener = onOpenFinThemeChange((isDark) => {
-        this.isDark = isDark;
-        this.applyTheme();
-      });
-    }
-  }
+  // Activate the shared macro ThemeService (default 'macro'; applies dark/light
+  // and syncs with the OS and the OpenFin platform). Injecting it is enough.
+  protected readonly theme = inject(ThemeService);
 
   ngOnInit(): void {
-    this.applyTheme();
     Logger.setGlobalLevel(LogLevel.DEBUG);
     this.logger.info('FDC3 Instrument Viewer initialized');
-  }
-
-  ngOnDestroy(): void {
-    this.cleanupSystemListener?.();
-    this.cleanupOpenFinListener?.();
-  }
-
-  private applyTheme(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
-    applyDarkMode(this.isDark);
   }
 }

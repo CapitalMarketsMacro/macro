@@ -88,7 +88,7 @@ describe('dark-mode', () => {
     });
 
     it('should invoke callback when system theme changes and no localStorage override', () => {
-      let handler: (e: Partial<MediaQueryListEvent>) => void = () => {};
+      let handler: (e: Partial<MediaQueryListEvent>) => void = () => undefined;
       Object.defineProperty(window, 'matchMedia', {
         value: jest.fn().mockReturnValue({
           addEventListener: (_: string, h: any) => { handler = h; },
@@ -109,7 +109,7 @@ describe('dark-mode', () => {
     });
 
     it('should NOT invoke callback when localStorage theme is set', () => {
-      let handler: (e: Partial<MediaQueryListEvent>) => void = () => {};
+      let handler: (e: Partial<MediaQueryListEvent>) => void = () => undefined;
       Object.defineProperty(window, 'matchMedia', {
         value: jest.fn().mockReturnValue({
           addEventListener: (_: string, h: any) => { handler = h; },

@@ -37,6 +37,30 @@ vi.mock('@macro/macro-design', () => ({
   onSystemThemeChange: (cb: (dark: boolean) => void) => mockOnSystemThemeChange(cb),
 }));
 
+// The component consumes theming via the shared `useTheme` hook; mock it so the
+// test controls dark/light state and observes toggle calls. (The hook's own
+// logic is covered by the @macro/macro-design ThemeController unit tests.)
+const { mockToggle, mockSetDark, mockSetTheme, themeState } = vi.hoisted(() => ({
+  mockToggle: vi.fn(),
+  mockSetDark: vi.fn(),
+  mockSetTheme: vi.fn(),
+  themeState: { isDark: false },
+}));
+
+vi.mock('@macro/macro-design/react', () => ({
+  useTheme: () => ({
+    isDark: themeState.isDark,
+    mode: themeState.isDark ? 'dark' : 'light',
+    themeId: 'macro',
+    theme: { id: 'macro', label: 'Macro E-Trading', palettes: { dark: {}, light: {} } },
+    palette: {},
+    toggle: mockToggle,
+    setDark: mockSetDark,
+    setTheme: mockSetTheme,
+  }),
+  themeController: { start: vi.fn(), subscribe: vi.fn(() => () => undefined), getSnapshot: vi.fn() },
+}));
+
 vi.mock('@macro/macro-react-grid', () => ({
   MacroReactGrid: vi.fn(() => <div data-testid="macro-react-grid">Mock Grid</div>),
 }));
@@ -98,6 +122,10 @@ beforeEach(() => {
   mockOnSystemThemeChange.mockClear();
   mockGetInitialIsDark.mockClear();
   mockGetInitialIsDark.mockReturnValue(false);
+  mockToggle.mockClear();
+  mockSetDark.mockClear();
+  mockSetTheme.mockClear();
+  themeState.isDark = false;
 });
 
 describe('App', () => {
@@ -141,7 +169,7 @@ describe('App', () => {
   });
 
   it('should show "Light" text when in dark mode', () => {
-    mockGetInitialIsDark.mockReturnValue(true);
+    themeState.isDark = true;
     render(
       <MemoryRouter initialEntries={['/treasury-market-data']}>
         <AppContent />
@@ -150,58 +178,27 @@ describe('App', () => {
     expect(screen.getByText('Light')).toBeTruthy();
   });
 
-  it('should toggle theme when button is clicked', () => {
-    mockGetInitialIsDark.mockReturnValue(false);
+  it('should call the theme hook toggle when the button is clicked', () => {
     render(
       <MemoryRouter initialEntries={['/treasury-market-data']}>
         <AppContent />
       </MemoryRouter>
     );
-
-    // Initially light mode -> shows "Dark"
-    expect(screen.getByText('Dark')).toBeTruthy();
-
-    // Click toggle
     const themeButton = screen.getByLabelText('Toggle theme');
     fireEvent.click(themeButton);
-
-    // Now should show "Light"
-    expect(screen.getByText('Light')).toBeTruthy();
+    expect(mockToggle).toHaveBeenCalledTimes(1);
   });
 
-  it('should call applyDarkMode on initial render', () => {
-    mockGetInitialIsDark.mockReturnValue(false);
+  it('should not toggle the theme on initial render', () => {
     render(
       <MemoryRouter initialEntries={['/treasury-market-data']}>
         <AppContent />
       </MemoryRouter>
     );
-    expect(mockApplyDarkMode).toHaveBeenCalledWith(false);
-  });
-
-  it('should call applyDarkMode with true after toggling from light', () => {
-    mockGetInitialIsDark.mockReturnValue(false);
-    render(
-      <MemoryRouter initialEntries={['/treasury-market-data']}>
-        <AppContent />
-      </MemoryRouter>
-    );
-    mockApplyDarkMode.mockClear();
-
-    const themeButton = screen.getByLabelText('Toggle theme');
-    fireEvent.click(themeButton);
-
-    expect(mockApplyDarkMode).toHaveBeenCalledWith(true);
-  });
-
-  it('should register system theme change listener', () => {
-    render(
-      <MemoryRouter initialEntries={['/treasury-market-data']}>
-        <AppContent />
-      </MemoryRouter>
-    );
-    expect(mockOnSystemThemeChange).toHaveBeenCalledTimes(1);
-    expect(typeof mockOnSystemThemeChange.mock.calls[0][0]).toBe('function');
+    // Dark/light application + system/OpenFin listeners now live in the shared
+    // ThemeController (covered by @macro/macro-design unit tests), so the
+    // component only wires the toggle action.
+    expect(mockToggle).not.toHaveBeenCalled();
   });
 
   it('should highlight Treasury Market Data nav when on that route', () => {

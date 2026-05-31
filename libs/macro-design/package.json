@@ -18,6 +18,14 @@
     ".": {
       "types": "./src/index.d.ts",
       "default": "./src/index.js"
+    },
+    "./angular": {
+      "types": "./src/lib/angular/index.d.ts",
+      "default": "./src/lib/angular/index.js"
+    },
+    "./react": {
+      "types": "./src/lib/react/index.d.ts",
+      "default": "./src/lib/react/index.js"
     }
   },
   "files": [
@@ -29,10 +37,18 @@
     "tslib": "^2.3.0"
   },
   "peerDependencies": {
-    "ag-grid-community": ">=33.0.0"
+    "ag-grid-community": ">=33.0.0",
+    "@angular/core": ">=18.0.0",
+    "react": ">=18.0.0"
   },
   "peerDependenciesMeta": {
     "ag-grid-community": {
+      "optional": true
+    },
+    "@angular/core": {
+      "optional": true
+    },
+    "react": {
       "optional": true
     }
   }

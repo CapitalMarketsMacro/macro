@@ -640,7 +640,7 @@ describe('FxMarketDataComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      (comp as any).updateInterval = setInterval(() => {}, 1000);
+      (comp as any).updateInterval = setInterval(() => undefined, 1000);
       const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
 
       comp.ngOnDestroy();
