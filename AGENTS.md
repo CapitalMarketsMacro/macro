@@ -32,10 +32,7 @@ macro/
 ├── libs/
 │   ├── macro-design/           # Shared design tokens, CSS variables, dark mode, AG Grid theme
 │   ├── logger/                 # Pino-based structured logging (@macro/logger)
-│   ├── transports/             # Unified messaging: AMPS, Solace, NATS (@macro/transports)
-│   ├── amps/                   # AMPS message broker client (@macro/amps) — standalone
-│   ├── solace/                 # Solace PubSub+ client (@macro/solace) — standalone
-│   ├── nats/                   # NATS.js v3 WebSocket client (@macro/nats) — standalone
+│   ├── transports/             # Unified messaging: AMPS, Solace, NATS (@macro/transports + /angular + /react)
 │   ├── openfin/                # OpenFin Workspace services + Angular DI + Snap + Analytics (@macro/openfin)
 │   ├── rxutils/                # RxJS conflation utilities (@macro/rxutils)
 │   ├── macro-angular-grid/     # AG Grid 35 Enterprise Angular wrapper + column formatting
@@ -54,11 +51,8 @@ All shared libraries are imported via `@macro/*` (defined in `tsconfig.base.json
 ```typescript
 import { Logger } from '@macro/logger';
 import { NatsTransport, AmpsTransport, SolaceTransport } from '@macro/transports';
-import { NatsTransportService } from '@macro/transports/angular';
-import { useNatsTransport } from '@macro/transports/react';
-import { AmpsClient } from '@macro/amps';
-import { SolaceClient } from '@macro/solace';
-import { NatsClient } from '@macro/nats';
+import { NatsTransportService, AmpsTransportService, SolaceTransportService } from '@macro/transports/angular';
+import { useNatsTransport, useAmpsTransport, useSolaceTransport } from '@macro/transports/react';
 import { WorkspaceService, ThemeService, ContextService, NotificationsService } from '@macro/openfin';
 import { useViewState } from '@macro/openfin/react';
 import { ConflationSubject } from '@macro/rxutils';

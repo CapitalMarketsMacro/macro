@@ -69,12 +69,12 @@ body {
 - Use the grid's \`updateRows$\` subject for streaming updates
 
 ## Step 8: Wire up data connectivity
-${ds === 'amps' ? `- Import \`AmpsClient\` from \`@macro/amps\`
+${ds === 'amps' ? `- Import \`AmpsClient\` from \`@macro/transports\`
 - Connect: \`await client.connect('ws://localhost:9100/amps/json')\`
 - Subscribe: \`const { observable } = await client.subscribeAsObservable('your-topic')\`
 - Use \`ConflationSubject\` from \`@macro/rxutils\` to conflate high-frequency updates
 - Pipe conflated output to \`grid.updateRows$.next([value])\`` :
-ds === 'solace' ? `- Import \`SolaceClient\` from \`@macro/solace\`
+ds === 'solace' ? `- Import \`SolaceClient\` from \`@macro/transports\`
 - Connect with \`SolaceConnectionProperties\`
 - Subscribe: \`const { observable } = await client.subscribeAsObservable('your/topic')\`
 - Use \`ConflationSubject\` from \`@macro/rxutils\` to conflate high-frequency updates

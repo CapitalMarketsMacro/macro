@@ -47,24 +47,24 @@ Single library providing a common \`TransportClient\` interface across AMPS, Sol
 
 ---
 
-## @macro/amps (standalone, legacy)
+## @macro/transports (standalone, legacy)
 AMPS (60East) pub/sub client wrapper with RxJS Observable/Subject support.
 
-**Import:** \`import { AmpsClient, AmpsMessage, AmpsSowOptions } from '@macro/amps';\`
+**Import:** \`import { AmpsClient, AmpsMessage, AmpsSowOptions } from '@macro/transports';\`
 
 ---
 
-## @macro/solace (standalone, legacy)
+## @macro/transports (standalone, legacy)
 Solace PubSub+ client wrapper with RxJS Observable/Subject support.
 
-**Import:** \`import { SolaceClient, SolaceConnectionProperties, SolaceMessage } from '@macro/solace';\`
+**Import:** \`import { SolaceClient, SolaceConnectionProperties, SolaceMessage } from '@macro/transports';\`
 
 ---
 
-## @macro/nats (standalone, legacy)
+## @macro/transports (standalone, legacy)
 NATS.js v3 WebSocket client wrapper.
 
-**Import:** \`import { NatsClient, NatsConnectionOptions, NatsMessage } from '@macro/nats';\`
+**Import:** \`import { NatsClient, NatsConnectionOptions, NatsMessage } from '@macro/transports';\`
 
 ---
 

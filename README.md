@@ -89,7 +89,7 @@ Works with **any MCP-compatible AI assistant**: Claude Code, VS Code GitHub Copi
 
 ## Unified Transports (`@macro/transports`)
 
-A single library providing a common `TransportClient` interface for AMPS, Solace, and NATS. All transport logic lives here -- the standalone `@macro/amps`, `@macro/solace`, `@macro/nats` packages are thin re-exports for backward compatibility.
+A single library providing a common `TransportClient` interface for AMPS, Solace, and NATS. All transport logic lives here. Backward-compatible class aliases `AmpsClient`, `SolaceClient`, and `NatsClient` are exported alongside the `AmpsTransport`, `SolaceTransport`, and `NatsTransport` classes.
 
 ### Framework-Agnostic
 
@@ -179,13 +179,12 @@ interface TransportClient {
 
 ### Backward Compatibility
 
-The standalone packages re-export from transports:
+The legacy client names are kept as aliases of the `*Transport` classes, all exported
+from the single `@macro/transports` package:
 
 ```typescript
-// These still work -- they delegate to @macro/transports
-import { AmpsClient } from '@macro/amps';
-import { SolaceClient } from '@macro/solace';
-import { NatsClient } from '@macro/nats';
+// Backward-compatible aliases (delegate to the *Transport classes)
+import { AmpsClient, SolaceClient, NatsClient } from '@macro/transports';
 
 // New code should use:
 import { AmpsTransport, SolaceTransport, NatsTransport } from '@macro/transports';
@@ -300,9 +299,6 @@ Both Angular and React grid wrappers include:
 | `@macro/transports` | Unified AMPS/Solace/NATS transport (primary) |
 | `@macro/transports/angular` | Angular DI services |
 | `@macro/transports/react` | React hooks |
-| `@macro/amps` | AMPS re-export (backward compat) |
-| `@macro/solace` | Solace re-export (backward compat) |
-| `@macro/nats` | NATS re-export (backward compat) |
 | `@macro/openfin` | OpenFin services + Angular DI |
 | `@macro/openfin/react` | React hooks (useViewState, useNotifications) |
 | `@macro/logger` | Pino structured logging |

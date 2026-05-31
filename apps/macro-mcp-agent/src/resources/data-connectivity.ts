@@ -76,26 +76,26 @@ function MyComponent() {
 
 ## Standalone Transport Libraries (legacy)
 
-### @macro/amps
+### @macro/transports
 \`\`\`typescript
-import { AmpsClient } from '@macro/amps';
+import { AmpsClient } from '@macro/transports';
 const client = new AmpsClient('my-app');
 await client.connect('ws://localhost:9100/amps/json');
 await client.subscribe(msg => console.log(msg.data), 'orders', "/symbol='AAPL'");
 client.publish('orders', { symbol: 'AAPL', qty: 100 });
 \`\`\`
 
-### @macro/solace
+### @macro/transports
 \`\`\`typescript
-import { SolaceClient } from '@macro/solace';
+import { SolaceClient } from '@macro/transports';
 const client = new SolaceClient();
 await client.connect({ hostUrl: 'ws://localhost:8008', vpnName: 'default', userName: 'default', password: 'default' });
 const { observable } = await client.subscribeAsObservable('orders/*');
 \`\`\`
 
-### @macro/nats
+### @macro/transports
 \`\`\`typescript
-import { NatsClient } from '@macro/nats';
+import { NatsClient } from '@macro/transports';
 const client = new NatsClient('my-app');
 await client.connect({ servers: 'ws://localhost:8224' });
 \`\`\`

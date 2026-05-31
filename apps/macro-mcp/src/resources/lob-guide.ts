@@ -29,8 +29,8 @@ const logger = Logger.getLogger('MyLobApp');
 import { MacroAngularGrid } from '@macro/macro-angular-grid';  // or MacroReactGrid
 
 // Messaging (pick your transport)
-import { AmpsClient } from '@macro/amps';
-import { SolaceClient } from '@macro/solace';
+import { AmpsClient } from '@macro/transports';
+import { SolaceClient } from '@macro/transports';
 
 // Conflation for high-frequency data
 import { ConflationSubject } from '@macro/rxutils';

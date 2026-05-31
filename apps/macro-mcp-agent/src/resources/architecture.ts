@@ -17,8 +17,7 @@ apps/
 
 libs/
   logger/             # @macro/logger — Pino-based logging (browser + Node)
-  amps/               # @macro/amps — AMPS pub/sub client wrapper
-  solace/             # @macro/solace — Solace PubSub+ client wrapper
+  transports/         # @macro/transports — unified AMPS, Solace & NATS transports
   rxutils/            # @macro/rxutils — RxJS conflation utilities
   openfin/            # @macro/openfin — OpenFin platform services
   macro-design/       # @macro/macro-design — CSS variables, dark mode, AG Grid theme
@@ -68,8 +67,7 @@ npx nx g @nx/react:app <name>         # Generate React app
 \`\`\`json
 {
   "@macro/logger":             ["libs/logger/src/index.ts"],
-  "@macro/amps":               ["libs/amps/src/index.ts"],
-  "@macro/solace":             ["libs/solace/src/index.ts"],
+  "@macro/transports":         ["libs/transports/src/index.ts"],
   "@macro/rxutils":            ["libs/rxutils/src/index.ts"],
   "@macro/openfin":            ["libs/openfin/src/index.ts"],
   "@macro/macro-design":       ["libs/macro-design/src/index.ts"],
