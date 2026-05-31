@@ -59,6 +59,12 @@
       ],
       "@macro/macro-design": [
         "libs/macro-design/src/index.ts"
+      ],
+      "@macro/macro-design/angular": [
+        "libs/macro-design/src/lib/angular/index.ts"
+      ],
+      "@macro/macro-design/react": [
+        "libs/macro-design/src/lib/react/index.ts"
       ]
     },
     "ignoreDeprecations": "6.0"

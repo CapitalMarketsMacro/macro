@@ -19,6 +19,7 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@macro/macro-design/react': path.resolve(__dirname, '../../libs/macro-design/src/lib/react/index.ts'),
       '@macro/macro-design': path.resolve(__dirname, '../../libs/macro-design/src/index.ts'),
     },
   },

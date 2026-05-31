@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react';
 import { BrowserRouter } from 'react-router-dom';
-import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
+import { useTheme } from '@macro/macro-design/react';
 import FigmaApp from '../figma/app/App';
 
 export function App() {
-  const [isDark, setIsDark] = useState(getInitialIsDark);
-  useEffect(() => { applyDarkMode(isDark); }, [isDark]);
-  useEffect(() => onSystemThemeChange((d) => setIsDark(d)), []);
+  // Activate the macro theme controller (default 'macro' + dark/light + system/OpenFin sync).
+  useTheme();
 
   return (
     <BrowserRouter basename="/capital-markets-themes/">

@@ -1,8 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router, NavigationEnd } from '@angular/router';
-import { PLATFORM_ID } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { Subject } from 'rxjs';
 import { App } from './app';
 
 // ---------------------------------------------------------------------------
@@ -34,35 +32,41 @@ jest.mock('@macro/logger', () => ({
   },
 }));
 
-// Mock @macro/openfin (prevents loading @openfin/workspace which bundles lodash)
-jest.mock('@macro/openfin', () => ({
-  onOpenFinThemeChange: jest.fn().mockReturnValue(jest.fn()),
+// Mock the shared macro ThemeService (@macro/macro-design/angular). The component
+// consumes it for dark/light state + toggling; its own logic (DOM class,
+// persistence, system/OpenFin sync) is covered by the @macro/macro-design
+// ThemeController unit tests.
+jest.mock('@macro/macro-design/angular', () => ({
+  ThemeService: class MockThemeService {},
 }));
 
-// Mock @macro/macro-design
-const mockCleanup = jest.fn();
-const mockOnSystemThemeChange = jest.fn().mockReturnValue(mockCleanup);
-const mockGetInitialIsDark = jest.fn().mockReturnValue(false);
-const mockApplyDarkMode = jest.fn();
+import { ThemeService } from '@macro/macro-design/angular';
 
-jest.mock('@macro/macro-design', () => ({
-  getInitialIsDark: (...args: unknown[]) => mockGetInitialIsDark(...args),
-  applyDarkMode: (...args: unknown[]) => mockApplyDarkMode(...args),
-  onSystemThemeChange: (...args: unknown[]) => mockOnSystemThemeChange(...args),
-}));
+const mockThemeState = { isDark: false };
+const mockToggle = jest.fn();
+const mockSetDark = jest.fn();
+const mockSetTheme = jest.fn();
+
+const mockThemeService = {
+  isDark: () => mockThemeState.isDark,
+  mode: () => (mockThemeState.isDark ? 'dark' : 'light'),
+  palette: () => ({}),
+  themeId: () => 'macro',
+  toggle: (...args: unknown[]) => mockToggle(...args),
+  setDark: (...args: unknown[]) => mockSetDark(...args),
+  setTheme: (...args: unknown[]) => mockSetTheme(...args),
+};
 
 describe('App (root component)', () => {
-  let routerEventsSubject: Subject<unknown>;
-
   beforeEach(async () => {
     jest.clearAllMocks();
-    routerEventsSubject = new Subject();
+    mockThemeState.isDark = false;
 
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
         provideRouter([]),
-        { provide: PLATFORM_ID, useValue: 'browser' },
+        { provide: ThemeService, useValue: mockThemeService },
       ],
       schemas: [NO_ERRORS_SCHEMA],
     })
@@ -80,33 +84,21 @@ describe('App (root component)', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should have isDark false by default when getInitialIsDark returns false', () => {
-    mockGetInitialIsDark.mockReturnValue(false);
+  it('should expose isDark=false when the theme service reports light', () => {
+    mockThemeState.isDark = false;
     const fixture = TestBed.createComponent(App);
     expect(fixture.componentInstance.isDark).toBe(false);
   });
 
-  it('should have isDark true when getInitialIsDark returns true', () => {
-    mockGetInitialIsDark.mockReturnValue(true);
+  it('should expose isDark=true when the theme service reports dark', () => {
+    mockThemeState.isDark = true;
     const fixture = TestBed.createComponent(App);
     expect(fixture.componentInstance.isDark).toBe(true);
-  });
-
-  it('should register a system theme change listener in browser platform', () => {
-    TestBed.createComponent(App);
-    expect(mockOnSystemThemeChange).toHaveBeenCalledTimes(1);
-    expect(typeof mockOnSystemThemeChange.mock.calls[0][0]).toBe('function');
   });
 
   // -----------------------------------------------------------------------
   // ngOnInit
   // -----------------------------------------------------------------------
-  it('should call applyDarkMode on init', () => {
-    const fixture = TestBed.createComponent(App);
-    fixture.detectChanges(); // triggers ngOnInit
-    expect(mockApplyDarkMode).toHaveBeenCalled();
-  });
-
   it('should initialize menu items with two entries', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
@@ -132,7 +124,6 @@ describe('App (root component)', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
-    // info is called multiple times in ngOnInit
     expect(mockLoggerInstance.info).toHaveBeenCalled();
     expect(mockLoggerInstance.debug).toHaveBeenCalled();
     expect(mockLoggerInstance.error).toHaveBeenCalled();
@@ -140,113 +131,13 @@ describe('App (root component)', () => {
   });
 
   // -----------------------------------------------------------------------
-  // toggleTheme
+  // toggleTheme delegates to the shared ThemeService
   // -----------------------------------------------------------------------
-  it('should toggle isDark from false to true', () => {
-    mockGetInitialIsDark.mockReturnValue(false);
-    const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-
-    mockApplyDarkMode.mockClear();
-    fixture.componentInstance.toggleTheme();
-
-    expect(fixture.componentInstance.isDark).toBe(true);
-    expect(mockApplyDarkMode).toHaveBeenCalledWith(true);
-  });
-
-  it('should toggle isDark from true to false', () => {
-    mockGetInitialIsDark.mockReturnValue(true);
-    const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-
-    mockApplyDarkMode.mockClear();
-    fixture.componentInstance.toggleTheme();
-
-    expect(fixture.componentInstance.isDark).toBe(false);
-    expect(mockApplyDarkMode).toHaveBeenCalledWith(false);
-  });
-
-  it('should toggle theme twice and return to original state', () => {
-    mockGetInitialIsDark.mockReturnValue(false);
+  it('should delegate toggleTheme to the theme service', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
     fixture.componentInstance.toggleTheme();
-    expect(fixture.componentInstance.isDark).toBe(true);
-
-    fixture.componentInstance.toggleTheme();
-    expect(fixture.componentInstance.isDark).toBe(false);
-  });
-
-  // -----------------------------------------------------------------------
-  // System theme change callback
-  // -----------------------------------------------------------------------
-  it('should update isDark when system theme changes', () => {
-    mockGetInitialIsDark.mockReturnValue(false);
-    const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-
-    // Capture the callback that was registered
-    const callback = mockOnSystemThemeChange.mock.calls[0][0];
-    expect(callback).toBeDefined();
-
-    // Simulate system switching to dark
-    mockApplyDarkMode.mockClear();
-    callback(true);
-    expect(fixture.componentInstance.isDark).toBe(true);
-    expect(mockApplyDarkMode).toHaveBeenCalledWith(true);
-
-    // Simulate system switching back to light
-    mockApplyDarkMode.mockClear();
-    callback(false);
-    expect(fixture.componentInstance.isDark).toBe(false);
-    expect(mockApplyDarkMode).toHaveBeenCalledWith(false);
-  });
-
-  // -----------------------------------------------------------------------
-  // ngOnDestroy
-  // -----------------------------------------------------------------------
-  it('should call cleanup on destroy', () => {
-    const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-    fixture.destroy();
-
-    expect(mockCleanup).toHaveBeenCalledTimes(1);
-  });
-
-  // -----------------------------------------------------------------------
-  // Server platform guard (applyTheme should no-op)
-  // -----------------------------------------------------------------------
-  describe('when platform is server', () => {
-    beforeEach(async () => {
-      await TestBed.resetTestingModule();
-      await TestBed.configureTestingModule({
-        imports: [App],
-        providers: [
-          provideRouter([]),
-          { provide: PLATFORM_ID, useValue: 'server' },
-        ],
-        schemas: [NO_ERRORS_SCHEMA],
-      })
-        .overrideComponent(App, {
-          set: { schemas: [NO_ERRORS_SCHEMA] },
-        })
-        .compileComponents();
-    });
-
-    it('should not call onSystemThemeChange on server', () => {
-      mockOnSystemThemeChange.mockClear();
-      TestBed.createComponent(App);
-      expect(mockOnSystemThemeChange).not.toHaveBeenCalled();
-    });
-
-    it('should not call applyDarkMode when toggling on server', () => {
-      const fixture = TestBed.createComponent(App);
-      fixture.detectChanges();
-      mockApplyDarkMode.mockClear();
-
-      fixture.componentInstance.toggleTheme();
-      expect(mockApplyDarkMode).not.toHaveBeenCalled();
-    });
+    expect(mockToggle).toHaveBeenCalledTimes(1);
   });
 });

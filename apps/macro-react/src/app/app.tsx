@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Logger, LogLevel } from '@macro/logger';
 import { Menubar, MenubarMenu, MenubarTrigger } from '@/components/ui/menubar';
-import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
-import { onOpenFinThemeChange } from '@macro/openfin/theme-sync';
+import { useTheme } from '@macro/macro-design/react';
 import TreasuryMarketDataComponent from './treasury-market-data/treasury-market-data.component';
 import CommoditiesDashboardComponent from './commodities-dashboard/commodities-dashboard.component';
 
@@ -84,23 +83,7 @@ export function App() {
 export function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isDark, setIsDark] = useState(getInitialIsDark);
-
-  useEffect(() => {
-    applyDarkMode(isDark);
-  }, [isDark]);
-
-  useEffect(() => {
-    return onSystemThemeChange((dark) => setIsDark(dark));
-  }, []);
-
-  useEffect(() => {
-    return onOpenFinThemeChange((dark) => setIsDark(dark));
-  }, []);
-
-  const toggleTheme = () => {
-    setIsDark((prev) => !prev);
-  };
+  const { isDark, toggle: toggleTheme } = useTheme();
 
   return (
     <div className="flex flex-col h-screen">
@@ -173,7 +156,7 @@ export function AppContent() {
             )}
           </button>
         </div>
-        <div className="flex-1 min-h-0 p-4 flex flex-col">
+        <div className="flex-1 min-h-0 p-4 overflow-auto flex flex-col">
           <Routes>
             <Route path="/treasury-market-data" element={<TreasuryMarketDataComponent />} />
             <Route path="/commodities-dashboard" element={<CommoditiesDashboardComponent />} />

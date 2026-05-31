@@ -1,12 +1,10 @@
-import { Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { Logger, LogLevel } from '@macro/logger';
-import { isPlatformBrowser } from '@angular/common';
 import { Menubar } from 'primeng/menubar';
 import { MenuItem } from 'primeng/api';
 import { filter } from 'rxjs/operators';
-import { getInitialIsDark, applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
-import { onOpenFinThemeChange } from '@macro/openfin';
+import { ThemeService } from '@macro/macro-design/angular';
 
 @Component({
   selector: 'app-root',
@@ -15,40 +13,23 @@ import { onOpenFinThemeChange } from '@macro/openfin';
   standalone: true,
   imports: [RouterOutlet, Menubar],
 })
-export class App implements OnInit, OnDestroy {
+export class App implements OnInit {
   private logger = Logger.getLogger('AngularApp');
-  
-  // Inject dependencies
-  private platformId = inject(PLATFORM_ID);
-  private router = inject(Router);
 
-  // Theme state
-  public isDark = false;
+  // Inject dependencies
+  private router = inject(Router);
+  // Shared macro ThemeService (default 'macro' theme; syncs system + OpenFin).
+  protected readonly theme = inject(ThemeService);
 
   // Menu items for PrimeNG MenuBar
   public menuItems: MenuItem[] = [];
-  private cleanupSystemListener?: () => void;
-  private cleanupOpenFinListener?: () => void;
 
-  constructor() {
-    // Initialize theme state
-    if (isPlatformBrowser(this.platformId)) {
-      this.isDark = getInitialIsDark();
-      this.cleanupSystemListener = onSystemThemeChange((isDark) => {
-        this.isDark = isDark;
-        this.applyTheme();
-      });
-      this.cleanupOpenFinListener = onOpenFinThemeChange((isDark) => {
-        this.isDark = isDark;
-        this.applyTheme();
-      });
-    }
+  /** Current dark-mode state from the shared macro ThemeService. */
+  get isDark(): boolean {
+    return this.theme.isDark();
   }
 
   ngOnInit(): void {
-    // Apply initial theme
-    this.applyTheme();
-    
     // Initialize menu items
     this.initializeMenuItems();
     
@@ -121,28 +102,11 @@ export class App implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
-    this.cleanupSystemListener?.();
-    this.cleanupOpenFinListener?.();
-  }
-
   /**
-   * Toggle theme between light and dark
+   * Toggle theme between light and dark (delegates to the shared ThemeService).
    */
   toggleTheme(): void {
-    this.isDark = !this.isDark;
-    this.applyTheme();
-  }
-
-  /**
-   * Apply theme to document root
-   * PrimeNG will automatically respond via darkModeSelector: '.dark'
-   */
-  private applyTheme(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
-    applyDarkMode(this.isDark);
+    this.theme.toggle();
   }
 
   /**

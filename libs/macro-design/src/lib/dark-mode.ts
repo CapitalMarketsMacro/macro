@@ -8,6 +8,9 @@ export function getInitialIsDark(): boolean {
   const stored = localStorage.getItem('theme');
   if (stored) return stored === 'dark';
 
+  // `matchMedia` is absent in some non-browser/test environments (e.g. jsdom).
+  if (typeof window.matchMedia !== 'function') return false;
+
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
