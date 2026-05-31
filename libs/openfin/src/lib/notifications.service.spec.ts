@@ -86,7 +86,7 @@ describe('NotificationsService', () => {
         notificationsPlatformOptions: {
           id: 'macro-workspace',
           title: 'Macro Workspace',
-          icon: '',
+          icon: 'favicon.ico',
         },
       });
     });

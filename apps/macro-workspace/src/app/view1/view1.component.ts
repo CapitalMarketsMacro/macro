@@ -16,7 +16,7 @@ const logger = Logger.getLogger('View1Component');
           <h1 class="tag" [style.color]="'var(--text-help)'">Angular app view in an OpenFin workspace</h1>
         </div>
         <div class="row middle gap10">
-          <img src="logo.svg" alt="OpenFin" height="40px" />
+          <img src="favicon.svg" alt="Macro" height="40px" />
         </div>
       </header>
       <main class="col gap10 left" [style.background-color]="'var(--background-2)'" [style.padding]="'20px'" [style.border-radius]="'8px'">

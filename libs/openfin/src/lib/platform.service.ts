@@ -16,6 +16,7 @@ import type { ThemePresetPalettes } from './theme-preset.service';
 import { themeConfig } from '@macro/macro-design';
 import { Logger } from '@macro/logger';
 import { getAnalyticsNats } from './analytics-nats.service';
+import { toTaskbarIcon } from './icon-utils';
 
 const logger = Logger.getLogger('PlatformService');
 
@@ -144,7 +145,7 @@ export class PlatformService {
           overrideCallback: this.workspaceOverrideService.createOverrideCallback(),
           defaultWindowOptions: {
             icon: platformSettings.icon,
-            taskbarIcon: platformSettings.icon.replace(/\/icons\/.*$/, '/favicon.ico'),
+            taskbarIcon: toTaskbarIcon(platformSettings.icon),
             workspacePlatform: {
               pages: [],
               favicon: platformSettings.icon,

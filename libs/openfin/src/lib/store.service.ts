@@ -12,6 +12,7 @@ import type { PlatformSettings } from './types';
 import type { SettingsService } from './settings.service';
 import type { FavoritesService } from './favorites.service';
 import { getAnalyticsNats } from './analytics-nats.service';
+import { toTaskbarIcon } from './icon-utils';
 
 /**
  * Store service for managing the OpenFin Storefront
@@ -87,6 +88,8 @@ export class StoreService {
     return from(
       Storefront.register({
         ...platformSettings,
+        // Taskbar icon for the Storefront window — raster favicon.ico, not the SVG.
+        icon: toTaskbarIcon(platformSettings.icon),
         // v24: Click app card to launch directly instead of showing details panel
         cardClickBehavior: 'perform-primary-button-action' as any,
         getNavigation: async (): Promise<

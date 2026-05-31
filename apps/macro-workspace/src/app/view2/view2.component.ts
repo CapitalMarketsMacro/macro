@@ -17,7 +17,7 @@ const logger = Logger.getLogger('View2Component');
           <h1 class="tag">Angular app view in an OpenFin workspace</h1>
         </div>
         <div class="row middle gap10">
-          <img src="logo.svg" alt="OpenFin" height="40px" />
+          <img src="favicon.svg" alt="Macro" height="40px" />
         </div>
       </header>
       <main class="col gap10 left width-full">

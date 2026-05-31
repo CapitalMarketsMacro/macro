@@ -8,6 +8,7 @@ import {
 import type { App } from '@openfin/workspace';
 import { Logger } from '@macro/logger';
 import { getAnalyticsNats } from './analytics-nats.service';
+import { toTaskbarIcon } from './icon-utils';
 import type {
   PlatformSettings,
   Dock3Settings,
@@ -70,7 +71,10 @@ export class Dock3Service {
 
     const config: Dock3Config = {
       title: platformSettings.title,
-      icon: platformSettings.icon,
+      // Dock window options don't allow `taskbarIcon` (DockAllowedWindowOptions),
+      // so the Dock window's taskbar icon comes from this provider icon. Point it
+      // at the raster favicon.ico — an SVG can't be rasterized for the taskbar.
+      icon: toTaskbarIcon(platformSettings.icon),
       favorites: favorites as Dock3Config['favorites'],
       contentMenu: contentMenu as Dock3Config['contentMenu'],
       defaultDockButtons: [
@@ -96,7 +100,6 @@ export class Dock3Service {
     this.provider = await Dock.init({
       config,
       windowOptions: {
-        taskbarIcon: platformSettings.icon.replace(/\/icons\/.*$/, '/favicon.ico'),
         taskbarIconGroup: 'macro-workspace',
         experimental: {
           snapZone: {
@@ -153,6 +156,21 @@ export class Dock3Service {
     });
 
     await this.provider.ready;
+
+    // Brand the dock window's taskbar icon. The dock window runs under the
+    // OpenFin Workspace application (uuid "openfin-workspace"), so it ignores
+    // our platform icon, and DockAllowedWindowOptions exposes no `taskbarIcon`.
+    // Its taskbar entry falls back to the window `icon` (the stock OpenFin logo
+    // by default); `icon` is runtime-mutable, so override it with the raster
+    // brand mark — an SVG can't be rasterized for the taskbar.
+    try {
+      await this.provider.getWindowSync().updateOptions({
+        icon: toTaskbarIcon(platformSettings.icon),
+      });
+    } catch (err) {
+      logger.warn('Could not set dock window icon', err);
+    }
+
     logger.info('Dock3 initialized');
   }
 

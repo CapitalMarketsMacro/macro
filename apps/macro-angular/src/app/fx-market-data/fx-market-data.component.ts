@@ -174,7 +174,7 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
     this.notifications.create({
       title: 'FX Market Data',
       body: '15 G10 currency pairs streaming',
-      icon: 'logo.svg',
+      icon: 'favicon.svg',
       indicator: { color: 'blue', text: 'Angular' },
       stream: { id: 'macro-angular', displayName: 'Macro Angular', appId: 'macro-angular' },
     } as any);
