@@ -1,0 +1,44 @@
+Subject: Macro Desktop & the Macro MFE Libraries — live in UAT & PROD
+
+Hi all,
+
+Macro Desktop — our OpenFin Workspace platform for the Macro franchise (Rates, Commodities, FX) — is live in UAT and PROD, along with a full set of Macro MFE Libraries for building on it.
+
+Adoption today:
+- Hyperion apps — in PRODUCTION on Macro Desktop, built with the Macro MFE Libraries
+- Hydra apps — in active development on the same platform and shared libraries
+
+A direct on-ramp to the firm-wide Capital Markets UI Strategy
+A Capital Markets–wide UI strategy is taking shape along the same lines as our approach, and the Macro UI team is actively participating in it. Because Macro Desktop and the Macro MFE Libraries already follow that model, the MFEs we build today are positioned to integrate into the wider Capital Markets store front with little to no rework. The Macro UI team will help influence and shape that strategy, giving us a seamless, very low-friction path into it.
+
+Here it is in action.
+
+[Paste screenshot: Trading Floor workspace]
+
+A single, Wells Fargo–branded desktop
+- Branded Store Front — users discover and launch only the apps they're entitled to
+- Dock3 toolbar — persistent, one-click access
+- Notification Center across all hosted MFEs
+- Save / Restore Layout, plus per-MFE state and preference persistence
+- Real-time analytics and observability built in: user activity analytics, remote log uploads, an OpenFin tracer, and a live log viewer
+
+[Paste screenshot: Store Front]
+
+MFEs already running on the desktop include Rates e-trading, a Commodities dashboard, FX market data, and Treasury market-data and microstructure views — a mix of Angular and React, all sharing the same shell, theme and transports.
+
+The developer journey — from idea to a live MFE
+Two MCP servers anchor the toolkit:
+- Macro MFE Scaffolding MCP Server — generate a standards-aligned Angular or React MFE from a compliant baseline
+- Figma Make MFE MCP Server — import a Figma Make–generated React app into the Macro ecosystem and design system, and host it on OpenShift in a few hours
+
+…then build with the @macro/* libraries: auth (OAuth 2.0 PKCE via APIGEE/Ping), transports (AMPS / Solace / WebSocket), design (tokens + ag-Grid theming), openfin (state, notifications, FDC3), components / react-components (ag-Grid wrappers + UI), deephaven (Core+ adapter for ag-Grid), plus logger and utils.
+
+[Paste screenshot: Real-time Analytics]
+
+Self-service onboarding
+The entitled Macro Admin GUI lets you register an MFE to the Store Front and Dock3 toolbar, provision it by Application / Roles / AD Groups, and upload a custom icon.
+
+For more details, or if you have a Macro application you'd like to bring onto the desktop, reach out to Rubicon / the Macro UI team.
+
+Best,
+Macro UI Team
