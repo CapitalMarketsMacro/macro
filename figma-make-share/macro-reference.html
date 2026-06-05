@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Macro Design System — Reference</title>
+<style>
+  /* ============ Macro tokens (inline, self-contained) ============ */
+  :root{
+    --bg-app:#0b0d12;--bg-canvas:#12141a;--bg-panel:#181b22;--bg-raised:#1e222a;
+    --grid-hover:#22262f;--grid-sel:#1a2a3f;
+    --fg-1:#e6e8ec;--fg-2:#a8afbd;--fg-3:#6f7687;--fg-4:#4a5060;
+    --b1:#2a2f39;--b2:#363c48;--bgrid:#1c2029;
+    --brand:#2aa6e6;--brand-hover:#55b2ee;--brand-press:#1685c2;--brand-soft:rgba(42,166,230,.14);--on-brand:#041a26;
+    --up:#34d97a;--up-bg:rgba(52,217,122,.14);--up-flash:rgba(52,217,122,.42);
+    --down:#ff6b64;--down-bg:rgba(255,107,100,.14);--down-flash:rgba(255,107,100,.42);
+    --info:#5b8def;--warn:#f5c13a;--err:#ff6b64;--ok:#34d97a;
+    --sans:"Roboto Condensed","Arial Narrow",system-ui,sans-serif;
+    --mono:"IBM Plex Mono","SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg-app);color:var(--fg-1);font-family:var(--sans);font-size:13px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;}
+  .num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 28px 64px}
+  header.top{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid var(--b1);margin-bottom:28px}
+  .mark{width:30px;height:30px;border-radius:7px;background:var(--bg-panel);border:1px solid var(--b2);display:flex;align-items:flex-end;justify-content:center;gap:2px;padding:5px 4px}
+  .mark i{display:block;width:3px;border-radius:1px}
+  .mark i.a{height:11px;background:var(--brand)} .mark i.b{height:18px;background:var(--up)} .mark i.c{height:13px;background:var(--down)}
+  h1{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0}
+  h1 small{color:var(--fg-3);font-weight:400;font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-left:10px}
+  .lede{color:var(--fg-2);max-width:70ch;margin:4px 0 0;font-size:13px}
+  h2.sec{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-3);margin:34px 0 12px;display:flex;align-items:center;gap:8px}
+  h2.sec::after{content:"";flex:1;height:1px;background:var(--b1)}
+  .grid{display:grid;gap:10px}
+  .panel{background:var(--bg-panel);border:1px solid var(--b1);border-radius:8px;overflow:hidden}
+  .ph{height:26px;display:flex;align-items:center;padding:0 10px;background:var(--bg-raised);border-bottom:1px solid var(--b1);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
+  .pb{padding:14px}
+  /* swatches */
+  .sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:8px}
+  .chip{border:1px solid var(--b1);border-radius:5px;overflow:hidden}
+  .chip .c{height:46px} .chip .l{padding:5px 7px;font-family:var(--mono);font-size:10px;color:var(--fg-2);display:flex;justify-content:space-between;gap:6px;background:var(--bg-canvas)}
+  .chip .l b{color:var(--fg-3);font-weight:400}
+  /* type */
+  .type-row{display:flex;align-items:baseline;gap:16px;padding:5px 0;border-bottom:1px solid var(--bgrid)}
+  .type-row:last-child{border:0}
+  .tag{color:var(--fg-3);font-family:var(--mono);font-size:10px;white-space:nowrap;width:130px;flex:0 0 130px}
+  /* buttons */
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .btn{font-family:var(--sans);font-size:12px;font-weight:500;border-radius:5px;padding:6px 12px;border:1px solid var(--b2);background:transparent;color:var(--fg-1);cursor:pointer}
+  .btn:hover{background:var(--grid-hover)}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:var(--on-brand)} .btn.primary:hover{background:var(--brand-hover)}
+  .btn.bid{background:var(--up-bg);border-color:#0a5c32;color:#6ee7a8}
+  .btn.ask{background:var(--down-bg);border-color:#861e19;color:#ff9a95}
+  .btn.danger{background:#3a0f0c;border-color:#861e19;color:#ff9a95}
+  .btn.sm{padding:3px 9px;font-size:11px}
+  input.f{background:var(--bg-canvas);border:1px solid var(--b2);border-radius:3px;color:var(--fg-1);font-family:var(--mono);font-size:12px;padding:5px 8px}
+  input.f:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 2px var(--brand-soft)}
+  .seg{display:inline-flex;border:1px solid var(--b2);border-radius:5px;overflow:hidden}
+  .seg button{border:0;background:transparent;color:var(--fg-2);font-family:var(--sans);font-size:11px;padding:5px 12px;cursor:pointer}
+  .seg button.buy{background:var(--up-bg);color:#6ee7a8}
+  .seg button.sell{color:var(--fg-2)}
+  /* pills */
+  .pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;font-size:10px;padding:3px 9px;font-weight:500}
+  .pill .d{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .pill.ok{background:var(--up-bg);color:#6ee7a8} .pill.warn{background:rgba(245,193,58,.14);color:#ffd96a}
+  .pill.err{background:var(--down-bg);color:#ff9a95} .pill.info{background:rgba(91,141,239,.14);color:#8fb5ff}
+  .pill.neu{background:rgba(168,175,189,.14);color:var(--fg-2)}
+  .vtag{display:inline-flex;border:1px solid var(--b2);border-radius:3px;background:var(--bg-raised);color:var(--fg-2);font-family:var(--mono);font-size:10px;padding:2px 6px}
+  /* grid demo */
+  table.g{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;font-variant-numeric:tabular-nums}
+  table.g th{position:sticky;top:0;background:var(--bg-panel);color:var(--fg-3);font-family:var(--sans);font-weight:500;font-size:10px;letter-spacing:.05em;text-transform:uppercase;text-align:left;padding:5px 9px;border-bottom:1px solid var(--b2)}
+  table.g th.r,table.g td.r{text-align:right}
+  table.g td{padding:3px 9px;height:22px;border-bottom:1px solid var(--bgrid);color:var(--fg-1)}
+  table.g tr:nth-child(even) td{background:var(--bg-panel)}
+  table.g tr:hover td{background:var(--grid-hover)}
+  table.g tr.sel td{background:var(--grid-sel)} table.g tr.sel td:first-child{box-shadow:inset 2px 0 0 var(--brand)}
+  .up{color:var(--up)} .down{color:var(--down)} .muted{color:var(--fg-3)}
+  @keyframes fu{0%{background:var(--up-flash)}100%{background:transparent}}
+  @keyframes fd{0%{background:var(--down-flash)}100%{background:transparent}}
+  .fu{animation:fu .6s linear} .fd{animation:fd .6s linear}
+  /* tabs */
+  .tabs{display:flex;border-bottom:1px solid var(--b1)}
+  .tabs .t{padding:7px 14px;font-size:12px;color:var(--fg-2);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer}
+  .tabs .t.on{color:var(--fg-1);border-bottom-color:var(--brand)}
+  .tabs .t b{color:var(--fg-3);font-family:var(--mono);font-weight:400;margin-left:5px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:720px){.two{grid-template-columns:1fr}}
+  .note{font-size:11px;color:var(--fg-3);margin-top:8px}
+  .rules{font-size:12px;color:var(--fg-2);line-height:1.7;background:var(--bg-panel);border:1px solid var(--b1);border-left:3px solid var(--brand);border-radius:5px;padding:12px 16px}
+  .rules b{color:var(--fg-1);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="mark"><i class="a"></i><i class="b"></i><i class="c"></i></div>
+    <div>
+      <h1>Macro <small>Rates E-Trading · Design System</small></h1>
+      <p class="lede">Dark-default, information-dense system for front-office rates trading. Borders over shadows, mono numerals, sacred directional colors. This page is a self-contained visual reference — paste into Figma Make alongside FIGMA_MAKE.md.</p>
+    </div>
+  </header>
+
+  <h2 class="sec">Surfaces &amp; text</h2>
+  <div class="sw">
+    <div class="chip"><div class="c" style="background:#0b0d12"></div><div class="l">app<b>#0b0d12</b></div></div>
+    <div class="chip"><div class="c" style="background:#12141a"></div><div class="l">canvas<b>#12141a</b></div></div>
+    <div class="chip"><div class="c" style="background:#181b22"></div><div class="l">panel<b>#181b22</b></div></div>
+    <div class="chip"><div class="c" style="background:#1e222a"></div><div class="l">raised<b>#1e222a</b></div></div>
+    <div class="chip"><div class="c" style="background:#1a2a3f"></div><div class="l">selected<b>#1a2a3f</b></div></div>
+    <div class="chip"><div class="c" style="background:#e6e8ec"></div><div class="l" style="color:#0b0d12">fg-1<b style="color:#3b414c">#e6e8ec</b></div></div>
+    <div class="chip"><div class="c" style="background:#a8afbd"></div><div class="l" style="color:#0b0d12">fg-2<b style="color:#3b414c">#a8afbd</b></div></div>
+    <div class="chip"><div class="c" style="background:#6f7687"></div><div class="l">fg-3<b>#6f7687</b></div></div>
+  </div>
+
+  <h2 class="sec">Brand &amp; market — green/red are directional only</h2>
+  <div class="sw">
+    <div class="chip"><div class="c" style="background:#2aa6e6"></div><div class="l" style="color:#041a26">brand<b style="color:#0a476c">#2aa6e6</b></div></div>
+    <div class="chip"><div class="c" style="background:#55b2ee"></div><div class="l" style="color:#041a26">hover<b style="color:#0a476c">#55b2ee</b></div></div>
+    <div class="chip"><div class="c" style="background:#34d97a"></div><div class="l" style="color:#04210e">up / bid<b style="color:#0a5c32">#34d97a</b></div></div>
+    <div class="chip"><div class="c" style="background:#ff6b64"></div><div class="l" style="color:#2a0403">down / ask<b style="color:#861e19">#ff6b64</b></div></div>
+    <div class="chip"><div class="c" style="background:#5b8def"></div><div class="l" style="color:#04102a">info<b style="color:#234aa6">#5b8def</b></div></div>
+    <div class="chip"><div class="c" style="background:#f5c13a"></div><div class="l" style="color:#2a1f00">warn<b style="color:#7a5a04">#f5c13a</b></div></div>
+  </div>
+
+  <h2 class="sec">Type — Roboto Condensed + IBM Plex Mono</h2>
+  <div class="panel"><div class="pb">
+    <div class="type-row"><span class="tag">h1 · 32/700</span><span style="font-size:32px;font-weight:700;letter-spacing:-.01em">Working orders</span></div>
+    <div class="type-row"><span class="tag">h2 · 24/600</span><span style="font-size:24px;font-weight:600">Rates blotter</span></div>
+    <div class="type-row"><span class="tag">body · 13/400</span><span>Submit order · Send RFQ · Cancel &amp; replace</span></div>
+    <div class="type-row"><span class="tag">label · 10 caps</span><span style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)">Working orders</span></div>
+    <div class="type-row"><span class="tag">mono · prices</span><span class="num" style="font-size:16px">4.2385 &nbsp; 99.42 &nbsp; 25MM &nbsp; +$12.4K</span></div>
+  </div></div>
+
+  <h2 class="sec">Buttons, inputs, pills</h2>
+  <div class="two">
+    <div class="panel"><div class="ph">Buttons &amp; inputs</div><div class="pb">
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn primary">Submit order</button>
+        <button class="btn">Cancel</button>
+        <button class="btn bid">Bid</button>
+        <button class="btn ask">Ask</button>
+        <button class="btn danger sm">Cancel all</button>
+      </div>
+      <div class="row">
+        <input class="f" value="25,000,000" style="width:130px">
+        <input class="f" value="99.42" style="width:80px;border-color:var(--brand);box-shadow:0 0 0 2px var(--brand-soft)">
+        <span class="seg"><button class="buy">Buy</button><button class="sell">Sell</button></span>
+      </div>
+    </div></div>
+    <div class="panel"><div class="ph">Status pills &amp; tags</div><div class="pb">
+      <div class="row" style="margin-bottom:12px">
+        <span class="pill ok"><span class="d"></span>Working</span>
+        <span class="pill ok"><span class="d"></span>Filled</span>
+        <span class="pill warn"><span class="d"></span>Pending</span>
+        <span class="pill err"><span class="d"></span>Rejected</span>
+        <span class="pill neu"><span class="d"></span>Cancelled</span>
+        <span class="pill info"><span class="d"></span>Routed</span>
+      </div>
+      <div class="row">
+        <span class="vtag">IRS</span><span class="vtag">10Y</span><span class="vtag">SOFR</span>
+        <span class="vtag">TradeWeb</span><span class="vtag">BBG</span><span class="vtag">MarketAxess</span>
+      </div>
+    </div></div>
+  </div>
+
+  <h2 class="sec">Tabs</h2>
+  <div class="panel"><div class="tabs">
+    <div class="t on">Working <b>12</b></div><div class="t">Filled <b>284</b></div><div class="t">Cancelled</div><div class="t">Rejected <b style="color:#ff9a95">3</b></div>
+  </div><div class="pb"><span class="note">Active tab: 2px brand underline + fg-1. Counts in mono fg-3.</span></div></div>
+
+  <h2 class="sec">Data grid — the centerpiece (live tick flash)</h2>
+  <div class="panel"><div class="ph">Rates blotter · 22px rows</div>
+    <table class="g">
+      <thead><tr><th>Instrument</th><th>Tenor</th><th class="r">Bid</th><th class="r">Ask</th><th class="r">Last</th><th class="r">Chg</th><th>Venue</th><th>Status</th></tr></thead>
+      <tbody id="tb">
+        <tr><td>USD 2Y SOFR</td><td><span class="vtag">2Y</span></td><td class="r up" data-c="bid">4.1820</td><td class="r down" data-c="ask">4.1840</td><td class="r">4.1830</td><td class="r up">+0.0020</td><td class="muted">TradeWeb</td><td><span class="pill ok"><span class="d"></span>Live</span></td></tr>
+        <tr class="sel"><td>USD 10Y SOFR</td><td><span class="vtag">10Y</span></td><td class="r up" data-c="bid">4.2375</td><td class="r down" data-c="ask">4.2395</td><td class="r">4.2385</td><td class="r up">+0.0040</td><td class="muted">BBG</td><td><span class="pill ok"><span class="d"></span>Live</span></td></tr>
+        <tr><td>EUR 5Y ESTR</td><td><span class="vtag">5Y</span></td><td class="r up" data-c="bid">2.1830</td><td class="r down" data-c="ask">2.1850</td><td class="r">2.1840</td><td class="r down">−0.0015</td><td class="muted">TradeWeb</td><td><span class="pill warn"><span class="d"></span>Stale</span></td></tr>
+        <tr><td>DBR 2.1 02/34</td><td><span class="vtag">10Y</span></td><td class="r up" data-c="bid">99.42</td><td class="r down" data-c="ask">99.46</td><td class="r">99.44</td><td class="r up">+0.08</td><td class="muted">MTS</td><td><span class="pill ok"><span class="d"></span>Live</span></td></tr>
+        <tr><td>GBP 10Y SONIA</td><td><span class="vtag">10Y</span></td><td class="r up" data-c="bid">4.5110</td><td class="r down" data-c="ask">4.5130</td><td class="r">4.5120</td><td class="r down">−0.0080</td><td class="muted">BBG</td><td><span class="pill err"><span class="d"></span>Halted</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="sec">Hard rules</h2>
+  <div class="rules">
+    • <b>Green/red are directional only</b> — price, P&amp;L, bid/ask. Never for success/error. Use neutral status pills.<br>
+    • <b>Brand cerulean is chrome only</b> — CTAs, tabs, focus, live dot. Never in data.<br>
+    • <b>Every number is mono + tabular.</b> Prices align on the decimal.<br>
+    • <b>Borders express hierarchy</b>, not shadows. 1px hairlines. No gradients, no blur, no glassmorphism.<br>
+    • <b>No emoji.</b> Only ▲▼ (direction) and ● (status dots) as glyphs.<br>
+    • <b>Tick flash = 600ms linear</b> background fade. No bounces, no shimmer.<br>
+    • <b>Copy is terse, verb-first, Sentence case</b> on actions, ALL CAPS on labels. Never Title Case.
+  </div>
+
+</div>
+
+<script>
+  // Live tick flash on bid/ask cells
+  const cells=[...document.querySelectorAll('#tb [data-c]')];
+  setInterval(()=>{
+    const c=cells[Math.floor(Math.random()*cells.length)];
+    const up=Math.random()>.5;
+    const step=c.textContent.includes('.')&&c.textContent.length<6?0.01:0.0005;
+    let v=parseFloat(c.textContent.replace('−','-'));
+    v=v+(up?step:-step);
+    const dp=(c.textContent.split('.')[1]||'').length||2;
+    c.textContent=(v).toFixed(dp);
+    c.classList.remove('fu','fd');void c.offsetWidth;c.classList.add(up?'fu':'fd');
+  },700);
+</script>
+</body>
+</html>
