@@ -447,6 +447,20 @@
               "appId": "macro-workspace-view2"
             }
           ]
+        },
+        {
+          "type": "folder",
+          "id": "platforms",
+          "label": "Platforms",
+          "children": [
+            {
+              "type": "item",
+              "id": "cm-rates-desktop",
+              "label": "Rates E-Trading Desktop",
+              "icon": "http://localhost:4202/icons/platform.svg",
+              "appId": "rates-desktop"
+            }
+          ]
         }
       ]
     }

@@ -7,6 +7,7 @@ import {
 } from '@openfin/workspace-platform';
 import type { App } from '@openfin/workspace';
 import { Logger } from '@macro/logger';
+import { launchApp } from './launch';
 import { getAnalyticsNats } from './analytics-nats.service';
 import { toTaskbarIcon } from './icon-utils';
 import type {
@@ -136,9 +137,17 @@ export class Dock3Service {
             if (appId && apps) {
               const app = apps.find((a) => a.appId === appId);
               if (app?.manifest) {
-                logger.info('Dock3 launching app', { appId, manifest: app.manifest });
-                const platform = getCurrentSync();
-                await platform.createView({ manifestUrl: app.manifest });
+                // Route through the shared launcher so the entry honours its
+                // manifestType — view → createView, manifest → boot the
+                // platform, snapshot → applySnapshot, external → launch process.
+                // Previously this always called createView, so platform apps
+                // could only ever open as a single embedded view.
+                logger.info('Dock3 launching app', {
+                  appId,
+                  manifestType: app.manifestType,
+                  manifest: app.manifest,
+                });
+                await launchApp(app);
                 return;
               }
             }
