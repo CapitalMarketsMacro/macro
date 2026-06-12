@@ -1,228 +1,456 @@
 {
+
   "name": "@macro/source",
+
   "version": "0.0.0",
+
   "license": "MIT",
+
   "scripts": {
+
     "start": "concurrently -n workspace,angular,react,fdc3 -c blue,green,yellow,magenta \"nx serve macro-workspace\" \"nx serve macro-angular\" \"nx serve macro-react\" \"nx serve macro-angular-fdc3\"",
+
     "stop": "node scripts/stop.mjs",
+
     "stop:all": "node scripts/stop.mjs --with-openfin",
+
     "start:workspace": "nx serve macro-workspace",
+
     "start:angular": "nx serve macro-angular",
+
     "start:react": "nx serve macro-react",
+
     "start:fdc3": "nx serve macro-angular-fdc3",
+
     "serve:workspace": "nx serve macro-workspace",
+
     "serve:angular": "nx serve macro-angular",
+
     "serve:react": "nx serve macro-react",
+
     "build:workspace": "nx build macro-workspace",
+
     "build:angular": "nx build macro-angular",
+
     "build:react": "nx build macro-react",
+
     "build:fdc3": "nx build macro-angular-fdc3",
+
     "build:logger": "nx build logger",
+
     "build:mcp": "nx build macro-mcp",
+
     "build:mcp-agent": "nx build macro-mcp-agent && node -e \"const f=require('fs'),p=JSON.parse(f.readFileSync('dist/apps/macro-mcp-agent/package.json','utf8'));p.dependencies.amps=JSON.parse(f.readFileSync('node_modules/amps/package.json','utf8')).version;f.writeFileSync('dist/apps/macro-mcp-agent/package.json',JSON.stringify(p,null,2))\"",
+
     "start:mcp-agent": "nx serve macro-mcp-agent",
+
     "publish:logger": "npm run build:logger && npm publish --prefix dist/libs/logger",
+
     "publish:logger:dry-run": "npm run build:logger && npm publish --prefix dist/libs/logger --dry-run",
+
     "launch": "node apps/macro-workspace/launch.mjs http://localhost:4202/local/manifest.fin.json",
+
     "launch:openshift": "echo 'Update OPENSHIFT_WORKSPACE_HOST in openshift/manifest.fin.json then run: node apps/macro-workspace/launch.mjs https://<OPENSHIFT_WORKSPACE_HOST>/openshift/manifest.fin.json'",
+
     "e2e:angular": "nx e2e macro-angular-e2e",
+
     "e2e:angular:headed": "nx e2e macro-angular-e2e --headed",
+
     "e2e:angular:ui": "nx e2e macro-angular-e2e --ui",
+
     "e2e:angular:debug": "nx e2e macro-angular-e2e --debug",
+
     "e2e:angular:chromium": "nx e2e macro-angular-e2e --project=chromium",
+
     "e2e:angular:firefox": "nx e2e macro-angular-e2e --project=firefox",
+
     "e2e:angular:webkit": "nx e2e macro-angular-e2e --project=webkit",
+
     "e2e:react": "nx e2e macro-react-e2e",
+
     "e2e:react:headed": "nx e2e macro-react-e2e --headed",
+
     "e2e:react:ui": "nx e2e macro-react-e2e --ui",
+
     "e2e:react:debug": "nx e2e macro-react-e2e --debug",
+
     "e2e:react:chromium": "nx e2e macro-react-e2e --project=chromium",
+
     "e2e:react:firefox": "nx e2e macro-react-e2e --project=firefox",
+
     "e2e:react:webkit": "nx e2e macro-react-e2e --project=webkit",
+
     "test:ci": "nx run-many --target=test --exclude=macro-react,macro-react-grid --configuration=ci && nx run-many --target=test --projects=macro-react,macro-react-grid --coverage",
+
     "e2e:workspace": "nx e2e macro-workspace-e2e",
+
     "e2e:workspace:headed": "nx e2e macro-workspace-e2e --headed",
+
     "e2e:workspace:ui": "nx e2e macro-workspace-e2e --ui",
+
     "e2e:workspace:debug": "nx e2e macro-workspace-e2e --debug",
+
     "e2e:workspace:openfin": "nx e2e macro-workspace-e2e --project=openfin",
+
     "build": "nx run-many --target=build --all",
+
     "buildAll": "nx run-many --target=build --all",
+
     "build:apps": "nx run-many --target=build --projects=macro-angular,macro-react,macro-workspace,macro-angular-fdc3,market-data-server,macro-mcp,capital-markets-themes",
+
     "build:libs": "nx run-many --target=build --projects=logger,amps,solace,nats,transports,openfin,macro-design,macro-angular-grid,macro-react-grid,rxutils",
+
     "test": "nx run-many --target=test --all",
+
     "start:capital-markets-themes": "nx serve capital-markets-themes",
+
     "build:capital-markets-themes": "nx build capital-markets-themes"
+
   },
+
   "private": true,
+
   "dependencies": {
+
     "@angular/animations": "~21.2.0",
+
     "@angular/common": "~21.2.0",
+
     "@angular/compiler": "~21.2.0",
+
     "@angular/core": "~21.2.0",
+
     "@angular/forms": "~21.2.0",
+
     "@angular/platform-browser": "~21.2.0",
+
     "@angular/platform-browser-dynamic": "~21.2.0",
+
     "@angular/router": "~21.2.0",
+
     "@finos/fdc3": "2.2.3",
+
     "@nats-io/nats-core": "^3.3.1",
-    "@openfin/core": "43.102.2",
+
+    "@openfin/core": "43.104.1",
+
     "@openfin/snap-sdk": "^1.6.0",
-    "@openfin/workspace": "23.0.22",
-    "@openfin/workspace-platform": "23.0.22",
+
+    "@openfin/workspace": "23.2.19",
+
+    "@openfin/workspace-platform": "23.2.19",
+
     "@popperjs/core": "^2.11.8",
+
     "@primeuix/themes": "^2.0.3",
+
     "@radix-ui/react-accordion": "^1.2.3",
+
     "@radix-ui/react-alert-dialog": "^1.1.6",
+
     "@radix-ui/react-aspect-ratio": "^1.1.2",
+
     "@radix-ui/react-avatar": "^1.1.3",
+
     "@radix-ui/react-checkbox": "^1.1.4",
+
     "@radix-ui/react-collapsible": "^1.1.3",
+
     "@radix-ui/react-context-menu": "^2.2.6",
+
     "@radix-ui/react-dialog": "^1.1.6",
+
     "@radix-ui/react-dropdown-menu": "^2.1.6",
+
     "@radix-ui/react-hover-card": "^1.1.6",
+
     "@radix-ui/react-label": "^2.1.8",
+
     "@radix-ui/react-menubar": "^1.1.16",
+
     "@radix-ui/react-navigation-menu": "^1.2.5",
+
     "@radix-ui/react-popover": "^1.1.6",
+
     "@radix-ui/react-progress": "^1.1.2",
+
     "@radix-ui/react-radio-group": "^1.2.3",
+
     "@radix-ui/react-scroll-area": "^1.2.3",
+
     "@radix-ui/react-select": "^2.1.6",
+
     "@radix-ui/react-separator": "^1.1.2",
+
     "@radix-ui/react-slider": "^1.2.3",
+
     "@radix-ui/react-switch": "^1.2.6",
+
     "@radix-ui/react-tabs": "^1.1.3",
+
     "@radix-ui/react-toggle": "^1.1.2",
+
     "@radix-ui/react-toggle-group": "^1.1.2",
+
     "@radix-ui/react-tooltip": "^1.1.8",
+
     "@tailwindcss/vite": "^4.3.0",
+
     "@types/ws": "^8.18.1",
+
     "@vitejs/plugin-react": "^6.0.2",
+
     "ag-charts-angular": "^13.3.0",
+
     "ag-charts-enterprise": "^13.3.0",
+
     "ag-charts-react": "^13.3.0",
+
     "ag-grid-angular": "^35.3.0",
+
     "ag-grid-community": "^35.3.0",
+
     "ag-grid-enterprise": "^35.3.0",
+
     "ag-grid-react": "^35.3.0",
+
     "amps": "^5.3.4-0.378635.60b2fcc",
+
     "class-variance-authority": "^0.7.1",
+
     "clone": "^2.1.2",
+
     "clsx": "^2.1.1",
+
     "cmdk": "^1.1.1",
+
     "date-fns": "^3.6.0",
+
     "embla-carousel-react": "^8.6.0",
+
     "input-otp": "^1.4.2",
+
     "lucide-react": "^0.553.0",
+
     "motion": "^12.23.24",
+
     "next-themes": "^0.4.6",
+
     "pino": "^10.1.0",
+
     "pino-pretty": "^13.1.2",
+
     "primeicons": "^7.0.0",
+
     "primeng": "^21.1.8",
+
     "primereact": "^11.0.0-alpha.10",
+
     "react": "^19.2.7",
+
     "react-day-picker": "^9.14.0",
+
     "react-dnd": "^16.0.1",
+
     "react-dnd-html5-backend": "^16.0.1",
+
     "react-dom": "^19.2.7",
+
     "react-hook-form": "^7.55.0",
+
     "react-is": "^18.3.1",
+
     "react-popper": "^2.3.0",
+
     "react-resizable-panels": "^2.1.7",
+
     "react-responsive-masonry": "^2.7.1",
+
     "react-router-dom": "^7.16.0",
+
     "react-slick": "^0.31.0",
+
     "recharts": "^3.4.1",
+
     "rxjs": "~7.8.2",
+
     "solclientjs": "^10.18.2",
+
     "sonner": "^2.0.3",
+
     "tailwind-merge": "^3.4.0",
+
     "tw-animate-css": "^1.4.0",
+
     "vaul": "^1.1.2",
+
     "vite": "^8.0.14",
+
     "ws": "^8.18.3",
+
     "zone.js": "~0.16.2"
+
   },
+
   "devDependencies": {
+
     "@angular-devkit/core": "~21.2.0",
+
     "@angular-devkit/schematics": "~21.2.0",
+
     "@angular/build": "~21.2.0",
+
     "@angular/cli": "~21.2.0",
+
     "@angular/compiler-cli": "~21.2.0",
+
     "@angular/language-service": "~21.2.0",
+
     "@babel/core": "^7.14.5",
+
     "@babel/preset-react": "^7.14.5",
+
     "@eslint/js": "^10.0.0",
+
     "@nx/angular": "22.7.5",
+
     "@nx/devkit": "22.7.5",
+
     "@nx/esbuild": "22.7.5",
+
     "@nx/eslint": "22.7.5",
+
     "@nx/eslint-plugin": "22.7.5",
+
     "@nx/jest": "22.7.5",
+
     "@nx/js": "22.7.5",
+
     "@nx/node": "22.7.5",
+
     "@nx/playwright": "22.7.5",
+
     "@nx/react": "22.7.5",
+
     "@nx/vite": "22.7.5",
+
     "@nx/web": "22.7.5",
+
     "@nx/workspace": "22.7.5",
+
     "@openfin/automation-helpers": "1.3.1",
-    "@openfin/node-adapter": "43.102.2",
+
+    "@openfin/node-adapter": "43.104.1",
+
     "@playwright/test": "^1.59.1",
+
     "@schematics/angular": "~21.2.0",
+
     "@swc-node/register": "1.11.1",
+
     "@swc/cli": "~0.8.0",
+
     "@swc/core": "1.15.26",
+
     "@swc/helpers": "0.5.21",
+
     "@tailwindcss/postcss": "^4.3.0",
+
     "@testing-library/dom": "10.4.0",
+
     "@testing-library/react": "16.3.0",
+
     "@types/clone": "^2.1.4",
+
     "@types/jest": "30.0.0",
+
     "@types/node": "^20.19.9",
+
     "@types/react": "^19.0.0",
+
     "@types/react-dom": "^19.0.0",
+
     "@typescript-eslint/utils": "^8.46.0",
+
     "@vitejs/plugin-react": "^6.0.1",
+
     "@vitest/coverage-v8": "^4.1.7",
+
     "@vitest/ui": "^4.1.7",
+
     "angular-eslint": "21.4.0",
+
     "autoprefixer": "^10.4.22",
+
     "chokidar": "^5.0.0",
+
     "concurrently": "^9.2.1",
+
     "esbuild": "^0.19.2",
+
     "eslint": "^10.0.0",
+
     "eslint-config-prettier": "^10.0.0",
+
     "eslint-plugin-import": "2.31.0",
+
     "eslint-plugin-jsx-a11y": "6.10.1",
+
     "eslint-plugin-playwright": "^1.6.2",
+
     "eslint-plugin-react": "7.35.0",
+
     "eslint-plugin-react-hooks": "5.0.0",
+
     "jest": "30.3.0",
+
     "jest-environment-jsdom": "^30.3.0",
+
     "jest-environment-node": "^29.7.0",
+
     "jest-junit": "^16.0.0",
+
     "jest-preset-angular": "16.1.4",
+
     "jest-util": "30.3.0",
+
     "jiti": "2.4.2",
+
     "jsdom": "^27.4.0",
+
     "jsonc-eslint-parser": "^2.1.0",
+
     "npm-run-all": "^4.1.5",
+
     "nx": "22.7.5",
+
     "postcss": "^8.5.6",
+
     "prettier": "~3.6.2",
+
     "tailwindcss": "^4.3.0",
+
     "ts-jest": "^29.1.0",
+
     "ts-node": "10.9.1",
+
     "tslib": "^2.3.0",
+
     "typescript": "~6.0.3",
+
     "typescript-eslint": "^8.46.0",
+
     "vite": "^8.0.0",
+
     "vitest": "^4.1.7"
+
   },
+
   "overrides": {
+
     "shell-quote": "1.8.4"
+
   }
+
 }
+
