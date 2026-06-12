@@ -6,18 +6,20 @@ import { Logger } from '@macro/logger';
 const logger = Logger.getLogger('LaunchService');
 
 /**
- * Recursively extract view component states from golden-layout content tree.
+ * Launch a workspace App from the Store, Home or Dock.
+ *
+ * The behaviour is driven entirely by `app.manifestType` so every entry point
+ * (Store card, Home search result, Dock button/Dock3 entry) gets identical,
+ * type-correct launching:
+ *
+ * - `view`     → a single MFE view created inside the current platform window.
+ * - `snapshot` → a saved layout applied into the current platform.
+ * - `manifest` → a full OpenFin **application/platform** booted from its own
+ *                manifest URL (its own runtime, provider and windows). This is
+ *                how nested platforms such as the Rates E-Trading Desktop are
+ *                launched, rather than being collapsed into a single view.
+ * - `external` → a native executable launched as an external process.
  */
-function extractViews(content: any[], views: OpenFin.PlatformViewCreationOptions[]): void {
-  for (const item of content) {
-    if (item.type === 'component' && item.componentState) {
-      views.push(item.componentState);
-    } else if (item.content) {
-      extractViews(item.content, views);
-    }
-  }
-}
-
 export async function launchApp(
   app: App,
 ): Promise<OpenFin.Platform | OpenFin.Identity | OpenFin.View | OpenFin.Application | undefined> {
@@ -25,6 +27,8 @@ export async function launchApp(
     logger.error(`No manifest provided for type ${app.manifestType}`);
     return;
   }
+
+  logger.info('Launching app', { appId: app.appId, manifestType: app.manifestType });
 
   let result: OpenFin.Platform | OpenFin.Identity | OpenFin.View | OpenFin.Application | undefined;
 
@@ -43,52 +47,11 @@ export async function launchApp(
       result = await fin.System.launchExternalProcess({ path: app.manifest, uuid: app.appId });
       break;
     }
-    case 'manifest': {
-      const platform = getCurrentSync();
-      const manifest = await platform.fetchManifest(app.manifest);
-      // Extract views from the fetched manifest's snapshot
-      const snapshot = (manifest as any)?.snapshot ?? (manifest as any)?.platform?.defaultWindowOptions;
-      const views: OpenFin.PlatformViewCreationOptions[] = [];
-      if (snapshot?.windows) {
-        for (const win of snapshot.windows) {
-          const layouts = win?.layout?.content;
-          if (layouts) {
-            extractViews(layouts, views);
-          }
-        }
-      }
-      // Create a named browser window with the app title and launch views into it
-      const windowId = `${app.appId}-${Date.now()}`;
-      await platform.Browser.createWindow({
-        workspacePlatform: {
-          pages: [
-            {
-              pageId: windowId,
-              title: app.title,
-              layout: {
-                content: [
-                  {
-                    type: 'stack',
-                    content: views.length > 0
-                      ? views.map((v) => ({
-                          type: 'component' as const,
-                          componentName: 'view',
-                          componentState: v,
-                        }))
-                      : [
-                          {
-                            type: 'component' as const,
-                            componentName: 'view',
-                            componentState: { url: app.manifest },
-                          },
-                        ],
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      } as any);
+    case AppManifestType.Manifest: {
+      // Boot the whole OpenFin app/platform from its manifest. startFromManifest
+      // inspects the manifest: a `platform` block starts a separate Workspace
+      // Platform (own provider + windows); otherwise it starts a classic app.
+      result = await fin.Application.startFromManifest(app.manifest);
       break;
     }
     default: {
@@ -98,4 +61,3 @@ export async function launchApp(
 
   return result;
 }
-

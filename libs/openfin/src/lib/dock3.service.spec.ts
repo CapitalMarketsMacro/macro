@@ -25,8 +25,19 @@ jest.mock('@openfin/workspace-platform', () => ({
 // Mock @openfin/workspace (for App type import)
 jest.mock('@openfin/workspace', () => ({}));
 
-// Import the mocked module to get references
-import { Dock } from '@openfin/workspace-platform';
+// Mock the shared launcher so we can assert Dock3 routes through it
+jest.mock('./launch', () => ({
+  launchApp: jest.fn().mockResolvedValue(undefined),
+}));
+
+// Mock analytics so launchEntry's publish() is a no-op
+jest.mock('./analytics-nats.service', () => ({
+  getAnalyticsNats: () => ({ publish: jest.fn().mockResolvedValue(undefined) }),
+}));
+
+// Import the mocked modules to get references
+import { Dock, getCurrentSync } from '@openfin/workspace-platform';
+import { launchApp } from './launch';
 
 describe('Dock3Service', () => {
   let service: Dock3Service;
@@ -402,6 +413,59 @@ describe('Dock3Service', () => {
       const item = (Dock.init as jest.Mock).mock.calls[0][0].config
         .contentMenu[0];
       expect(item.icon).toBe('custom.png');
+    });
+  });
+
+  // ── launchEntry ─────────────────────────────────────────────
+
+  describe('launchEntry (via Dock provider override)', () => {
+    // Reproduce what Dock.init does internally: feed the override factory a
+    // stub base class so we can drive launchEntry directly.
+    async function getDockProvider(apps: App[]): Promise<any> {
+      await service.init(platformSettings, apps);
+      const initArg = (Dock.init as jest.Mock).mock.calls[0][0];
+      const Subclass = initArg.override(class {});
+      return new Subclass();
+    }
+
+    beforeEach(() => {
+      (launchApp as jest.Mock).mockClear();
+    });
+
+    it('routes an appId entry through the shared launchApp so manifestType is honoured', async () => {
+      const app = makeApp('rates-desktop', 'Rates', 'http://host/app.platform.fin.json');
+      (app as any).manifestType = 'manifest';
+      const provider = await getDockProvider([app]);
+
+      await provider.launchEntry({
+        entry: { type: 'item', id: 'i', label: 'Rates', itemData: { appId: 'rates-desktop' } },
+      });
+
+      expect(launchApp).toHaveBeenCalledTimes(1);
+      expect(launchApp).toHaveBeenCalledWith(app);
+    });
+
+    it('falls back to createView for a url-only entry (no appId)', async () => {
+      const mockCreateView = jest.fn().mockResolvedValue(undefined);
+      (getCurrentSync as jest.Mock).mockReturnValue({ createView: mockCreateView });
+      const provider = await getDockProvider([]);
+
+      await provider.launchEntry({
+        entry: { type: 'item', id: 'i', label: 'Ad-hoc', itemData: { url: 'http://host/page' } },
+      });
+
+      expect(launchApp).not.toHaveBeenCalled();
+      expect(mockCreateView).toHaveBeenCalledWith({ url: 'http://host/page' });
+    });
+
+    it('ignores non-item (folder) entries', async () => {
+      const provider = await getDockProvider([]);
+
+      await provider.launchEntry({
+        entry: { type: 'folder', id: 'f', label: 'F', children: [] },
+      });
+
+      expect(launchApp).not.toHaveBeenCalled();
     });
   });
 });
