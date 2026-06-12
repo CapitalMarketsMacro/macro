@@ -7,11 +7,11 @@ import {
   type CustomBrowserButtonConfig,
   type ToolbarButton,
 } from '@openfin/workspace-platform';
-import { from, map, type Observable } from 'rxjs';
+import { from, map, switchMap, type Observable } from 'rxjs';
 import type { App } from '@openfin/workspace';
 import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
-import { WorkspaceOverrideService, setViewTitle } from './workspace-override.service';
+import { WorkspaceOverrideService, setViewTitle, THEME_CHANGED_TOPIC } from './workspace-override.service';
 import type { ThemePresetPalettes } from './theme-preset.service';
 import { themeConfig } from '@macro/macro-design';
 import { Logger } from '@macro/logger';
@@ -294,7 +294,23 @@ export class PlatformService {
           },
         },
       }),
-    ).pipe(map(() => undefined));
+    ).pipe(
+      switchMap(() => from(
+        (async () => {
+          // Broadcast the initial theme over IAB so views that call syncWithOpenFinTheme()
+          // after platform init can receive the current scheme without needing Theme API access.
+          try {
+            const workspacePlatform = getCurrentSync();
+            const scheme = await workspacePlatform.Theme.getSelectedScheme();
+            const isDark = scheme === ColorSchemeOptionType.Dark;
+            await fin.InterApplicationBus.publish(THEME_CHANGED_TOPIC, { isDark });
+          } catch (err) {
+            logger.warn('Could not broadcast initial theme', err);
+          }
+        })()
+      )),
+      map(() => undefined),
+    );
   }
 }
 
