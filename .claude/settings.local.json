@@ -130,7 +130,18 @@
       "Bash(echo \"=== exit: $? ===\")",
       "Bash(git pull *)",
       "Bash(git branch *)",
-      "Bash(git ls-remote *)"
+      "Bash(git ls-remote *)",
+      "Bash(sed 's/\\\\x1b\\\\[[0-9;]*m//g')",
+      "Read(//tmp/**)",
+      "Bash(awk '/^E:.*\\\\.ts$/{file=$0} / error /{print file}' /tmp/lint.txt)",
+      "Bash(awk '/^E:.*\\\\.ts$/{file=$0} / error /{if\\(file ~ /launch\\\\.ts$|launch\\\\.spec\\\\.ts$|dock3\\\\.service\\\\.ts$|dock3\\\\.service\\\\.spec\\\\.ts$/\\) print file\": \"$0}' /tmp/lint.txt)",
+      "Bash([ -f \"$HOME/.npmrc\" ])",
+      "Read(//c/Users/mruda/**)",
+      "Bash(git --no-pager diff -- package.json)",
+      "Bash(git --no-pager diff -- package-lock.json)",
+      "PowerShell(git *)",
+      "Bash(gh auth *)",
+      "Bash(gh api *)"
     ]
   },
   "enableAllProjectMcpServers": true
