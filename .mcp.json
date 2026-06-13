@@ -18,7 +18,7 @@
     },
     "macro-mcp": {
       "command": "node",
-      "args": ["/Users/monty/GitHub/MacroRepos/macro/dist/apps/macro-mcp/main.js"]
+      "args": ["dist/apps/macro-mcp/main.js"]
     }
   }
 }
