@@ -141,7 +141,12 @@
       "Bash(git --no-pager diff -- package-lock.json)",
       "PowerShell(git *)",
       "Bash(gh auth *)",
-      "Bash(gh api *)"
+      "Bash(gh api *)",
+      "Skill(update-config)",
+      "Bash(jq -e '.env.MCP_TIMEOUT' .claude/settings.json)",
+      "Bash(claude plugin *)",
+      "Bash(git config *)",
+      "Bash(git *)"
     ]
   },
   "enableAllProjectMcpServers": true

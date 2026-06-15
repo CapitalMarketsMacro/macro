@@ -172,12 +172,16 @@ export class ThemeService {
     }
 
     try {
-      const workspacePlatform = getCurrentSync();
-
-      // Initial sync
-      const scheme = await workspacePlatform.Theme.getSelectedScheme();
-      const isDarkMode = scheme === ColorSchemeOptionType.Dark;
-      this.applyTheme(isDarkMode ? 'dark' : 'light');
+      // Initial sync — Theme API is only available in the platform provider process;
+      // in view contexts it may throw, so we isolate it and fall back to dark.
+      try {
+        const workspacePlatform = getCurrentSync();
+        const scheme = await workspacePlatform.Theme.getSelectedScheme();
+        const isDarkMode = scheme === ColorSchemeOptionType.Dark;
+        this.applyTheme(isDarkMode ? 'dark' : 'light');
+      } catch {
+        logger.debug('Theme.getSelectedScheme() unavailable in this context, using IAB only');
+      }
 
       // Subscribe to theme changes broadcast by the platform override
       this.iabHandler = (payload: { isDark: boolean }) => {
