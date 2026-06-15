@@ -394,7 +394,7 @@
 
     "concurrently": "^9.2.1",
 
-    "esbuild": "^0.19.2",
+    "esbuild": "^0.28.1",
 
     "eslint": "^10.0.0",
 
@@ -456,7 +456,9 @@
 
   "overrides": {
 
-    "shell-quote": "1.8.4"
+    "shell-quote": "1.8.4",
+
+    "esbuild": "^0.28.1"
 
   }
 
