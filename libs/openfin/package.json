@@ -18,6 +18,14 @@
     ".": {
       "types": "./src/index.d.ts",
       "default": "./src/index.js"
+    },
+    "./react": {
+      "types": "./src/lib/react.d.ts",
+      "default": "./src/lib/react.js"
+    },
+    "./theme-sync": {
+      "types": "./src/lib/theme-sync.d.ts",
+      "default": "./src/lib/theme-sync.js"
     }
   },
   "files": [

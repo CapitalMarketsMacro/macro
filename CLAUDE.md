@@ -25,13 +25,15 @@ macro/
 │   ├── macro-react/            # React market data app (Shadcn/Radix, Tailwind, AG Grid, Recharts)
 │   ├── macro-workspace/        # OpenFin Workspace platform shell (Angular, zoneless)
 │   ├── market-data-server/     # WebSocket server (simulated FX + Treasury data)
-│   ├── macro-mcp/              # Custom MCP server for scaffolding
+│   ├── macro-mcp/              # MCP server (stdio) — thin entrypoint over @macro/mcp-core
+│   ├── macro-mcp-agent/        # MCP server (HTTP/SSE) — same @macro/mcp-core, for remote deploy
 │   ├── macro-angular-e2e/      # Playwright E2E tests (Angular)
 │   ├── macro-react-e2e/        # Playwright E2E tests (React)
 │   └── macro-workspace-e2e/    # Playwright E2E tests (OpenFin)
 ├── libs/
 │   ├── macro-design/           # Shared design tokens, CSS variables, dark mode, AG Grid theme
 │   ├── logger/                 # Pino-based structured logging (@macro/logger)
+│   ├── mcp-core/               # Shared MCP tools/resources/prompts (@macro/mcp-core) — used by both MCP servers
 │   ├── transports/             # Unified messaging: AMPS, Solace, NATS (@macro/transports + /angular + /react)
 │   ├── openfin/                # OpenFin Workspace services + Angular DI + Snap + Analytics (@macro/openfin)
 │   ├── rxutils/                # RxJS conflation utilities (@macro/rxutils)

@@ -1,8 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { registerResources } from './resources/index.js';
-import { registerTools } from './tools/index.js';
-import { registerPrompts } from './prompts/index.js';
+import { registerResources, registerTools, registerPrompts } from '@macro/mcp-core';
 
 const server = new McpServer(
   {

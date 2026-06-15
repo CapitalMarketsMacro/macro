@@ -1,0 +1,8 @@
+{
+  "name": "@macro/mcp-core",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared MCP tools, resources, and prompts for the Macro Desktop MCP servers (stdio + HTTP)",
+  "type": "commonjs",
+  "main": "./src/index.ts"
+}
