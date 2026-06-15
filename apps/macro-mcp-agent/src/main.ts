@@ -2,9 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import express from 'express';
-import { registerResources } from './resources/index.js';
-import { registerTools } from './tools/index.js';
-import { registerPrompts } from './prompts/index.js';
+import { registerResources, registerTools, registerPrompts } from '@macro/mcp-core';
 
 const PORT = parseInt(process.env['MCP_PORT'] || '3100', 10);
 const HOST = process.env['MCP_HOST'] || '0.0.0.0';

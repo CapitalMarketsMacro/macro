@@ -1,0 +1,7 @@
+{
+  "name": "mcp-core",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/mcp-core/src",
+  "projectType": "library",
+  "tags": []
+}

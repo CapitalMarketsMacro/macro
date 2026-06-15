@@ -98,7 +98,7 @@
 
     "build:apps": "nx run-many --target=build --projects=macro-angular,macro-react,macro-workspace,macro-angular-fdc3,market-data-server,macro-mcp,capital-markets-themes",
 
-    "build:libs": "nx run-many --target=build --projects=logger,amps,solace,nats,transports,openfin,macro-design,macro-angular-grid,macro-react-grid,rxutils",
+    "build:libs": "nx run-many --target=build --projects=logger,transports,openfin,macro-design,macro-angular-grid,macro-react-grid,rxutils",
 
     "test": "nx run-many --target=test --all",
 
@@ -129,6 +129,8 @@
     "@angular/router": "~21.2.0",
 
     "@finos/fdc3": "2.2.3",
+
+    "@modelcontextprotocol/sdk": "^1.26.0",
 
     "@nats-io/nats-core": "^3.3.1",
 
@@ -228,6 +230,8 @@
 
     "embla-carousel-react": "^8.6.0",
 
+    "express": "^5.2.1",
+
     "input-otp": "^1.4.2",
 
     "lodash.clonedeep": "^4.5.0",
@@ -290,7 +294,9 @@
 
     "ws": "^8.18.3",
 
-    "zone.js": "~0.16.2"
+    "zone.js": "~0.16.2",
+
+    "zod": "^4.3.6"
 
   },
 

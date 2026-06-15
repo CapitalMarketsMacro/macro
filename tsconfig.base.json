@@ -21,6 +21,9 @@
       "@macro/logger": [
         "libs/logger/src/index.ts"
       ],
+      "@macro/mcp-core": [
+        "libs/mcp-core/src/index.ts"
+      ],
       "@macro/rxutils": [
         "libs/rxutils/src/index.ts"
       ],
