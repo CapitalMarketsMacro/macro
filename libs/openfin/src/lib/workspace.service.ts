@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, catchError, concatMap, delay, forkJoin, from, map, of, tap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, concatMap, delay, forkJoin, from, map, of, tap, timeout } from 'rxjs';
 import type { CustomSettings, PlatformSettings } from './types';
 import { PlatformService } from './platform.service';
 import { SettingsService } from './settings.service';
@@ -178,11 +178,21 @@ export class WorkspaceService {
   private awaitPlatformReady() {
     return new Observable<void>((observer) => {
       const platform = fin.Platform.getCurrentSync();
-      platform.once('platform-api-ready', () => {
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
         this.status$.next('Platform API ready...');
         observer.next();
         observer.complete();
-      });
+      };
+      // `platform-api-ready` is a one-shot event that may have already fired by
+      // the time we subscribe (WS 23.2.x resolves init() after it fires). Listen
+      // for it, but fall back to a timeout so a missed event can never stall the
+      // init pipeline before registerComponents() — which would silently keep
+      // Dock/Store/Home from ever registering.
+      platform.once('platform-api-ready', done);
+      setTimeout(done, 1000);
     });
   }
 
@@ -194,34 +204,60 @@ export class WorkspaceService {
     customSettings?: CustomSettings;
   }) {
     this.status$.next('Registering workspace components...');
+    // Each component registration is independent. Guard every one so a single
+    // slow/hanging registration (e.g. the native Snap helper failing to
+    // connect) can never pin the platform on "Registering workspace
+    // components..." forever. The warning names the offending component.
     return forkJoin([
-      from(
-        this.dock3Service.init(
-          platformSettings,
-          customSettings?.apps,
-          customSettings?.dock3
+      this.guarded(
+        'dock',
+        from(
+          this.dock3Service.init(
+            platformSettings,
+            customSettings?.apps,
+            customSettings?.dock3
+          )
         )
       ),
-      this.homeService.register(platformSettings),
-      this.storeService.register(platformSettings),
-      from(this.notificationsService.register(platformSettings)),
-      from(this.snapService.init(platformSettings.id, customSettings?.snapProvider)),
+      this.guarded('home', this.homeService.register(platformSettings)),
+      this.guarded('store', this.storeService.register(platformSettings)),
+      this.guarded('notifications', from(this.notificationsService.register(platformSettings))),
+      this.guarded('snap', from(this.snapService.init(platformSettings.id, customSettings?.snapProvider))),
     ]);
   }
 
-  private showStartupComponents() {
-    // Dock3 auto-shows on init; also show Home and Store at startup.
-    // Store.show() is wrapped in catchError — if it fails (e.g. provider
-    // not ready yet), it should not crash the init pipeline.
-    return forkJoin([
-      from(this.homeService.show()),
-      from(this.storeService.show()).pipe(
-        catchError((err) => {
-          logger.warn('Storefront.show() failed at startup — user can open it from Dock', err);
-          return of(undefined);
-        }),
-      ),
-    ]).pipe(map(() => undefined));
+  /**
+   * Wrap a component register/show operation so a hang or failure can never
+   * stall the platform-init pipeline. In Workspace 23.2.x several component
+   * promises resolve their UI (the window appears) but never settle; without a
+   * timeout the init Observable waits forever and the provider never reaches
+   * the "Platform initialized" (green) state. On timeout/error we log which
+   * operation stalled and continue startup.
+   */
+  private guarded<T>(label: string, source: Observable<T>, ms = 12000): Observable<T | undefined> {
+    return source.pipe(
+      timeout({ first: ms }),
+      catchError((err) => {
+        logger.warn(
+          `Component "${label}" did not finish within ${ms}ms — continuing platform startup`,
+          err,
+        );
+        return of(undefined);
+      }),
+    );
+  }
+
+  private showStartupComponents(): Observable<void> {
+    // Dock3 auto-shows on init; also open Home and Store at startup. This is a
+    // UX nicety, NOT a readiness gate, so we fire the shows WITHOUT awaiting
+    // them: in WS 23.2.x Storefront.show() (and potentially Home.show()) opens
+    // the window but its promise never settles, so blocking here would stall
+    // the init pipeline and the provider would never reach the "Platform
+    // initialized" (green) state. The guards self-complete and log if a show
+    // stalls, without gating startup.
+    this.guarded('home.show', from(this.homeService.show())).subscribe();
+    this.guarded('store.show', from(this.storeService.show())).subscribe();
+    return of(undefined);
   }
 
   private async setAppLogUsername(retries = 5, delayMs = 2000): Promise<void> {
