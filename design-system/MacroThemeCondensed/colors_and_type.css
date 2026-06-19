@@ -5,7 +5,7 @@
    Target density: 12–13px body, 11–12px grid rows.
    ========================================================================== */
 
-@import url('./fonts/fonts.css');
+@import url('fonts/fonts.css');
 
 /* --------------------------------------------------------------------------
    1. CORE PALETTE  (raw colors — never use directly in components)
