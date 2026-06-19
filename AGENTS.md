@@ -25,10 +25,7 @@ macro/
 │   ├── macro-react/            # React market data app (Shadcn/Radix, Tailwind, AG Grid, Recharts)
 │   ├── macro-workspace/        # OpenFin Workspace platform shell (Angular, zoneless)
 │   ├── market-data-server/     # WebSocket server (simulated FX + Treasury data)
-│   ├── macro-mcp/              # Custom MCP server for scaffolding
-│   ├── macro-angular-e2e/      # Playwright E2E tests (Angular)
-│   ├── macro-react-e2e/        # Playwright E2E tests (React)
-│   └── macro-workspace-e2e/    # Playwright E2E tests (OpenFin)
+│   └── macro-mcp/              # Custom MCP server for scaffolding
 ├── libs/
 │   ├── macro-design/           # Shared design tokens, CSS variables, dark mode, AG Grid theme
 │   ├── logger/                 # Pino-based structured logging (@macro/logger)
@@ -139,13 +136,6 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 - Run all: `npx nx run-many --target=test --all`
 - Run one: `npx nx test <project-name>` (e.g., `npx nx test logger`)
 
-**E2E tests:**
-
-- **Playwright** for all three app E2E projects
-- Angular: `npm run e2e:angular` (also `:headed`, `:ui`, `:debug` variants)
-- React: `npm run e2e:react`
-- Workspace: `npm run e2e:workspace`
-
 ## Building
 
 ```bash
@@ -228,7 +218,7 @@ This repo has 6 MCP servers configured in `.mcp.json`:
 ## General Guidelines for working with Nx
 
 - For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies
-- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
+- When running tasks (for example build, lint, test, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
 - Prefix nx commands with the workspace's package manager (e.g., `pnpm nx build`, `npm exec nx test`) - avoids using globally installed CLI
 - You have access to the Nx MCP server and its tools, use them to help the user
 - For Nx plugin best practices, check `node_modules/@nx/<plugin>/PLUGIN.md`. Not all plugins have this file - proceed without it if unavailable.

@@ -46,7 +46,6 @@ const TECH_STACK_DOC = `# Technology Stack
 | **esbuild** | 0.19.2 | Node.js build tool |
 | **Jest** | 30.3.0 | Unit testing (Angular, libs) |
 | **Vitest** | 4.1.7 | Unit testing (React) |
-| **Playwright** | 1.59.1 | E2E testing |
 | **ESLint** | 10.0.0 | Linting |
 | **Prettier** | 3.6.2 | Code formatting |
 
