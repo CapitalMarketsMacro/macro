@@ -78,7 +78,11 @@ describe('TreasuryMarketDataComponent', () => {
 
   it('should have proper layout structure', () => {
     const { container } = render(<TreasuryMarketDataComponent />);
-    const gridContainer = container.querySelector('div[style]');
+    // Outer flex-column container wraps the heading and the grid
+    const outer = container.querySelector('div.flex.flex-col');
+    expect(outer).toBeTruthy();
+    // Grid sits in a flex-1 container so it fills the remaining height
+    const gridContainer = container.querySelector('div.flex-1.min-h-0.w-full');
     expect(gridContainer).toBeTruthy();
   });
 

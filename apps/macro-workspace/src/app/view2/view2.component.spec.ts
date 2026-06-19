@@ -393,13 +393,13 @@ describe('View2Component', () => {
       );
     });
 
-    it('should render the OpenFin logo image', () => {
+    it('should render the Macro logo image', () => {
       const fixture = TestBed.createComponent(View2Component);
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const img = compiled.querySelector('img');
       expect(img).toBeTruthy();
-      expect(img?.getAttribute('alt')).toBe('OpenFin');
+      expect(img?.getAttribute('alt')).toBe('Macro');
     });
 
     it('should not render the fieldset when message is empty', () => {

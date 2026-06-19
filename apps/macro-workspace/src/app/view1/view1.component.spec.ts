@@ -257,13 +257,13 @@ describe('View1Component', () => {
       expect(buttons.length).toBe(3);
     });
 
-    it('should render the OpenFin logo image', () => {
+    it('should render the Macro logo image', () => {
       const fixture = TestBed.createComponent(View1Component);
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const img = compiled.querySelector('img');
       expect(img).toBeTruthy();
-      expect(img?.getAttribute('alt')).toBe('OpenFin');
+      expect(img?.getAttribute('alt')).toBe('Macro');
     });
 
     it('should call showNotification when the notification button is clicked', () => {
