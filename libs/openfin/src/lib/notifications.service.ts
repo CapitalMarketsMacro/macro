@@ -26,7 +26,7 @@ function serializeError(error: unknown): unknown {
 /** Severity level for convenience notification methods. */
 export type NotificationLevel = 'info' | 'success' | 'warning' | 'error' | 'critical';
 
-/** v24 toast display mode. */
+/** Toast display mode. */
 export type NotificationToastMode = 'sticky' | 'transient' | 'none';
 
 /** Options accepted by the level-based convenience methods. */
@@ -37,11 +37,11 @@ export interface LevelNotificationOptions {
   source?: string;
   /** Custom icon URL (defaults to platform icon). */
   icon?: string;
-  /** v24: Toast display mode — 'sticky' persists, 'transient' auto-dismisses, 'none' goes straight to center. */
+  /** Toast display mode — 'sticky' persists, 'transient' auto-dismisses, 'none' goes straight to center. */
   toast?: NotificationToastMode;
-  /** v24: Priority 1 (highest) to 4 (lowest) — affects ordering in Notification Center. */
+  /** Priority 1 (highest) to 4 (lowest) — affects ordering in Notification Center. */
   priority?: 1 | 2 | 3 | 4;
-  /** v24: Sound mode — 'default' plays sound, 'silent' suppresses it. */
+  /** Sound mode — 'default' plays sound, 'silent' suppresses it. */
   sound?: 'default' | 'silent';
 }
 
@@ -214,7 +214,7 @@ export class NotificationsService {
       icon: options.icon ?? this.platformIcon ?? '',
       indicator: { color: LEVEL_INDICATOR_COLORS[level], text: LEVEL_LABELS[level] },
       stream: { id: streamId, displayName: source, appId: streamId },
-      // v24: Toast display mode, priority, and sound options
+      // Toast display mode, priority, and sound options
       ...(options.toast && { toast: options.toast }),
       ...(options.priority && { priority: options.priority }),
       ...(options.sound && { soundOptions: { mode: options.sound } }),
@@ -256,12 +256,8 @@ export class NotificationsService {
   async setReminder(notificationId: string, reminderDate: Date): Promise<boolean> {
     if (typeof fin === 'undefined') return false;
     try {
-      const api = await getNotificationsApi() as any;
-      if (typeof api.setReminder !== 'function') {
-        logger.warn('setReminder not supported by this workspace version');
-        return false;
-      }
-      return await api.setReminder(notificationId, reminderDate);
+      const { setReminder } = await getNotificationsApi();
+      return await setReminder(notificationId, reminderDate);
     } catch (err) {
       logger.error('Failed to set notification reminder', { notificationId, err });
       return false;
@@ -276,12 +272,8 @@ export class NotificationsService {
   async cancelReminder(notificationId: string): Promise<boolean> {
     if (typeof fin === 'undefined') return false;
     try {
-      const api = await getNotificationsApi() as any;
-      if (typeof api.cancelReminder !== 'function') {
-        logger.warn('cancelReminder not supported by this workspace version');
-        return false;
-      }
-      return await api.cancelReminder(notificationId);
+      const { cancelReminder } = await getNotificationsApi();
+      return await cancelReminder(notificationId);
     } catch (err) {
       logger.error('Failed to cancel notification reminder', { notificationId, err });
       return false;

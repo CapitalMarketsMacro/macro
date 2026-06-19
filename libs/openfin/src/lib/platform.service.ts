@@ -152,9 +152,9 @@ export class PlatformService {
               toolbarOptions: {
                 buttons: this.getToolbarButtons(ColorSchemeOptionType.Dark, false),
               },
-              // v24: Enable browser navigation buttons (back/forward/reload)
+              // Enable browser navigation buttons (back/forward/reload)
               navigationButtons: { enabled: true },
-              // v24: Control tab sizing for dense capital markets layouts
+              // Control tab sizing for dense capital markets layouts
               viewTabDimensions: { minWidth: '100px', maxWidth: '240px' },
               pageTabDimensions: { minWidth: '80px', maxWidth: '200px' },
             },

@@ -113,7 +113,7 @@ export class Dock3Service {
           enabled: true,
           template: ['snapToTop', 'snapToBottom'],
         },
-      } as any,
+      },
       override: (Base) =>
         class extends Base {
           // Always use fresh config from settings.json instead of stale IndexedDB cache.

@@ -111,7 +111,7 @@ export class WorkspaceService {
   }
 
   /**
-   * Restore last saved workspace using the v24 built-in API.
+   * Restore last saved workspace using the built-in API.
    * Returns 'success', 'not-saved-workspace', or 'user-declined'.
    */
   private restoreLastSavedWorkspace(): Observable<void> {

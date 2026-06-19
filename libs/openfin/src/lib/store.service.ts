@@ -90,8 +90,8 @@ export class StoreService {
         ...platformSettings,
         // Taskbar icon for the Storefront window — raster favicon.ico, not the SVG.
         icon: toTaskbarIcon(platformSettings.icon),
-        // v24: Click app card to launch directly instead of showing details panel
-        cardClickBehavior: 'perform-primary-button-action' as any,
+        // Click app card to launch directly instead of showing details panel
+        cardClickBehavior: 'perform-primary-button-action',
         getNavigation: async (): Promise<
           [
             StorefrontNavigationSection?,
