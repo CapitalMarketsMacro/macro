@@ -146,7 +146,15 @@
       "Bash(jq -e '.env.MCP_TIMEOUT' .claude/settings.json)",
       "Bash(claude plugin *)",
       "Bash(git config *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(cmd //c \"netstat -ano -p tcp\")",
+      "Bash(cmd //c \"wmic process where \\\\\"name='node.exe'\\\\\" get ProcessId,CommandLine /format:list\")",
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\" //FO TABLE)",
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\" //FO CSV //NH)",
+      "Bash(echo \"blank-line count in package.json: $\\(grep -c '^$' package.json\\) \\(was ~230 when corrupted; clean master has 0\\)\")",
+      "PowerShell(npm install *)",
+      "PowerShell(npm ci *)"
     ]
   },
   "enableAllProjectMcpServers": true
