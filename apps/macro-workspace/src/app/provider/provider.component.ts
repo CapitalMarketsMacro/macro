@@ -10,6 +10,10 @@ import { Logger } from '@macro/logger';
 
 import { AsyncPipe } from '@angular/common';
 
+// Single source of truth for the displayed Workspace version — tracks the installed
+// @openfin/workspace package so it can never drift from the actual bundled version.
+import workspacePkg from '@openfin/workspace/package.json';
+
 
 
 const logger = Logger.getLogger('ProviderComponent');
@@ -108,7 +112,7 @@ export class ProviderComponent implements OnInit, OnDestroy {
 
         this.runtimeVersion.set(rv);
 
-        this.platformVersion.set('23.2.19');
+        this.platformVersion.set(workspacePkg.version);
 
 
 
