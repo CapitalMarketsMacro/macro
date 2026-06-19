@@ -14,6 +14,7 @@ import type { PlatformSettings } from './types';
 import { WorkspaceOverrideService, setViewTitle, THEME_CHANGED_TOPIC } from './workspace-override.service';
 import type { ThemePresetPalettes } from './theme-preset.service';
 import { themeConfig } from '@macro/macro-design';
+import { buildMacroGranularTheme } from './granular-theme';
 import { Logger } from '@macro/logger';
 import { getAnalyticsNats } from './analytics-nats.service';
 import { toTaskbarIcon } from './icon-utils';
@@ -160,17 +161,9 @@ export class PlatformService {
             },
           },
         },
-        theme: [
-          {
-            label: 'Default',
-            default: 'dark',
-            palettes: {
-              // Cast: JSON palettes include all required CustomPaletteSet properties
-              dark: dark as typeof themeConfig.dark,
-              light: light as typeof themeConfig.light,
-            },
-          },
-        ],
+        // HERE Core UI granular color theming: one token-based theme drives the workspace
+        // UI and the Notification Center (replaces the legacy enumerated `palettes`).
+        theme: [buildMacroGranularTheme(dark as typeof themeConfig.dark, light as typeof themeConfig.light)],
         customActions: {
           ...additionalCustomActions,
           'launch-app': async (event): Promise<void> => {
