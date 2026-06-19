@@ -109,7 +109,7 @@ In one tool call this will:
 | `list_libraries` | List all `@macro/*` shared libs with short descriptions and key exports. |
 | `get_library_api` | Full public API of a specific `@macro/*` lib — types, function signatures, usage examples. |
 | `list_icons` | List the 144 Capital Markets icons available under `apps/macro-workspace/public/icons/capital-markets/` (dark + light variants). Filter by category or keyword. |
-| `get_commands` | All `npm run *` scripts and useful `nx` commands, optionally filtered by category (start / build / test / e2e / lint). |
+| `get_commands` | All `npm run *` scripts and useful `nx` commands, optionally filtered by category (start / build / test / lint). |
 
 ---
 
@@ -130,7 +130,7 @@ code. Every URI uses the `macro://` scheme.
 | `macro://market-data-server` | Local WebSocket mock server (ports, endpoints, payload shape) |
 | `macro://templates/angular` | Boilerplate for a new Angular LOB |
 | `macro://templates/react` | Boilerplate for a new React LOB |
-| `macro://testing` | Jest 30 (Angular) + Vitest 4 (React) + Playwright E2E setup |
+| `macro://testing` | Jest 30 (Angular) + Vitest 4 (React) |
 | `macro://lob-guide` | End-to-end checklist for onboarding a new LOB |
 | `macro://figma-workflow` | Recommended flow for Figma Make → OpenFin view |
 
