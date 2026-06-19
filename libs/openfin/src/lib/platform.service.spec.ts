@@ -185,10 +185,15 @@ describe('PlatformService', () => {
       expect(init).toHaveBeenCalledTimes(1);
       const callArg = (init as jest.Mock).mock.calls[0][0];
       expect(callArg.theme).toHaveLength(1);
-      expect(callArg.theme[0].label).toBe('Default');
+      expect(callArg.theme[0].label).toBe('Macro');
       expect(callArg.theme[0].default).toBe('dark');
-      expect(callArg.theme[0].palettes.dark).toBeDefined();
-      expect(callArg.theme[0].palettes.light).toBeDefined();
+      // Granular token-based theme replaces the legacy `palettes` block (cannot mix).
+      expect(callArg.theme[0].palettes).toBeUndefined();
+      expect(callArg.theme[0].seed['brand.accent.dark']).toBe('#0A76D3');
+      expect(callArg.theme[0].seed['brand.base.dark']).toBe('#1E1F23');
+      expect(callArg.theme[0].overrides.dark).toBeDefined();
+      expect(callArg.theme[0].overrides.light).toBeDefined();
+      expect(callArg.theme[0].notificationIndicatorColors).toBeDefined();
     });
 
     it('should pass overrideCallback from override service', async () => {
