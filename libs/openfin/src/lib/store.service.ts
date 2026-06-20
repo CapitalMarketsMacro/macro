@@ -10,7 +10,7 @@ import { getCurrentSync, type StoreCustomButtonActionPayload } from '@openfin/wo
 import { from, tap } from 'rxjs';
 import { Logger } from '@macro/logger';
 import type { MacroApp, PlatformSettings, StorefrontRowConfig } from './types';
-import type { SettingsService } from './settings.service';
+import type { AppsService } from './apps.service';
 import type { FavoritesService } from './favorites.service';
 import type { StorefrontConfigService } from './storefront-config.service';
 import type { EntitlementsService } from './entitlements.service';
@@ -36,7 +36,7 @@ export class StoreService {
   private storeRegistration: StoreRegistration | null = null;
 
   constructor(
-    private readonly settingsService: SettingsService,
+    private readonly appsService: AppsService,
     private readonly favoritesService: FavoritesService,
     private readonly storefrontConfigService: StorefrontConfigService,
     private readonly entitlementsService: EntitlementsService,
@@ -102,7 +102,8 @@ export class StoreService {
   /** Decorate apps with the favorite toggle button + an entitlement hint (visible to all). */
   private async buildDecoratedApps(): Promise<MacroApp[]> {
     await this.entitlementsService.ensureLoaded();
-    const apps = (this.settingsService.getApps() ?? []) as MacroApp[];
+    await this.appsService.ensureLoaded();
+    const apps = (this.appsService.getApps() ?? []) as MacroApp[];
     return apps.map((app) => {
       const entitled = this.entitlementsService.canLaunch(app.appId);
       const required = this.entitlementsService.getRequiredEntitlements(app.appId);

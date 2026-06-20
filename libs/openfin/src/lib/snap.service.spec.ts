@@ -33,10 +33,12 @@ jest.mock('@macro/logger', () => ({
 
 describe('SnapService', () => {
   let service: SnapService;
+  let mockSnapConfigService: { getSnapConfig: jest.Mock };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new SnapService();
+    mockSnapConfigService = { getSnapConfig: jest.fn().mockResolvedValue({ enabled: true }) };
+    service = new SnapService(mockSnapConfigService as any);
   });
 
   describe('init', () => {
@@ -49,13 +51,14 @@ describe('SnapService', () => {
     });
 
     it('should pass through server options from settings', async () => {
-      await service.init('test-platform', {
+      mockSnapConfigService.getSnapConfig.mockResolvedValue({
         serverOptions: {
           showDebug: true,
           keyToStick: 'ctrl',
           theme: 'snap-dark1',
         },
       });
+      await service.init('test-platform');
 
       expect(mockStart).toHaveBeenCalledWith({
         showDebug: true,
@@ -65,7 +68,8 @@ describe('SnapService', () => {
     });
 
     it('should not initialize when disabled', async () => {
-      await service.init('test-platform', { enabled: false });
+      mockSnapConfigService.getSnapConfig.mockResolvedValue({ enabled: false });
+      await service.init('test-platform');
 
       expect(mockStart).not.toHaveBeenCalled();
       expect(service.isRunning).toBe(false);

@@ -1,7 +1,7 @@
 import type OpenFin from '@openfin/core';
 import { SnapServer, type ServerOptions, type SnapSnapshot } from '@openfin/snap-sdk';
 import { Logger } from '@macro/logger';
-import type { SnapProviderSettings } from './types';
+import type { SnapConfigService } from './snap-config.service';
 
 const logger = Logger.getLogger('SnapService');
 
@@ -14,12 +14,14 @@ export class SnapService {
   private server: SnapServer | undefined;
   private disableAutoReg: (() => Promise<void>) | undefined;
 
+  constructor(private readonly snapConfigService: SnapConfigService) {}
+
   /**
    * Initialize the Snap server and enable automatic window registration.
    * @param platformId The platform UUID used as the snap server id
-   * @param settings Optional snap provider settings from manifest/settings
    */
-  async init(platformId: string, settings?: SnapProviderSettings): Promise<void> {
+  async init(platformId: string): Promise<void> {
+    const settings = await this.snapConfigService.getSnapConfig();
     if (settings?.enabled === false) {
       logger.info('Snap provider disabled by configuration');
       return;

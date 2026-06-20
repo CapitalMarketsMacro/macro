@@ -1,7 +1,7 @@
 import { firstValueFrom } from 'rxjs';
 import { StoreService } from './store.service';
 import type { PlatformSettings } from './types';
-import type { SettingsService } from './settings.service';
+import type { AppsService } from './apps.service';
 import type { FavoritesService } from './favorites.service';
 import type { StorefrontConfigService } from './storefront-config.service';
 import type { EntitlementsService } from './entitlements.service';
@@ -24,7 +24,7 @@ import { Storefront } from '@openfin/workspace';
 
 describe('StoreService', () => {
   let service: StoreService;
-  let mockSettingsService: SettingsService;
+  let mockAppsService: AppsService;
   let mockFavoritesService: FavoritesService;
   let mockStorefrontConfigService: StorefrontConfigService;
   let mockEntitlementsService: EntitlementsService;
@@ -69,7 +69,7 @@ describe('StoreService', () => {
     mockStoreRegistration = { updateAppCardButtons: jest.fn().mockResolvedValue(undefined) };
     (Storefront.register as jest.Mock).mockResolvedValue(mockStoreRegistration);
 
-    mockSettingsService = { getApps: jest.fn().mockReturnValue(mockApps) } as unknown as SettingsService;
+    mockAppsService = { getApps: jest.fn().mockReturnValue(mockApps), ensureLoaded: jest.fn().mockResolvedValue(undefined) } as unknown as AppsService;
 
     mockFavoritesService = {
       getFavoriteIds: jest.fn().mockReturnValue(new Set()),
@@ -100,7 +100,7 @@ describe('StoreService', () => {
     mockLaunchService = { launch: jest.fn().mockResolvedValue(true) } as unknown as LaunchService;
 
     service = new StoreService(
-      mockSettingsService,
+      mockAppsService,
       mockFavoritesService,
       mockStorefrontConfigService,
       mockEntitlementsService,
@@ -204,7 +204,7 @@ describe('StoreService', () => {
     });
 
     it('handles empty/undefined apps from settings', async () => {
-      (mockSettingsService.getApps as jest.Mock).mockReturnValue(undefined);
+      (mockAppsService.getApps as jest.Mock).mockReturnValue(undefined);
       await firstValueFrom(service.register(platformSettings));
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
       expect(await provider.getApps()).toEqual([]);

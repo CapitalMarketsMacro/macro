@@ -1,7 +1,7 @@
 import { firstValueFrom } from 'rxjs';
 import { HomeService } from './home.service';
 import type { PlatformSettings } from './types';
-import type { SettingsService } from './settings.service';
+import type { AppsService } from './apps.service';
 import type { App } from '@openfin/workspace';
 
 // Mock @macro/logger (used by launch.ts dependency)
@@ -47,7 +47,7 @@ import { Home } from '@openfin/workspace';
 
 describe('HomeService', () => {
   let service: HomeService;
-  let mockSettingsService: SettingsService;
+  let mockAppsService: AppsService;
   let mockLaunchService: { launch: jest.Mock };
 
   const platformSettings: PlatformSettings = {
@@ -75,14 +75,14 @@ describe('HomeService', () => {
     (Home.register as jest.Mock).mockReset();
     (Home.show as jest.Mock).mockReset();
 
-    mockSettingsService = {
+    mockAppsService = {
       getApps: jest.fn().mockReturnValue([]),
-      getManifestSettings: jest.fn(),
+      ensureLoaded: jest.fn().mockResolvedValue(undefined),
       getApps$: jest.fn(),
-    } as unknown as SettingsService;
+    } as unknown as AppsService;
 
     mockLaunchService = { launch: jest.fn().mockResolvedValue(true) };
-    service = new HomeService(mockSettingsService, mockLaunchService as any);
+    service = new HomeService(mockAppsService, mockLaunchService as any);
   });
 
   // ── register ────────────────────────────────────────────────
@@ -134,7 +134,7 @@ describe('HomeService', () => {
         makeApp('fx-blotter', 'FX Blotter', 'view', 'FX rates'),
         makeApp('tsy-viewer', 'Treasury Viewer', 'view', 'Treasury'),
       ];
-      (mockSettingsService.getApps as jest.Mock).mockReturnValue(apps);
+      (mockAppsService.getApps as jest.Mock).mockReturnValue(apps);
       (Home.register as jest.Mock).mockResolvedValue(undefined);
 
       await firstValueFrom(service.register(platformSettings));
