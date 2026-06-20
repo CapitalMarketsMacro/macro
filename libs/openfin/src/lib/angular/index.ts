@@ -19,6 +19,12 @@ import { ThemeService as BaseThemeService } from '../theme.service';
 import { ViewStateService as BaseViewStateService } from '../view-state.service';
 import { ThemePresetService as BaseThemePresetService } from '../theme-preset.service';
 import { SnapService as BaseSnapService } from '../snap.service';
+import { AuthService as BaseAuthService } from '../auth.service';
+import { EntitlementsService as BaseEntitlementsService } from '../entitlements.service';
+import { LaunchService as BaseLaunchService } from '../launch.service';
+import { StorefrontConfigService as BaseStorefrontConfigService } from '../storefront-config.service';
+import { LocalStorageFavoritesStore } from '../favorites.service';
+import { resolveEnvConfigPath } from '../config-path';
 
 /**
  * Angular wrapper services for @macro/openfin
@@ -32,6 +38,35 @@ export class SettingsService extends BaseSettingsService {
     super({
       get: <T>(url: string) => http.get<T>(url).toPromise() as Promise<T>,
     });
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class AuthService extends BaseAuthService {
+  constructor() {
+    const http = inject(HttpClient);
+    super(
+      { get: <T>(url: string) => http.get<T>(url).toPromise() as Promise<T> },
+      () => resolveEnvConfigPath('entitlements.json'),
+    );
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class EntitlementsService extends BaseEntitlementsService {
+  constructor() {
+    super(inject(AuthService));
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class StorefrontConfigService extends BaseStorefrontConfigService {
+  constructor() {
+    const http = inject(HttpClient);
+    super(
+      { get: <T>(url: string) => http.get<T>(url).toPromise() as Promise<T> },
+      () => resolveEnvConfigPath('storefront-config.json'),
+    );
   }
 }
 
@@ -50,14 +85,24 @@ export class ChannelService extends BaseChannelService {
 }
 
 @Injectable({ providedIn: 'root' })
-export class FavoritesService extends BaseFavoritesService {}
+export class FavoritesService extends BaseFavoritesService {
+  constructor() {
+    super(new LocalStorageFavoritesStore(), inject(AuthService));
+    // Load the current user's persisted favorites at startup.
+    void this.hydrate();
+  }
+}
 
 @Injectable({ providedIn: 'root' })
 export class StoreService extends BaseStoreService {
   constructor() {
-    const settingsService = inject(SettingsService);
-    const favoritesService = inject(FavoritesService);
-    super(settingsService, favoritesService);
+    super(
+      inject(SettingsService),
+      inject(FavoritesService),
+      inject(StorefrontConfigService),
+      inject(EntitlementsService),
+      inject(LaunchService),
+    );
   }
 }
 
@@ -71,20 +116,26 @@ export class DockService extends BaseDockService {
 @Injectable({ providedIn: 'root' })
 export class Dock3Service extends BaseDock3Service {
   constructor() {
-    super();
+    super(inject(LaunchService));
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class HomeService extends BaseHomeService {
   constructor() {
-    const settingsService = inject(SettingsService);
-    super(settingsService);
+    super(inject(SettingsService), inject(LaunchService));
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class NotificationsService extends BaseNotificationsService {}
+
+@Injectable({ providedIn: 'root' })
+export class LaunchService extends BaseLaunchService {
+  constructor() {
+    super(inject(EntitlementsService), inject(NotificationsService));
+  }
+}
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceStorageService extends BaseWorkspaceStorageService {}
@@ -108,7 +159,7 @@ export class WorkspaceOverrideService extends BaseWorkspaceOverrideService {
 export class PlatformService extends BasePlatformService {
   constructor() {
     const workspaceOverrideService = inject(WorkspaceOverrideService);
-    super(workspaceOverrideService);
+    super(workspaceOverrideService, inject(LaunchService));
   }
 }
 

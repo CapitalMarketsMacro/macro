@@ -1,0 +1,36 @@
+{
+  "navigation": {
+    "favoritesTitle": "Favorites",
+    "sections": [
+      {
+        "id": "markets",
+        "title": "Markets",
+        "items": [
+          { "id": "fx", "title": "FX", "category": "FX" },
+          { "id": "rates", "title": "Rates", "category": "Rates" },
+          { "id": "commodities", "title": "Commodities", "category": "Commodities" }
+        ]
+      },
+      {
+        "id": "library",
+        "title": "All Apps",
+        "items": [
+          { "id": "all-apps", "title": "All Apps", "category": "*" }
+        ]
+      }
+    ]
+  },
+  "landingPage": {
+    "topRow": { "title": "Featured", "category": "FX" },
+    "middleRow": { "title": "Markets", "category": "*" },
+    "bottomRow": { "title": "", "appIds": [] }
+  },
+  "footer": {
+    "text": "Macro Workspace — Capital Markets",
+    "links": [
+      { "title": "Support", "url": "mailto:support@macro.example.com" },
+      { "title": "Documentation", "url": "https://macro.example.com/docs" }
+    ]
+  },
+  "cardClickBehavior": "perform-primary-button-action"
+}

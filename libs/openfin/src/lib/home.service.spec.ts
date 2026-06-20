@@ -48,6 +48,7 @@ import { Home } from '@openfin/workspace';
 describe('HomeService', () => {
   let service: HomeService;
   let mockSettingsService: SettingsService;
+  let mockLaunchService: { launch: jest.Mock };
 
   const platformSettings: PlatformSettings = {
     id: 'macro-workspace',
@@ -80,7 +81,8 @@ describe('HomeService', () => {
       getApps$: jest.fn(),
     } as unknown as SettingsService;
 
-    service = new HomeService(mockSettingsService);
+    mockLaunchService = { launch: jest.fn().mockResolvedValue(true) };
+    service = new HomeService(mockSettingsService, mockLaunchService as any);
   });
 
   // ── register ────────────────────────────────────────────────
@@ -157,8 +159,7 @@ describe('HomeService', () => {
       expect(mockResponse.respond).toHaveBeenCalledWith([]);
     });
 
-    it('should call launchApp on onResultDispatch when data is provided', async () => {
-      const { launchApp } = require('./launch');
+    it('routes onResultDispatch through the entitlement-gating LaunchService', async () => {
       (Home.register as jest.Mock).mockResolvedValue(undefined);
 
       await firstValueFrom(service.register(platformSettings));
@@ -167,12 +168,10 @@ describe('HomeService', () => {
       const appData = { appId: 'test', title: 'Test' };
       await provider.onResultDispatch({ data: appData });
 
-      expect(launchApp).toHaveBeenCalledWith(appData);
+      expect(mockLaunchService.launch).toHaveBeenCalledWith(appData);
     });
 
-    it('should not call launchApp when data is falsy', async () => {
-      const { launchApp } = require('./launch');
-      (launchApp as jest.Mock).mockClear();
+    it('does not launch when dispatched result has no data', async () => {
       (Home.register as jest.Mock).mockResolvedValue(undefined);
 
       await firstValueFrom(service.register(platformSettings));
@@ -180,7 +179,7 @@ describe('HomeService', () => {
       const provider = (Home.register as jest.Mock).mock.calls[0][0];
       await provider.onResultDispatch({ data: null });
 
-      expect(launchApp).not.toHaveBeenCalled();
+      expect(mockLaunchService.launch).not.toHaveBeenCalled();
     });
   });
 

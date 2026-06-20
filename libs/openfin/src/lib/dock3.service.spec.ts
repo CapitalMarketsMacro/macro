@@ -37,10 +37,10 @@ jest.mock('./analytics-nats.service', () => ({
 
 // Import the mocked modules to get references
 import { Dock, getCurrentSync } from '@openfin/workspace-platform';
-import { launchApp } from './launch';
 
 describe('Dock3Service', () => {
   let service: Dock3Service;
+  let mockLaunchService: { launch: jest.Mock };
   let mockProviderShutdown: jest.Mock;
   let mockUpdateOptions: jest.Mock;
 
@@ -73,7 +73,8 @@ describe('Dock3Service', () => {
       getWindowSync: () => ({ updateOptions: mockUpdateOptions }),
     });
 
-    service = new Dock3Service();
+    mockLaunchService = { launch: jest.fn().mockResolvedValue(true) };
+    service = new Dock3Service(mockLaunchService as any);
   });
 
   // ── init ────────────────────────────────────────────────────
@@ -428,11 +429,7 @@ describe('Dock3Service', () => {
       return new Subclass();
     }
 
-    beforeEach(() => {
-      (launchApp as jest.Mock).mockClear();
-    });
-
-    it('routes an appId entry through the shared launchApp so manifestType is honoured', async () => {
+    it('routes an appId entry through the entitlement-gating LaunchService', async () => {
       const app = makeApp('rates-desktop', 'Rates', 'http://host/app.platform.fin.json');
       (app as any).manifestType = 'manifest';
       const provider = await getDockProvider([app]);
@@ -441,8 +438,8 @@ describe('Dock3Service', () => {
         entry: { type: 'item', id: 'i', label: 'Rates', itemData: { appId: 'rates-desktop' } },
       });
 
-      expect(launchApp).toHaveBeenCalledTimes(1);
-      expect(launchApp).toHaveBeenCalledWith(app);
+      expect(mockLaunchService.launch).toHaveBeenCalledTimes(1);
+      expect(mockLaunchService.launch).toHaveBeenCalledWith(app);
     });
 
     it('falls back to createView for a url-only entry (no appId)', async () => {
@@ -454,7 +451,7 @@ describe('Dock3Service', () => {
         entry: { type: 'item', id: 'i', label: 'Ad-hoc', itemData: { url: 'http://host/page' } },
       });
 
-      expect(launchApp).not.toHaveBeenCalled();
+      expect(mockLaunchService.launch).not.toHaveBeenCalled();
       expect(mockCreateView).toHaveBeenCalledWith({ url: 'http://host/page' });
     });
 
@@ -465,7 +462,7 @@ describe('Dock3Service', () => {
         entry: { type: 'folder', id: 'f', label: 'F', children: [] },
       });
 
-      expect(launchApp).not.toHaveBeenCalled();
+      expect(mockLaunchService.launch).not.toHaveBeenCalled();
     });
   });
 });
