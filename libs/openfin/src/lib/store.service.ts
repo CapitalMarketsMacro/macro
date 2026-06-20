@@ -34,9 +34,6 @@ const MAX_NAV_ITEMS = 5;
  */
 export class StoreService {
   private storeRegistration: StoreRegistration | null = null;
-  private platformSettings: PlatformSettings | null = null;
-  private refreshing = false;
-  private refreshQueued = false;
 
   constructor(
     private readonly settingsService: SettingsService,
@@ -51,55 +48,34 @@ export class StoreService {
       'toggle-store-favorite': async (event) => {
         const payload = event as StoreCustomButtonActionPayload;
         this.favoritesService.toggleFavorite(payload.appId);
-        // Re-register the storefront so BOTH the Favorites nav section AND the card's
-        // own button reflect the change (buildDecoratedApps re-derives the ★/☆ button).
-        //
-        // We deliberately do NOT call updateAppCardButtons first: awaiting it before
-        // the refresh meant that if it rejected (which happened on the *favorite* path)
-        // the handler threw and the refresh never ran, so favoriting didn't update the
-        // nav. The re-register is the single source of truth for both fav and unfav.
-        await this.refreshStorefront();
+        const isFav = this.favoritesService.isFavorite(payload.appId);
+        // Flip the card's own ★/☆ button immediately. This is the only STABLE live
+        // update OpenFin supports — re-registering the provider to live-refresh the
+        // left-nav Favorites section corrupts the store window's platform connection
+        // ("Target is not a Workspace Platform"), so we don't do it. The Favorites
+        // nav section refreshes when the user navigates or reopens the store (OpenFin
+        // re-calls getNavigation() then). Guarded so a failed update never throws.
+        if (this.storeRegistration) {
+          try {
+            await this.storeRegistration.updateAppCardButtons({
+              appId: payload.appId,
+              primaryButton: payload.primaryButton,
+              secondaryButtons: [
+                {
+                  title: isFav ? '★ Unfavorite' : '☆ Favorite',
+                  action: { id: 'toggle-store-favorite' },
+                },
+              ],
+            });
+          } catch (error) {
+            logger.warn('updateAppCardButtons failed (non-fatal)', error);
+          }
+        }
       },
     };
   }
 
-  /**
-   * Force the Storefront to re-render its navigation/landing/cards by re-registering
-   * the provider. OpenFin exposes no nav-refresh API, so deregister + register is the
-   * canonical way to make getNavigation()/getApps() run again (e.g. after a favorite
-   * toggle). Because deregistering the only provider closes the Store window, we
-   * re-show it afterwards so it stays open instead of forcing the user to relaunch
-   * from the Dock. Rapid toggles are coalesced into a single trailing refresh.
-   */
-  async refreshStorefront(): Promise<void> {
-    if (!this.platformSettings) return;
-    if (this.refreshing) {
-      this.refreshQueued = true;
-      return;
-    }
-    this.refreshing = true;
-    try {
-      do {
-        this.refreshQueued = false;
-        try {
-          await Storefront.deregister(this.platformSettings.id);
-        } catch {
-          /* not currently registered — fine, register below */
-        }
-        const provider = await this.buildProvider(this.platformSettings);
-        this.storeRegistration = await Storefront.register(provider);
-      } while (this.refreshQueued);
-      // Re-show: deregistering the last provider closes the Store window, so bring
-      // it back automatically (otherwise the user has to reopen it from the Dock).
-      await Storefront.show();
-    } catch (error) {
-      logger.error('Failed to refresh storefront', error);
-    } finally {
-      this.refreshing = false;
-    }
-  }
-
-  /** Build the StorefrontProvider definition (reused by register + refresh). */
+  /** Build the StorefrontProvider definition. */
   private async buildProvider(platformSettings: PlatformSettings) {
     const cardClickBehavior = await this.storefrontConfigService.getCardClickBehavior();
     return {
@@ -266,8 +242,6 @@ export class StoreService {
   }
 
   register(platformSettings: PlatformSettings) {
-    this.platformSettings = platformSettings;
-
     // Track Storefront window lifecycle and enforce theme on creation (set up once).
     // The Store window is created lazily — it doesn't exist until the user opens it.
     // When it appears, re-apply the current scheme so it renders with the platform theme.

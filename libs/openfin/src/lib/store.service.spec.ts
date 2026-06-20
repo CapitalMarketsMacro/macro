@@ -217,49 +217,47 @@ describe('StoreService', () => {
       expect(typeof actions['toggle-store-favorite']).toBe('function');
     });
 
-    // Both fav and unfav take the same path: toggle + re-register (deregister +
-    // register + show). Previously a pre-refresh updateAppCardButtons call could
-    // reject on the favorite path and skip the refresh — regression guard below.
+    // Stable behavior: toggle persists the favorite + flips the card's own button
+    // (updateAppCardButtons). We do NOT re-register the provider on toggle — that
+    // corrupts the store's platform connection. So deregister is never called here.
     it.each([
-      ['favorite (not yet favorited)', false],
-      ['unfavorite (already favorited)', true],
-    ])('toggling %s re-registers + re-shows so the nav updates and the store stays open', async (_label, alreadyFav) => {
-      (Storefront.show as jest.Mock).mockResolvedValue(undefined);
-      (mockFavoritesService.isFavorite as jest.Mock).mockReturnValue(alreadyFav);
+      ['favorite', true, '★ Unfavorite'],
+      ['unfavorite', false, '☆ Favorite'],
+    ])('toggling to %s persists it and flips the card button — without re-registering', async (_label, becomesFav, expectedTitle) => {
+      (mockFavoritesService.isFavorite as jest.Mock).mockReturnValue(becomesFav);
       await firstValueFrom(service.register(platformSettings));
       (Storefront.register as jest.Mock).mockClear();
-      ((Storefront as any).deregister as jest.Mock).mockClear();
-      (Storefront.show as jest.Mock).mockClear();
+      const primaryButton = { title: 'Open', action: { id: 'launch-app' } };
 
-      await service.getStoreCustomActions()['toggle-store-favorite']({
-        appId: 'app-1',
-        primaryButton: { title: 'Open', action: { id: 'launch-app' } },
-      });
+      await service.getStoreCustomActions()['toggle-store-favorite']({ appId: 'app-1', primaryButton });
 
       expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith('app-1');
-      expect((Storefront as any).deregister).toHaveBeenCalledWith('macro-workspace');
-      expect(Storefront.register).toHaveBeenCalledTimes(1);
-      expect(Storefront.show).toHaveBeenCalled();
-    });
-
-    it('still re-registers the favorite path even if updateAppCardButtons-style work would fail (no longer awaited)', async () => {
-      (Storefront.show as jest.Mock).mockResolvedValue(undefined);
-      (mockFavoritesService.isFavorite as jest.Mock).mockReturnValue(false);
-      await firstValueFrom(service.register(platformSettings));
-      ((Storefront as any).deregister as jest.Mock).mockClear();
-
-      await service.getStoreCustomActions()['toggle-store-favorite']({ appId: 'app-1', primaryButton: undefined as any });
-
-      expect((Storefront as any).deregister).toHaveBeenCalledWith('macro-workspace');
-    });
-
-    it('records the favorite but does not re-register before the storefront is registered', async () => {
-      await service.getStoreCustomActions()['toggle-store-favorite']({
+      expect(mockStoreRegistration.updateAppCardButtons).toHaveBeenCalledWith({
         appId: 'app-1',
-        primaryButton: { title: 'Open', action: { id: 'launch-app' } },
+        primaryButton,
+        secondaryButtons: [{ title: expectedTitle, action: { id: 'toggle-store-favorite' } }],
       });
-      expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith('app-1');
+      // No re-register / deregister — that would destabilize the platform.
       expect((Storefront as any).deregister).not.toHaveBeenCalled();
+      expect(Storefront.register).not.toHaveBeenCalled();
+    });
+
+    it('does not throw if updateAppCardButtons rejects (non-fatal)', async () => {
+      await firstValueFrom(service.register(platformSettings));
+      mockStoreRegistration.updateAppCardButtons.mockRejectedValueOnce(new Error('boom'));
+      await expect(
+        service.getStoreCustomActions()['toggle-store-favorite']({ appId: 'app-1', primaryButton: undefined as any }),
+      ).resolves.toBeUndefined();
+      expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith('app-1');
+    });
+
+    it('records the favorite even before the storefront is registered', async () => {
+      await service.getStoreCustomActions()['toggle-store-favorite']({
+        appId: 'app-1',
+        primaryButton: { title: 'Open', action: { id: 'launch-app' } },
+      });
+      expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith('app-1');
+      expect(mockStoreRegistration.updateAppCardButtons).not.toHaveBeenCalled();
     });
   });
 
