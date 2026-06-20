@@ -234,9 +234,9 @@
 
   "shortcut": {
 
-    "company": "OpenFin",
+    "company": "Macro Workspace",
 
-    "description": "A way of showing examples of what OpenFin can do.",
+    "description": "A way of showing examples of what Macro Workspace can do.",
 
     "icon": "http://localhost:4202/favicon.ico",
 
@@ -254,11 +254,11 @@
 
   "supportInformation": {
 
-    "company": "OpenFin",
+    "company": "Macro Workspace",
 
     "product": "Workspace Starter - Macro Workspace",
 
-    "email": "support@openfin.co",
+    "email": "support@macroworkspace.co",
 
     "forwardErrorReports": true
 
