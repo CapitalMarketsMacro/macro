@@ -32,7 +32,7 @@ import { MacroAngularGrid } from '@macro/macro-angular-grid';  // or MacroReactG
 import { AmpsTransport, SolaceTransport, NatsTransport } from '@macro/transports';
 
 // Conflation for high-frequency data
-import { ConflationSubject } from '@macro/rxutils';
+import { ConflationSubject } from '@macro/utils';
 
 // OpenFin services (if running in OpenFin)
 import { ContextService, ChannelService, ThemeService } from '@macro/openfin';

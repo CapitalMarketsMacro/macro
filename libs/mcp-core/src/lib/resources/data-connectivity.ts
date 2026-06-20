@@ -110,9 +110,9 @@ Start with: \`npx nx serve market-data-server\`
 
 ---
 
-## @macro/rxutils — Conflation Utilities
+## @macro/utils — Conflation Utilities
 \`\`\`typescript
-import { ConflationSubject } from '@macro/rxutils';
+import { ConflationSubject } from '@macro/utils';
 const conflated = new ConflationSubject<string, MarketData>(100);
 conflated.next({ key: 'EUR/USD', value: { bid: 1.0850 } });
 conflated.subscribeToConflated(({ key, value }) => grid.updateRows$.next([value]));

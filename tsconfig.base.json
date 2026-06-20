@@ -24,8 +24,8 @@
       "@macro/mcp-core": [
         "libs/mcp-core/src/index.ts"
       ],
-      "@macro/rxutils": [
-        "libs/rxutils/src/index.ts"
+      "@macro/utils": [
+        "libs/utils/src/index.ts"
       ],
       "@macro/macro-angular-grid": [
         "libs/macro-angular-grid/src/index.ts"

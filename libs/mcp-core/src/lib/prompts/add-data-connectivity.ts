@@ -51,7 +51,7 @@ function generateAngularDataConnectivity(
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import { ColDef, GetRowIdParams } from 'ag-grid-community';
-import { ConflationSubject } from '@macro/rxutils';
+import { ConflationSubject } from '@macro/utils';
 import { Logger } from '@macro/logger';
 import { Subscription } from 'rxjs';
 ${transportSetup.imports}
@@ -139,7 +139,7 @@ function generateReactDataConnectivity(
 import { useEffect, useRef } from 'react';
 import { MacroReactGrid, MacroReactGridRef } from '@macro/macro-react-grid';
 import { ColDef, GetRowIdParams } from 'ag-grid-community';
-import { ConflationSubject } from '@macro/rxutils';
+import { ConflationSubject } from '@macro/utils';
 import { Logger } from '@macro/logger';
 ${transportSetup.imports}
 

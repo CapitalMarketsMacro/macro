@@ -24,8 +24,8 @@ const LIBRARIES = [
     ],
   },
   {
-    name: '@macro/rxutils',
-    importPath: '@macro/rxutils',
+    name: '@macro/utils',
+    importPath: '@macro/utils',
     description: 'RxJS conflation utilities for reducing high-frequency data updates.',
     keyExports: ['ConflationSubject', 'conflateByKey', 'ConflatedValue'],
   },

@@ -1,7 +1,7 @@
-export * from './lib/conflation';
+export * from './lib/rx/conflation';
 export {
   conflateByKey,
   ConflationSubject,
   type ConflatedValue,
-} from './lib/conflation';
+} from './lib/rx/conflation';
 

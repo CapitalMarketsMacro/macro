@@ -107,7 +107,9 @@ describe('ConflationSubject', () => {
 
   it('should clean up on complete', () => {
     const conflatedSubject = new ConflationSubject<string, number>(100);
-    const subscription = conflatedSubject.subscribeToConflated(() => {});
+    const subscription = conflatedSubject.subscribeToConflated(() => {
+      /* no-op subscriber */
+    });
 
     expect(subscription.closed).toBe(false);
 
@@ -118,7 +120,9 @@ describe('ConflationSubject', () => {
 
   it('should clean up on unsubscribe', () => {
     const conflatedSubject = new ConflationSubject<string, number>(100);
-    const subscription = conflatedSubject.subscribeToConflated(() => {});
+    const subscription = conflatedSubject.subscribeToConflated(() => {
+      /* no-op subscriber */
+    });
 
     expect(subscription.closed).toBe(false);
 

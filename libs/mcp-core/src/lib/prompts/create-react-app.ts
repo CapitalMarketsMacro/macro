@@ -102,18 +102,18 @@ ${ds === 'amps' ? `- Import \`AmpsClient\` from \`@macro/transports\`
 - Connect in a useEffect: \`await client.connect({ url: 'ws://localhost:9100/amps/json' })\`
 - Subscribe: \`const { observable } = await client.subscribeAsObservable('your-topic')\`
 - Read messages via the unified \`TransportMessage\` API: \`msg.json<YourType>()\` (or \`msg.data\` for the raw string)
-- Use \`ConflationSubject\` from \`@macro/rxutils\` to conflate updates
+- Use \`ConflationSubject\` from \`@macro/utils\` to conflate updates
 - Pipe to \`gridRef.current?.updateRows$.next([value])\`` :
 ds === 'solace' ? `- Import \`SolaceClient\` from \`@macro/transports\`
 - Connect in a useEffect with \`SolaceConnectionOptions\`: \`await client.connect({ hostUrl, vpnName, userName, password })\`
 - Subscribe: \`const { observable } = await client.subscribeAsObservable('your/topic')\`
 - Read messages via \`msg.json<YourType>()\` (unified TransportMessage)
-- Use \`ConflationSubject\` from \`@macro/rxutils\` to conflate updates
+- Use \`ConflationSubject\` from \`@macro/utils\` to conflate updates
 - Pipe to \`gridRef.current?.updateRows$.next([value])\`` :
 ds === 'websocket' ? `- Use the built-in market-data-server: \`ws://localhost:3000/marketData/fx\` or \`/marketData/tsy\`
 - Connect via native WebSocket in useEffect
 - Parse incoming JSON messages
-- Use \`ConflationSubject\` from \`@macro/rxutils\` if needed
+- Use \`ConflationSubject\` from \`@macro/utils\` if needed
 - Pipe to \`gridRef.current?.updateRows$.next([data])\`` :
 `- Use fetch or axios in a useEffect
 - Fetch data from your REST API

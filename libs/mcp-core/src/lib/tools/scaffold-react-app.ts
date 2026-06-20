@@ -267,7 +267,7 @@ export function DataGrid() {
 \`TransportMessage\`s — use \`msg.json()\` to parse, \`msg.data\` for the raw string.
 \`\`\`typescript
 import { AmpsClient } from '@macro/transports';
-${hasConflation ? "import { ConflationSubject } from '@macro/rxutils';" : ''}
+${hasConflation ? "import { ConflationSubject } from '@macro/utils';" : ''}
 
 const ampsClient = new AmpsClient('${appName}');
 await ampsClient.connect({ url: 'ws://localhost:9100/amps/json' });
@@ -293,7 +293,7 @@ conflated.subscribeToConflated(({ value }) => {
 ## Solace Integration (\`@macro/transports\`)
 \`\`\`typescript
 import { SolaceClient } from '@macro/transports';
-${hasConflation ? "import { ConflationSubject } from '@macro/rxutils';" : ''}
+${hasConflation ? "import { ConflationSubject } from '@macro/utils';" : ''}
 
 const solaceClient = new SolaceClient();
 await solaceClient.connect({
@@ -324,7 +324,7 @@ conflated.subscribeToConflated(({ value }) => {
 ## NATS Integration (\`@macro/transports\`)
 \`\`\`typescript
 import { NatsClient } from '@macro/transports';
-${hasConflation ? "import { ConflationSubject } from '@macro/rxutils';" : ''}
+${hasConflation ? "import { ConflationSubject } from '@macro/utils';" : ''}
 
 const natsClient = new NatsClient('${appName}');
 await natsClient.connect({ servers: 'ws://localhost:8224' });

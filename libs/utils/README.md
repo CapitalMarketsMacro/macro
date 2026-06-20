@@ -1,6 +1,6 @@
-# @macro/rxutils
+# @macro/utils
 
-A TypeScript utility library for RxJS with conflation support.
+A TypeScript shared utility library. Currently provides RxJS conflation support (under `lib/rx`).
 
 ## Overview
 
@@ -11,7 +11,7 @@ Based on: [angular-fintech/Conflation](https://github.com/angular-fintech/Confla
 ## Installation
 
 ```bash
-npm install @macro/rxutils
+npm install @macro/utils
 ```
 
 **Note**: This library requires `rxjs` as a peer dependency. Install it separately:
@@ -25,7 +25,7 @@ npm install rxjs
 ### Basic Conflation
 
 ```typescript
-import { conflateByKey } from '@macro/rxutils';
+import { conflateByKey } from '@macro/utils';
 import { Subject } from 'rxjs';
 
 const subject = new Subject<{ key: string; value: number }>();
@@ -48,7 +48,7 @@ subject.next({ key: 'Key2', value: 3 });
 ### Using ConflationSubject
 
 ```typescript
-import { ConflationSubject } from '@macro/rxutils';
+import { ConflationSubject } from '@macro/utils';
 
 const conflatedSubject = new ConflationSubject<string, number>(1000);
 
@@ -70,7 +70,7 @@ conflatedSubject.next({ key: 'Key2', value: 3 });
 ### Getting the Conflated Observable
 
 ```typescript
-import { ConflationSubject } from '@macro/rxutils';
+import { ConflationSubject } from '@macro/utils';
 
 const conflatedSubject = new ConflationSubject<string, number>(1000);
 const conflated$ = conflatedSubject.getConflatedObservable();
@@ -83,7 +83,7 @@ conflated$.subscribe(value => {
 ### Piping to Another Subject
 
 ```typescript
-import { ConflationSubject } from '@macro/rxutils';
+import { ConflationSubject } from '@macro/utils';
 import { Subject } from 'rxjs';
 
 const conflatedSubject = new ConflationSubject<string, number>(1000);
@@ -100,7 +100,7 @@ targetSubject.subscribe(value => {
 ### Real-World Example: Market Data Conflation
 
 ```typescript
-import { ConflationSubject } from '@macro/rxutils';
+import { ConflationSubject } from '@macro/utils';
 
 interface MarketData {
   symbol: string;

@@ -1,7 +1,7 @@
 {
-  "name": "@macro/rxutils",
+  "name": "@macro/utils",
   "version": "0.0.1",
-  "description": "RxJS utility library with conflation support",
+  "description": "Shared utility library (RxJS conflation and helpers)",
   "keywords": [
     "rxjs",
     "reactive",
