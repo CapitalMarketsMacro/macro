@@ -217,32 +217,18 @@ describe('StoreService', () => {
       expect(typeof actions['toggle-store-favorite']).toBe('function');
     });
 
-    it('toggles the favorite and refreshes the card button after register', async () => {
-      await firstValueFrom(service.register(platformSettings));
-      (mockFavoritesService.isFavorite as jest.Mock).mockReturnValue(true);
-      const primaryButton = { title: 'Open', action: { id: 'launch-app' } };
-      await service.getStoreCustomActions()['toggle-store-favorite']({ appId: 'app-1', primaryButton });
-
-      expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith('app-1');
-      expect(mockStoreRegistration.updateAppCardButtons).toHaveBeenCalledWith({
-        appId: 'app-1',
-        primaryButton,
-        secondaryButtons: [{ title: '★ Unfavorite', action: { id: 'toggle-store-favorite' } }],
-      });
-    });
-
-    it('does not refresh card buttons before register (no registration)', async () => {
-      await service.getStoreCustomActions()['toggle-store-favorite']({
-        appId: 'app-1',
-        primaryButton: { title: 'Open', action: { id: 'launch-app' } },
-      });
-      expect(mockStoreRegistration.updateAppCardButtons).not.toHaveBeenCalled();
-    });
-
-    it('re-renders the storefront (deregister + register + show) so the nav updates live and the store stays open', async () => {
+    // Both fav and unfav take the same path: toggle + re-register (deregister +
+    // register + show). Previously a pre-refresh updateAppCardButtons call could
+    // reject on the favorite path and skip the refresh — regression guard below.
+    it.each([
+      ['favorite (not yet favorited)', false],
+      ['unfavorite (already favorited)', true],
+    ])('toggling %s re-registers + re-shows so the nav updates and the store stays open', async (_label, alreadyFav) => {
       (Storefront.show as jest.Mock).mockResolvedValue(undefined);
+      (mockFavoritesService.isFavorite as jest.Mock).mockReturnValue(alreadyFav);
       await firstValueFrom(service.register(platformSettings));
       (Storefront.register as jest.Mock).mockClear();
+      ((Storefront as any).deregister as jest.Mock).mockClear();
       (Storefront.show as jest.Mock).mockClear();
 
       await service.getStoreCustomActions()['toggle-store-favorite']({
@@ -250,16 +236,29 @@ describe('StoreService', () => {
         primaryButton: { title: 'Open', action: { id: 'launch-app' } },
       });
 
+      expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith('app-1');
       expect((Storefront as any).deregister).toHaveBeenCalledWith('macro-workspace');
-      expect(Storefront.register).toHaveBeenCalledTimes(1); // re-registered after deregister
-      expect(Storefront.show).toHaveBeenCalled(); // re-shown so the window doesn't stay closed
+      expect(Storefront.register).toHaveBeenCalledTimes(1);
+      expect(Storefront.show).toHaveBeenCalled();
     });
 
-    it('does not re-register before the storefront has been registered', async () => {
+    it('still re-registers the favorite path even if updateAppCardButtons-style work would fail (no longer awaited)', async () => {
+      (Storefront.show as jest.Mock).mockResolvedValue(undefined);
+      (mockFavoritesService.isFavorite as jest.Mock).mockReturnValue(false);
+      await firstValueFrom(service.register(platformSettings));
+      ((Storefront as any).deregister as jest.Mock).mockClear();
+
+      await service.getStoreCustomActions()['toggle-store-favorite']({ appId: 'app-1', primaryButton: undefined as any });
+
+      expect((Storefront as any).deregister).toHaveBeenCalledWith('macro-workspace');
+    });
+
+    it('records the favorite but does not re-register before the storefront is registered', async () => {
       await service.getStoreCustomActions()['toggle-store-favorite']({
         appId: 'app-1',
         primaryButton: { title: 'Open', action: { id: 'launch-app' } },
       });
+      expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith('app-1');
       expect((Storefront as any).deregister).not.toHaveBeenCalled();
     });
   });
