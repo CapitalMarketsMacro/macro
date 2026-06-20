@@ -9,7 +9,7 @@ import {
 } from '@openfin/workspace-platform';
 import { from, map, switchMap, type Observable } from 'rxjs';
 import type { App } from '@openfin/workspace';
-import { launchApp } from './launch';
+import type { LaunchService } from './launch.service';
 import type { PlatformSettings } from './types';
 import { WorkspaceOverrideService, setViewTitle, THEME_CHANGED_TOPIC } from './workspace-override.service';
 import type { ThemePresetPalettes } from './theme-preset.service';
@@ -27,6 +27,7 @@ const logger = Logger.getLogger('PlatformService');
  */
 export class PlatformService {
   private readonly workspaceOverrideService: WorkspaceOverrideService;
+  private readonly launchService: LaunchService;
 
   // Custom button icons use blue (#3b82f6) stroke for visibility on both dark and light themes.
   // OpenFin's custom button API doesn't support theme-adaptive icons like built-in buttons.
@@ -52,8 +53,9 @@ export class PlatformService {
 
   private pageTabsHidden = false;
 
-  constructor(workspaceOverrideService: WorkspaceOverrideService) {
+  constructor(workspaceOverrideService: WorkspaceOverrideService, launchService: LaunchService) {
     this.workspaceOverrideService = workspaceOverrideService;
+    this.launchService = launchService;
     // Update custom toolbar icons whenever the platform theme changes
     this.workspaceOverrideService.setOnThemeChanged((scheme) =>
       this.updateToolbarButtons(scheme),
@@ -179,7 +181,7 @@ export class PlatformService {
                 value: app.title || app.appId,
                 data: { appId: app.appId, manifestType: app.manifestType, callerType: event.callerType },
               }).catch(() => {});
-              await launchApp(app);
+              await this.launchService.launch(app);
             }
           },
           'toggle-page-tabs': async (event): Promise<void> => {

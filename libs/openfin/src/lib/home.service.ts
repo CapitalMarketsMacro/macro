@@ -10,9 +10,9 @@ import {
 } from '@openfin/workspace';
 import { getCurrentSync } from '@openfin/workspace-platform';
 import { from } from 'rxjs';
-import { launchApp } from './launch';
 import type { PlatformSettings } from './types';
 import type { SettingsService } from './settings.service';
+import type { LaunchService } from './launch.service';
 import { getAnalyticsNats } from './analytics-nats.service';
 import { toTaskbarIcon } from './icon-utils';
 
@@ -21,7 +21,10 @@ import { toTaskbarIcon } from './icon-utils';
  * Framework-agnostic implementation
  */
 export class HomeService {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly launchService: LaunchService,
+  ) {}
 
   register(platformSettings: PlatformSettings) {
     const homeProvider: HomeProvider = {
@@ -51,7 +54,7 @@ export class HomeService {
             value: app.title || app.appId,
             data: { appId: app.appId },
           }).catch(() => {});
-          await launchApp(app);
+          await this.launchService.launch(app);
         }
       },
     };
