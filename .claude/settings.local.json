@@ -154,7 +154,9 @@
       "Bash(tasklist //FI \"IMAGENAME eq node.exe\" //FO CSV //NH)",
       "Bash(echo \"blank-line count in package.json: $\\(grep -c '^$' package.json\\) \\(was ~230 when corrupted; clean master has 0\\)\")",
       "PowerShell(npm install *)",
-      "PowerShell(npm ci *)"
+      "PowerShell(npm ci *)",
+      "PowerShell(claude *)",
+      "PowerShell(npm view *)"
     ]
   },
   "enableAllProjectMcpServers": true
