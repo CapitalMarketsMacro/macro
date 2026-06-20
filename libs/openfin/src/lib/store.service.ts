@@ -51,21 +51,13 @@ export class StoreService {
       'toggle-store-favorite': async (event) => {
         const payload = event as StoreCustomButtonActionPayload;
         this.favoritesService.toggleFavorite(payload.appId);
-        const isFav = this.favoritesService.isFavorite(payload.appId);
-        if (this.storeRegistration) {
-          // Immediate feedback: flip the card's own button without waiting for the re-render.
-          await this.storeRegistration.updateAppCardButtons({
-            appId: payload.appId,
-            primaryButton: payload.primaryButton,
-            secondaryButtons: [
-              {
-                title: isFav ? '★ Unfavorite' : '☆ Favorite',
-                action: { id: 'toggle-store-favorite' },
-              },
-            ],
-          });
-        }
-        // Re-render the left-nav so the Favorites section appears/updates in real time.
+        // Re-register the storefront so BOTH the Favorites nav section AND the card's
+        // own button reflect the change (buildDecoratedApps re-derives the ★/☆ button).
+        //
+        // We deliberately do NOT call updateAppCardButtons first: awaiting it before
+        // the refresh meant that if it rejected (which happened on the *favorite* path)
+        // the handler threw and the refresh never ran, so favoriting didn't update the
+        // nav. The re-register is the single source of truth for both fav and unfav.
         await this.refreshStorefront();
       },
     };
