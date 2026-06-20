@@ -11,7 +11,7 @@ import {
 import { getCurrentSync } from '@openfin/workspace-platform';
 import { from } from 'rxjs';
 import type { PlatformSettings } from './types';
-import type { SettingsService } from './settings.service';
+import type { AppsService } from './apps.service';
 import type { LaunchService } from './launch.service';
 import { getAnalyticsNats } from './analytics-nats.service';
 import { toTaskbarIcon } from './icon-utils';
@@ -22,7 +22,7 @@ import { toTaskbarIcon } from './icon-utils';
  */
 export class HomeService {
   constructor(
-    private readonly settingsService: SettingsService,
+    private readonly appsService: AppsService,
     private readonly launchService: LaunchService,
   ) {}
 
@@ -40,8 +40,9 @@ export class HomeService {
           }).catch(() => {});
         }
         response.respond([]);
+        await this.appsService.ensureLoaded();
         return {
-          results: this.mapAppEntriesToSearchEntries(this.settingsService.getApps()).filter((entry) =>
+          results: this.mapAppEntriesToSearchEntries(this.appsService.getApps()).filter((entry) =>
             entry.title.toLowerCase().includes(query),
           ),
         };

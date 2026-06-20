@@ -34,6 +34,9 @@ export { AuthService as BaseAuthService } from './lib/auth.service';
 export { EntitlementsService as BaseEntitlementsService } from './lib/entitlements.service';
 export { LaunchService as BaseLaunchService } from './lib/launch.service';
 export { StorefrontConfigService as BaseStorefrontConfigService } from './lib/storefront-config.service';
+export { AppsService as BaseAppsService } from './lib/apps.service';
+export { DockConfigService as BaseDockConfigService } from './lib/dock-config.service';
+export { SnapConfigService as BaseSnapConfigService } from './lib/snap-config.service';
 export { LocalStorageFavoritesStore } from './lib/favorites.service';
 export type { FavoritesStore } from './lib/favorites.service';
 

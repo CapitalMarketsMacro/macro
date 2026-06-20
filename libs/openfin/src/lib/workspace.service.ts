@@ -1,5 +1,5 @@
 import { BehaviorSubject, Observable, catchError, concatMap, delay, forkJoin, from, map, of, tap, timeout } from 'rxjs';
-import type { CustomSettings, PlatformSettings } from './types';
+import type { PlatformSettings } from './types';
 import { PlatformService } from './platform.service';
 import { SettingsService } from './settings.service';
 import { DockService } from './dock.service';
@@ -82,7 +82,7 @@ export class WorkspaceService {
           tap(() => nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'PlatformCreated' }).catch(() => {})),
           concatMap(() => this.awaitPlatformReady()),
           tap(() => nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'PlatformReady' }).catch(() => {})),
-          concatMap(() => this.registerComponents(settings)),
+          concatMap(() => this.registerComponents(settings.platformSettings)),
           tap(() => nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'ComponentsRegistered',
             data: { components: ['dock', 'home', 'store', 'notifications', 'snap'] } }).catch(() => {})),
           concatMap(() => this.showStartupComponents()),
@@ -196,33 +196,18 @@ export class WorkspaceService {
     });
   }
 
-  private registerComponents({
-    platformSettings,
-    customSettings,
-  }: {
-    platformSettings: PlatformSettings;
-    customSettings?: CustomSettings;
-  }) {
+  private registerComponents(platformSettings: PlatformSettings) {
     this.status$.next('Registering workspace components...');
     // Each component registration is independent. Guard every one so a single
     // slow/hanging registration (e.g. the native Snap helper failing to
     // connect) can never pin the platform on "Registering workspace
     // components..." forever. The warning names the offending component.
     return forkJoin([
-      this.guarded(
-        'dock',
-        from(
-          this.dock3Service.init(
-            platformSettings,
-            customSettings?.apps,
-            customSettings?.dock3
-          )
-        )
-      ),
+      this.guarded('dock', from(this.dock3Service.init(platformSettings))),
       this.guarded('home', this.homeService.register(platformSettings)),
       this.guarded('store', this.storeService.register(platformSettings)),
       this.guarded('notifications', from(this.notificationsService.register(platformSettings))),
-      this.guarded('snap', from(this.snapService.init(platformSettings.id, customSettings?.snapProvider))),
+      this.guarded('snap', from(this.snapService.init(platformSettings.id))),
     ]);
   }
 

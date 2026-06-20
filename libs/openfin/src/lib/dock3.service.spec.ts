@@ -41,6 +41,8 @@ import { Dock, getCurrentSync } from '@openfin/workspace-platform';
 describe('Dock3Service', () => {
   let service: Dock3Service;
   let mockLaunchService: { launch: jest.Mock };
+  let mockAppsService: { load: jest.Mock; ensureLoaded: jest.Mock; getApps: jest.Mock };
+  let mockDockConfigService: { getDockConfig: jest.Mock };
   let mockProviderShutdown: jest.Mock;
   let mockUpdateOptions: jest.Mock;
 
@@ -74,7 +76,13 @@ describe('Dock3Service', () => {
     });
 
     mockLaunchService = { launch: jest.fn().mockResolvedValue(true) };
-    service = new Dock3Service(mockLaunchService as any);
+    mockAppsService = {
+      load: jest.fn().mockResolvedValue([]),
+      ensureLoaded: jest.fn().mockResolvedValue(undefined),
+      getApps: jest.fn().mockReturnValue([]),
+    };
+    mockDockConfigService = { getDockConfig: jest.fn().mockResolvedValue({ favorites: [], contentMenu: [] }) };
+    service = new Dock3Service(mockLaunchService as any, mockAppsService as any, mockDockConfigService as any);
   });
 
   // ── init ────────────────────────────────────────────────────

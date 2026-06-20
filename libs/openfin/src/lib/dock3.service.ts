@@ -8,6 +8,8 @@ import {
 import type { App } from '@openfin/workspace';
 import { Logger } from '@macro/logger';
 import type { LaunchService } from './launch.service';
+import type { AppsService } from './apps.service';
+import type { DockConfigService } from './dock-config.service';
 import { getAnalyticsNats } from './analytics-nats.service';
 import { toTaskbarIcon } from './icon-utils';
 import type {
@@ -54,13 +56,21 @@ type ContentMenuNode = ContentMenuFolder | ContentMenuItem;
 export class Dock3Service {
   private provider: Dock3Provider | null = null;
 
-  constructor(private readonly launchService: LaunchService) {}
+  constructor(
+    private readonly launchService: LaunchService,
+    private readonly appsService: AppsService,
+    private readonly dockConfigService: DockConfigService,
+  ) {}
 
   async init(
     platformSettings: PlatformSettings,
-    apps?: App[],
-    dock3Settings?: Dock3Settings
+    appsOverride?: App[],
+    dockOverride?: Dock3Settings,
   ): Promise<void> {
+    // Production passes no overrides → config comes from the injected services.
+    // Overrides exist for tests/advanced callers that supply config directly.
+    const apps = appsOverride ?? (await this.appsService.load());
+    const dock3Settings = dockOverride ?? (await this.dockConfigService.getDockConfig());
     const favorites = this.buildFavorites(
       dock3Settings?.favorites,
       apps,

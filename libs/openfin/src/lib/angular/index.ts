@@ -23,6 +23,9 @@ import { AuthService as BaseAuthService } from '../auth.service';
 import { EntitlementsService as BaseEntitlementsService } from '../entitlements.service';
 import { LaunchService as BaseLaunchService } from '../launch.service';
 import { StorefrontConfigService as BaseStorefrontConfigService } from '../storefront-config.service';
+import { AppsService as BaseAppsService } from '../apps.service';
+import { DockConfigService as BaseDockConfigService } from '../dock-config.service';
+import { SnapConfigService as BaseSnapConfigService } from '../snap-config.service';
 import { LocalStorageFavoritesStore } from '../favorites.service';
 import { resolveEnvConfigPath } from '../config-path';
 
@@ -71,6 +74,39 @@ export class StorefrontConfigService extends BaseStorefrontConfigService {
 }
 
 @Injectable({ providedIn: 'root' })
+export class AppsService extends BaseAppsService {
+  constructor() {
+    const http = inject(HttpClient);
+    super(
+      { get: <T>(url: string) => http.get<T>(url).toPromise() as Promise<T> },
+      () => resolveEnvConfigPath('apps.json'),
+    );
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class DockConfigService extends BaseDockConfigService {
+  constructor() {
+    const http = inject(HttpClient);
+    super(
+      { get: <T>(url: string) => http.get<T>(url).toPromise() as Promise<T> },
+      () => resolveEnvConfigPath('dock-config.json'),
+    );
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class SnapConfigService extends BaseSnapConfigService {
+  constructor() {
+    const http = inject(HttpClient);
+    super(
+      { get: <T>(url: string) => http.get<T>(url).toPromise() as Promise<T> },
+      () => resolveEnvConfigPath('snap-config.json'),
+    );
+  }
+}
+
+@Injectable({ providedIn: 'root' })
 export class ContextService extends BaseContextService {
   constructor() {
     super();
@@ -97,7 +133,7 @@ export class FavoritesService extends BaseFavoritesService {
 export class StoreService extends BaseStoreService {
   constructor() {
     super(
-      inject(SettingsService),
+      inject(AppsService),
       inject(FavoritesService),
       inject(StorefrontConfigService),
       inject(EntitlementsService),
@@ -116,14 +152,14 @@ export class DockService extends BaseDockService {
 @Injectable({ providedIn: 'root' })
 export class Dock3Service extends BaseDock3Service {
   constructor() {
-    super(inject(LaunchService));
+    super(inject(LaunchService), inject(AppsService), inject(DockConfigService));
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class HomeService extends BaseHomeService {
   constructor() {
-    super(inject(SettingsService), inject(LaunchService));
+    super(inject(AppsService), inject(LaunchService));
   }
 }
 
@@ -144,7 +180,11 @@ export class WorkspaceStorageService extends BaseWorkspaceStorageService {}
 export class ThemePresetService extends BaseThemePresetService {}
 
 @Injectable({ providedIn: 'root' })
-export class SnapService extends BaseSnapService {}
+export class SnapService extends BaseSnapService {
+  constructor() {
+    super(inject(SnapConfigService));
+  }
+}
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceOverrideService extends BaseWorkspaceOverrideService {

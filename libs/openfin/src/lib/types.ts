@@ -60,7 +60,13 @@ export type ManifestWithCustomSettings = OpenFin.Manifest & { customSettings?: C
 
 export interface SettingsResponse {
   platformSettings: PlatformSettings;
-  customSettings: CustomSettings;
+  /** @deprecated apps/dock3/snapProvider now live in their own config files/services. */
+  customSettings?: CustomSettings;
+}
+
+/** Shape of apps.json — the app registry, loaded by AppsService. */
+export interface AppsConfig {
+  apps: App[];
 }
 
 // --- Enterprise storefront: config-driven navigation / landing / footer ---
