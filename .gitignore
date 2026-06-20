@@ -51,3 +51,6 @@ vitest.config.*.timestamp*
 /migrations.json
 
 .nx/migrate-runs
+
+# Claude Code — local, per-machine permission grants (not shared)
+.claude/settings.local.json
