@@ -1,4 +1,3 @@
-import type OpenFin from '@openfin/core';
 import type { App } from '@openfin/workspace';
 
 export interface Dock3FavoriteEntry {
@@ -44,24 +43,14 @@ export interface SnapProviderSettings {
   };
 }
 
-export interface CustomSettings {
-  apps?: App[];
-  dock3?: Dock3Settings;
-  snapProvider?: SnapProviderSettings;
-}
-
 export interface PlatformSettings {
   id: string;
   title: string;
   icon: string;
 }
 
-export type ManifestWithCustomSettings = OpenFin.Manifest & { customSettings?: CustomSettings };
-
 export interface SettingsResponse {
   platformSettings: PlatformSettings;
-  /** @deprecated apps/dock3/snapProvider now live in their own config files/services. */
-  customSettings?: CustomSettings;
 }
 
 /** Shape of apps.json — the app registry, loaded by AppsService. */
