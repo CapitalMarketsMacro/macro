@@ -239,9 +239,11 @@ describe('StoreService', () => {
       expect(mockStoreRegistration.updateAppCardButtons).not.toHaveBeenCalled();
     });
 
-    it('re-renders the storefront (deregister + register) so the Favorites nav updates live', async () => {
+    it('re-renders the storefront (deregister + register + show) so the nav updates live and the store stays open', async () => {
+      (Storefront.show as jest.Mock).mockResolvedValue(undefined);
       await firstValueFrom(service.register(platformSettings));
       (Storefront.register as jest.Mock).mockClear();
+      (Storefront.show as jest.Mock).mockClear();
 
       await service.getStoreCustomActions()['toggle-store-favorite']({
         appId: 'app-1',
@@ -250,6 +252,7 @@ describe('StoreService', () => {
 
       expect((Storefront as any).deregister).toHaveBeenCalledWith('macro-workspace');
       expect(Storefront.register).toHaveBeenCalledTimes(1); // re-registered after deregister
+      expect(Storefront.show).toHaveBeenCalled(); // re-shown so the window doesn't stay closed
     });
 
     it('does not re-register before the storefront has been registered', async () => {

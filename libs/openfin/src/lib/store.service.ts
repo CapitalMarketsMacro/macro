@@ -75,7 +75,9 @@ export class StoreService {
    * Force the Storefront to re-render its navigation/landing/cards by re-registering
    * the provider. OpenFin exposes no nav-refresh API, so deregister + register is the
    * canonical way to make getNavigation()/getApps() run again (e.g. after a favorite
-   * toggle). Rapid toggles are coalesced into a single trailing refresh.
+   * toggle). Because deregistering the only provider closes the Store window, we
+   * re-show it afterwards so it stays open instead of forcing the user to relaunch
+   * from the Dock. Rapid toggles are coalesced into a single trailing refresh.
    */
   async refreshStorefront(): Promise<void> {
     if (!this.platformSettings) return;
@@ -95,6 +97,9 @@ export class StoreService {
         const provider = await this.buildProvider(this.platformSettings);
         this.storeRegistration = await Storefront.register(provider);
       } while (this.refreshQueued);
+      // Re-show: deregistering the last provider closes the Store window, so bring
+      // it back automatically (otherwise the user has to reopen it from the Dock).
+      await Storefront.show();
     } catch (error) {
       logger.error('Failed to refresh storefront', error);
     } finally {
