@@ -20,7 +20,7 @@ apps/
 libs/
   logger/             # @macro/logger — Pino-based logging (browser + Node)
   transports/         # @macro/transports — unified AMPS, Solace & NATS transports
-  rxutils/            # @macro/rxutils — RxJS conflation utilities
+  utils/            # @macro/utils — RxJS conflation utilities
   openfin/            # @macro/openfin — OpenFin platform services
   macro-design/       # @macro/macro-design — CSS variables, dark mode, AG Grid theme
   macro-angular-grid/ # @macro/macro-angular-grid — AG Grid Angular wrapper
@@ -73,7 +73,7 @@ npx nx g @nx/react:app <name>         # Generate React app
 {
   "@macro/logger":             ["libs/logger/src/index.ts"],
   "@macro/transports":         ["libs/transports/src/index.ts"],
-  "@macro/rxutils":            ["libs/rxutils/src/index.ts"],
+  "@macro/utils":            ["libs/utils/src/index.ts"],
   "@macro/openfin":            ["libs/openfin/src/index.ts"],
   "@macro/macro-design":       ["libs/macro-design/src/index.ts"],
   "@macro/macro-angular-grid": ["libs/macro-angular-grid/src/index.ts"],

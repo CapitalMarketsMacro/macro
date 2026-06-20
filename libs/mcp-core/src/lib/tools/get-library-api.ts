@@ -32,10 +32,10 @@ logger.info('User data', { userId: 123, name: 'John' });
 logger.error('Request failed', { statusCode: 500, endpoint: '/api' });
 \`\`\``,
 
-  rxutils: `# @macro/rxutils API
+  utils: `# @macro/utils API
 
-**Import:** \`import { ConflationSubject, conflateByKey, ConflatedValue } from '@macro/rxutils';\`
-**Source:** \`libs/rxutils/src/index.ts\`
+**Import:** \`import { ConflationSubject, conflateByKey, ConflatedValue } from '@macro/utils';\`
+**Source:** \`libs/utils/src/index.ts\`
 
 ## ConflationSubject<TKey, TValue> class (extends Subject)
 - \`constructor(intervalMs: number)\` — conflation interval in ms
@@ -314,7 +314,7 @@ export function registerGetLibraryApi(server: McpServer): void {
           'nats',
           'amps',
           'solace',
-          'rxutils',
+          'utils',
           'openfin',
           'macro-design',
           'macro-angular-grid',

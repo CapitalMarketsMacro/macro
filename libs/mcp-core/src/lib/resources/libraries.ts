@@ -51,10 +51,10 @@ Single library providing a common \`TransportClient\` interface across AMPS, Sol
 
 ---
 
-## @macro/rxutils
+## @macro/utils
 RxJS conflation utilities for reducing high-frequency data updates.
 
-**Import:** \`import { ConflationSubject, conflateByKey, ConflatedValue } from '@macro/rxutils';\`
+**Import:** \`import { ConflationSubject, conflateByKey, ConflatedValue } from '@macro/utils';\`
 
 ---
 

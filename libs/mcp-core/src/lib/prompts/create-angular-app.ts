@@ -77,18 +77,18 @@ ${ds === 'amps' ? `- Import \`AmpsClient\` from \`@macro/transports\` (or inject
 - Connect: \`await client.connect({ url: 'ws://localhost:9100/amps/json' })\`
 - Subscribe: \`const { observable } = await client.subscribeAsObservable('your-topic')\`
 - Read messages via the unified \`TransportMessage\` API: \`msg.json<YourType>()\` (or \`msg.data\` for the raw string)
-- Use \`ConflationSubject\` from \`@macro/rxutils\` to conflate high-frequency updates
+- Use \`ConflationSubject\` from \`@macro/utils\` to conflate high-frequency updates
 - Pipe conflated output to \`grid.updateRows$.next([value])\`` :
 ds === 'solace' ? `- Import \`SolaceClient\` from \`@macro/transports\` (or inject \`SolaceTransportService\` from \`@macro/transports/angular\`)
 - Connect with \`SolaceConnectionOptions\`: \`await client.connect({ hostUrl, vpnName, userName, password })\`
 - Subscribe: \`const { observable } = await client.subscribeAsObservable('your/topic')\`
 - Read messages via \`msg.json<YourType>()\` (unified TransportMessage)
-- Use \`ConflationSubject\` from \`@macro/rxutils\` to conflate high-frequency updates
+- Use \`ConflationSubject\` from \`@macro/utils\` to conflate high-frequency updates
 - Pipe conflated output to \`grid.updateRows$.next([value])\`` :
 ds === 'websocket' ? `- Use the built-in market-data-server: \`ws://localhost:3000/marketData/fx\` or \`/marketData/tsy\`
 - Connect via native WebSocket or a service
 - Parse incoming JSON messages
-- Use \`ConflationSubject\` from \`@macro/rxutils\` if needed
+- Use \`ConflationSubject\` from \`@macro/utils\` if needed
 - Pipe to \`grid.updateRows$.next([data])\`` :
 `- Create an Angular service with HttpClient
 - Fetch data from your REST API

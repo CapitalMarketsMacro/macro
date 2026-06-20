@@ -608,7 +608,7 @@ Both Angular and React grid wrappers include:
 
 | `@macro/macro-design` | CSS variables, dark mode, AG Grid theme |
 
-| `@macro/rxutils` | RxJS conflation (high-frequency data) |
+| `@macro/utils` | RxJS conflation (high-frequency data) |
 
 | `@macro/macro-angular-grid` | AG Grid 35 Angular wrapper |
 
@@ -820,7 +820,7 @@ apps/rates-blotter/
 
 - `sowComplete` promise — resolves when initial SOW batch finishes
 
-- `ConflationSubject` from `@macro/rxutils` — batches high-frequency updates
+- `ConflationSubject` from `@macro/utils` — batches high-frequency updates
 
 - `MacroAngularGrid` from `@macro/macro-angular-grid` — AG Grid Enterprise wrapper
 

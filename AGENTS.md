@@ -31,7 +31,7 @@ macro/
 │   ├── logger/                 # Pino-based structured logging (@macro/logger)
 │   ├── transports/             # Unified messaging: AMPS, Solace, NATS (@macro/transports + /angular + /react)
 │   ├── openfin/                # OpenFin Workspace services + Angular DI + Snap + Analytics (@macro/openfin)
-│   ├── rxutils/                # RxJS conflation utilities (@macro/rxutils)
+│   ├── utils/                # RxJS conflation utilities (@macro/utils)
 │   ├── macro-angular-grid/     # AG Grid 35 Enterprise Angular wrapper + column formatting
 │   └── macro-react-grid/       # AG Grid 35 Enterprise React wrapper + column formatting
 ├── tsconfig.base.json          # Path aliases: @macro/* -> libs/*/src/index.ts
@@ -52,7 +52,7 @@ import { NatsTransportService, AmpsTransportService, SolaceTransportService } fr
 import { useNatsTransport, useAmpsTransport, useSolaceTransport } from '@macro/transports/react';
 import { WorkspaceService, ThemeService, ContextService, NotificationsService } from '@macro/openfin';
 import { useViewState } from '@macro/openfin/react';
-import { ConflationSubject } from '@macro/rxutils';
+import { ConflationSubject } from '@macro/utils';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import { MacroReactGrid } from '@macro/macro-react-grid';
 import { buildAgGridTheme, getInitialIsDark, applyDarkMode, onSystemThemeChange, themeConfig } from '@macro/macro-design';
@@ -115,7 +115,7 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 - Market data flows via WebSocket from `market-data-server` (port 3000)
 - FX endpoint: `ws://localhost:3000/marketData/fx` (15 G10 pairs, 1-sec ticks)
 - Treasury endpoint: `ws://localhost:3000/marketData/tsy` (11 securities, 1-sec ticks)
-- For high-frequency data, use `ConflationSubject` from `@macro/rxutils` (double-buffer algorithm)
+- For high-frequency data, use `ConflationSubject` from `@macro/utils` (double-buffer algorithm)
 - Angular grid updates via `updateRows$` Subject on `MacroAngularGrid`
 - React grid updates via `ref.current?.updateRows$` Subject on `MacroReactGridRef`
 

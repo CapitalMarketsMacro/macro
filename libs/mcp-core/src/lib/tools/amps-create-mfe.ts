@@ -77,7 +77,7 @@ function generateAngularFiles(
   const componentTs = `import { Component, OnInit, OnDestroy, ViewChild, signal, inject } from '@angular/core';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import { AmpsTransportService } from '@macro/transports/angular';
-import { ConflationSubject } from '@macro/rxutils';
+import { ConflationSubject } from '@macro/utils';
 import { Logger } from '@macro/logger';
 import type { TransportMessage } from '@macro/transports';
 import type { ColDef } from 'ag-grid-community';
@@ -324,7 +324,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { MacroReactGrid, MacroReactGridRef } from '@macro/macro-react-grid';
 import { applyDarkMode, onSystemThemeChange } from '@macro/macro-design';
 import { AmpsTransport, type TransportMessage } from '@macro/transports';
-import { ConflationSubject } from '@macro/rxutils';
+import { ConflationSubject } from '@macro/utils';
 import { Logger } from '@macro/logger';
 
 const logger = Logger.getLogger('${appName}');
@@ -471,7 +471,7 @@ export default defineConfig(() => ({
       '@macro/macro-react-grid': path.resolve(__dirname, '../../libs/macro-react-grid/src/index.ts'),
       '@macro/transports': path.resolve(__dirname, '../../libs/transports/src/index.ts'),
       '@macro/transports/react': path.resolve(__dirname, '../../libs/transports/src/lib/react/index.ts'),
-      '@macro/rxutils': path.resolve(__dirname, '../../libs/rxutils/src/index.ts'),
+      '@macro/utils': path.resolve(__dirname, '../../libs/utils/src/index.ts'),
     },
   },
   build: {
@@ -631,7 +631,7 @@ export default defineConfig(() => ({
       '@macro/macro-react-grid': path.resolve(__dirname, '../../libs/macro-react-grid/src/index.ts'),
       '@macro/transports': path.resolve(__dirname, '../../libs/transports/src/index.ts'),
       '@macro/transports/react': path.resolve(__dirname, '../../libs/transports/src/lib/react/index.ts'),
-      '@macro/rxutils': path.resolve(__dirname, '../../libs/rxutils/src/index.ts'),
+      '@macro/utils': path.resolve(__dirname, '../../libs/utils/src/index.ts'),
     },
   },
   build: {

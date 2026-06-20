@@ -29,7 +29,7 @@
     "build": "nx run-many --target=build --all",
     "buildAll": "nx run-many --target=build --all",
     "build:apps": "nx run-many --target=build --projects=macro-angular,macro-react,macro-workspace,macro-angular-fdc3,market-data-server,macro-mcp,capital-markets-themes",
-    "build:libs": "nx run-many --target=build --projects=logger,transports,openfin,macro-design,macro-angular-grid,macro-react-grid,rxutils",
+    "build:libs": "nx run-many --target=build --projects=logger,transports,openfin,macro-design,macro-angular-grid,macro-react-grid,utils",
     "test": "nx run-many --target=test --all",
     "start:capital-markets-themes": "nx serve capital-markets-themes",
     "build:capital-markets-themes": "nx build capital-markets-themes"
