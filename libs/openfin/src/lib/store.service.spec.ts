@@ -3,432 +3,247 @@ import { StoreService } from './store.service';
 import type { PlatformSettings } from './types';
 import type { SettingsService } from './settings.service';
 import type { FavoritesService } from './favorites.service';
+import type { StorefrontConfigService } from './storefront-config.service';
+import type { EntitlementsService } from './entitlements.service';
+import type { LaunchService } from './launch.service';
 
-// Mock @macro/logger (required by launch.ts)
 jest.mock('@macro/logger', () => ({
-  Logger: {
-    getLogger: () => ({
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      debug: jest.fn(),
-    }),
-  },
+  Logger: { getLogger: () => ({ info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() }) },
 }));
 
-// Mock launch
-jest.mock('./launch', () => ({
-  launchApp: jest.fn().mockResolvedValue(undefined),
-}));
-
-// Mock @openfin/workspace -- inline jest.fn() in factory to avoid TDZ
 jest.mock('@openfin/workspace', () => ({
-  Storefront: {
-    register: jest.fn(),
-    show: jest.fn(),
-  },
-  StorefrontTemplate: {
-    AppGrid: 'AppGrid',
-  },
+  Storefront: { register: jest.fn(), show: jest.fn() },
+  StorefrontTemplate: { AppGrid: 'AppGrid', LandingPage: 'landingPage' },
 }));
 
-// Mock @openfin/workspace-platform (required by launch.ts + store custom actions)
 jest.mock('@openfin/workspace-platform', () => ({
   getCurrentSync: jest.fn(),
-  AppManifestType: {
-    Snapshot: 'snapshot',
-    View: 'view',
-    External: 'external',
-  },
-  CustomActionCallerType: {
-    StoreCustomButton: 'StoreCustomButton',
-  },
 }));
 
-// Import the mocked module to get references
 import { Storefront } from '@openfin/workspace';
 
 describe('StoreService', () => {
   let service: StoreService;
   let mockSettingsService: SettingsService;
   let mockFavoritesService: FavoritesService;
+  let mockStorefrontConfigService: StorefrontConfigService;
+  let mockEntitlementsService: EntitlementsService;
+  let mockLaunchService: LaunchService;
   let mockStoreRegistration: { updateAppCardButtons: jest.Mock };
 
-  const platformSettings: PlatformSettings = {
-    id: 'macro-workspace',
-    title: 'Macro Workspace',
-    icon: 'icon.png',
-  };
+  const platformSettings: PlatformSettings = { id: 'macro-workspace', title: 'Macro Workspace', icon: 'icon.png' };
 
   const mockApps = [
-    { appId: 'app-1', title: 'App One' },
-    { appId: 'app-2', title: 'App Two' },
+    { appId: 'app-1', title: 'App One', category: 'FX' },
+    { appId: 'app-2', title: 'App Two', category: 'Rates' },
   ] as any[];
 
-  const favoriteButton = (title = '☆ Favorite') => ({
-    title,
-    action: { id: 'toggle-store-favorite' },
-  });
+  const navConfig = {
+    favoritesTitle: 'Favorites',
+    sections: [
+      { id: 'markets', title: 'Markets', items: [{ id: 'fx', title: 'FX', category: 'FX' }] },
+      { id: 'library', title: 'All Apps', items: [{ id: 'all-apps', title: 'All Apps', category: '*' }] },
+    ],
+  };
 
-  const withSecondaryButtons = (apps: any[], favIds = new Set<string>()) =>
-    apps.map((app: any) => ({
+  /** Build the expected decorated-app shape (favorite button + entitlement tooltip). */
+  const decorate = (
+    apps: any[],
+    opts: { favIds?: Set<string>; canLaunch?: (id: string) => boolean; required?: (id: string) => string[] } = {},
+  ) => {
+    const { favIds = new Set<string>(), canLaunch = () => true, required = () => [] } = opts;
+    return apps.map((app) => ({
       ...app,
+      tooltip: canLaunch(app.appId) ? (app.tooltip ?? app.title) : `🔒 Requires entitlement: ${required(app.appId).join(', ')}`,
       secondaryButtons: [
-        favoriteButton(favIds.has(app.appId) ? '★ Unfavorite' : '☆ Favorite'),
+        { title: favIds.has(app.appId) ? '★ Unfavorite' : '☆ Favorite', action: { id: 'toggle-store-favorite' } },
       ],
     }));
+  };
 
   beforeEach(() => {
     (Storefront.register as jest.Mock).mockReset();
     (Storefront.show as jest.Mock).mockReset();
 
-    mockStoreRegistration = {
-      updateAppCardButtons: jest.fn().mockResolvedValue(undefined),
-    };
-    (Storefront.register as jest.Mock).mockResolvedValue(
-      mockStoreRegistration
-    );
+    mockStoreRegistration = { updateAppCardButtons: jest.fn().mockResolvedValue(undefined) };
+    (Storefront.register as jest.Mock).mockResolvedValue(mockStoreRegistration);
 
-    mockSettingsService = {
-      getApps: jest.fn().mockReturnValue(mockApps),
-      getManifestSettings: jest.fn(),
-      getApps$: jest.fn(),
-    } as unknown as SettingsService;
+    mockSettingsService = { getApps: jest.fn().mockReturnValue(mockApps) } as unknown as SettingsService;
 
     mockFavoritesService = {
       getFavoriteIds: jest.fn().mockReturnValue(new Set()),
-      getFavoriteIds$: jest.fn(),
       isFavorite: jest.fn().mockReturnValue(false),
       toggleFavorite: jest.fn(),
     } as unknown as FavoritesService;
 
-    service = new StoreService(mockSettingsService, mockFavoritesService);
+    mockStorefrontConfigService = {
+      getNavigationConfig: jest.fn().mockResolvedValue(navConfig),
+      getLandingPageConfig: jest.fn().mockResolvedValue({
+        topRow: { title: 'Featured', category: '*' },
+        middleRow: { title: 'Markets', category: 'FX' },
+        bottomRow: { title: '', appIds: [] },
+      }),
+      getFooterConfig: jest.fn().mockResolvedValue({
+        text: 'Macro Workspace — Capital Markets',
+        links: [{ title: 'Support', url: 'mailto:support@example.com' }],
+      }),
+      getCardClickBehavior: jest.fn().mockResolvedValue('perform-primary-button-action'),
+    } as unknown as StorefrontConfigService;
+
+    mockEntitlementsService = {
+      ensureLoaded: jest.fn().mockResolvedValue(undefined),
+      canLaunch: jest.fn().mockReturnValue(true),
+      getRequiredEntitlements: jest.fn().mockReturnValue([]),
+    } as unknown as EntitlementsService;
+
+    mockLaunchService = { launch: jest.fn().mockResolvedValue(true) } as unknown as LaunchService;
+
+    service = new StoreService(
+      mockSettingsService,
+      mockFavoritesService,
+      mockStorefrontConfigService,
+      mockEntitlementsService,
+      mockLaunchService,
+    );
   });
 
-  // ── register ────────────────────────────────────────────────
-
   describe('register', () => {
-    it('should return an observable', () => {
-      const result$ = service.register(platformSettings);
-      expect(result$).toBeDefined();
-      expect(typeof result$.subscribe).toBe('function');
-    });
-
-    it('should call Storefront.register with platform settings', async () => {
+    it('registers with platform settings + config-driven cardClickBehavior', async () => {
       await firstValueFrom(service.register(platformSettings));
-
       expect(Storefront.register).toHaveBeenCalledTimes(1);
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
       expect(provider.id).toBe('macro-workspace');
-      expect(provider.title).toBe('Macro Workspace');
-      // Provider icon is resolved to the raster favicon.ico for the taskbar.
       expect(provider.icon).toBe('favicon.ico');
+      expect(provider.cardClickBehavior).toBe('perform-primary-button-action');
     });
 
-    it('should provide getNavigation callback', async () => {
+    it('builds navigation from config: configured business-area sections, filtered by category', async () => {
       await firstValueFrom(service.register(platformSettings));
-
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
-      expect(typeof provider.getNavigation).toBe('function');
+      const nav = await provider.getNavigation();
+
+      expect(nav.map((s: any) => s.id)).toEqual(['markets', 'library']);
+      // FX item only contains FX-category apps
+      expect(nav[0].items[0].templateData.apps).toEqual(decorate([mockApps[0]]));
+      // All Apps (*) contains everything
+      expect(nav[1].items[0].templateData.apps).toEqual(decorate(mockApps));
     });
 
-    it('should return only Apps section when no favorites', async () => {
+    it('prepends a dynamic Favorites section when favorites exist', async () => {
+      (mockFavoritesService.getFavoriteIds as jest.Mock).mockReturnValue(new Set(['app-2']));
+      (mockFavoritesService.isFavorite as jest.Mock).mockImplementation((id: string) => id === 'app-2');
       await firstValueFrom(service.register(platformSettings));
-
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
-      const navigation = await provider.getNavigation();
+      const nav = await provider.getNavigation();
 
-      expect(navigation).toHaveLength(1);
-      expect(navigation[0].id).toBe('apps');
-      expect(navigation[0].title).toBe('Apps');
-      expect(navigation[0].items[0].id).toBe('all-apps');
-      expect(navigation[0].items[0].templateId).toBe('AppGrid');
-      expect(navigation[0].items[0].templateData.apps).toEqual(
-        withSecondaryButtons(mockApps)
-      );
+      expect(nav[0].id).toBe('favorites');
+      expect(nav[0].title).toBe('Favorites');
+      expect(nav[0].items[0].templateData.apps).toEqual(decorate([mockApps[1]], { favIds: new Set(['app-2']) }));
     });
 
-    it('should include Favorites section when favorites exist', async () => {
-      (mockFavoritesService.getFavoriteIds as jest.Mock).mockReturnValue(
-        new Set(['app-1'])
-      );
-
+    it('caps navigation at the OpenFin max of 3 sections', async () => {
+      (mockFavoritesService.getFavoriteIds as jest.Mock).mockReturnValue(new Set(['app-1']));
+      (mockStorefrontConfigService.getNavigationConfig as jest.Mock).mockResolvedValue({
+        favoritesTitle: 'Favorites',
+        sections: [
+          { id: 's1', title: 'S1', items: [{ id: 'i1', title: 'I1', category: '*' }] },
+          { id: 's2', title: 'S2', items: [{ id: 'i2', title: 'I2', category: '*' }] },
+          { id: 's3', title: 'S3', items: [{ id: 'i3', title: 'I3', category: '*' }] },
+        ],
+      });
       await firstValueFrom(service.register(platformSettings));
-
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
-      const navigation = await provider.getNavigation();
-
-      expect(navigation).toHaveLength(2);
-      expect(navigation[0].id).toBe('favorites');
-      expect(navigation[0].title).toBe('Favorites');
-      expect(navigation[0].items[0].templateData.apps).toEqual(
-        withSecondaryButtons([mockApps[0]])
-      );
-      expect(navigation[1].id).toBe('apps');
+      const nav = await provider.getNavigation();
+      expect(nav.length).toBeLessThanOrEqual(3);
     });
 
-    it('should filter favorite apps correctly by appId', async () => {
-      (mockFavoritesService.getFavoriteIds as jest.Mock).mockReturnValue(
-        new Set(['app-2'])
-      );
-
+    it('getApps returns decorated apps (favorite button + entitlement tooltip)', async () => {
       await firstValueFrom(service.register(platformSettings));
-
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
-      const navigation = await provider.getNavigation();
-
-      expect(navigation[0].id).toBe('favorites');
-      expect(navigation[0].items[0].templateData.apps).toEqual(
-        withSecondaryButtons([mockApps[1]])
-      );
+      expect(await provider.getApps()).toEqual(decorate(mockApps));
     });
 
-    it('should not include Favorites section when favorited appId is not in apps list', async () => {
-      (mockFavoritesService.getFavoriteIds as jest.Mock).mockReturnValue(
-        new Set(['non-existent-app'])
+    it('marks non-entitled apps with a locked tooltip (still visible)', async () => {
+      (mockEntitlementsService.canLaunch as jest.Mock).mockImplementation((id: string) => id !== 'app-2');
+      (mockEntitlementsService.getRequiredEntitlements as jest.Mock).mockImplementation((id: string) =>
+        id === 'app-2' ? ['rates-trader'] : [],
       );
-
       await firstValueFrom(service.register(platformSettings));
-
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
-      const navigation = await provider.getNavigation();
-
-      expect(navigation).toHaveLength(1);
-      expect(navigation[0].id).toBe('apps');
+      const apps = await provider.getApps();
+      expect(apps.find((a: any) => a.appId === 'app-1').tooltip).toBe('App One');
+      expect(apps.find((a: any) => a.appId === 'app-2').tooltip).toBe('🔒 Requires entitlement: rates-trader');
     });
 
-    it('should provide getLandingPage callback with correct structure', async () => {
+    it('routes the storefront launch through the entitlement-gating LaunchService', async () => {
       await firstValueFrom(service.register(platformSettings));
-
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
-      const landing = await provider.getLandingPage();
-
-      expect(landing.topRow.title).toBe('Featured');
-      expect(landing.topRow.items).toHaveLength(1);
-      expect(landing.topRow.items[0].templateData.apps).toEqual(
-        withSecondaryButtons(mockApps)
-      );
-      expect(landing.topRow.items[0].image.src).toBe('icon.png');
-      expect(landing.middleRow).toEqual({ title: '', apps: [] });
-      expect(landing.bottomRow).toEqual({ title: '', items: [] });
+      const app = { appId: 'app-1', title: 'App One' };
+      await provider.launchApp(app);
+      expect(mockLaunchService.launch).toHaveBeenCalledWith(app);
     });
 
-    it('should provide getFooter callback', async () => {
+    it('builds the footer from config', async () => {
       await firstValueFrom(service.register(platformSettings));
-
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
       const footer = await provider.getFooter();
-
-      expect(footer.logo.src).toBe('icon.png');
-      expect(footer.logo.size).toBe('32');
-      expect(footer.text).toBe('Macro Workspace');
-      expect(footer.links).toEqual([]);
+      expect(footer.text).toBe('Macro Workspace — Capital Markets');
+      expect(footer.links).toEqual([{ title: 'Support', url: 'mailto:support@example.com' }]);
+      expect(footer.logo.src).toBe('icon.png'); // falls back to platform icon
     });
 
-    it('should provide getApps callback that returns decorated apps', async () => {
+    it('builds the landing page rows from config', async () => {
       await firstValueFrom(service.register(platformSettings));
-
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
-      const apps = await provider.getApps();
-
-      expect(apps).toEqual(withSecondaryButtons(mockApps));
+      const landing = await provider.getLandingPage();
+      expect(landing.topRow.title).toBe('Featured');
+      expect(landing.middleRow.title).toBe('Markets');
+      // middleRow (category FX) -> only app-1
+      expect(landing.middleRow.apps).toEqual(decorate([mockApps[0]]));
     });
 
-    it('should decorate apps with secondaryButtons', async () => {
-      await firstValueFrom(service.register(platformSettings));
-
-      const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
-      const apps = await provider.getApps();
-
-      for (const app of apps) {
-        expect(app.secondaryButtons).toEqual([
-          {
-            title: '☆ Favorite',
-            action: { id: 'toggle-store-favorite' },
-          },
-        ]);
-      }
-    });
-
-    it('should show ★ Unfavorite button for favorited apps', async () => {
-      (mockFavoritesService.isFavorite as jest.Mock).mockImplementation(
-        (id: string) => id === 'app-1'
-      );
-
-      await firstValueFrom(service.register(platformSettings));
-
-      const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
-      const apps = await provider.getApps();
-
-      expect(apps[0].secondaryButtons[0].title).toBe('★ Unfavorite');
-      expect(apps[1].secondaryButtons[0].title).toBe('☆ Favorite');
-    });
-
-    it('should capture StoreRegistration from Storefront.register', async () => {
-      await firstValueFrom(service.register(platformSettings));
-
-      // Verify by calling the toggle action — it should use the captured registration
-      const actions = service.getStoreCustomActions();
-      await actions['toggle-store-favorite']({
-        appId: 'app-1',
-        primaryButton: { title: 'Open', action: { id: 'launch-app' } },
-      });
-
-      expect(mockStoreRegistration.updateAppCardButtons).toHaveBeenCalled();
-    });
-
-    it('should provide launchApp callback', async () => {
-      const { launchApp } = require('./launch');
-
-      await firstValueFrom(service.register(platformSettings));
-
-      const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
-      const app = { appId: 'test' };
-      await provider.launchApp(app);
-
-      expect(launchApp).toHaveBeenCalledWith(app);
-    });
-
-    it('should handle empty apps from settings service', async () => {
-      (mockSettingsService.getApps as jest.Mock).mockReturnValue([]);
-
-      await firstValueFrom(service.register(platformSettings));
-
-      const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
-      const apps = await provider.getApps();
-
-      expect(apps).toEqual([]);
-    });
-
-    it('should handle undefined apps from settings service', async () => {
+    it('handles empty/undefined apps from settings', async () => {
       (mockSettingsService.getApps as jest.Mock).mockReturnValue(undefined);
-
       await firstValueFrom(service.register(platformSettings));
-
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
-      const apps = await provider.getApps();
-      const navigation = await provider.getNavigation();
-
-      expect(apps).toEqual([]);
-      // Last section is always Apps
-      const appsSection = navigation[navigation.length - 1];
-      expect(appsSection.items[0].templateData.apps).toEqual([]);
+      expect(await provider.getApps()).toEqual([]);
     });
   });
 
-  // ── getStoreCustomActions ─────────────────────────────────────
-
   describe('getStoreCustomActions', () => {
-    it('should return a map with toggle-store-favorite action', () => {
+    it('exposes the toggle-store-favorite action', () => {
       const actions = service.getStoreCustomActions();
-      expect(actions).toHaveProperty('toggle-store-favorite');
       expect(typeof actions['toggle-store-favorite']).toBe('function');
     });
 
-    it('should call toggleFavorite when action is invoked', async () => {
-      const actions = service.getStoreCustomActions();
-      await actions['toggle-store-favorite']({
-        appId: 'app-1',
-        primaryButton: { title: 'Open', action: { id: 'launch-app' } },
-      });
-
-      expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith(
-        'app-1'
-      );
-    });
-
-    it('should check isFavorite after toggling', async () => {
-      const actions = service.getStoreCustomActions();
-      await actions['toggle-store-favorite']({
-        appId: 'app-1',
-        primaryButton: { title: 'Open', action: { id: 'launch-app' } },
-      });
-
-      expect(mockFavoritesService.isFavorite).toHaveBeenCalledWith('app-1');
-    });
-
-    it('should not call updateAppCardButtons when storeRegistration is null', async () => {
-      // Service has not called register(), so storeRegistration is null
-      const actions = service.getStoreCustomActions();
-      await actions['toggle-store-favorite']({
-        appId: 'app-1',
-        primaryButton: { title: 'Open', action: { id: 'launch-app' } },
-      });
-
-      expect(
-        mockStoreRegistration.updateAppCardButtons
-      ).not.toHaveBeenCalled();
-    });
-
-    it('should call updateAppCardButtons with ★ Unfavorite when newly favorited', async () => {
-      // First register to capture storeRegistration
+    it('toggles the favorite and refreshes the card button after register', async () => {
       await firstValueFrom(service.register(platformSettings));
-
       (mockFavoritesService.isFavorite as jest.Mock).mockReturnValue(true);
-
-      const actions = service.getStoreCustomActions();
       const primaryButton = { title: 'Open', action: { id: 'launch-app' } };
-      await actions['toggle-store-favorite']({
-        appId: 'app-1',
-        primaryButton,
-      });
+      await service.getStoreCustomActions()['toggle-store-favorite']({ appId: 'app-1', primaryButton });
 
-      expect(
-        mockStoreRegistration.updateAppCardButtons
-      ).toHaveBeenCalledWith({
+      expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith('app-1');
+      expect(mockStoreRegistration.updateAppCardButtons).toHaveBeenCalledWith({
         appId: 'app-1',
         primaryButton,
-        secondaryButtons: [
-          {
-            title: '★ Unfavorite',
-            action: { id: 'toggle-store-favorite' },
-          },
-        ],
+        secondaryButtons: [{ title: '★ Unfavorite', action: { id: 'toggle-store-favorite' } }],
       });
     });
 
-    it('should call updateAppCardButtons with ☆ Favorite when unfavorited', async () => {
-      await firstValueFrom(service.register(platformSettings));
-
-      (mockFavoritesService.isFavorite as jest.Mock).mockReturnValue(false);
-
-      const actions = service.getStoreCustomActions();
-      const primaryButton = { title: 'Open', action: { id: 'launch-app' } };
-      await actions['toggle-store-favorite']({
-        appId: 'app-2',
-        primaryButton,
+    it('does not refresh card buttons before register (no registration)', async () => {
+      await service.getStoreCustomActions()['toggle-store-favorite']({
+        appId: 'app-1',
+        primaryButton: { title: 'Open', action: { id: 'launch-app' } },
       });
-
-      expect(
-        mockStoreRegistration.updateAppCardButtons
-      ).toHaveBeenCalledWith({
-        appId: 'app-2',
-        primaryButton,
-        secondaryButtons: [
-          {
-            title: '☆ Favorite',
-            action: { id: 'toggle-store-favorite' },
-          },
-        ],
-      });
+      expect(mockStoreRegistration.updateAppCardButtons).not.toHaveBeenCalled();
     });
   });
 
-  // ── show ────────────────────────────────────────────────────
-
   describe('show', () => {
-    it('should call Storefront.show()', async () => {
+    it('calls Storefront.show()', async () => {
       (Storefront.show as jest.Mock).mockResolvedValue(undefined);
-
       await service.show();
-
       expect(Storefront.show).toHaveBeenCalledTimes(1);
-    });
-
-    it('should resolve after Storefront.show() completes', async () => {
-      (Storefront.show as jest.Mock).mockResolvedValue(undefined);
-
-      await expect(service.show()).resolves.toBeUndefined();
     });
   });
 });

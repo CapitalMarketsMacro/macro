@@ -1,0 +1,17 @@
+{
+  "currentUser": {
+    "id": "u-001",
+    "name": "Macro Trader",
+    "groups": ["fx-desk", "rates-desk"],
+    "entitlements": ["fx-trader", "rates-trader", "general-user"]
+  },
+  "apps": {
+    "macro-angular-fx-market-data": ["fx-trader"],
+    "macro-angular-fdc3-instrument-viewer": ["fx-trader"],
+    "macro-angular-treasury-microstructure": ["rates-trader"],
+    "macro-react-treasury-market-data": ["rates-trader"],
+    "rates-desktop": ["rates-trader"],
+    "macro-react-commodities-dashboard": ["commodities-trader"],
+    "macro-analytics-dashboard": ["analytics-viewer"]
+  }
+}

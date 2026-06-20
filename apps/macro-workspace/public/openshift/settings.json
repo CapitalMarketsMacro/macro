@@ -26,7 +26,8 @@
         "tags": [
           "view",
           "openfin"
-        ]
+        ],
+        "category": "Workspace"
       },
       {
         "appId": "macro-workspace-view2",
@@ -48,7 +49,8 @@
         "tags": [
           "view",
           "openfin"
-        ]
+        ],
+        "category": "Workspace"
       },
       {
         "appId": "macro-angular-view",
@@ -71,7 +73,8 @@
           "view",
           "angular",
           "market-data"
-        ]
+        ],
+        "category": "Markets"
       },
       {
         "appId": "macro-angular-fx-market-data",
@@ -95,7 +98,8 @@
           "angular",
           "fx",
           "market-data"
-        ]
+        ],
+        "category": "FX"
       },
       {
         "appId": "macro-angular-treasury-microstructure",
@@ -119,7 +123,8 @@
           "angular",
           "treasury",
           "market-data"
-        ]
+        ],
+        "category": "Rates"
       },
       {
         "appId": "macro-react-view",
@@ -142,7 +147,8 @@
           "view",
           "react",
           "market-data"
-        ]
+        ],
+        "category": "Markets"
       },
       {
         "appId": "macro-react-treasury-market-data",
@@ -166,7 +172,8 @@
           "react",
           "treasury",
           "market-data"
-        ]
+        ],
+        "category": "Rates"
       },
       {
         "appId": "macro-angular-fdc3-instrument-viewer",
@@ -190,7 +197,8 @@
           "angular",
           "fdc3",
           "instrument"
-        ]
+        ],
+        "category": "FX"
       },
       {
         "appId": "macro-react-commodities-dashboard",
@@ -214,7 +222,8 @@
           "react",
           "commodities",
           "market-data"
-        ]
+        ],
+        "category": "Commodities"
       },
       {
         "appId": "macro-analytics-dashboard",
@@ -237,7 +246,8 @@
           "view",
           "analytics",
           "monitoring"
-        ]
+        ],
+        "category": "Analytics"
       },
       {
         "appId": "rates-desktop",
@@ -260,7 +270,8 @@
           "platform",
           "rates",
           "fixed-income"
-        ]
+        ],
+        "category": "Rates"
       },
       {
         "appId": "capital-markets-themes",
@@ -283,7 +294,8 @@
           "view",
           "react",
           "figma-make"
-        ]
+        ],
+        "category": "Design"
       }
     ],
     "snapProvider": {

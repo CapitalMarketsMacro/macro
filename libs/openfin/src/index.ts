@@ -7,6 +7,7 @@ export { themeConfig } from '@macro/macro-design';
 export { launchApp } from './lib/launch';
 export { onOpenFinThemeChange } from './lib/theme-sync';
 export { buildMacroGranularTheme } from './lib/granular-theme';
+export { resolveEnvConfigPath } from './lib/config-path';
 
 // Framework-agnostic base services (exported with 'Base' prefix to avoid conflicts)
 export { SettingsService as BaseSettingsService } from './lib/settings.service';
@@ -29,6 +30,12 @@ export type { ViewStateData } from './lib/view-state.service';
 export { ThemePresetService as BaseThemePresetService } from './lib/theme-preset.service';
 export type { ThemePresetPalettes, ThemePresetInfo } from './lib/theme-preset.service';
 export { SnapService as BaseSnapService } from './lib/snap.service';
+export { AuthService as BaseAuthService } from './lib/auth.service';
+export { EntitlementsService as BaseEntitlementsService } from './lib/entitlements.service';
+export { LaunchService as BaseLaunchService } from './lib/launch.service';
+export { StorefrontConfigService as BaseStorefrontConfigService } from './lib/storefront-config.service';
+export { LocalStorageFavoritesStore } from './lib/favorites.service';
+export type { FavoritesStore } from './lib/favorites.service';
 
 // Angular wrappers (for Angular applications) - these are the default exports
 export * from './lib/angular';

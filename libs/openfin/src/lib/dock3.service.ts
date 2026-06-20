@@ -7,7 +7,7 @@ import {
 } from '@openfin/workspace-platform';
 import type { App } from '@openfin/workspace';
 import { Logger } from '@macro/logger';
-import { launchApp } from './launch';
+import type { LaunchService } from './launch.service';
 import { getAnalyticsNats } from './analytics-nats.service';
 import { toTaskbarIcon } from './icon-utils';
 import type {
@@ -54,6 +54,8 @@ type ContentMenuNode = ContentMenuFolder | ContentMenuItem;
 export class Dock3Service {
   private provider: Dock3Provider | null = null;
 
+  constructor(private readonly launchService: LaunchService) {}
+
   async init(
     platformSettings: PlatformSettings,
     apps?: App[],
@@ -97,6 +99,10 @@ export class Dock3Service {
       favoritesCount: favorites.length,
       contentMenuCount: contentMenu.length,
     });
+
+    // Capture for use inside the Dock provider override below (where `this`
+    // is the provider instance, not this Dock3Service).
+    const launchService = this.launchService;
 
     this.provider = await Dock.init({
       config,
@@ -147,7 +153,7 @@ export class Dock3Service {
                   manifestType: app.manifestType,
                   manifest: app.manifest,
                 });
-                await launchApp(app);
+                await launchService.launch(app);
                 return;
               }
             }

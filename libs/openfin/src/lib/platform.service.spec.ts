@@ -72,7 +72,8 @@ describe('PlatformService', () => {
       setOnThemeChanged: jest.fn(),
     } as unknown as WorkspaceOverrideService;
 
-    service = new PlatformService(mockOverrideService);
+    const mockLaunchService = { launch: jest.fn().mockResolvedValue(true) } as any;
+    service = new PlatformService(mockOverrideService, mockLaunchService);
   });
 
   // ── constructor ─────────────────────────────────────────────
