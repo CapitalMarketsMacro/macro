@@ -12,7 +12,7 @@ jest.mock('@macro/logger', () => ({
 }));
 
 jest.mock('@openfin/workspace', () => ({
-  Storefront: { register: jest.fn(), show: jest.fn() },
+  Storefront: { register: jest.fn(), show: jest.fn(), deregister: jest.fn().mockResolvedValue(undefined) },
   StorefrontTemplate: { AppGrid: 'AppGrid', LandingPage: 'landingPage' },
 }));
 
@@ -64,6 +64,7 @@ describe('StoreService', () => {
   beforeEach(() => {
     (Storefront.register as jest.Mock).mockReset();
     (Storefront.show as jest.Mock).mockReset();
+    ((Storefront as any).deregister as jest.Mock).mockClear();
 
     mockStoreRegistration = { updateAppCardButtons: jest.fn().mockResolvedValue(undefined) };
     (Storefront.register as jest.Mock).mockResolvedValue(mockStoreRegistration);
@@ -236,6 +237,27 @@ describe('StoreService', () => {
         primaryButton: { title: 'Open', action: { id: 'launch-app' } },
       });
       expect(mockStoreRegistration.updateAppCardButtons).not.toHaveBeenCalled();
+    });
+
+    it('re-renders the storefront (deregister + register) so the Favorites nav updates live', async () => {
+      await firstValueFrom(service.register(platformSettings));
+      (Storefront.register as jest.Mock).mockClear();
+
+      await service.getStoreCustomActions()['toggle-store-favorite']({
+        appId: 'app-1',
+        primaryButton: { title: 'Open', action: { id: 'launch-app' } },
+      });
+
+      expect((Storefront as any).deregister).toHaveBeenCalledWith('macro-workspace');
+      expect(Storefront.register).toHaveBeenCalledTimes(1); // re-registered after deregister
+    });
+
+    it('does not re-register before the storefront has been registered', async () => {
+      await service.getStoreCustomActions()['toggle-store-favorite']({
+        appId: 'app-1',
+        primaryButton: { title: 'Open', action: { id: 'launch-app' } },
+      });
+      expect((Storefront as any).deregister).not.toHaveBeenCalled();
     });
   });
 

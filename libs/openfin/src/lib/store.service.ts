@@ -34,6 +34,9 @@ const MAX_NAV_ITEMS = 5;
  */
 export class StoreService {
   private storeRegistration: StoreRegistration | null = null;
+  private platformSettings: PlatformSettings | null = null;
+  private refreshing = false;
+  private refreshQueued = false;
 
   constructor(
     private readonly settingsService: SettingsService,
@@ -50,6 +53,7 @@ export class StoreService {
         this.favoritesService.toggleFavorite(payload.appId);
         const isFav = this.favoritesService.isFavorite(payload.appId);
         if (this.storeRegistration) {
+          // Immediate feedback: flip the card's own button without waiting for the re-render.
           await this.storeRegistration.updateAppCardButtons({
             appId: payload.appId,
             primaryButton: payload.primaryButton,
@@ -61,6 +65,63 @@ export class StoreService {
             ],
           });
         }
+        // Re-render the left-nav so the Favorites section appears/updates in real time.
+        await this.refreshStorefront();
+      },
+    };
+  }
+
+  /**
+   * Force the Storefront to re-render its navigation/landing/cards by re-registering
+   * the provider. OpenFin exposes no nav-refresh API, so deregister + register is the
+   * canonical way to make getNavigation()/getApps() run again (e.g. after a favorite
+   * toggle). Rapid toggles are coalesced into a single trailing refresh.
+   */
+  async refreshStorefront(): Promise<void> {
+    if (!this.platformSettings) return;
+    if (this.refreshing) {
+      this.refreshQueued = true;
+      return;
+    }
+    this.refreshing = true;
+    try {
+      do {
+        this.refreshQueued = false;
+        try {
+          await Storefront.deregister(this.platformSettings.id);
+        } catch {
+          /* not currently registered — fine, register below */
+        }
+        const provider = await this.buildProvider(this.platformSettings);
+        this.storeRegistration = await Storefront.register(provider);
+      } while (this.refreshQueued);
+    } catch (error) {
+      logger.error('Failed to refresh storefront', error);
+    } finally {
+      this.refreshing = false;
+    }
+  }
+
+  /** Build the StorefrontProvider definition (reused by register + refresh). */
+  private async buildProvider(platformSettings: PlatformSettings) {
+    const cardClickBehavior = await this.storefrontConfigService.getCardClickBehavior();
+    return {
+      ...platformSettings,
+      // Taskbar icon for the Storefront window — raster favicon.ico, not the SVG.
+      icon: toTaskbarIcon(platformSettings.icon),
+      cardClickBehavior,
+      getNavigation: () => this.buildNavigation(),
+      getLandingPage: () => this.buildLandingPage(platformSettings),
+      getFooter: () => this.buildFooter(platformSettings),
+      getApps: () => this.buildDecoratedApps(),
+      launchApp: async (app: MacroApp) => {
+        getAnalyticsNats().publish({
+          source: 'Store', type: 'App', action: 'Launch',
+          value: app.title || app.appId,
+          data: { appId: app.appId },
+        }).catch(() => {});
+        // Entitlement gate: blocks + notifies if the user isn't entitled.
+        await this.launchService.launch(app);
       },
     };
   }
@@ -208,7 +269,9 @@ export class StoreService {
   }
 
   register(platformSettings: PlatformSettings) {
-    // Track Storefront window lifecycle and enforce theme on creation.
+    this.platformSettings = platformSettings;
+
+    // Track Storefront window lifecycle and enforce theme on creation (set up once).
     // The Store window is created lazily — it doesn't exist until the user opens it.
     // When it appears, re-apply the current scheme so it renders with the platform theme.
     try {
@@ -229,28 +292,9 @@ export class StoreService {
       });
     } catch { /* not in OpenFin */ }
 
-    const registration = (async () => {
-      const cardClickBehavior = await this.storefrontConfigService.getCardClickBehavior();
-      return Storefront.register({
-        ...platformSettings,
-        // Taskbar icon for the Storefront window — raster favicon.ico, not the SVG.
-        icon: toTaskbarIcon(platformSettings.icon),
-        cardClickBehavior,
-        getNavigation: () => this.buildNavigation(),
-        getLandingPage: () => this.buildLandingPage(platformSettings),
-        getFooter: () => this.buildFooter(platformSettings),
-        getApps: () => this.buildDecoratedApps(),
-        launchApp: async (app) => {
-          getAnalyticsNats().publish({
-            source: 'Store', type: 'App', action: 'Launch',
-            value: app.title || app.appId,
-            data: { appId: app.appId },
-          }).catch(() => {});
-          // Entitlement gate: blocks + notifies if the user isn't entitled.
-          await this.launchService.launch(app);
-        },
-      });
-    })();
+    const registration = this.buildProvider(platformSettings).then((provider) =>
+      Storefront.register(provider),
+    );
 
     return from(registration).pipe(
       tap((reg) => {
