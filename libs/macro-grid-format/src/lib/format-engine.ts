@@ -169,6 +169,9 @@ export function formatValue(value: unknown, spec: ColumnFormatSpec, rowData?: Re
     }
     case 'date':
       return formatDate(value, spec);
+    case 'text':
+      // Text formats only style the cell; the value passes through unchanged.
+      return value == null ? spec.nullText ?? '' : String(value);
     default: {
       const mods = spec as NumericModifiers;
       if (!isFiniteNumber(value)) return mods.nullText ?? '';
@@ -178,8 +181,12 @@ export function formatValue(value: unknown, spec: ColumnFormatSpec, rowData?: Re
   }
 }
 
-/** Build an AG Grid `valueFormatter` from a spec (rebuilt from the persisted spec on restore). */
-export function buildValueFormatter(spec: ColumnFormatSpec): ValueFormatterFunc {
+/**
+ * Build an AG Grid `valueFormatter` from a spec, or `undefined` when the kind does not change
+ * the displayed value (`text` only styles the cell — its column keeps its own value display).
+ */
+export function buildValueFormatter(spec: ColumnFormatSpec): ValueFormatterFunc | undefined {
+  if (spec.kind === 'text') return undefined;
   return (params: ValueFormatterParams) =>
     formatValue(params?.value, spec, params?.data as Record<string, unknown> | undefined);
 }
@@ -205,20 +212,52 @@ function resolveBaseStyle(base: ColDef['cellStyle'], params: unknown): CellStyle
   return (base as CellStyle) ?? {};
 }
 
+/** The concrete CSS props a format can overlay onto a cell (used for live cellStyle + preview). */
+export interface FormatStyleOverlay {
+  color?: string;
+  fontWeight?: string;
+  fontStyle?: string;
+}
+
 /**
- * Build a `cellStyle` that colours the cell by the sign of its value, composed OVER the
- * column's original `cellStyle` (so app-defined `{ textAlign: 'right' }` etc. survive).
- * Returns `base` unchanged when the spec has no colour mode.
+ * The style overlay a spec contributes ON TOP of a column's own cellStyle: colour-by-sign for
+ * numeric kinds, and font weight/italic for the `text` kind. Returns the props to merge (no
+ * base), so it can drive both the live `cellStyle` and the tool-panel preview. Typed concretely
+ * (not via `CellStyle`'s index signature) so consumers can read `.fontWeight` etc. directly.
+ */
+export function previewStyle(spec: ColumnFormatSpec, value?: unknown): FormatStyleOverlay {
+  const overlay: FormatStyleOverlay = {};
+  const mode = (spec as NumericModifiers).colorMode;
+  if (mode && mode !== 'none') {
+    const color = resolveSignColor(value, mode);
+    if (color) overlay.color = color;
+  }
+  if (spec.kind === 'text') {
+    overlay.fontWeight = spec.weight ?? 'normal';
+    overlay.fontStyle = spec.italic ? 'italic' : 'normal';
+  }
+  return overlay;
+}
+
+/** True when a spec contributes any cellStyle overlay (colour or font). */
+function hasStyleOverlay(spec: ColumnFormatSpec): boolean {
+  const mode = (spec as NumericModifiers).colorMode;
+  return (!!mode && mode !== 'none') || spec.kind === 'text';
+}
+
+/**
+ * Build a `cellStyle` composed OVER the column's original `cellStyle` (so app-defined
+ * `{ textAlign: 'right' }` etc. survive): colour-by-sign for numeric kinds, font weight/italic
+ * for `text`. Returns `base` unchanged when the spec contributes no overlay.
  */
 export function buildCellStyle(
   spec: ColumnFormatSpec,
   base?: ColDef['cellStyle'],
 ): ColDef['cellStyle'] | undefined {
-  const mode = (spec as NumericModifiers).colorMode;
-  if (!mode || mode === 'none') return base;
+  if (!hasStyleOverlay(spec)) return base;
   return (params: unknown): CellStyle => {
     const baseStyle = resolveBaseStyle(base, params);
-    const color = resolveSignColor((params as { value?: unknown })?.value, mode);
-    return color ? { ...baseStyle, color } : baseStyle;
+    const overlay = previewStyle(spec, (params as { value?: unknown })?.value);
+    return { ...baseStyle, ...overlay };
   };
 }

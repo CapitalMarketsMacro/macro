@@ -5,6 +5,7 @@ import {
   formatValue,
   kindsByGroup,
   presetsByGroup,
+  previewStyle,
   setSpecField,
   type ColumnFormatSpec,
   type FormatFieldDef,
@@ -105,6 +106,7 @@ export function MacroFormatToolPanel({ store, api }: MacroFormatToolPanelProps) 
 
   const kindDef = FORMAT_REGISTRY[draft.kind];
   const preview = formatValue(kindDef.example, draft, SAMPLE_ROW);
+  const previewCss = previewStyle(draft, kindDef.example) as React.CSSProperties;
   const specVal = (key: string): unknown => (draft as Record<string, unknown>)[key];
   const strVal = (key: string): string => (specVal(key) == null ? '' : String(specVal(key)));
 
@@ -222,7 +224,7 @@ export function MacroFormatToolPanel({ store, api }: MacroFormatToolPanelProps) 
 
         <div style={css.preview}>
           <span style={css.fieldLabel}>Preview</span>
-          <code style={css.previewCode}>{preview}</code>
+          <code style={{ ...css.previewCode, ...previewCss }}>{preview}</code>
         </div>
 
         <div style={css.actions}>

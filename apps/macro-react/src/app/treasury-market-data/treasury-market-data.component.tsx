@@ -38,6 +38,7 @@ const logger = Logger.getLogger('TreasuryMarketDataComponent');
 // Seed capital-markets formats via the shared @macro/macro-grid-format engine: prices in
 // 32nds, change as a signed, colour-by-sign decimal. Editable from the "Format" tool panel.
 const INITIAL_COLUMN_FORMATS: ColumnFormatMap = {
+  cusip: { kind: 'text', weight: 'bold' },
   price: { kind: 'treasury', fraction: 32, plusTick: true },
   bid: { kind: 'treasury', fraction: 32, plusTick: true },
   ask: { kind: 'treasury', fraction: 32, plusTick: true },

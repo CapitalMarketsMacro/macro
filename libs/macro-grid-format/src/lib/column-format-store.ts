@@ -115,8 +115,13 @@ export class ColumnFormatStore {
       const col = api.getColumn(colId);
       if (!col) continue;
       const colDef = col.getColDef();
-      const installed = this.installedFormatters.get(colId);
-      if (installed && colDef.valueFormatter === installed) continue; // still ours
+      // Still fully ours? Both the installed valueFormatter AND cellStyle (whichever this kind
+      // installs) must still be on the colDef. A text format installs only a cellStyle.
+      const installedVf = this.installedFormatters.get(colId);
+      const installedStyle = this.installedStyles.get(colId);
+      const vfOk = !installedVf || colDef.valueFormatter === installedVf;
+      const styleOk = !installedStyle || colDef.cellStyle === installedStyle;
+      if (vfOk && styleOk) continue;
       // colDef was rebuilt (or never installed): capture the fresh app formatter, unless
       // it is (somehow) one of ours, then re-install.
       const current = colDef.valueFormatter;
@@ -159,27 +164,36 @@ export class ColumnFormatStore {
     );
   }
 
-  /** Install the built valueFormatter + (optional) coloured cellStyle onto the live colDef. */
+  /** Install the built valueFormatter (if the kind has one) + any cellStyle overlay onto the colDef. */
   private mutate(colId: string): boolean {
     const col = this.getApi()?.getColumn(colId);
     const spec = this.formats.get(colId);
     if (!col || !spec) return false;
     const colDef = col.getColDef();
 
+    // valueFormatter — kinds that only style the cell (text) return undefined; in that case
+    // leave the column's own value display in place (restoring it if we'd previously installed one).
     const vf = buildValueFormatter(spec);
-    this.ours.add(vf);
-    colDef.valueFormatter = vf;
-    this.installedFormatters.set(colId, vf);
+    if (vf) {
+      this.ours.add(vf);
+      colDef.valueFormatter = vf;
+      this.installedFormatters.set(colId, vf);
+    } else if (this.installedFormatters.has(colId)) {
+      colDef.valueFormatter = this.originalFormatters.get(colId);
+      this.installedFormatters.delete(colId);
+    }
 
-    const mode = (spec as { colorMode?: string }).colorMode;
-    if (mode && mode !== 'none') {
-      const styled = buildCellStyle(spec, this.originalCellStyles.get(colId));
+    // cellStyle overlay — colour-by-sign (numeric) or font weight/italic (text), merged over the
+    // original. buildCellStyle returns the SAME base ref when there is no overlay.
+    const base = this.originalCellStyles.get(colId);
+    const styled = buildCellStyle(spec, base);
+    if (styled !== base) {
       if (typeof styled === 'function') this.ours.add(styled);
       colDef.cellStyle = styled;
       this.installedStyles.set(colId, styled);
     } else if (this.installedStyles.has(colId)) {
-      // colour was removed on a re-apply → restore original cellStyle.
-      colDef.cellStyle = this.originalCellStyles.get(colId);
+      // overlay was removed on a re-apply → restore the original cellStyle.
+      colDef.cellStyle = base;
       this.installedStyles.delete(colId);
     }
     return true;

@@ -10,6 +10,7 @@ import {
   formatValue,
   kindsByGroup,
   presetsByGroup,
+  previewStyle,
   setSpecField,
 } from '../../index';
 import type { ColumnFormatStore } from '../column-format-store';
@@ -60,6 +61,9 @@ export class MacroFormatToolPanelComponent implements IToolPanelAngularComp {
     const def = this.currentKind();
     return formatValue(def.example, this.draft(), SAMPLE_ROW);
   });
+
+  /** Style overlay (font weight/italic, colour) applied to the preview text so it reflects the draft. */
+  readonly previewCss = computed(() => previewStyle(this.draft(), this.currentKind().example));
 
   agInit(params: FormatToolPanelParams): void {
     this.params = params;

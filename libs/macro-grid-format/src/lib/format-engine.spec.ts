@@ -1,4 +1,4 @@
-import { buildCellStyle, buildValueFormatter, formatValue } from './format-engine';
+import { buildCellStyle, buildValueFormatter, formatValue, previewStyle } from './format-engine';
 import type { ColumnFormatSpec } from './format-spec';
 
 /** Normalise NBSP that Intl inserts (e.g. before currency codes) so assertions are stable. */
@@ -106,6 +106,29 @@ describe('format-engine formatValue', () => {
     });
   });
 
+  describe('text', () => {
+    it('passes the value through unchanged (no value formatter)', () => {
+      expect(buildValueFormatter({ kind: 'text', weight: 'bold' })).toBeUndefined();
+      expect(formatValue('AAPL', { kind: 'text', weight: 'bold' })).toBe('AAPL');
+      expect(formatValue(null, { kind: 'text', nullText: '-' })).toBe('-');
+    });
+
+    it('previewStyle returns font weight + italic', () => {
+      expect(previewStyle({ kind: 'text', weight: 'bold', italic: true })).toEqual({
+        fontWeight: 'bold',
+        fontStyle: 'italic',
+      });
+      expect(previewStyle({ kind: 'text' })).toEqual({ fontWeight: 'normal', fontStyle: 'normal' });
+    });
+
+    it('buildCellStyle merges font over the base cellStyle', () => {
+      const styleFn = buildCellStyle({ kind: 'text', weight: 'bolder' }, { textAlign: 'left' }) as (
+        p: unknown,
+      ) => Record<string, unknown>;
+      expect(styleFn({ value: 'x' })).toEqual({ textAlign: 'left', fontWeight: 'bolder', fontStyle: 'normal' });
+    });
+  });
+
   describe('treasury / fxRate dispatch', () => {
     it('formats treasury via the tick formatter', () => {
       expect(fmt(99.5, { kind: 'treasury', fraction: 32, plusTick: true })).toBe('99-16');
@@ -124,7 +147,8 @@ describe('format-engine formatValue', () => {
 describe('format-engine buildValueFormatter', () => {
   it('reads value and data from value-formatter params', () => {
     const vf = buildValueFormatter({ kind: 'fxRate', symbolField: 'sym' });
-    expect(norm(String(vf({ value: 150.0, data: { sym: 'USDJPY' } } as never)))).toBe('150.000');
+    expect(vf).toBeDefined();
+    expect(norm(String(vf!({ value: 150.0, data: { sym: 'USDJPY' } } as never)))).toBe('150.000');
   });
 });
 

@@ -102,6 +102,31 @@ describe('ColumnFormatStore', () => {
     expect(h.colDef('bid').valueFormatter).toBe(original);
   });
 
+  it('text format styles the cell without replacing the value formatter, and clear restores both', () => {
+    const original = () => 'APP';
+    const h = makeApi({ name: { field: 'name', valueFormatter: original, cellStyle: { textAlign: 'left' } } });
+    const store = new ColumnFormatStore(() => h.api);
+
+    store.apply('name', { kind: 'text', weight: 'bold', italic: true });
+    expect(h.colDef('name').valueFormatter).toBe(original); // value display untouched
+    const cs = h.colDef('name').cellStyle as (p: unknown) => Record<string, unknown>;
+    expect(cs({ value: 'x' })).toEqual({ textAlign: 'left', fontWeight: 'bold', fontStyle: 'italic' });
+
+    store.clear('name');
+    expect(h.colDef('name').valueFormatter).toBe(original);
+    expect(h.colDef('name').cellStyle).toEqual({ textAlign: 'left' });
+  });
+
+  it('switching a numeric format to text removes the installed value formatter', () => {
+    const h = makeApi({ x: { field: 'x' } });
+    const store = new ColumnFormatStore(() => h.api);
+    store.apply('x', { kind: 'number', decimals: 2 });
+    expect(typeof h.colDef('x').valueFormatter).toBe('function');
+    store.apply('x', { kind: 'text', weight: 'bold' });
+    expect(h.colDef('x').valueFormatter).toBeUndefined();
+    expect(typeof h.colDef('x').cellStyle).toBe('function');
+  });
+
   it('serializes to a bare map and restores it', () => {
     const h = makeApi({ a: { field: 'a' }, b: { field: 'b' } });
     const store = new ColumnFormatStore(() => h.api);
