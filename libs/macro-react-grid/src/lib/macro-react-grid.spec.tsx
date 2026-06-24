@@ -78,6 +78,11 @@ function createMockGridApi(overrides: Partial<GridApi> = {}): GridApi {
     applyTransactionAsync: vi.fn(),
     getState: vi.fn().mockReturnValue({ columnOrder: ['a'] } as unknown as GridState),
     setState: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    refreshCells: vi.fn(),
+    getColumn: vi.fn().mockReturnValue(null),
+    getColumns: vi.fn().mockReturnValue([]),
     ...overrides,
   } as unknown as GridApi;
 }

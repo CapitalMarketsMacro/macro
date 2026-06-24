@@ -1,0 +1,138 @@
+<div class="mff-panel">
+  <!-- Columns -->
+  <section class="mff-section">
+    <header class="mff-head">
+      <span>Columns</span>
+      @if (selected().size > 0) {
+        <button class="mff-link" type="button" (click)="clearSelection()">Clear ({{ selected().size }})</button>
+      }
+    </header>
+    <input
+      class="mff-search"
+      type="search"
+      placeholder="Filter columns…"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+    <div class="mff-collist">
+      @for (col of filteredColumns(); track col.colId) {
+        <label class="mff-col" [class.active]="col.active">
+          <input type="checkbox" [checked]="isSelected(col.colId)" (change)="toggleColumn(col.colId)" />
+          <span class="mff-col-name">{{ col.headerName }}</span>
+          @if (col.active) { <span class="mff-dot" title="Formatted">●</span> }
+        </label>
+      } @empty {
+        <p class="mff-empty">No columns match.</p>
+      }
+    </div>
+  </section>
+
+  <!-- Presets -->
+  <section class="mff-section">
+    <header class="mff-head"><span>Presets</span></header>
+    @for (grp of presetGroups; track grp.group) {
+      <div class="mff-group-label">{{ grp.group }}</div>
+      <div class="mff-presets">
+        @for (preset of grp.presets; track preset.id) {
+          <button class="mff-preset" type="button" [title]="preset.hint ?? ''" (click)="selectPreset(preset)">
+            {{ preset.label }}
+          </button>
+        }
+      </div>
+    }
+  </section>
+
+  <!-- Editor -->
+  <section class="mff-section">
+    <header class="mff-head"><span>Format</span></header>
+
+    <div class="mff-kinds">
+      @for (grp of kindGroups; track grp.group) {
+        @for (kind of grp.kinds; track kind.kind) {
+          <button
+            class="mff-pill"
+            type="button"
+            [class.active]="draft().kind === kind.kind"
+            (click)="selectKind(kind)"
+          >
+            {{ kind.label }}
+          </button>
+        }
+      }
+    </div>
+
+    <div class="mff-fields">
+      @for (field of currentKind().fields; track field.key) {
+        <div class="mff-field">
+          <span class="mff-field-label">{{ field.label }}</span>
+
+          @switch (field.control) {
+            @case ('stepper') {
+              <div class="mff-stepper">
+                <button type="button" (click)="onStep(field.key, -1, field.min ?? 0, field.max ?? 10)">−</button>
+                <span>{{ strVal(field.key) || '0' }}</span>
+                <button type="button" (click)="onStep(field.key, 1, field.min ?? 0, field.max ?? 10)">+</button>
+              </div>
+            }
+            @case ('toggle') {
+              <button
+                type="button"
+                class="mff-toggle"
+                [class.on]="boolVal(field.key)"
+                (click)="onToggle(field.key)"
+              >
+                {{ boolVal(field.key) ? 'On' : 'Off' }}
+              </button>
+            }
+            @case ('select') {
+              <select (change)="onField(field.key, $any($event.target).value)">
+                @for (opt of field.options; track opt.value) {
+                  <option [value]="opt.value" [selected]="strVal(field.key) === opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            }
+            @case ('text') {
+              <input
+                type="text"
+                [placeholder]="field.placeholder ?? ''"
+                [value]="strVal(field.key)"
+                (change)="onField(field.key, $any($event.target).value)"
+              />
+            }
+          }
+        </div>
+      }
+    </div>
+
+    <div class="mff-preview">
+      <span class="mff-field-label">Preview</span>
+      <code>{{ preview() }}</code>
+    </div>
+
+    <div class="mff-actions">
+      <button class="mff-apply" type="button" [disabled]="!canApply()" (click)="apply()">
+        Apply{{ selected().size > 0 ? ' (' + selected().size + ')' : '' }}
+      </button>
+      <button class="mff-reset" type="button" [disabled]="!canApply()" (click)="resetSelected()">Reset</button>
+    </div>
+  </section>
+
+  <!-- Active formats -->
+  @if (active().length > 0) {
+    <section class="mff-section">
+      <header class="mff-head">
+        <span>Applied ({{ active().length }})</span>
+        <button class="mff-link" type="button" (click)="resetAll()">Reset all</button>
+      </header>
+      <div class="mff-active">
+        @for (entry of active(); track entry[0]) {
+          <div class="mff-active-row">
+            <span class="mff-active-name">{{ headerFor(entry[0]) }}</span>
+            <span class="mff-active-kind">{{ entry[1].kind }}</span>
+            <button class="mff-x" type="button" title="Remove" (click)="removeActive(entry[0])">×</button>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>

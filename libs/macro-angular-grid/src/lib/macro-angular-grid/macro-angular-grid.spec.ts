@@ -42,6 +42,8 @@ jest.mock('@macro/logger', () => ({
 jest.mock('ag-grid-angular', () => {
   const { Component, Input } = jest.requireActual('@angular/core');
 
+  // The mock must reuse the real component's selector so it stands in for it in the template.
+  // eslint-disable-next-line @angular-eslint/component-selector
   @Component({ selector: 'ag-grid-angular', template: '', standalone: true })
   class MockAgGridAngular {
     @Input() columnDefs: unknown;
@@ -78,6 +80,11 @@ function createMockGridApi(overrides: Partial<GridApi> = {}): GridApi {
     applyTransactionAsync: jest.fn(),
     getState: jest.fn().mockReturnValue({ columnOrder: ['a'] } as unknown as GridState),
     setState: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    refreshCells: jest.fn(),
+    getColumn: jest.fn().mockReturnValue(null),
+    getColumns: jest.fn().mockReturnValue([]),
     ...overrides,
   } as unknown as GridApi;
 }
@@ -655,11 +662,20 @@ describe('MacroAngularGrid', () => {
       });
     });
 
-    it('should have sidebar with columns and filters panels', () => {
-      expect(component.defaultGridOptions.sideBar).toEqual({
-        toolPanels: ['columns', 'filters'],
-        hiddenByDefault: false,
-      });
+    it('should have sidebar with columns, filters and the Format tool panel', () => {
+      const sideBar = component.defaultGridOptions.sideBar as {
+        toolPanels: (string | { id: string })[];
+        hiddenByDefault: boolean;
+      };
+      expect(sideBar.hiddenByDefault).toBe(false);
+      expect(sideBar.toolPanels).toContain('columns');
+      expect(sideBar.toolPanels).toContain('filters');
+      const formatPanel = sideBar.toolPanels.find((p) => typeof p === 'object' && p.id === 'macroFormat');
+      expect(formatPanel).toBeDefined();
+    });
+
+    it('registers the Format tool-panel component', () => {
+      expect(component.defaultGridOptions.components?.['macroFormatToolPanel']).toBeDefined();
     });
 
     it('should have pagination defaults', () => {

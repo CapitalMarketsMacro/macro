@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, PLATFORM_ID, inject, ElementRef, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, PLATFORM_ID, inject } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import { Subject, Subscription } from 'rxjs';
 import { isPlatformBrowser, DOCUMENT } from '@angular/common';
@@ -21,6 +21,14 @@ import {
 } from 'ag-grid-enterprise';
 import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
 import { buildAgGridTheme } from '@macro/macro-design';
+import {
+  ColumnFormatStore,
+  FORMAT_TOOL_PANEL_COMPONENT,
+  migrateMap,
+  withFormatPanel,
+  type ColumnFormatMap,
+} from '@macro/macro-grid-format';
+import { MacroFormatToolPanelComponent } from '@macro/macro-grid-format/angular';
 
 // Register all ag-Grid modules (Community and Enterprise)
 ModuleRegistry.registerModules([
@@ -28,36 +36,6 @@ ModuleRegistry.registerModules([
   AllEnterpriseModule,
   IntegratedChartsModule.with(AgChartsEnterpriseModule)
 ]);
-
-/** User-applied column format types */
-export type FormatType = 'number' | 'percent' | 'bps' | 'currency' | 'compact';
-
-/** Configuration for a user-applied column format */
-export interface ColumnFormatConfig {
-  type: FormatType;
-  decimals: number;
-}
-
-/** Format a numeric value according to user config */
-function applyFormat(value: unknown, config: ColumnFormatConfig): string {
-  if (value == null || typeof value !== 'number' || isNaN(value)) return String(value ?? '');
-  let num = value;
-  let prefix = '';
-  let suffix = '';
-  switch (config.type) {
-    case 'percent': num = value * 100; suffix = '%'; break;
-    case 'bps': num = value * 10000; suffix = ' bps'; break;
-    case 'currency': prefix = '$'; break;
-    case 'compact': {
-      const abs = Math.abs(value);
-      if (abs >= 1e9) return prefix + (value / 1e9).toFixed(config.decimals) + 'B';
-      if (abs >= 1e6) return prefix + (value / 1e6).toFixed(config.decimals) + 'M';
-      if (abs >= 1e3) return prefix + (value / 1e3).toFixed(config.decimals) + 'K';
-      break;
-    }
-  }
-  return prefix + num.toFixed(config.decimals) + suffix;
-}
 
 /**
  * Macro Angular Grid Component
@@ -91,6 +69,13 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
    * This is useful for tracking rows when data changes
    */
   @Input() getRowId?: (params: GetRowIdParams) => string;
+
+  /**
+   * Optional initial column formats (colId -> spec), applied on grid ready. Lets an app
+   * seed capital-markets formats declaratively; the user can still change them via the
+   * Format tool panel, and saved view state overrides these on restore.
+   */
+  @Input() columnFormats?: ColumnFormatMap;
 
   /**
    * Parsed column definitions
@@ -148,6 +133,16 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   private logger = Logger.getLogger('MacroAngularGrid');
 
   /**
+   * Owns all user column formats for this grid (apply/clear/serialize/restore). Created
+   * ONCE as a field (never rebuilt in mergeGridOptions) so the tool-panel params ref stays
+   * stable and the panel is not torn down on sideBar/option updates.
+   */
+  private readonly formatStore = new ColumnFormatStore(() => this.gridApi);
+
+  /** Stable handler so we can add/remove it on the grid's column-change events. */
+  private readonly reconcileFormats = (): void => this.formatStore.reconcile();
+
+  /**
    * Default grid options
    */
   public defaultGridOptions: GridOptions = {
@@ -156,7 +151,11 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       filter: true,
       resizable: true,
     },
-    sideBar: { toolPanels: ['columns', 'filters'], hiddenByDefault: false },
+    components: { [FORMAT_TOOL_PANEL_COMPONENT]: MacroFormatToolPanelComponent },
+    sideBar: withFormatPanel(
+      { toolPanels: ['columns', 'filters'], hiddenByDefault: false },
+      { store: this.formatStore },
+    ),
     pagination: true,
     paginationPageSize: 10,
     paginationPageSizeSelector: [10, 25, 50, 100],
@@ -173,25 +172,6 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   public mergedGridOptions: GridOptions = {};
 
   theme: Theme | undefined;
-
-  @ViewChild('gridContainer', { static: true }) private gridContainerRef!: ElementRef<HTMLElement>;
-
-  // ── Column formatting state ──
-  public formatMode = false;
-  public popover: { colId: string; headerName: string; x: number; y: number } | null = null;
-  public selectedFormatType: FormatType = 'number';
-  public selectedFormatDecimals = 2;
-  private columnFormats = new Map<string, ColumnFormatConfig>();
-  private originalFormatters = new Map<string, any>();
-  private headerClickListener?: (e: MouseEvent) => void;
-
-  public readonly formatTypes: { value: FormatType; label: string }[] = [
-    { value: 'number', label: 'Num' },
-    { value: 'percent', label: '%' },
-    { value: 'bps', label: 'bps' },
-    { value: 'currency', label: '$' },
-    { value: 'compact', label: 'K/M' },
-  ];
 
   ngOnInit(): void {
     this.parseColumns();
@@ -333,6 +313,14 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       rowData: this.rowData,
       // Add getRowId if provided
       ...(this.getRowId && { getRowId: this.getRowId }),
+      // Re-apply the Format tool panel AFTER the gridOptions spread so a consumer-supplied
+      // sideBar/components cannot clobber it — they are merged instead (mirrors how the React
+      // wrapper passes sideBar/components as explicit, higher-precedence props).
+      components: {
+        ...this.gridOptions.components,
+        [FORMAT_TOOL_PANEL_COMPONENT]: MacroFormatToolPanelComponent,
+      },
+      sideBar: withFormatPanel(this.gridOptions.sideBar, { store: this.formatStore }),
     };
   }
 
@@ -354,6 +342,16 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
 
     // Apply any queued transactions
     this.flushTransactionQueue();
+
+    // Re-apply user column formats whenever AG Grid rebuilds the column defs (e.g. the app
+    // re-passes [columns]); the in-place valueFormatter mutation would otherwise be lost.
+    this.gridApi.addEventListener('displayedColumnsChanged', this.reconcileFormats);
+    this.gridApi.addEventListener('newColumnsLoaded', this.reconcileFormats);
+
+    // Seed declarative initial formats (saved view state overrides these on restore).
+    if (this.columnFormats) {
+      this.formatStore.restore(migrateMap(this.columnFormats));
+    }
   }
 
   /**
@@ -449,146 +447,43 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Get the current grid state including user column formats.
-   * Column formats are stored as `columnFormats` on the returned object.
+   * Get the current grid state including user column formats. Column formats are stored
+   * under `columnFormats` as a bare `colId -> spec` map (see {@link ColumnFormatStore}).
    */
   public getGridState(): any {
     const state = this.gridApi?.getState();
     if (!state) return undefined;
-    if (this.columnFormats.size > 0) {
-      return { ...state, columnFormats: Object.fromEntries(this.columnFormats) };
-    }
-    return state;
+    const formats = this.formatStore.serialize();
+    return formats ? { ...state, columnFormats: formats } : state;
   }
 
   /**
-   * Apply a previously saved grid state, including any column formats.
+   * Apply a previously saved grid state, including any column formats (migrating the legacy
+   * `{ type, decimals }` shape). Formats are applied right after `setState`; any whose column
+   * isn't present yet are re-applied on the next `firstDataRendered` (no `setTimeout` race).
    */
   public applyGridState(state: any): void {
     if (!this.gridApi) {
       this.logger.warn('Cannot apply grid state — grid is not ready');
       return;
     }
-    if (state?.columnFormats) {
-      const { columnFormats, ...gridState } = state;
-      this.restoreColumnFormats(columnFormats);
-      this.gridApi.setState(gridState as GridState);
-    } else {
-      this.gridApi.setState(state as GridState);
-    }
+    // Always drive the store from the saved blob — including the empty case. A saved view
+    // with no `columnFormats` (user cleared every format) must REMOVE any declaratively
+    // seeded formats, not let them survive; restore([]) clears them.
+    const { columnFormats, ...gridState } = state ?? {};
+    this.gridApi.setState(gridState as GridState);
+    this.applyFormatsWhenReady(migrateMap(columnFormats ?? {}));
   }
 
-  // ── Format mode UI methods ──
-
-  toggleFormatMode(): void {
-    this.formatMode = !this.formatMode;
-    this.popover = null;
-    if (this.formatMode) {
-      this.attachHeaderClickListener();
-    } else {
-      this.detachHeaderClickListener();
-    }
-  }
-
-  closePopover(): void {
-    this.popover = null;
-  }
-
-  selectFormatType(type: FormatType): void {
-    this.selectedFormatType = type;
-  }
-
-  adjustDecimals(delta: number): void {
-    this.selectedFormatDecimals = Math.max(0, Math.min(10, this.selectedFormatDecimals + delta));
-  }
-
-  hasColumnFormat(colId: string): boolean {
-    return this.columnFormats.has(colId);
-  }
-
-  getFormattedColumnCount(): number {
-    return this.columnFormats.size;
-  }
-
-  applyAndClose(): void {
-    if (!this.popover || !this.gridApi) return;
-    const config: ColumnFormatConfig = {
-      type: this.selectedFormatType,
-      decimals: this.selectedFormatDecimals,
-    };
-    this.columnFormats.set(this.popover.colId, config);
-    this.applyFormatterToColumn(this.popover.colId, config);
-    this.popover = null;
-  }
-
-  clearColumnFormat(): void {
-    if (!this.popover || !this.gridApi) return;
-    this.columnFormats.delete(this.popover.colId);
-    this.restoreOriginalFormatter(this.popover.colId);
-    this.selectedFormatType = 'number';
-    this.selectedFormatDecimals = 2;
-  }
-
-  private attachHeaderClickListener(): void {
-    this.detachHeaderClickListener();
-    this.headerClickListener = (e: MouseEvent) => {
-      const headerCell = (e.target as HTMLElement).closest('.ag-header-cell') as HTMLElement | null;
-      if (!headerCell) return;
-      if ((e.target as HTMLElement).closest('.ag-header-cell-menu-button, .ag-header-cell-filter-button')) return;
-      const colId = headerCell.getAttribute('col-id');
-      if (!colId) return;
-      e.stopPropagation();
-      e.preventDefault();
-      const col = this.gridApi?.getColumn(colId);
-      if (!col) return;
-      const rect = headerCell.getBoundingClientRect();
-      const existing = this.columnFormats.get(colId);
-      this.selectedFormatType = existing?.type ?? 'number';
-      this.selectedFormatDecimals = existing?.decimals ?? 2;
-      this.popover = {
-        colId,
-        headerName: col.getColDef().headerName ?? colId,
-        x: rect.left,
-        y: rect.bottom + 4,
+  private applyFormatsWhenReady(map: ColumnFormatMap): void {
+    this.formatStore.restore(map);
+    const missing = Object.keys(map).some((colId) => !this.gridApi?.getColumn(colId));
+    if (missing && this.gridApi) {
+      const handler = () => {
+        this.formatStore.reconcile();
+        this.gridApi?.removeEventListener('firstDataRendered', handler);
       };
-    };
-    this.gridContainerRef.nativeElement.addEventListener('click', this.headerClickListener, true);
-  }
-
-  private detachHeaderClickListener(): void {
-    if (this.headerClickListener) {
-      this.gridContainerRef.nativeElement.removeEventListener('click', this.headerClickListener, true);
-      this.headerClickListener = undefined;
-    }
-  }
-
-  private applyFormatterToColumn(colId: string, config: ColumnFormatConfig): void {
-    const col = this.gridApi?.getColumn(colId);
-    if (!col) return;
-    const colDef = col.getColDef();
-    if (!this.originalFormatters.has(colId)) {
-      this.originalFormatters.set(colId, colDef.valueFormatter);
-    }
-    colDef.valueFormatter = (params: any) => applyFormat(params.value, config);
-    this.gridApi?.refreshCells({ columns: [colId], force: true });
-  }
-
-  private restoreOriginalFormatter(colId: string): void {
-    const col = this.gridApi?.getColumn(colId);
-    if (!col) return;
-    const colDef = col.getColDef();
-    if (this.originalFormatters.has(colId)) {
-      colDef.valueFormatter = this.originalFormatters.get(colId);
-      this.originalFormatters.delete(colId);
-    }
-    this.gridApi?.refreshCells({ columns: [colId], force: true });
-  }
-
-  private restoreColumnFormats(formats: Record<string, ColumnFormatConfig>): void {
-    for (const [colId, config] of Object.entries(formats)) {
-      this.columnFormats.set(colId, config);
-      // Defer formatter application until after grid state is applied
-      setTimeout(() => this.applyFormatterToColumn(colId, config), 0);
+      this.gridApi.addEventListener('firstDataRendered', handler);
     }
   }
 
@@ -596,7 +491,6 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
    * Cleanup subscriptions
    */
   ngOnDestroy(): void {
-    this.detachHeaderClickListener();
     this.subscriptions.unsubscribe();
     this.addRows$.complete();
     this.updateRows$.complete();
