@@ -6,7 +6,7 @@
 
 import type { ColumnFormatSpec } from './format-spec';
 
-export type PresetGroup = 'Rates' | 'FX' | 'Commodities' | 'Risk / PnL' | 'General';
+export type PresetGroup = 'Rates' | 'FX' | 'Commodities' | 'Risk / PnL' | 'Text' | 'General';
 
 export interface FormatPreset {
   id: string;
@@ -62,6 +62,20 @@ export const FORMAT_PRESETS: FormatPreset[] = [
     spec: { kind: 'currency', currency: 'USD', currencyDisplay: 'symbol', decimals: 0,
       negativeStyle: 'parentheses' } },
 
+  // ── Text (styling only — value unchanged) ──
+  { id: 'text-bold', label: 'Bold', group: 'Text', hint: 'font-weight bold',
+    spec: { kind: 'text', weight: 'bold' } },
+  { id: 'text-bolder', label: 'Bolder', group: 'Text', hint: 'font-weight bolder',
+    spec: { kind: 'text', weight: 'bolder' } },
+  { id: 'text-light', label: 'Light', group: 'Text', hint: 'font-weight lighter',
+    spec: { kind: 'text', weight: 'lighter' } },
+  { id: 'text-italic', label: 'Italic', group: 'Text', hint: 'italic',
+    spec: { kind: 'text', italic: true } },
+  { id: 'text-bold-italic', label: 'Bold Italic', group: 'Text', hint: 'bold + italic',
+    spec: { kind: 'text', weight: 'bold', italic: true } },
+  { id: 'text-normal', label: 'Normal', group: 'Text', hint: 'reset to normal',
+    spec: { kind: 'text', weight: 'normal', italic: false } },
+
   // ── General ──
   { id: 'gen-integer', label: 'Integer', group: 'General', hint: 'grouped, 0 dp',
     spec: { kind: 'integer' } },
@@ -77,7 +91,7 @@ export const FORMAT_PRESETS: FormatPreset[] = [
 
 /** Presets grouped for rendering a gallery, preserving declaration order within a group. */
 export function presetsByGroup(): { group: PresetGroup; presets: FormatPreset[] }[] {
-  const order: PresetGroup[] = ['Rates', 'FX', 'Commodities', 'Risk / PnL', 'General'];
+  const order: PresetGroup[] = ['Rates', 'FX', 'Commodities', 'Risk / PnL', 'Text', 'General'];
   return order
     .map((group) => ({ group, presets: FORMAT_PRESETS.filter((p) => p.group === group) }))
     .filter((g) => g.presets.length > 0);

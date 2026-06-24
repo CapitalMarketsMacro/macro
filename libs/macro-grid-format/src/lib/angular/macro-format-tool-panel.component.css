@@ -1,11 +1,25 @@
+/*
+ * Colours derive from the live AG theme's foreground/background so contrast tracks the theme
+ * in BOTH light and dark. The theme does not always set a secondary-foreground var, so muted
+ * text / borders / surfaces are mixed off the actual foreground rather than a fixed grey
+ * (which read as low-contrast dark-grey-on-black before).
+ */
 .mff-panel {
+  --mff-fg: var(--ag-foreground-color, #e6e8ec);
+  --mff-bg: var(--ag-background-color, #1b1f27);
+  --mff-muted: color-mix(in srgb, var(--mff-fg) 62%, transparent);
+  --mff-border: var(--ag-border-color, color-mix(in srgb, var(--mff-fg) 24%, transparent));
+  --mff-surface: color-mix(in srgb, var(--mff-fg) 8%, var(--mff-bg));
+  --mff-accent: var(--ag-accent-color, var(--ag-range-selection-border-color, #2aa6e6));
+  --mff-hover: color-mix(in srgb, var(--mff-fg) 12%, transparent);
+
   display: flex;
   flex-direction: column;
   gap: 14px;
   padding: 10px 12px;
   font-family: inherit;
   font-size: 12px;
-  color: var(--ag-foreground-color, #181d1f);
+  color: var(--mff-fg);
   width: 100%;
   box-sizing: border-box;
   overflow-y: auto;
@@ -25,7 +39,7 @@
   text-transform: uppercase;
   font-size: 10px;
   letter-spacing: 0.04em;
-  color: var(--ag-secondary-foreground-color, #5f6b7a);
+  color: var(--mff-muted);
 }
 
 .mff-link {
@@ -34,7 +48,7 @@
   cursor: pointer;
   font-size: 11px;
   padding: 0;
-  color: var(--ag-range-selection-border-color, #3b82f6);
+  color: var(--mff-accent);
 }
 
 .mff-search,
@@ -46,9 +60,9 @@
   font-size: 12px;
   font-family: inherit;
   border-radius: 4px;
-  border: 1px solid var(--ag-border-color, #dde2eb);
-  background: var(--ag-background-color, #fff);
-  color: var(--ag-foreground-color, #181d1f);
+  border: 1px solid var(--mff-border);
+  background: var(--mff-surface);
+  color: var(--mff-fg);
 }
 
 .mff-collist {
@@ -57,7 +71,7 @@
   gap: 2px;
   max-height: 160px;
   overflow-y: auto;
-  border: 1px solid var(--ag-border-color, #dde2eb);
+  border: 1px solid var(--mff-border);
   border-radius: 4px;
   padding: 4px;
 }
@@ -69,10 +83,11 @@
   padding: 2px 4px;
   border-radius: 3px;
   cursor: pointer;
+  color: var(--mff-fg);
 }
 
 .mff-col:hover {
-  background: var(--ag-row-hover-color, rgba(59, 130, 246, 0.08));
+  background: var(--mff-hover);
 }
 
 .mff-col-name {
@@ -83,19 +98,19 @@
 }
 
 .mff-dot {
-  color: var(--ag-range-selection-border-color, #3b82f6);
+  color: var(--mff-accent);
   font-size: 9px;
 }
 
 .mff-empty {
   margin: 4px;
-  color: var(--ag-secondary-foreground-color, #5f6b7a);
+  color: var(--mff-muted);
 }
 
 .mff-group-label {
   font-size: 10px;
   font-weight: 600;
-  color: var(--ag-secondary-foreground-color, #5f6b7a);
+  color: var(--mff-muted);
   margin-top: 2px;
 }
 
@@ -113,20 +128,20 @@
   font-family: inherit;
   border-radius: 10px;
   cursor: pointer;
-  border: 1px solid var(--ag-border-color, #dde2eb);
-  background: var(--ag-background-color, #fff);
-  color: var(--ag-secondary-foreground-color, #5f6b7a);
+  border: 1px solid var(--mff-border);
+  background: var(--mff-surface);
+  color: var(--mff-fg);
   transition: all 0.1s;
 }
 
 .mff-preset:hover,
 .mff-pill:hover {
-  border-color: var(--ag-range-selection-border-color, #3b82f6);
+  border-color: var(--mff-accent);
 }
 
 .mff-pill.active {
-  background: var(--ag-range-selection-border-color, #3b82f6);
-  border-color: var(--ag-range-selection-border-color, #3b82f6);
+  background: var(--mff-accent);
+  border-color: var(--mff-accent);
   color: #fff;
 }
 
@@ -145,7 +160,7 @@
 
 .mff-field-label {
   font-size: 11px;
-  color: var(--ag-secondary-foreground-color, #5f6b7a);
+  color: var(--mff-muted);
   white-space: nowrap;
 }
 
@@ -159,7 +174,7 @@
 .mff-stepper {
   display: flex;
   align-items: center;
-  border: 1px solid var(--ag-border-color, #dde2eb);
+  border: 1px solid var(--mff-border);
   border-radius: 5px;
   overflow: hidden;
 }
@@ -170,15 +185,15 @@
   border: none;
   cursor: pointer;
   font-size: 14px;
-  background: var(--ag-background-color, #fff);
-  color: var(--ag-foreground-color, #181d1f);
+  background: var(--mff-surface);
+  color: var(--mff-fg);
 }
 
 .mff-stepper span {
   min-width: 28px;
   text-align: center;
-  border-left: 1px solid var(--ag-border-color, #dde2eb);
-  border-right: 1px solid var(--ag-border-color, #dde2eb);
+  border-left: 1px solid var(--mff-border);
+  border-right: 1px solid var(--mff-border);
   line-height: 24px;
 }
 
@@ -187,15 +202,15 @@
   padding: 4px 8px;
   border-radius: 5px;
   cursor: pointer;
-  border: 1px solid var(--ag-border-color, #dde2eb);
-  background: var(--ag-background-color, #fff);
-  color: var(--ag-secondary-foreground-color, #5f6b7a);
+  border: 1px solid var(--mff-border);
+  background: var(--mff-surface);
+  color: var(--mff-fg);
   font-family: inherit;
 }
 
 .mff-toggle.on {
-  background: var(--ag-range-selection-border-color, #3b82f6);
-  border-color: var(--ag-range-selection-border-color, #3b82f6);
+  background: var(--mff-accent);
+  border-color: var(--mff-accent);
   color: #fff;
 }
 
@@ -206,12 +221,14 @@
   gap: 8px;
   padding: 6px 8px;
   border-radius: 5px;
-  background: var(--ag-row-hover-color, rgba(59, 130, 246, 0.06));
+  border: 1px solid var(--mff-border);
+  background: var(--mff-surface);
 }
 
 .mff-preview code {
   font-weight: 600;
   font-size: 13px;
+  color: var(--mff-fg);
 }
 
 .mff-actions {
@@ -228,12 +245,12 @@
   border-radius: 5px;
   cursor: pointer;
   font-family: inherit;
-  border: 1px solid var(--ag-border-color, #dde2eb);
+  border: 1px solid var(--mff-border);
 }
 
 .mff-apply {
-  background: var(--ag-range-selection-border-color, #3b82f6);
-  border-color: var(--ag-range-selection-border-color, #3b82f6);
+  background: var(--mff-accent);
+  border-color: var(--mff-accent);
   color: #fff;
 }
 
@@ -244,8 +261,8 @@
 }
 
 .mff-reset {
-  background: var(--ag-background-color, #fff);
-  color: var(--ag-secondary-foreground-color, #5f6b7a);
+  background: var(--mff-surface);
+  color: var(--mff-fg);
 }
 
 .mff-active {
@@ -260,7 +277,7 @@
   gap: 6px;
   padding: 3px 6px;
   border-radius: 4px;
-  background: var(--ag-row-hover-color, rgba(59, 130, 246, 0.06));
+  background: var(--mff-surface);
 }
 
 .mff-active-name {
@@ -272,7 +289,7 @@
 
 .mff-active-kind {
   font-size: 10px;
-  color: var(--ag-secondary-foreground-color, #5f6b7a);
+  color: var(--mff-muted);
 }
 
 .mff-x {
@@ -281,9 +298,9 @@
   cursor: pointer;
   font-size: 15px;
   line-height: 1;
-  color: var(--ag-secondary-foreground-color, #5f6b7a);
+  color: var(--mff-muted);
 }
 
 .mff-x:hover {
-  color: var(--ag-range-selection-border-color, #3b82f6);
+  color: var(--mff-accent);
 }

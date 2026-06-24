@@ -5,6 +5,7 @@ import {
   formatValue,
   kindsByGroup,
   presetsByGroup,
+  previewStyle,
   setSpecField,
   type ColumnFormatSpec,
   type FormatFieldDef,
@@ -21,12 +22,15 @@ const PRESET_GROUPS = presetsByGroup();
 const KIND_GROUPS = kindsByGroup();
 
 const v = (name: string, fallback: string) => `var(${name}, ${fallback})`;
-const border = v('--ag-border-color', '#dde2eb');
-const fg = v('--ag-foreground-color', '#181d1f');
-const sub = v('--ag-secondary-foreground-color', '#5f6b7a');
-const bg = v('--ag-background-color', '#fff');
-const accent = v('--ag-range-selection-border-color', '#3b82f6');
-const hover = v('--ag-row-hover-color', 'rgba(59,130,246,0.06)');
+// Derive all colours from the live AG theme's foreground/background so contrast tracks the
+// theme in BOTH light and dark (the theme does not always set a secondary-foreground var, so
+// we mix our own muted/border/surface tones off the actual foreground instead of a fixed grey).
+const fg = v('--ag-foreground-color', '#e6e8ec');
+const bg = v('--ag-background-color', '#1b1f27');
+const sub = `color-mix(in srgb, ${fg} 62%, transparent)`;
+const border = v('--ag-border-color', `color-mix(in srgb, ${fg} 24%, transparent)`);
+const surface = `color-mix(in srgb, ${fg} 8%, ${bg})`;
+const accent = v('--ag-accent-color', v('--ag-range-selection-border-color', '#2aa6e6'));
 
 const css = {
   panel: { display: 'flex', flexDirection: 'column' as const, gap: 14, padding: '10px 12px',
@@ -36,7 +40,7 @@ const css = {
     fontWeight: 600, textTransform: 'uppercase' as const, fontSize: 10, letterSpacing: '0.04em', color: sub },
   link: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, padding: 0, color: accent },
   input: { width: '100%', boxSizing: 'border-box' as const, padding: '4px 6px', fontSize: 12,
-    fontFamily: 'inherit', borderRadius: 4, border: `1px solid ${border}`, background: bg, color: fg },
+    fontFamily: 'inherit', borderRadius: 4, border: `1px solid ${border}`, background: surface, color: fg },
   collist: { display: 'flex', flexDirection: 'column' as const, gap: 2, maxHeight: 160, overflowY: 'auto' as const,
     border: `1px solid ${border}`, borderRadius: 4, padding: 4 },
   col: { display: 'flex', alignItems: 'center', gap: 6, padding: '2px 4px', borderRadius: 3, cursor: 'pointer' },
@@ -46,20 +50,20 @@ const css = {
   row: { display: 'flex', flexWrap: 'wrap' as const, gap: 4 },
   chip: (active: boolean): React.CSSProperties => ({ padding: '3px 8px', fontSize: 11, fontFamily: 'inherit',
     borderRadius: 10, cursor: 'pointer', border: `1px solid ${active ? accent : border}`,
-    background: active ? accent : bg, color: active ? '#fff' : sub }),
+    background: active ? accent : surface, color: active ? '#fff' : fg }),
   fields: { display: 'flex', flexDirection: 'column' as const, gap: 6 },
   field: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   fieldLabel: { fontSize: 11, color: sub, whiteSpace: 'nowrap' as const },
   control: { minWidth: 92, padding: '4px 6px', fontSize: 12, fontFamily: 'inherit', borderRadius: 4,
-    border: `1px solid ${border}`, background: bg, color: fg },
+    border: `1px solid ${border}`, background: surface, color: fg },
   stepper: { display: 'flex', alignItems: 'center', border: `1px solid ${border}`, borderRadius: 5, overflow: 'hidden' },
-  stepBtn: { width: 26, height: 24, border: 'none', cursor: 'pointer', fontSize: 14, background: bg, color: fg },
+  stepBtn: { width: 26, height: 24, border: 'none', cursor: 'pointer', fontSize: 14, background: surface, color: fg },
   stepVal: { minWidth: 28, textAlign: 'center' as const, lineHeight: '24px',
     borderLeft: `1px solid ${border}`, borderRight: `1px solid ${border}` },
   toggle: (on: boolean): React.CSSProperties => ({ minWidth: 56, padding: '4px 8px', borderRadius: 5, cursor: 'pointer',
-    border: `1px solid ${on ? accent : border}`, background: on ? accent : bg, color: on ? '#fff' : sub, fontFamily: 'inherit' }),
+    border: `1px solid ${on ? accent : border}`, background: on ? accent : surface, color: on ? '#fff' : fg, fontFamily: 'inherit' }),
   preview: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-    padding: '6px 8px', borderRadius: 5, background: hover },
+    padding: '6px 8px', borderRadius: 5, background: surface, border: `1px solid ${border}` },
   previewCode: { fontWeight: 600, fontSize: 13 },
   actions: { display: 'flex', gap: 6 },
   apply: (disabled: boolean): React.CSSProperties => ({ flex: 1, padding: 6, fontSize: 12, fontWeight: 500,
@@ -67,8 +71,8 @@ const css = {
     border: `1px solid ${accent}`, background: accent, color: '#fff', opacity: disabled ? 0.5 : 1 }),
   reset: (disabled: boolean): React.CSSProperties => ({ flex: 1, padding: 6, fontSize: 12, fontWeight: 500,
     borderRadius: 5, cursor: disabled ? 'default' : 'pointer', fontFamily: 'inherit',
-    border: `1px solid ${border}`, background: bg, color: sub, opacity: disabled ? 0.5 : 1 }),
-  activeRow: { display: 'flex', alignItems: 'center', gap: 6, padding: '3px 6px', borderRadius: 4, background: hover },
+    border: `1px solid ${border}`, background: surface, color: fg, opacity: disabled ? 0.5 : 1 }),
+  activeRow: { display: 'flex', alignItems: 'center', gap: 6, padding: '3px 6px', borderRadius: 4, background: surface },
   activeName: { flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const },
   activeKind: { fontSize: 10, color: sub },
   x: { border: 'none', background: 'none', cursor: 'pointer', fontSize: 15, lineHeight: 1, color: sub },
@@ -105,6 +109,7 @@ export function MacroFormatToolPanel({ store, api }: MacroFormatToolPanelProps) 
 
   const kindDef = FORMAT_REGISTRY[draft.kind];
   const preview = formatValue(kindDef.example, draft, SAMPLE_ROW);
+  const previewCss = previewStyle(draft, kindDef.example) as React.CSSProperties;
   const specVal = (key: string): unknown => (draft as Record<string, unknown>)[key];
   const strVal = (key: string): string => (specVal(key) == null ? '' : String(specVal(key)));
 
@@ -222,7 +227,7 @@ export function MacroFormatToolPanel({ store, api }: MacroFormatToolPanelProps) 
 
         <div style={css.preview}>
           <span style={css.fieldLabel}>Preview</span>
-          <code style={css.previewCode}>{preview}</code>
+          <code style={{ ...css.previewCode, ...previewCss }}>{preview}</code>
         </div>
 
         <div style={css.actions}>

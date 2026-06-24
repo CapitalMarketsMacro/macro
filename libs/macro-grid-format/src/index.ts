@@ -6,6 +6,7 @@
 
 export type {
   FormatKind,
+  FontWeight,
   NegativeStyle,
   SignDisplay,
   ColorMode,
@@ -20,6 +21,7 @@ export type {
   TreasurySpec,
   FxRateSpec,
   DateSpec,
+  TextStyleSpec,
   ColumnFormatSpec,
   ColumnFormatMap,
   LegacyFormatConfig,
@@ -28,7 +30,7 @@ export type {
 } from './lib/format-spec';
 export { migrateSpec, migrateMap } from './lib/format-spec';
 
-export { formatValue, buildValueFormatter, buildCellStyle } from './lib/format-engine';
+export { formatValue, buildValueFormatter, buildCellStyle, previewStyle } from './lib/format-engine';
 
 export { formatTreasury } from './lib/treasury';
 export type { TreasuryFormatOptions } from './lib/treasury';

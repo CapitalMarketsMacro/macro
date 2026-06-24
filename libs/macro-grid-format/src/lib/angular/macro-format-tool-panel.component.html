@@ -106,7 +106,12 @@
 
     <div class="mff-preview">
       <span class="mff-field-label">Preview</span>
-      <code>{{ preview() }}</code>
+      <code
+        [style.font-weight]="previewCss().fontWeight"
+        [style.font-style]="previewCss().fontStyle"
+        [style.color]="previewCss().color"
+        >{{ preview() }}</code
+      >
     </div>
 
     <div class="mff-actions">

@@ -23,14 +23,14 @@ export interface FormatFieldDef {
   placeholder?: string;
 }
 
-export type FieldGroup = 'Numeric' | 'Rates' | 'FX' | 'Other';
+export type FieldGroup = 'Numeric' | 'Rates' | 'FX' | 'Text' | 'Other';
 
 export interface FormatKindDef {
   kind: FormatKind;
   label: string;
   group: FieldGroup;
   /** Sample raw value fed to the live preview. */
-  example: number;
+  example: number | string;
   /** Default spec applied when the user first selects this kind. */
   defaults: ColumnFormatSpec;
   /** Controls to render for this kind, in order. */
@@ -171,11 +171,27 @@ export const FORMAT_REGISTRY: Record<FormatKind, FormatKindDef> = {
       },
     ],
   },
+  text: {
+    kind: 'text', label: 'Text style', group: 'Text', example: 'Sample',
+    defaults: { kind: 'text', weight: 'bold' },
+    fields: [
+      {
+        key: 'weight', label: 'Weight', control: 'select',
+        options: [
+          { value: 'normal', label: 'Normal' },
+          { value: 'bold', label: 'Bold' },
+          { value: 'bolder', label: 'Bolder' },
+          { value: 'lighter', label: 'Lighter' },
+        ],
+      },
+      { key: 'italic', label: 'Italic', control: 'toggle' },
+    ],
+  },
 };
 
 /** Format kinds in display order, grouped for the kind picker. */
 export function kindsByGroup(): { group: FieldGroup; kinds: FormatKindDef[] }[] {
-  const order: FieldGroup[] = ['Numeric', 'Rates', 'FX', 'Other'];
+  const order: FieldGroup[] = ['Numeric', 'Rates', 'FX', 'Text', 'Other'];
   const all = Object.values(FORMAT_REGISTRY);
   return order
     .map((group) => ({ group, kinds: all.filter((k) => k.group === group) }))
@@ -184,7 +200,7 @@ export function kindsByGroup(): { group: FieldGroup; kinds: FormatKindDef[] }[] 
 
 /** The numeric fields whose stepper/select values must be coerced from string inputs. */
 export const NUMBER_FIELD_KEYS = new Set(['decimals', 'pipDecimals', 'scale', 'fraction']);
-export const BOOLEAN_FIELD_KEYS = new Set(['thousands', 'plusTick', 'jpyConvention']);
+export const BOOLEAN_FIELD_KEYS = new Set(['thousands', 'plusTick', 'jpyConvention', 'italic']);
 
 /**
  * Apply one editor control's raw value onto a draft spec, coercing it to the right type and

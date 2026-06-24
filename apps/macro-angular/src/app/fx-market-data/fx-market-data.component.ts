@@ -116,6 +116,7 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
   // @macro/macro-grid-format engine — pip/JPY precision is derived per-row from `symbol`.
   // Users can change or clear these from the grid's "Format" tool panel.
   public initialColumnFormats: ColumnFormatMap = {
+    symbol: { kind: 'text', weight: 'bold' },
     bid: { kind: 'fxRate', symbolField: 'symbol' },
     ask: { kind: 'fxRate', symbolField: 'symbol' },
     mid: { kind: 'fxRate', symbolField: 'symbol' },

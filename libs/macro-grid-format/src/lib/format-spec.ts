@@ -19,7 +19,11 @@ export type FormatKind =
   | 'multiplier'
   | 'treasury'
   | 'fxRate'
-  | 'date';
+  | 'date'
+  | 'text';
+
+/** Curated font-weight presets for text columns (CSS keyword values, not free-form). */
+export type FontWeight = 'normal' | 'bold' | 'bolder' | 'lighter';
 
 /** How negative numbers are rendered. `parentheses` = accounting style `(1,234)`. */
 export type NegativeStyle = 'minus' | 'parentheses';
@@ -110,6 +114,17 @@ export type DateSpec = {
   locale?: string;
 };
 
+/**
+ * Spec for `text` — leaves the value untouched (no value formatter) and only styles the cell
+ * via a curated set of font presets (weight + italic). For string columns where the desk wants
+ * emphasis without arbitrary CSS control.
+ */
+export type TextStyleSpec = {
+  kind: 'text';
+  weight?: FontWeight;
+  italic?: boolean;
+} & Pick<NumericModifiers, 'nullText'>;
+
 /** The full discriminated union of column format specs. */
 export type ColumnFormatSpec =
   | NumberSpec
@@ -121,7 +136,8 @@ export type ColumnFormatSpec =
   | MultiplierSpec
   | TreasurySpec
   | FxRateSpec
-  | DateSpec;
+  | DateSpec
+  | TextStyleSpec;
 
 /**
  * PERSISTED shape — a BARE map `colId -> spec`. Kept un-wrapped (no `{version, formats}`
