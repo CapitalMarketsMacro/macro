@@ -59,6 +59,15 @@
       ],
       "@macro/macro-design/react": [
         "libs/macro-design/src/lib/react/index.ts"
+      ],
+      "@macro/macro-grid-format": [
+        "libs/macro-grid-format/src/index.ts"
+      ],
+      "@macro/macro-grid-format/angular": [
+        "libs/macro-grid-format/src/lib/angular/index.ts"
+      ],
+      "@macro/macro-grid-format/react": [
+        "libs/macro-grid-format/src/lib/react/index.ts"
       ]
     },
     "ignoreDeprecations": "6.0"

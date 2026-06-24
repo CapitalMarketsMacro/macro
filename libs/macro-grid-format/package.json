@@ -1,0 +1,65 @@
+{
+  "name": "@macro/macro-grid-format",
+  "version": "0.0.1",
+  "description": "Framework-agnostic capital-markets column formatting for AG Grid (spec, engine, presets, tool panel) shared by the Angular and React grid wrappers",
+  "keywords": [
+    "ag-grid",
+    "capital-markets",
+    "formatting",
+    "basis-points",
+    "treasury",
+    "fx",
+    "tool-panel"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./angular": {
+      "types": "./src/lib/angular/index.d.ts",
+      "default": "./src/lib/angular/index.js"
+    },
+    "./react": {
+      "types": "./src/lib/react/index.d.ts",
+      "default": "./src/lib/react/index.js"
+    }
+  },
+  "files": [
+    "src/**/*",
+    "README.md",
+    "package.json"
+  ],
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "ag-grid-community": ">=33.0.0",
+    "ag-grid-angular": ">=33.0.0",
+    "ag-grid-react": ">=33.0.0",
+    "@angular/core": ">=18.0.0",
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ag-grid-community": {
+      "optional": true
+    },
+    "ag-grid-angular": {
+      "optional": true
+    },
+    "ag-grid-react": {
+      "optional": true
+    },
+    "@angular/core": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  }
+}

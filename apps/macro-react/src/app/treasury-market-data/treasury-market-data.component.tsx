@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Logger } from '@macro/logger';
 import { MacroReactGrid, MacroReactGridRef } from '@macro/macro-react-grid';
+import type { ColumnFormatMap } from '@macro/macro-grid-format';
 import { useViewState, useNotifications } from '@macro/openfin/react';
 import { GetRowIdParams, GridState } from 'ag-grid-community';
 import {
@@ -33,6 +34,15 @@ interface TreasurySecurity {
 }
 
 const logger = Logger.getLogger('TreasuryMarketDataComponent');
+
+// Seed capital-markets formats via the shared @macro/macro-grid-format engine: prices in
+// 32nds, change as a signed, colour-by-sign decimal. Editable from the "Format" tool panel.
+const INITIAL_COLUMN_FORMATS: ColumnFormatMap = {
+  price: { kind: 'treasury', fraction: 32, plusTick: true },
+  bid: { kind: 'treasury', fraction: 32, plusTick: true },
+  ask: { kind: 'treasury', fraction: 32, plusTick: true },
+  change: { kind: 'number', decimals: 4, signDisplay: 'always', colorMode: 'posneg' },
+};
 
 export function TreasuryMarketDataComponent() {
   const gridRef = useRef<MacroReactGridRef>(null);
@@ -352,6 +362,7 @@ export function TreasuryMarketDataComponent() {
           columns={columns}
           rowData={rowData}
           getRowId={getRowId}
+          columnFormats={INITIAL_COLUMN_FORMATS}
         />
       </div>
     </div>

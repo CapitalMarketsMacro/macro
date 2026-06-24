@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy, inject } from '@angular/core';
 import { Logger } from '@macro/logger';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
+import type { ColumnFormatMap } from '@macro/macro-grid-format';
 import { ViewStateService, NotificationsService, ContextService } from '@macro/openfin';
 import { GetRowIdParams, ColDef, CellStyle, GridState, GridOptions, RowClickedEvent } from 'ag-grid-community';
 
@@ -110,6 +111,15 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       ] as any,
     },
   ];
+
+  // Seed capital-markets formats on the streaming-rate columns via the shared
+  // @macro/macro-grid-format engine — pip/JPY precision is derived per-row from `symbol`.
+  // Users can change or clear these from the grid's "Format" tool panel.
+  public initialColumnFormats: ColumnFormatMap = {
+    bid: { kind: 'fxRate', symbolField: 'symbol' },
+    ask: { kind: 'fxRate', symbolField: 'symbol' },
+    mid: { kind: 'fxRate', symbolField: 'symbol' },
+  };
 
   // Initial row data (empty, will be populated via transactions)
   public rowData: CurrencyPair[] = [];
