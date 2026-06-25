@@ -21,7 +21,6 @@ function generateColDefs(schema: AmpsSchemaField[]): string {
     if (f.type === 'number') {
       parts.push(`      type: 'numericColumn'`);
       parts.push(`      cellStyle: { textAlign: 'right' }`);
-      parts.push(`      allowFormula: true`);
       if (f.field.toLowerCase().includes('change')) {
         parts.push(`      valueFormatter: (p: any) => p.value != null ? \`\${p.value >= 0 ? '+' : ''}\${p.value.toFixed(${f.decimals})}\` : ''`);
         parts.push(`      cellStyle: (p: any) => ({ textAlign: 'right', color: p.value > 0 ? '#10b981' : p.value < 0 ? '#ef4444' : 'inherit' })`);

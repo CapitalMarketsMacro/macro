@@ -85,6 +85,8 @@ function createMockGridApi(overrides: Partial<GridApi> = {}): GridApi {
     refreshCells: jest.fn(),
     getColumn: jest.fn().mockReturnValue(null),
     getColumns: jest.fn().mockReturnValue([]),
+    getColumnDefs: jest.fn().mockReturnValue([]),
+    setGridOption: jest.fn(),
     ...overrides,
   } as unknown as GridApi;
 }
@@ -592,6 +594,28 @@ describe('MacroAngularGrid', () => {
     it('should warn and not throw when applying state before grid is ready', () => {
       const state = { columnOrder: ['x'] } as unknown as GridState;
       expect(() => component.applyGridState(state)).not.toThrow();
+    });
+
+    it('round-trips calculated columns through applyGridState/getGridState', () => {
+      component.onGridReady(makeGridReadyEvent(mockApi));
+
+      component.applyGridState({
+        columnOrder: ['a'],
+        calculatedColumns: { defs: [{ colId: 'spread', calculatedExpression: '[bid] - [ask]' }] },
+      });
+
+      // recreated via setGridOption('columnDefs', ...) so setState can bind their column-state
+      expect(mockApi.setGridOption).toHaveBeenCalledWith(
+        'columnDefs',
+        expect.arrayContaining([
+          expect.objectContaining({ colId: 'spread', calculatedExpression: '[bid] - [ask]' }),
+        ]),
+      );
+
+      // serialized back out
+      expect(component.getGridState().calculatedColumns).toEqual({
+        defs: [{ colId: 'spread', calculatedExpression: '[bid] - [ask]' }],
+      });
     });
   });
 

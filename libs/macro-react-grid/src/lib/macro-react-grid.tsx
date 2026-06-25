@@ -12,6 +12,9 @@ import {
   ModuleRegistry,
   AllCommunityModule,
   Theme,
+  type CalculatedColumnCreatedEvent,
+  type CalculatedColumnExpressionChangedEvent,
+  type CalculatedColumnRemovedEvent,
 } from 'ag-grid-community';
 import {
   AllEnterpriseModule,
@@ -20,10 +23,13 @@ import {
 import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
 import { buildAgGridTheme } from '@macro/macro-design';
 import {
+  CALCULATED_COLUMNS_KEY,
   ColumnFormatStore,
   FORMAT_TOOL_PANEL_COMPONENT,
+  mergeCalculatedColumns,
   migrateMap,
   withFormatPanel,
+  type CalcColumnSchema,
   type ColumnFormatMap,
 } from '@macro/macro-grid-format';
 import { MacroFormatToolPanel } from '@macro/macro-grid-format/react';
@@ -86,6 +92,8 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       pagination: true, paginationPageSize: 10, paginationPageSizeSelector: [10, 25, 50, 100],
       animateRows: true, rowSelection: 'multiple', suppressRowClickSelection: true,
       enableRangeSelection: true, suppressCellFocus: true,
+      // AG Grid 36 calculated columns: 'deferred' = validate + Apply/Cancel in the dialog.
+      calculatedColumns: { applyMode: 'deferred' },
     }), []);
 
     const columnDefs: ColDef[] = useMemo(() => {
@@ -97,11 +105,61 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       return Array.isArray(columns) ? columns : [columns];
     }, [columns]);
 
+    // Runtime-tracked calculated columns (created/edited/removed via the dialog). Refs + a
+    // version counter so changes recompute the effective columnDefs without per-keystroke churn.
+    const calcDefsRef = useRef(new Map<string, CalcColumnSchema>());
+    const calcRemovedRef = useRef(new Set<string>());
+    const [calcVersion, setCalcVersion] = useState(0);
+    // Set by applyGridState so the next render hands AG Grid the SAME array reference that was
+    // passed to setGridOption('columnDefs', ...) — AG Grid then short-circuits (identical ref)
+    // and does not re-apply columnDefs after setState, preserving restored column-state. Matches
+    // the Angular wrapper (which feeds one shared field reference to both paths).
+    const pinnedDefsRef = useRef<ReturnType<typeof mergeCalculatedColumns> | null>(null);
+
+    // Effective columnDefs = app base + tracked calc columns (so user calc columns survive a
+    // columnDefs rebuild from the app's useMemo).
+    const effectiveColumnDefs = useMemo(() => {
+      if (pinnedDefsRef.current) {
+        const pinned = pinnedDefsRef.current;
+        pinnedDefsRef.current = null;
+        return pinned;
+      }
+      return mergeCalculatedColumns(columnDefs, [...calcDefsRef.current.values()], calcRemovedRef.current);
+    }, [columnDefs, calcVersion]);
+
+    const onCalcUpserted = useCallback(
+      (e: CalculatedColumnCreatedEvent | CalculatedColumnExpressionChangedEvent) => {
+        const colId = e.column.getColId();
+        const def = e.column.getColDef();
+        calcDefsRef.current.set(colId, {
+          colId,
+          calculatedExpression: e.expression,
+          ...(def.headerName != null ? { headerName: def.headerName } : {}),
+          ...(typeof def.cellDataType === 'string' ? { cellDataType: def.cellDataType } : {}),
+        });
+        calcRemovedRef.current.delete(colId);
+        setCalcVersion((v) => v + 1);
+        store.reconcile();
+      },
+      [store],
+    );
+
+    const onCalcRemoved = useCallback((e: CalculatedColumnRemovedEvent) => {
+      const colId = e.column.getColId();
+      calcDefsRef.current.delete(colId);
+      calcRemovedRef.current.add(colId);
+      // Drop any user format on the removed calc column so it isn't persisted as a dangling
+      // columnFormats entry (which would resurrect if a same-colId calc column is recreated).
+      store.clear(colId);
+      setCalcVersion((v) => v + 1);
+      store.reconcile();
+    }, [store]);
+
     const mergedGridOptions: GridOptions = useMemo(() => ({
       ...defaultGridOptions, ...gridOptions,
-      columnDefs, rowData,
+      columnDefs: effectiveColumnDefs, rowData,
       ...(getRowId && { getRowId }),
-    }), [defaultGridOptions, gridOptions, columnDefs, rowData, getRowId]);
+    }), [defaultGridOptions, gridOptions, effectiveColumnDefs, rowData, getRowId]);
 
     const onGridReady = useCallback((e: GridReadyEvent) => {
       gridApiRef.current = e.api;
@@ -110,9 +168,13 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       // useMemo columns change); the in-place valueFormatter mutation would otherwise be lost.
       e.api.addEventListener('displayedColumnsChanged', reconcile);
       e.api.addEventListener('newColumnsLoaded', reconcile);
+      // Track calculated columns the user adds/edits/removes via the dialog (for persistence).
+      e.api.addEventListener('calculatedColumnCreated', onCalcUpserted);
+      e.api.addEventListener('calculatedColumnExpressionChanged', onCalcUpserted);
+      e.api.addEventListener('calculatedColumnRemoved', onCalcRemoved);
       // Seed declarative initial formats (saved view state overrides these on restore).
       if (columnFormats) store.restore(migrateMap(columnFormats));
-    }, [reconcile, store, columnFormats]);
+    }, [reconcile, store, columnFormats, onCalcUpserted, onCalcRemoved]);
 
     useImperativeHandle(ref, () => ({
       applyTransaction: (t: RowNodeTransaction) => {
@@ -125,16 +187,35 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
         const s = gridApiRef.current?.getState();
         if (!s) return undefined;
         const formats = store.serialize();
-        return formats ? { ...s, columnFormats: formats } : s;
+        const defs = [...calcDefsRef.current.values()];
+        const removed = [...calcRemovedRef.current];
+        const calc = defs.length || removed.length ? (removed.length ? { defs, removed } : { defs }) : undefined;
+        return {
+          ...s,
+          ...(formats ? { columnFormats: formats } : {}),
+          ...(calc ? { [CALCULATED_COLUMNS_KEY]: calc } : {}),
+        };
       },
       applyGridState: (state: any) => {
         const api = gridApiRef.current;
         if (!api) return;
-        // Always drive the store from the saved blob — including the empty case. A saved view
-        // with no `columnFormats` (user cleared every format) must REMOVE any declaratively
-        // seeded formats, not let them survive; restore([]) clears them.
-        const { columnFormats: cf, ...gs } = state ?? {};
+        const { columnFormats: cf, [CALCULATED_COLUMNS_KEY]: calc, ...gs } = state ?? {};
+        // 1. Recreate calculated columns (reset the tracked set, so a saved "no calc columns"
+        //    view removes any added at runtime) BEFORE setState so column-state can bind by colId.
+        calcDefsRef.current = new Map((calc?.defs ?? []).map((s: CalcColumnSchema) => [s.colId, s]));
+        calcRemovedRef.current = new Set<string>(calc?.removed ?? []);
+        const merged = mergeCalculatedColumns(
+          columnDefs,
+          [...calcDefsRef.current.values()],
+          calcRemovedRef.current,
+        );
+        // Pin so the re-render's effectiveColumnDefs is THIS exact reference (no post-setState re-apply).
+        pinnedDefsRef.current = merged;
+        setCalcVersion((v) => v + 1);
+        api.setGridOption('columnDefs', merged);
+        // 2. Native state.
         api.setState(gs as GridState);
+        // 3. Column formats (bind to columns — incl. calc columns — by colId).
         const map = migrateMap(cf ?? {});
         store.restore(map);
         if (Object.keys(map).some((id) => !api.getColumn(id))) {
@@ -146,7 +227,7 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
         }
       },
       addRows$, updateRows$, deleteRows$,
-    }), [store, addRows$, updateRows$, deleteRows$]);
+    }), [store, columnDefs, addRows$, updateRows$, deleteRows$]);
 
     useEffect(() => {
       const update = () => setTheme(buildAgGridTheme(document.documentElement.classList.contains('dark')));
@@ -167,7 +248,7 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
     return (
       <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ flex: 1, minHeight: 0 }}>
-          <AgGridReact theme={theme} columnDefs={columnDefs} enableCharts rowData={rowData}
+          <AgGridReact theme={theme} columnDefs={effectiveColumnDefs} enableCharts rowData={rowData}
             gridOptions={mergedGridOptions} getRowId={getRowId}
             sideBar={sideBar} components={components}
             onGridReady={onGridReady} />

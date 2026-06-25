@@ -5,6 +5,7 @@ import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 import { Logger } from '@macro/logger';
 import {
   ColDef,
+  ColGroupDef,
   GridOptions,
   GridReadyEvent,
   GridApi,
@@ -14,6 +15,9 @@ import {
   ModuleRegistry,
   AllCommunityModule,
   Theme,
+  type CalculatedColumnCreatedEvent,
+  type CalculatedColumnExpressionChangedEvent,
+  type CalculatedColumnRemovedEvent,
 } from 'ag-grid-community';
 import {
   AllEnterpriseModule,
@@ -22,10 +26,13 @@ import {
 import { AgChartsEnterpriseModule } from 'ag-charts-enterprise';
 import { buildAgGridTheme } from '@macro/macro-design';
 import {
+  CALCULATED_COLUMNS_KEY,
   ColumnFormatStore,
   FORMAT_TOOL_PANEL_COMPONENT,
+  mergeCalculatedColumns,
   migrateMap,
   withFormatPanel,
+  type CalcColumnSchema,
   type ColumnFormatMap,
 } from '@macro/macro-grid-format';
 import { MacroFormatToolPanelComponent } from '@macro/macro-grid-format/angular';
@@ -78,9 +85,15 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   @Input() columnFormats?: ColumnFormatMap;
 
   /**
-   * Parsed column definitions
+   * Parsed column definitions (the app's base columns).
    */
   public columnDefs: ColDef[] = [];
+
+  /**
+   * The columnDefs actually fed to the grid: the base columns with tracked calculated columns
+   * merged in (so user-created calc columns survive Angular re-binding the [columns] input).
+   */
+  public effectiveColumnDefs: (ColDef | ColGroupDef)[] = [];
 
   /**
    * Grid API reference for programmatic access
@@ -142,6 +155,41 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   /** Stable handler so we can add/remove it on the grid's column-change events. */
   private readonly reconcileFormats = (): void => this.formatStore.reconcile();
 
+  /** A user created or edited a calculated column via the dialog — track it for persistence. */
+  private readonly onCalcColumnUpserted = (
+    e: CalculatedColumnCreatedEvent | CalculatedColumnExpressionChangedEvent,
+  ): void => {
+    const colId = e.column.getColId();
+    const def = e.column.getColDef();
+    this.userCalcCols.set(colId, {
+      colId,
+      calculatedExpression: e.expression,
+      ...(def.headerName != null ? { headerName: def.headerName } : {}),
+      ...(typeof def.cellDataType === 'string' ? { cellDataType: def.cellDataType } : {}),
+    });
+    this.removedCalcCols.delete(colId);
+    this.recomputeEffectiveColumns();
+    this.formatStore.reconcile();
+  };
+
+  /** A user removed a calculated column via the dialog. */
+  private readonly onCalcColumnRemoved = (e: CalculatedColumnRemovedEvent): void => {
+    const colId = e.column.getColId();
+    this.userCalcCols.delete(colId);
+    this.removedCalcCols.add(colId);
+    // Drop any user format on the removed calc column so it isn't persisted as a dangling
+    // columnFormats entry (which would resurrect if a same-colId calc column is recreated).
+    this.formatStore.clear(colId);
+    this.recomputeEffectiveColumns();
+    this.formatStore.reconcile();
+  };
+
+  // ── Calculated columns (AG Grid 36) ──
+  /** Runtime-tracked user calc columns (created/edited via the dialog), keyed by colId. */
+  private userCalcCols = new Map<string, CalcColumnSchema>();
+  /** colIds of pre-defined calc columns the user removed via the dialog (so we don't re-add them). */
+  private removedCalcCols = new Set<string>();
+
   /**
    * Default grid options
    */
@@ -156,6 +204,9 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       { toolPanels: ['columns', 'filters'], hiddenByDefault: false },
       { store: this.formatStore },
     ),
+    // AG Grid 36 calculated columns: users add/edit/remove via the column header menu.
+    // 'deferred' = the dialog validates the expression and applies on Apply (safer for desks).
+    calculatedColumns: { applyMode: 'deferred' },
     pagination: true,
     paginationPageSize: 10,
     paginationPageSizeSelector: [10, 25, 50, 100],
@@ -283,10 +334,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   private parseColumns(): void {
     if (!this.columns) {
       this.columnDefs = [];
-      return;
-    }
-
-    if (typeof this.columns === 'string') {
+    } else if (typeof this.columns === 'string') {
       try {
         const parsed = JSON.parse(this.columns);
         this.columnDefs = Array.isArray(parsed) ? parsed : [parsed];
@@ -299,6 +347,16 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     } else {
       this.columnDefs = [this.columns];
     }
+    this.recomputeEffectiveColumns();
+  }
+
+  /** Effective columnDefs = app base columns + tracked calculated columns (minus removed). */
+  private recomputeEffectiveColumns(): void {
+    this.effectiveColumnDefs = mergeCalculatedColumns(
+      this.columnDefs,
+      [...this.userCalcCols.values()],
+      this.removedCalcCols,
+    );
   }
 
   /**
@@ -309,7 +367,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       ...this.defaultGridOptions,
       ...this.gridOptions,
       // Ensure columnDefs and rowData are not overridden by gridOptions
-      columnDefs: this.columnDefs,
+      columnDefs: this.effectiveColumnDefs,
       rowData: this.rowData,
       // Add getRowId if provided
       ...(this.getRowId && { getRowId: this.getRowId }),
@@ -347,6 +405,11 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     // re-passes [columns]); the in-place valueFormatter mutation would otherwise be lost.
     this.gridApi.addEventListener('displayedColumnsChanged', this.reconcileFormats);
     this.gridApi.addEventListener('newColumnsLoaded', this.reconcileFormats);
+
+    // Track calculated columns the user adds/edits/removes via the dialog (for persistence).
+    this.gridApi.addEventListener('calculatedColumnCreated', this.onCalcColumnUpserted);
+    this.gridApi.addEventListener('calculatedColumnExpressionChanged', this.onCalcColumnUpserted);
+    this.gridApi.addEventListener('calculatedColumnRemoved', this.onCalcColumnRemoved);
 
     // Seed declarative initial formats (saved view state overrides these on restore).
     if (this.columnFormats) {
@@ -447,32 +510,56 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Get the current grid state including user column formats. Column formats are stored
-   * under `columnFormats` as a bare `colId -> spec` map (see {@link ColumnFormatStore}).
+   * Get the current grid state including user column formats and calculated columns. Formats
+   * are stored under `columnFormats` (a bare `colId -> spec` map); runtime calculated columns
+   * under `calculatedColumns` (since they do NOT appear in AG Grid's native `getState()`).
    */
   public getGridState(): any {
     const state = this.gridApi?.getState();
     if (!state) return undefined;
     const formats = this.formatStore.serialize();
-    return formats ? { ...state, columnFormats: formats } : state;
+    const calc = this.serializeCalcColumns();
+    return {
+      ...state,
+      ...(formats ? { columnFormats: formats } : {}),
+      ...(calc ? { [CALCULATED_COLUMNS_KEY]: calc } : {}),
+    };
   }
 
   /**
-   * Apply a previously saved grid state, including any column formats (migrating the legacy
-   * `{ type, decimals }` shape). Formats are applied right after `setState`; any whose column
-   * isn't present yet are re-applied on the next `firstDataRendered` (no `setTimeout` race).
+   * Apply a previously saved grid state. Order matters: (1) recreate calculated columns so the
+   * native state can bind their order/width/sort by colId, (2) `setState`, (3) restore column
+   * formats (which bind to columns — incl. calc columns — by colId).
    */
   public applyGridState(state: any): void {
     if (!this.gridApi) {
       this.logger.warn('Cannot apply grid state — grid is not ready');
       return;
     }
-    // Always drive the store from the saved blob — including the empty case. A saved view
-    // with no `columnFormats` (user cleared every format) must REMOVE any declaratively
-    // seeded formats, not let them survive; restore([]) clears them.
-    const { columnFormats, ...gridState } = state ?? {};
+    const { columnFormats, [CALCULATED_COLUMNS_KEY]: calc, ...gridState } = state ?? {};
+    this.restoreCalcColumns(calc);
     this.gridApi.setState(gridState as GridState);
     this.applyFormatsWhenReady(migrateMap(columnFormats ?? {}));
+  }
+
+  /** Serialize tracked calculated columns for persistence, or undefined when there are none. */
+  private serializeCalcColumns(): { defs: CalcColumnSchema[]; removed?: string[] } | undefined {
+    const defs = [...this.userCalcCols.values()];
+    const removed = [...this.removedCalcCols];
+    if (defs.length === 0 && removed.length === 0) return undefined;
+    return removed.length ? { defs, removed } : { defs };
+  }
+
+  /**
+   * Recreate calculated columns from a saved blob (always resets the tracked set, so a saved
+   * "no calc columns" view removes any added at runtime). Pushes them onto the grid synchronously
+   * via setGridOption so a subsequent setState can restore their column-state.
+   */
+  private restoreCalcColumns(calc: { defs?: CalcColumnSchema[]; removed?: string[] } | undefined): void {
+    this.userCalcCols = new Map((calc?.defs ?? []).map((s) => [s.colId, s]));
+    this.removedCalcCols = new Set(calc?.removed ?? []);
+    this.recomputeEffectiveColumns();
+    this.gridApi?.setGridOption('columnDefs', this.effectiveColumnDefs);
   }
 
   private applyFormatsWhenReady(map: ColumnFormatMap): void {

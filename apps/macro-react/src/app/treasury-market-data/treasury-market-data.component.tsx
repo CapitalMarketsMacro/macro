@@ -232,7 +232,6 @@ export function TreasuryMarketDataComponent() {
         field: 'price',
         headerName: 'Price',
         width: 120,
-        allowFormula: true,
         valueFormatter: (params: any) => formatTreasury32nd(params.value),
         cellStyle: { textAlign: 'right' }
       },
@@ -240,7 +239,6 @@ export function TreasuryMarketDataComponent() {
         field: 'yield',
         headerName: 'Yield',
         width: 120,
-        allowFormula: true,
         valueFormatter: (params: any) => `${params.value.toFixed(4)}%`,
         cellStyle: { textAlign: 'right' }
       },
@@ -248,7 +246,6 @@ export function TreasuryMarketDataComponent() {
         field: 'bid',
         headerName: 'Bid',
         width: 120,
-        allowFormula: true,
         valueFormatter: (params: any) => formatTreasury32nd(params.value),
         cellStyle: { textAlign: 'right' }
       },
@@ -256,7 +253,6 @@ export function TreasuryMarketDataComponent() {
         field: 'ask',
         headerName: 'Ask',
         width: 120,
-        allowFormula: true,
         valueFormatter: (params: any) => formatTreasury32nd(params.value),
         cellStyle: { textAlign: 'right' }
       },
@@ -264,7 +260,6 @@ export function TreasuryMarketDataComponent() {
         field: 'spread',
         headerName: 'Spread',
         width: 100,
-        allowFormula: true,
         valueFormatter: (params: any) => params.value.toFixed(4),
         cellStyle: { textAlign: 'right' }
       },
@@ -304,7 +299,6 @@ export function TreasuryMarketDataComponent() {
         field: 'volume',
         headerName: 'Volume',
         width: 120,
-        allowFormula: true,
         valueFormatter: (params: any) => `${params.value.toFixed(2)}M`,
         cellStyle: { textAlign: 'right' }
       },
@@ -312,7 +306,6 @@ export function TreasuryMarketDataComponent() {
         field: 'duration',
         headerName: 'Duration',
         width: 120,
-        allowFormula: true,
         valueFormatter: (params: any) => params.value.toFixed(2),
         cellStyle: { textAlign: 'right' }
       },
@@ -320,9 +313,18 @@ export function TreasuryMarketDataComponent() {
         field: 'convexity',
         headerName: 'Convexity',
         width: 120,
-        allowFormula: true,
         valueFormatter: (params: any) => params.value.toFixed(2),
         cellStyle: { textAlign: 'right' }
+      },
+      // Pre-defined calculated column (AG Grid 36). Users can add/edit/remove their own from the
+      // column header menu; all calc columns persist in the saved view.
+      {
+        colId: 'calcMid',
+        headerName: 'Mid (calc)',
+        calculatedExpression: '([bid] + [ask]) / 2',
+        cellDataType: 'number',
+        width: 120,
+        cellStyle: { textAlign: 'right' },
       },
     ],
     []
