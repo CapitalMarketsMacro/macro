@@ -158,6 +158,41 @@ describe('ColumnFormatStore', () => {
     expect(h.colDef('price').valueFormatter).toBe(original);
   });
 
+  it('does not mutate the colDef for externally-managed (calc) columns, but still tracks the spec', () => {
+    const h = makeApi({ calc: { colId: 'calc', calculatedExpression: '[a] + [b]' } });
+    const store = new ColumnFormatStore(() => h.api);
+    store.setExternallyManaged(['calc']);
+
+    store.apply('calc', { kind: 'number', decimals: 2 });
+    // The store does NOT install a valueFormatter (the wrapper bakes it into the colDef instead)...
+    expect(h.colDef('calc').valueFormatter).toBeUndefined();
+    // ...but the spec is tracked + serialized (persistence) and listed (panel).
+    expect(store.has('calc')).toBe(true);
+    expect(store.serialize()).toEqual({ calc: { kind: 'number', decimals: 2 } });
+
+    store.clear('calc');
+    expect(store.has('calc')).toBe(false);
+    expect(h.colDef('calc').valueFormatter).toBeUndefined();
+  });
+
+  it('in bake mode, tracks specs without ever mutating colDefs (wrapper bakes instead)', () => {
+    const original = () => 'APP';
+    const h = makeApi({ bid: { field: 'bid', valueFormatter: original } });
+    const store = new ColumnFormatStore(() => h.api);
+    store.setBakeMode(true);
+
+    store.apply('bid', { kind: 'number', decimals: 2 });
+    expect(h.colDef('bid').valueFormatter).toBe(original); // untouched — wrapper bakes
+    expect(store.serialize()).toEqual({ bid: { kind: 'number', decimals: 2 } });
+
+    store.reconcile(); // no-op in bake mode
+    expect(h.colDef('bid').valueFormatter).toBe(original);
+
+    store.clear('bid');
+    expect(store.has('bid')).toBe(false);
+    expect(h.colDef('bid').valueFormatter).toBe(original);
+  });
+
   it('returns undefined from serialize when nothing is formatted', () => {
     const h = makeApi({ a: { field: 'a' } });
     const store = new ColumnFormatStore(() => h.api);

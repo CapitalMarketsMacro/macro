@@ -26,8 +26,11 @@ import {
   CALCULATED_COLUMNS_KEY,
   ColumnFormatStore,
   FORMAT_TOOL_PANEL_COMPONENT,
+  buildCellStyle,
+  buildValueFormatter,
   mergeCalculatedColumns,
   migrateMap,
+  sameCalcSchema,
   withFormatPanel,
   type CalcColumnSchema,
   type ColumnFormatMap,
@@ -76,7 +79,12 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
     // The format store + sideBar/components are created ONCE (stable refs) so the Format tool
     // panel is never torn down on re-render.
     const storeRef = useRef<ColumnFormatStore>(undefined);
-    if (!storeRef.current) storeRef.current = new ColumnFormatStore(() => gridApiRef.current);
+    if (!storeRef.current) {
+      storeRef.current = new ColumnFormatStore(() => gridApiRef.current);
+      // Bake mode: the store is a pure spec registry; we bake every format into the colDefs (one
+      // source of truth) — avoids the in-place-mutation ↔ columnDef-rebuild ↔ reconcile loop.
+      storeRef.current.setBakeMode(true);
+    }
     const store = storeRef.current;
 
     const reconcile = useCallback(() => store.reconcile(), [store]);
@@ -109,34 +117,77 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
     // version counter so changes recompute the effective columnDefs without per-keystroke churn.
     const calcDefsRef = useRef(new Map<string, CalcColumnSchema>());
     const calcRemovedRef = useRef(new Set<string>());
+    // Re-entrancy guard: true while pushing columnDefs.
+    const applyingCalcDefsRef = useRef(false);
     const [calcVersion, setCalcVersion] = useState(0);
-    // Set by applyGridState so the next render hands AG Grid the SAME array reference that was
-    // passed to setGridOption('columnDefs', ...) — AG Grid then short-circuits (identical ref)
-    // and does not re-apply columnDefs after setState, preserving restored column-state. Matches
-    // the Angular wrapper (which feeds one shared field reference to both paths).
+    // Set by applyGridState / the store-change subscription so the next render hands AG Grid the
+    // SAME array reference passed to setGridOption('columnDefs', ...) — AG Grid then short-circuits
+    // (identical ref) and doesn't re-apply columnDefs after setState. Matches the Angular wrapper.
     const pinnedDefsRef = useRef<ReturnType<typeof mergeCalculatedColumns> | null>(null);
 
-    // Effective columnDefs = app base + tracked calc columns (so user calc columns survive a
-    // columnDefs rebuild from the app's useMemo).
+    // Build effective columnDefs = app base + tracked calc columns, with EVERY user format BAKED into
+    // its column's colDef (valueFormatter + cellStyle from the store spec). In bake mode this is the
+    // single source of truth for formatting — both regular and calculated columns are formatted
+    // purely by their colDef (calc columns, whose cellDataType caches a value formatter, MUST be).
+    const buildEffective = useCallback(() => {
+      const merged = mergeCalculatedColumns(columnDefs, [...calcDefsRef.current.values()], calcRemovedRef.current);
+      return merged.map((def) => {
+        const d = def as ColDef;
+        const colId = d.colId ?? (typeof d.field === 'string' ? d.field : undefined);
+        if (!colId) return def;
+        const spec = store.get(colId);
+        if (!spec) return def;
+        const baked: ColDef = { ...d };
+        const vf = buildValueFormatter(spec);
+        if (vf) baked.valueFormatter = vf;
+        const cs = buildCellStyle(spec, d.cellStyle);
+        if (cs) baked.cellStyle = cs;
+        return baked;
+      });
+    }, [columnDefs, store]);
+
     const effectiveColumnDefs = useMemo(() => {
       if (pinnedDefsRef.current) {
         const pinned = pinnedDefsRef.current;
         pinnedDefsRef.current = null;
         return pinned;
       }
-      return mergeCalculatedColumns(columnDefs, [...calcDefsRef.current.values()], calcRemovedRef.current);
-    }, [columnDefs, calcVersion]);
+      return buildEffective();
+    }, [buildEffective, calcVersion]);
+
+    // Re-bake + re-apply when the store changes. In bake mode the store doesn't touch colDefs and
+    // reconcile is a no-op, so setGridOption can't trigger a reconcile→emit loop.
+    useEffect(() => {
+      const off = store.onChange(() => {
+        if (applyingCalcDefsRef.current) return;
+        applyingCalcDefsRef.current = true;
+        try {
+          const built = buildEffective();
+          pinnedDefsRef.current = built;
+          setCalcVersion((v) => v + 1);
+          gridApiRef.current?.setGridOption('columnDefs', built);
+        } finally {
+          applyingCalcDefsRef.current = false;
+        }
+      });
+      return off;
+    }, [store, buildEffective]);
 
     const onCalcUpserted = useCallback(
       (e: CalculatedColumnCreatedEvent | CalculatedColumnExpressionChangedEvent) => {
         const colId = e.column.getColId();
         const def = e.column.getColDef();
-        calcDefsRef.current.set(colId, {
+        const next: CalcColumnSchema = {
           colId,
           calculatedExpression: e.expression,
           ...(def.headerName != null ? { headerName: def.headerName } : {}),
           ...(typeof def.cellDataType === 'string' ? { cellDataType: def.cellDataType } : {}),
-        });
+        };
+        // Idempotency guard: feeding a user-created calc column back into columnDefs can make AG Grid
+        // re-emit the create event; bail when nothing changed, else the re-feed cycle freezes the grid.
+        const prev = calcDefsRef.current.get(colId);
+        if (prev && !calcRemovedRef.current.has(colId) && sameCalcSchema(prev, next)) return;
+        calcDefsRef.current.set(colId, next);
         calcRemovedRef.current.delete(colId);
         setCalcVersion((v) => v + 1);
         store.reconcile();
@@ -204,18 +255,15 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
         //    view removes any added at runtime) BEFORE setState so column-state can bind by colId.
         calcDefsRef.current = new Map((calc?.defs ?? []).map((s: CalcColumnSchema) => [s.colId, s]));
         calcRemovedRef.current = new Set<string>(calc?.removed ?? []);
-        const merged = mergeCalculatedColumns(
-          columnDefs,
-          [...calcDefsRef.current.values()],
-          calcRemovedRef.current,
-        );
+        const merged = buildEffective();
         // Pin so the re-render's effectiveColumnDefs is THIS exact reference (no post-setState re-apply).
         pinnedDefsRef.current = merged;
         setCalcVersion((v) => v + 1);
         api.setGridOption('columnDefs', merged);
         // 2. Native state.
         api.setState(gs as GridState);
-        // 3. Column formats (bind to columns — incl. calc columns — by colId).
+        // 3. Column formats. store.restore emits -> our store-change subscription re-bakes calc
+        //    column formats into the colDefs and re-applies; regular columns are mutated in place.
         const map = migrateMap(cf ?? {});
         store.restore(map);
         if (Object.keys(map).some((id) => !api.getColumn(id))) {
@@ -227,7 +275,7 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
         }
       },
       addRows$, updateRows$, deleteRows$,
-    }), [store, columnDefs, addRows$, updateRows$, deleteRows$]);
+    }), [store, columnDefs, buildEffective, addRows$, updateRows$, deleteRows$]);
 
     useEffect(() => {
       const update = () => setTheme(buildAgGridTheme(document.documentElement.classList.contains('dark')));
