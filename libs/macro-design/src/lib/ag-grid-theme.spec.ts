@@ -27,12 +27,12 @@ describe('ag-grid-theme', () => {
   });
 
   describe('AG_GRID_FONTS', () => {
-    it('should have fontFamily set to IBM Plex Mono', () => {
-      expect(AG_GRID_FONTS.fontFamily).toContain('IBM Plex Mono');
+    it('should use IBM Plex Mono for data cells (cellFontFamily)', () => {
+      expect(AG_GRID_FONTS.cellFontFamily).toContain('IBM Plex Mono');
     });
 
-    it('should have headerFontFamily set to Roboto', () => {
-      expect(AG_GRID_FONTS.headerFontFamily).toContain('Roboto');
+    it('should use Roboto for the base/header font (v36 has no headerFontFamily)', () => {
+      expect(AG_GRID_FONTS.fontFamily).toContain('Roboto');
     });
 
     it('should have trading-appropriate row height', () => {
