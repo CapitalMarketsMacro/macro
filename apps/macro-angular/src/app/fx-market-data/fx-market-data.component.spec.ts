@@ -133,9 +133,16 @@ describe('FxMarketDataComponent', () => {
   // -----------------------------------------------------------------------
   // Column definitions
   // -----------------------------------------------------------------------
-  it('should define 9 columns', () => {
+  it('should define 10 columns (incl. the pre-defined calculated column)', () => {
     const comp = createComponent();
-    expect(comp.columns).toHaveLength(9);
+    expect(comp.columns).toHaveLength(10);
+  });
+
+  it('should include a pre-defined calculated column', () => {
+    const comp = createComponent();
+    const calc = comp.columns.find((c: any) => c.colId === 'calcSpreadPips') as any;
+    expect(calc).toBeDefined();
+    expect(calc.calculatedExpression).toBe('[ask] - [bid]');
   });
 
   it('should have Symbol column pinned left', () => {

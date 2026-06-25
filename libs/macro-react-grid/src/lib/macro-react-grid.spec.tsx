@@ -83,6 +83,8 @@ function createMockGridApi(overrides: Partial<GridApi> = {}): GridApi {
     refreshCells: vi.fn(),
     getColumn: vi.fn().mockReturnValue(null),
     getColumns: vi.fn().mockReturnValue([]),
+    getColumnDefs: vi.fn().mockReturnValue([]),
+    setGridOption: vi.fn(),
     ...overrides,
   } as unknown as GridApi;
 }
@@ -387,6 +389,30 @@ describe('MacroReactGrid', () => {
 
       const state = { columnOrder: ['x'] } as unknown as GridState;
       expect(() => ref.current?.applyGridState(state)).not.toThrow();
+    });
+
+    it('round-trips calculated columns through applyGridState/getGridState', () => {
+      const ref = createRef<MacroReactGridRef>();
+      render(<MacroReactGrid ref={ref} />);
+      const mockApi = createMockGridApi();
+      fireGridReady(mockApi);
+
+      act(() => {
+        ref.current?.applyGridState({
+          columnOrder: ['a'],
+          calculatedColumns: { defs: [{ colId: 'spread', calculatedExpression: '[bid] - [ask]' }] },
+        });
+      });
+
+      expect(mockApi.setGridOption).toHaveBeenCalledWith(
+        'columnDefs',
+        expect.arrayContaining([
+          expect.objectContaining({ colId: 'spread', calculatedExpression: '[bid] - [ask]' }),
+        ]),
+      );
+      expect(ref.current?.getGridState().calculatedColumns).toEqual({
+        defs: [{ colId: 'spread', calculatedExpression: '[bid] - [ask]' }],
+      });
     });
   });
 

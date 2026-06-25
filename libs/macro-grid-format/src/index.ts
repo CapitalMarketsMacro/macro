@@ -58,3 +58,11 @@ export {
   formatToolPanelDef,
   withFormatPanel,
 } from './lib/tool-panel-def';
+
+export {
+  CALCULATED_COLUMNS_KEY,
+  serializeCalculatedColumns,
+  schemaToColDef,
+  mergeCalculatedColumns,
+} from './lib/calculated-columns';
+export type { CalcColumnSchema } from './lib/calculated-columns';

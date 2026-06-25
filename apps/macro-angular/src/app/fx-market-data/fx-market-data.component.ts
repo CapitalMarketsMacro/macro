@@ -42,7 +42,6 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       field: 'bid',
       headerName: 'Bid',
       width: 120,
-      allowFormula: true,
       valueFormatter: (params: any) => this.formatPrice(params.value, params.data.symbol),
       cellStyle: { textAlign: 'right' }
     },
@@ -50,7 +49,6 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       field: 'ask',
       headerName: 'Ask',
       width: 120,
-      allowFormula: true,
       valueFormatter: (params: any) => this.formatPrice(params.value, params.data.symbol),
       cellStyle: { textAlign: 'right' }
     },
@@ -58,7 +56,6 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       field: 'mid',
       headerName: 'Mid',
       width: 120,
-      allowFormula: true,
       valueFormatter: (params: any) => this.formatPrice(params.value, params.data.symbol),
       cellStyle: { textAlign: 'right' }
     },
@@ -66,7 +63,6 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       field: 'spread',
       headerName: 'Spread',
       width: 100,
-      allowFormula: true,
       valueFormatter: (params: any) => this.formatSpread(params.value, params.data.symbol),
       cellStyle: { textAlign: 'right' }
     },
@@ -110,6 +106,16 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
         null,
       ] as any,
     },
+    // Pre-defined calculated column (AG Grid 36). Users can add/edit/remove their own from the
+    // column header menu; all calc columns persist in the saved view.
+    {
+      colId: 'calcSpreadPips',
+      headerName: 'Spread (calc)',
+      calculatedExpression: '[ask] - [bid]',
+      cellDataType: 'number',
+      width: 120,
+      cellStyle: { textAlign: 'right' },
+    } as ColDef,
   ];
 
   // Seed capital-markets formats on the streaming-rate columns via the shared
