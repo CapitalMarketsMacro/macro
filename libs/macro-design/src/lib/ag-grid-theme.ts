@@ -10,8 +10,9 @@ import {
 const DARK_TOKENS = {
   backgroundColor:                '#12141a',
   foregroundColor:                '#e6e8ec',
+  // The header background derives from chromeBackgroundColor in the v36 theming API
+  // (the dedicated `headerBackgroundColor` param was removed).
   chromeBackgroundColor:          '#181b22',
-  headerBackgroundColor:          '#181b22',
   headerTextColor:                '#6f7687',
   borderColor:                    '#1c2029',
   oddRowBackgroundColor:          '#181b22',
@@ -26,20 +27,24 @@ const DARK_TOKENS = {
   inputFocusBorder:               { style: 'solid' as const, width: 1, color: '#2aa6e6' },
   menuBackgroundColor:            '#1e222a',
   menuBorder:                     { style: 'solid' as const, width: 1, color: '#363c48' },
-  menuShadow:                     '0 4px 16px rgba(0,0,0,0.40)',
+  // v36 renamed `menuShadow` → `popupShadow` (covers menus, dropdowns, dialogs).
+  popupShadow:                    '0 4px 16px rgba(0,0,0,0.40)',
 };
 
-/** Macro E-Trading font families */
+/**
+ * Macro E-Trading fonts. v36 has no `headerFontFamily`: the base `fontFamily` applies to headers
+ * and chrome, while `cellFontFamily` overrides cells. So chrome/headers use Roboto and data cells
+ * use IBM Plex Mono (monospaced digits stay aligned).
+ */
 export const AG_GRID_FONTS = {
-  fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
-  headerFontFamily: "'Roboto', system-ui, sans-serif",
+  fontFamily: "'Roboto', system-ui, sans-serif",
+  cellFontFamily: "'IBM Plex Mono', ui-monospace, monospace",
   headerFontSize: 10,
   headerFontWeight: 500,
   fontSize: 12,
   cellHorizontalPadding: 10,
   rowHeight: 22,
   headerHeight: 28,
-  listItemHeight: 22,
   wrapperBorderRadius: 0,
   rowBorder: { style: 'solid' as const, width: 1, color: '#1c2029' },
   columnBorder: false,
