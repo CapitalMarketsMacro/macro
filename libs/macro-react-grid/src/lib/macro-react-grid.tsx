@@ -113,6 +113,8 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
     const calcDefsRef = useRef(new Map<string, CalcColumnSchema>());
     const calcRemovedRef = useRef(new Set<string>());
     const calcColIdsRef = useRef<string[]>([]);
+    // Re-entrancy guard: true while pushing columnDefs, so the resulting reconcile→emit is ignored.
+    const applyingCalcDefsRef = useRef(false);
     const [calcVersion, setCalcVersion] = useState(0);
     // Set by applyGridState / the store-change subscription so the next render hands AG Grid the
     // SAME array reference passed to setGridOption('columnDefs', ...) — AG Grid then short-circuits
@@ -157,15 +159,23 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       store.setExternallyManaged(calcColIdsRef.current);
     }, [store, effectiveColumnDefs]);
 
-    // Re-bake + re-apply calc-column formats when the store changes (calc cols can't use the store's
-    // post-hoc valueFormatter mutation; their format is baked into the colDef).
+    // Re-bake + re-apply calc-column formats when the store changes. Only CALC columns need this
+    // (regular columns use the store's in-place mutation). Re-pushing columnDefs resets the regular
+    // columns (AG Grid clones colDefs, so the store's mutations live on the clones, not our base
+    // defs) and triggers a reconcile→emit; the re-entrancy guard stops that from looping.
     useEffect(() => {
       const off = store.onChange(() => {
-        if (calcColIdsRef.current.length === 0) return;
-        const built = buildEffective();
-        pinnedDefsRef.current = built;
-        setCalcVersion((v) => v + 1);
-        gridApiRef.current?.setGridOption('columnDefs', built);
+        if (applyingCalcDefsRef.current) return;
+        if (!calcColIdsRef.current.some((id) => store.has(id))) return;
+        applyingCalcDefsRef.current = true;
+        try {
+          const built = buildEffective();
+          pinnedDefsRef.current = built;
+          setCalcVersion((v) => v + 1);
+          gridApiRef.current?.setGridOption('columnDefs', built);
+        } finally {
+          applyingCalcDefsRef.current = false;
+        }
       });
       return off;
     }, [store, buildEffective]);

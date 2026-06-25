@@ -361,8 +361,10 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     this.recomputeEffectiveColumns();
   }
 
-  /** Number of calculated columns currently in the effective defs (drives the store re-push). */
-  private calcColCount = 0;
+  /** colIds of the calculated columns currently in the effective defs. */
+  private calcColIds: string[] = [];
+  /** Re-entrancy guard: true while we are pushing columnDefs (so the resulting reconcile→emit is ignored). */
+  private applyingCalcColumnDefs = false;
 
   /**
    * Effective columnDefs = app base columns + tracked calculated columns (minus removed), with any
@@ -387,15 +389,31 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       if (cs) baked.cellStyle = cs;
       return baked;
     });
-    this.calcColCount = calcColIds.length;
+    this.calcColIds = calcColIds;
     this.formatStore.setExternallyManaged(calcColIds);
   }
 
-  /** A format changed in the store — re-bake + re-apply calc columnDefs (calc cols only). */
+  /** True when at least one calculated column currently has a user format (i.e. needs baking). */
+  private hasFormattedCalcColumn(): boolean {
+    return this.calcColIds.some((id) => this.formatStore.has(id));
+  }
+
+  /**
+   * A format changed in the store. Only CALC columns need re-baking via setGridOption — regular
+   * columns are handled by the store's in-place mutation. Re-pushing columnDefs resets the regular
+   * columns (AG Grid clones colDefs, so the store's mutations live on the clones, not our base defs)
+   * and triggers a reconcile→emit; the re-entrancy guard stops that from looping.
+   */
   private readonly onStoreFormatsChanged = (): void => {
-    if (this.calcColCount === 0) return;
-    this.recomputeEffectiveColumns();
-    this.gridApi?.setGridOption('columnDefs', this.effectiveColumnDefs);
+    if (this.applyingCalcColumnDefs) return;
+    if (!this.hasFormattedCalcColumn()) return;
+    this.applyingCalcColumnDefs = true;
+    try {
+      this.recomputeEffectiveColumns();
+      this.gridApi?.setGridOption('columnDefs', this.effectiveColumnDefs);
+    } finally {
+      this.applyingCalcColumnDefs = false;
+    }
   };
 
   /**
