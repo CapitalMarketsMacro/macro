@@ -208,7 +208,7 @@ describe('MacroAngularGrid', () => {
       expect(component.mergedGridOptions.pagination).toBe(true);
       expect(component.mergedGridOptions.paginationPageSize).toBe(10);
       expect(component.mergedGridOptions.animateRows).toBe(true);
-      expect(component.mergedGridOptions.enableRangeSelection).toBe(true);
+      expect(component.mergedGridOptions.cellSelection).toBe(true);
       expect(component.mergedGridOptions.defaultColDef).toEqual({
         sortable: true,
         filter: true,
@@ -708,15 +708,18 @@ describe('MacroAngularGrid', () => {
       expect(component.defaultGridOptions.paginationPageSizeSelector).toEqual([10, 25, 50, 100]);
     });
 
-    it('should enable range selection and suppress cell focus', () => {
-      expect(component.defaultGridOptions.enableRangeSelection).toBe(true);
+    it('should enable cell (range) selection and suppress cell focus', () => {
+      expect(component.defaultGridOptions.cellSelection).toBe(true);
       expect(component.defaultGridOptions.suppressCellFocus).toBe(true);
     });
 
-    it('should enable animate rows and multiple row selection', () => {
+    it('should enable animate rows and multi-row selection (v36 object API)', () => {
       expect(component.defaultGridOptions.animateRows).toBe(true);
-      expect(component.defaultGridOptions.rowSelection).toBe('multiple');
-      expect(component.defaultGridOptions.suppressRowClickSelection).toBe(true);
+      expect(component.defaultGridOptions.rowSelection).toEqual({
+        mode: 'multiRow',
+        checkboxes: false,
+        enableClickSelection: false,
+      });
     });
   });
 });

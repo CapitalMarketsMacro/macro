@@ -98,8 +98,13 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
     const defaultGridOptions: GridOptions = useMemo(() => ({
       defaultColDef: { sortable: true, filter: true, resizable: true },
       pagination: true, paginationPageSize: 10, paginationPageSizeSelector: [10, 25, 50, 100],
-      animateRows: true, rowSelection: 'multiple', suppressRowClickSelection: true,
-      enableRangeSelection: true, suppressCellFocus: true,
+      animateRows: true,
+      // v36 selection API (string rowSelection / enableRangeSelection / suppressRowClickSelection
+      // are deprecated). Preserves prior behaviour: multi-row mode, no checkbox column, no
+      // click-to-select; cell-range selection enabled.
+      rowSelection: { mode: 'multiRow', checkboxes: false, enableClickSelection: false },
+      cellSelection: true,
+      suppressCellFocus: true,
       // AG Grid 36 calculated columns: 'deferred' = validate + Apply/Cancel in the dialog.
       calculatedColumns: { applyMode: 'deferred' },
     }), []);
