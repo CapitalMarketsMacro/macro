@@ -28,7 +28,11 @@
 .ag-cell-data-changed        { background: var(--mkt-up-bg-flash) !important; }
 .ag-cell-data-changed-animation { transition: background var(--motion-flash) linear; }
 
-/* ---------- Pinned rows (totals, working orders) ---------- */
+/* ---------- Pinned rows (totals, working orders) ----------
+   v36 renamed the containers to .ag-grid-pinned-{top,bottom}-rows;
+   legacy .ag-pinned-{top,bottom} kept as a harmless fallback. */
+.ag-grid-pinned-top-rows .ag-row,
+.ag-grid-pinned-bottom-rows .ag-row,
 .ag-pinned-top .ag-row,
 .ag-pinned-bottom .ag-row {
   background: var(--bg-raised) !important;
@@ -37,7 +41,10 @@
   font-weight: 500;
 }
 
-/* ---------- Sort icons ---------- */
+/* ---------- Sort icons ----------
+   v36 renders sort glyphs as .ag-icon-asc/.ag-icon-desc; legacy selectors kept as fallback. */
+.ag-header-cell-sorted-asc .ag-icon-asc,
+.ag-header-cell-sorted-desc .ag-icon-desc,
 .ag-header-cell-sorted-asc .ag-sort-ascending-icon,
 .ag-header-cell-sorted-desc .ag-sort-descending-icon {
   color: var(--cerulean-400);
