@@ -222,9 +222,11 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     paginationPageSize: 10,
     paginationPageSizeSelector: [10, 25, 50, 100],
     animateRows: true,
-    rowSelection: 'multiple',
-    suppressRowClickSelection: true,
-    enableRangeSelection: true,
+    // v36 selection API (string rowSelection / enableRangeSelection / suppressRowClickSelection
+    // are deprecated). Preserves prior behaviour: multi-row mode, no checkbox column, no
+    // click-to-select; cell-range selection enabled.
+    rowSelection: { mode: 'multiRow', checkboxes: false, enableClickSelection: false },
+    cellSelection: true,
     suppressCellFocus: true,
   };
 

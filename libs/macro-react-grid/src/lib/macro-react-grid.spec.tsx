@@ -192,7 +192,8 @@ describe('MacroReactGrid', () => {
       expect(opts.pagination).toBe(true);
       expect(opts.paginationPageSize).toBe(10);
       expect(opts.animateRows).toBe(true);
-      expect(opts.enableRangeSelection).toBe(true);
+      expect(opts.cellSelection).toBe(true);
+      expect(opts.rowSelection).toEqual({ mode: 'multiRow', checkboxes: false, enableClickSelection: false });
       expect(opts.defaultColDef).toEqual({
         sortable: true,
         filter: true,
