@@ -1,0 +1,7 @@
+{
+  "url": "http://localhost:4200/risk-pnl",
+  "fdc3InteropApi": "2.0",
+  "interop": {
+    "currentContextGroup": "green"
+  }
+}

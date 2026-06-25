@@ -121,6 +121,31 @@
       "category": "Rates"
     },
     {
+      "appId": "macro-angular-risk-pnl",
+      "name": "macro-angular-risk-pnl",
+      "title": "Risk / PnL",
+      "description": "Risk and PnL aggregated by desk, book and trader with Show Values As contributions",
+      "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/macro-angular-risk-pnl.fin.json",
+      "manifestType": "view",
+      "icons": [
+        {
+          "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/risk-pnl.svg"
+        }
+      ],
+      "contactEmail": "contact@example.com",
+      "supportEmail": "support@example.com",
+      "publisher": "OpenFin",
+      "intents": [],
+      "images": [],
+      "tags": [
+        "view",
+        "angular",
+        "risk",
+        "pnl"
+      ],
+      "category": "Risk"
+    },
+    {
       "appId": "macro-react-view",
       "name": "macro-react-view",
       "title": "Macro React App",
