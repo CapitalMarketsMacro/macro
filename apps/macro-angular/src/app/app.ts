@@ -124,6 +124,11 @@ export class App implements OnInit {
         icon: 'pi pi-chart-bar',
         routerLink: '/treasury-microstructure',
       },
+      {
+        label: 'Risk / PnL',
+        icon: 'pi pi-chart-pie',
+        routerLink: '/risk-pnl',
+      },
     ];
     
     // Subscribe to route changes to update active menu item

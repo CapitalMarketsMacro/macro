@@ -84,6 +84,8 @@ function createMockGridApi(overrides: Partial<GridApi> = {}): GridApi {
     getColumn: vi.fn().mockReturnValue(null),
     getColumns: vi.fn().mockReturnValue([]),
     getColumnDefs: vi.fn().mockReturnValue([]),
+    getColumnState: vi.fn().mockReturnValue([]),
+    applyColumnState: vi.fn(),
     setGridOption: vi.fn(),
     ...overrides,
   } as unknown as GridApi;
@@ -414,6 +416,41 @@ describe('MacroReactGrid', () => {
       expect(ref.current?.getGridState().calculatedColumns).toEqual({
         defs: [{ colId: 'spread', calculatedExpression: '[bid] - [ask]' }],
       });
+    });
+
+    it('captures Show Values As selections from column state into getGridState', () => {
+      const ref = createRef<MacroReactGridRef>();
+      render(<MacroReactGrid ref={ref} />);
+      const mockApi = createMockGridApi({
+        getColumnState: vi.fn().mockReturnValue([
+          { colId: 'pnl', showValuesAs: 'percentOfGrandTotal' },
+          { colId: 'dv01' },
+        ]),
+      } as Partial<GridApi>);
+      fireGridReady(mockApi);
+
+      expect(ref.current?.getGridState().showValuesAs).toEqual([
+        { colId: 'pnl', showValuesAs: 'percentOfGrandTotal' },
+      ]);
+    });
+
+    it('re-applies persisted Show Values As selections via applyColumnState', () => {
+      const ref = createRef<MacroReactGridRef>();
+      render(<MacroReactGrid ref={ref} />);
+      const mockApi = createMockGridApi();
+      fireGridReady(mockApi);
+
+      act(() => {
+        ref.current?.applyGridState({
+          columnOrder: ['a'],
+          showValuesAs: [{ colId: 'pnl', showValuesAs: 'percentOfParentRowTotal' }],
+        });
+      });
+
+      expect(mockApi.applyColumnState).toHaveBeenCalledWith({
+        state: [{ colId: 'pnl', showValuesAs: 'percentOfParentRowTotal' }],
+      });
+      expect((mockApi.setState as ReturnType<typeof vi.fn>).mock.calls[0][0]).not.toHaveProperty('showValuesAs');
     });
   });
 

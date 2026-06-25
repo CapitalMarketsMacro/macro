@@ -62,6 +62,13 @@
       "label": "Capital Markets Theme",
       "icon": "http://localhost:4202/icons/platform.svg",
       "appId": "capital-markets-themes"
+    },
+    {
+      "type": "item",
+      "id": "fav-risk-pnl",
+      "label": "Risk / PnL",
+      "icon": "http://localhost:4202/icons/risk-pnl.svg",
+      "appId": "macro-angular-risk-pnl"
     }
   ],
   "contentMenu": [
@@ -97,6 +104,13 @@
           "label": "FDC3 Instrument Viewer",
           "icon": "http://localhost:4202/icons/angular-app.svg",
           "appId": "macro-angular-fdc3-instrument-viewer"
+        },
+        {
+          "type": "item",
+          "id": "cm-risk-pnl",
+          "label": "Risk / PnL",
+          "icon": "http://localhost:4202/icons/risk-pnl.svg",
+          "appId": "macro-angular-risk-pnl"
         }
       ]
     },

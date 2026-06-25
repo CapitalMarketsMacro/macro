@@ -55,6 +55,13 @@
       "label": "Analytics Dashboard",
       "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg",
       "appId": "macro-analytics-dashboard"
+    },
+    {
+      "type": "item",
+      "id": "fav-risk-pnl",
+      "label": "Risk / PnL",
+      "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/risk-pnl.svg",
+      "appId": "macro-angular-risk-pnl"
     }
   ],
   "contentMenu": [
@@ -90,6 +97,13 @@
           "label": "FDC3 Instrument Viewer",
           "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/angular-app.svg",
           "appId": "macro-angular-fdc3-instrument-viewer"
+        },
+        {
+          "type": "item",
+          "id": "cm-risk-pnl",
+          "label": "Risk / PnL",
+          "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/risk-pnl.svg",
+          "appId": "macro-angular-risk-pnl"
         }
       ]
     },

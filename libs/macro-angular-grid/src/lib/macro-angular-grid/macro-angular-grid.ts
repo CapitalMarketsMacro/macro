@@ -29,14 +29,17 @@ import {
   CALCULATED_COLUMNS_KEY,
   ColumnFormatStore,
   FORMAT_TOOL_PANEL_COMPONENT,
+  SHOW_VALUES_AS_KEY,
   buildCellStyle,
   buildValueFormatter,
   mergeCalculatedColumns,
   migrateMap,
   sameCalcSchema,
+  serializeShowValuesAs,
   withFormatPanel,
   type CalcColumnSchema,
   type ColumnFormatMap,
+  type ShowValuesAsEntry,
 } from '@macro/macro-grid-format';
 import { MacroFormatToolPanelComponent } from '@macro/macro-grid-format/angular';
 
@@ -572,10 +575,12 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     if (!state) return undefined;
     const formats = this.formatStore.serialize();
     const calc = this.serializeCalcColumns();
+    const showValuesAs = serializeShowValuesAs(this.gridApi?.getColumnState());
     return {
       ...state,
       ...(formats ? { columnFormats: formats } : {}),
       ...(calc ? { [CALCULATED_COLUMNS_KEY]: calc } : {}),
+      ...(showValuesAs ? { [SHOW_VALUES_AS_KEY]: showValuesAs } : {}),
     };
   }
 
@@ -589,10 +594,25 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       this.logger.warn('Cannot apply grid state — grid is not ready');
       return;
     }
-    const { columnFormats, [CALCULATED_COLUMNS_KEY]: calc, ...gridState } = state ?? {};
+    const {
+      columnFormats,
+      [CALCULATED_COLUMNS_KEY]: calc,
+      [SHOW_VALUES_AS_KEY]: showValuesAs,
+      ...gridState
+    } = state ?? {};
     this.restoreCalcColumns(calc);
     this.gridApi.setState(gridState as GridState);
+    this.applyShowValuesAsState(showValuesAs);
     this.applyFormatsWhenReady(migrateMap(columnFormats ?? {}));
+  }
+
+  /**
+   * Re-apply persisted Show Values As selections via column state (they ride a side-channel
+   * since `getState()`/`setState()` do NOT carry them — only `aggFunc` is in `GridState`).
+   */
+  private applyShowValuesAsState(entries: ShowValuesAsEntry[] | undefined): void {
+    if (!entries?.length) return;
+    this.gridApi?.applyColumnState({ state: entries });
   }
 
   /** Serialize tracked calculated columns for persistence, or undefined when there are none. */
