@@ -31,8 +31,20 @@ export class ColumnFormatStore {
   /** Every formatter/style function we have ever produced (to never back one up as "original"). */
   private readonly ours = new WeakSet<object>();
   private readonly listeners = new Set<() => void>();
+  /**
+   * colIds whose formatting is applied externally by baking the spec into the colDef (calculated
+   * columns — AG Grid caches a cellDataType value formatter, so a post-hoc valueFormatter mutation
+   * + refreshCells is ignored). For these the store tracks the spec (for persistence + the panel)
+   * but does NOT mutate/restore/reconcile the live colDef — the grid wrapper bakes it instead.
+   */
+  private externallyManaged = new Set<string>();
 
   constructor(private readonly getApi: () => GridApi | undefined) {}
+
+  /** Declare which colIds are externally managed (their formatting is baked into the colDef). */
+  setExternallyManaged(colIds: Iterable<string>): void {
+    this.externallyManaged = new Set(colIds);
+  }
 
   /** Apply (or replace) a format on a column. */
   apply(colId: string, spec: ColumnFormatSpec): void {
@@ -112,6 +124,7 @@ export class ColumnFormatStore {
     if (!api || this.formats.size === 0) return;
     let changed = false;
     for (const colId of this.formats.keys()) {
+      if (this.externallyManaged.has(colId)) continue; // baked into the colDef by the wrapper
       const col = api.getColumn(colId);
       if (!col) continue;
       const colDef = col.getColDef();
@@ -166,6 +179,9 @@ export class ColumnFormatStore {
 
   /** Install the built valueFormatter (if the kind has one) + any cellStyle overlay onto the colDef. */
   private mutate(colId: string): boolean {
+    // Externally-managed (calculated) columns get their format baked into the colDef by the
+    // wrapper; the store must not mutate the live colDef for them.
+    if (this.externallyManaged.has(colId)) return true;
     const col = this.getApi()?.getColumn(colId);
     const spec = this.formats.get(colId);
     if (!col || !spec) return false;
@@ -200,7 +216,7 @@ export class ColumnFormatStore {
   }
 
   private clearOne(colId: string): void {
-    const col = this.getApi()?.getColumn(colId);
+    const col = this.externallyManaged.has(colId) ? null : this.getApi()?.getColumn(colId);
     if (col) {
       const colDef = col.getColDef();
       if (this.originalFormatters.has(colId)) colDef.valueFormatter = this.originalFormatters.get(colId);

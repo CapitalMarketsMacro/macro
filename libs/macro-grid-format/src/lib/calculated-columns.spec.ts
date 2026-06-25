@@ -1,5 +1,6 @@
 import {
   mergeCalculatedColumns,
+  sameCalcSchema,
   schemaToColDef,
   serializeCalculatedColumns,
   type CalcColumnSchema,
@@ -40,6 +41,18 @@ describe('schemaToColDef', () => {
       cellDataType: 'number',
       headerName: 'PnL',
     });
+  });
+});
+
+describe('sameCalcSchema', () => {
+  const base: CalcColumnSchema = { colId: 'm', calculatedExpression: '[a]+[b]', headerName: 'M', cellDataType: 'number' };
+  it('is true for equivalent schemas, false on any field change', () => {
+    expect(sameCalcSchema(base, { ...base })).toBe(true);
+    expect(sameCalcSchema(base, { ...base, calculatedExpression: '[a]-[b]' })).toBe(false);
+    expect(sameCalcSchema(base, { ...base, headerName: 'X' })).toBe(false);
+    expect(sameCalcSchema(base, { ...base, cellDataType: 'text' })).toBe(false);
+    expect(sameCalcSchema(base, undefined)).toBe(false);
+    expect(sameCalcSchema(undefined, undefined)).toBe(true);
   });
 });
 

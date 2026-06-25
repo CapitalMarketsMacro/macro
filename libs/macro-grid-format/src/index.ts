@@ -63,6 +63,7 @@ export {
   CALCULATED_COLUMNS_KEY,
   serializeCalculatedColumns,
   schemaToColDef,
+  sameCalcSchema,
   mergeCalculatedColumns,
 } from './lib/calculated-columns';
 export type { CalcColumnSchema } from './lib/calculated-columns';

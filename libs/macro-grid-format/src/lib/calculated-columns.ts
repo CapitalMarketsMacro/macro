@@ -52,6 +52,17 @@ export function serializeCalculatedColumns(colDefs: readonly AnyColDef[] | undef
   return out;
 }
 
+/** True when two calc-column schemas are equivalent (used to dedupe re-emitted calc events). */
+export function sameCalcSchema(a: CalcColumnSchema | undefined, b: CalcColumnSchema | undefined): boolean {
+  if (!a || !b) return a === b;
+  return (
+    a.colId === b.colId &&
+    a.calculatedExpression === b.calculatedExpression &&
+    a.headerName === b.headerName &&
+    a.cellDataType === b.cellDataType
+  );
+}
+
 /** Turn a persisted schema into a calculated-column colDef AG Grid can materialise. */
 export function schemaToColDef(schema: CalcColumnSchema): ColDef {
   const def: ColDef = { colId: schema.colId, calculatedExpression: schema.calculatedExpression };
