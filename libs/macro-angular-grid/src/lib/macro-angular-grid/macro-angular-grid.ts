@@ -236,6 +236,9 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
   theme: Theme | undefined;
 
   ngOnInit(): void {
+    // Bake mode: the store is a pure spec registry; we bake every format into the colDefs (one
+    // source of truth) — avoids the in-place-mutation ↔ columnDef-rebuild ↔ reconcile feedback loop.
+    this.formatStore.setBakeMode(true);
     this.parseColumns();
     this.mergeGridOptions();
     this.initializeTheme();
@@ -361,26 +364,23 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     this.recomputeEffectiveColumns();
   }
 
-  /** colIds of the calculated columns currently in the effective defs. */
-  private calcColIds: string[] = [];
-  /** Re-entrancy guard: true while we are pushing columnDefs (so the resulting reconcile→emit is ignored). */
-  private applyingCalcColumnDefs = false;
+  /** Re-entrancy guard: true while we are applying columnDefs. */
+  private applyingColumnDefs = false;
 
   /**
-   * Effective columnDefs = app base columns + tracked calculated columns (minus removed), with any
-   * user format BAKED into each calc column's colDef. Calc columns carry a `cellDataType`, so AG
-   * Grid ignores a post-hoc `valueFormatter` mutation; their format must live on the colDef and be
-   * applied via `setGridOption('columnDefs', …)`. These colIds are marked externally-managed so the
-   * ColumnFormatStore tracks the spec (persistence + panel) without fighting the baking.
+   * Effective columnDefs = app base columns + tracked calculated columns (minus removed), with EVERY
+   * user format BAKED into its column's colDef (valueFormatter + cellStyle from the store spec). In
+   * bake mode this is the single source of truth for formatting — both regular and calculated
+   * columns are formatted purely by their colDef (which is also how calc columns, whose cellDataType
+   * caches a value formatter, must be formatted).
    */
   private recomputeEffectiveColumns(): void {
     const merged = mergeCalculatedColumns(this.columnDefs, [...this.userCalcCols.values()], this.removedCalcCols);
-    const calcColIds: string[] = [];
     this.effectiveColumnDefs = merged.map((def) => {
       const d = def as ColDef;
-      if (!d.calculatedExpression || !d.colId) return def;
-      calcColIds.push(d.colId);
-      const spec = this.formatStore.get(d.colId);
+      const colId = d.colId ?? (typeof d.field === 'string' ? d.field : undefined);
+      if (!colId) return def;
+      const spec = this.formatStore.get(colId);
       if (!spec) return def;
       const baked: ColDef = { ...d };
       const vf = buildValueFormatter(spec);
@@ -389,30 +389,20 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       if (cs) baked.cellStyle = cs;
       return baked;
     });
-    this.calcColIds = calcColIds;
-    this.formatStore.setExternallyManaged(calcColIds);
-  }
-
-  /** True when at least one calculated column currently has a user format (i.e. needs baking). */
-  private hasFormattedCalcColumn(): boolean {
-    return this.calcColIds.some((id) => this.formatStore.has(id));
   }
 
   /**
-   * A format changed in the store. Only CALC columns need re-baking via setGridOption — regular
-   * columns are handled by the store's in-place mutation. Re-pushing columnDefs resets the regular
-   * columns (AG Grid clones colDefs, so the store's mutations live on the clones, not our base defs)
-   * and triggers a reconcile→emit; the re-entrancy guard stops that from looping.
+   * A format changed in the store — re-bake the colDefs and re-apply. In bake mode the store doesn't
+   * touch colDefs and reconcile is a no-op, so setGridOption can't trigger a reconcile→emit loop.
    */
   private readonly onStoreFormatsChanged = (): void => {
-    if (this.applyingCalcColumnDefs) return;
-    if (!this.hasFormattedCalcColumn()) return;
-    this.applyingCalcColumnDefs = true;
+    if (this.applyingColumnDefs) return;
+    this.applyingColumnDefs = true;
     try {
       this.recomputeEffectiveColumns();
       this.gridApi?.setGridOption('columnDefs', this.effectiveColumnDefs);
     } finally {
-      this.applyingCalcColumnDefs = false;
+      this.applyingColumnDefs = false;
     }
   };
 

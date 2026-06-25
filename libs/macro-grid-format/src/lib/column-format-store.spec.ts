@@ -175,6 +175,24 @@ describe('ColumnFormatStore', () => {
     expect(h.colDef('calc').valueFormatter).toBeUndefined();
   });
 
+  it('in bake mode, tracks specs without ever mutating colDefs (wrapper bakes instead)', () => {
+    const original = () => 'APP';
+    const h = makeApi({ bid: { field: 'bid', valueFormatter: original } });
+    const store = new ColumnFormatStore(() => h.api);
+    store.setBakeMode(true);
+
+    store.apply('bid', { kind: 'number', decimals: 2 });
+    expect(h.colDef('bid').valueFormatter).toBe(original); // untouched — wrapper bakes
+    expect(store.serialize()).toEqual({ bid: { kind: 'number', decimals: 2 } });
+
+    store.reconcile(); // no-op in bake mode
+    expect(h.colDef('bid').valueFormatter).toBe(original);
+
+    store.clear('bid');
+    expect(store.has('bid')).toBe(false);
+    expect(h.colDef('bid').valueFormatter).toBe(original);
+  });
+
   it('returns undefined from serialize when nothing is formatted', () => {
     const h = makeApi({ a: { field: 'a' } });
     const store = new ColumnFormatStore(() => h.api);

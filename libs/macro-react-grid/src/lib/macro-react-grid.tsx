@@ -79,7 +79,12 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
     // The format store + sideBar/components are created ONCE (stable refs) so the Format tool
     // panel is never torn down on re-render.
     const storeRef = useRef<ColumnFormatStore>(undefined);
-    if (!storeRef.current) storeRef.current = new ColumnFormatStore(() => gridApiRef.current);
+    if (!storeRef.current) {
+      storeRef.current = new ColumnFormatStore(() => gridApiRef.current);
+      // Bake mode: the store is a pure spec registry; we bake every format into the colDefs (one
+      // source of truth) — avoids the in-place-mutation ↔ columnDef-rebuild ↔ reconcile loop.
+      storeRef.current.setBakeMode(true);
+    }
     const store = storeRef.current;
 
     const reconcile = useCallback(() => store.reconcile(), [store]);
@@ -112,8 +117,7 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
     // version counter so changes recompute the effective columnDefs without per-keystroke churn.
     const calcDefsRef = useRef(new Map<string, CalcColumnSchema>());
     const calcRemovedRef = useRef(new Set<string>());
-    const calcColIdsRef = useRef<string[]>([]);
-    // Re-entrancy guard: true while pushing columnDefs, so the resulting reconcile→emit is ignored.
+    // Re-entrancy guard: true while pushing columnDefs.
     const applyingCalcDefsRef = useRef(false);
     const [calcVersion, setCalcVersion] = useState(0);
     // Set by applyGridState / the store-change subscription so the next render hands AG Grid the
@@ -121,18 +125,17 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
     // (identical ref) and doesn't re-apply columnDefs after setState. Matches the Angular wrapper.
     const pinnedDefsRef = useRef<ReturnType<typeof mergeCalculatedColumns> | null>(null);
 
-    // Build effective columnDefs = app base + tracked calc columns, with any user format BAKED into
-    // each calc column's colDef (calc cols carry cellDataType, so AG Grid ignores a post-hoc
-    // valueFormatter mutation — the format must live on the colDef). Records the calc colIds so they
-    // can be marked externally-managed in the store.
+    // Build effective columnDefs = app base + tracked calc columns, with EVERY user format BAKED into
+    // its column's colDef (valueFormatter + cellStyle from the store spec). In bake mode this is the
+    // single source of truth for formatting — both regular and calculated columns are formatted
+    // purely by their colDef (calc columns, whose cellDataType caches a value formatter, MUST be).
     const buildEffective = useCallback(() => {
       const merged = mergeCalculatedColumns(columnDefs, [...calcDefsRef.current.values()], calcRemovedRef.current);
-      const ids: string[] = [];
-      const out = merged.map((def) => {
+      return merged.map((def) => {
         const d = def as ColDef;
-        if (!d.calculatedExpression || !d.colId) return def;
-        ids.push(d.colId);
-        const spec = store.get(d.colId);
+        const colId = d.colId ?? (typeof d.field === 'string' ? d.field : undefined);
+        if (!colId) return def;
+        const spec = store.get(colId);
         if (!spec) return def;
         const baked: ColDef = { ...d };
         const vf = buildValueFormatter(spec);
@@ -141,8 +144,6 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
         if (cs) baked.cellStyle = cs;
         return baked;
       });
-      calcColIdsRef.current = ids;
-      return out;
     }, [columnDefs, store]);
 
     const effectiveColumnDefs = useMemo(() => {
@@ -154,19 +155,11 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       return buildEffective();
     }, [buildEffective, calcVersion]);
 
-    // Keep the store's externally-managed set in sync with the current calc columns.
-    useEffect(() => {
-      store.setExternallyManaged(calcColIdsRef.current);
-    }, [store, effectiveColumnDefs]);
-
-    // Re-bake + re-apply calc-column formats when the store changes. Only CALC columns need this
-    // (regular columns use the store's in-place mutation). Re-pushing columnDefs resets the regular
-    // columns (AG Grid clones colDefs, so the store's mutations live on the clones, not our base
-    // defs) and triggers a reconcile→emit; the re-entrancy guard stops that from looping.
+    // Re-bake + re-apply when the store changes. In bake mode the store doesn't touch colDefs and
+    // reconcile is a no-op, so setGridOption can't trigger a reconcile→emit loop.
     useEffect(() => {
       const off = store.onChange(() => {
         if (applyingCalcDefsRef.current) return;
-        if (!calcColIdsRef.current.some((id) => store.has(id))) return;
         applyingCalcDefsRef.current = true;
         try {
           const built = buildEffective();

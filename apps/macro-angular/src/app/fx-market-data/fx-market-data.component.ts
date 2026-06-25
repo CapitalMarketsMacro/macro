@@ -126,6 +126,8 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
     bid: { kind: 'fxRate', symbolField: 'symbol' },
     ask: { kind: 'fxRate', symbolField: 'symbol' },
     mid: { kind: 'fxRate', symbolField: 'symbol' },
+    // The pre-defined calculated column, formatted (spread shown in basis points).
+    calcSpreadPips: { kind: 'basisPoints', decimals: 1 },
   };
 
   // Initial row data (empty, will be populated via transactions)
