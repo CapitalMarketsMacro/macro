@@ -203,6 +203,8 @@ This repo has 6 MCP servers configured in `.mcp.json`:
 | `apps/macro-angular/src/app/app.config.ts`       | Angular app providers (PrimeNG, zone config) |
 | `apps/macro-react/src/main.tsx`                  | React entry (PrimeReact provider config)     |
 | `apps/macro-workspace/src/app/app.config.ts`     | Workspace app config (zoneless)              |
+| `.github/copilot-instructions.md`                | Condensed AG Grid 36 / format-panel / calc / Show-Values-As rules + gotchas (auto-loaded by Copilot) |
+| `docs/copilot/ag-grid-36-format-panel-port.md`   | Full verbatim port guide for the above (engine, tool panel, persistence side-channels) |
 
 ## Common Pitfalls
 
