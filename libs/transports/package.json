@@ -18,11 +18,15 @@
     "amps": "*",
     "solclientjs": "*",
     "@nats-io/nats-core": "^3.0.0",
+    "@nats-io/jetstream": "^3.0.0",
+    "@nats-io/kv": "^3.0.0",
     "rxjs": "^7.0.0"
   },
   "peerDependenciesMeta": {
     "amps": { "optional": true },
     "solclientjs": { "optional": true },
-    "@nats-io/nats-core": { "optional": true }
+    "@nats-io/nats-core": { "optional": true },
+    "@nats-io/jetstream": { "optional": true },
+    "@nats-io/kv": { "optional": true }
   }
 }

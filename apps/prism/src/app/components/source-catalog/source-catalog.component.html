@@ -1,0 +1,71 @@
+<div class="catalog">
+  <header class="catalog__header">
+    <div>
+      <h2 class="catalog__title">Data Sources</h2>
+      <p class="catalog__subtitle">
+        Pick a source to open a snapshot + real-time blotter, or define your own ad-hoc source.
+      </p>
+    </div>
+    <div class="catalog__actions">
+      <p-selectButton
+        [options]="groupByOptions"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        [ngModel]="groupBy()"
+        (ngModelChange)="groupBy.set($event)"
+      />
+      <p-button label="Add ad-hoc source" icon="pi pi-plus" (onClick)="addAdhoc()" />
+    </div>
+  </header>
+
+  @for (group of groups(); track group.title) {
+    <section class="catalog__group">
+      <h3 class="catalog__group-title">{{ group.title }}</h3>
+      <div class="catalog__grid">
+        @for (src of group.sources; track src.id) {
+          <p-card styleClass="source-card">
+            <div class="source-card__tags">
+              <p-tag [value]="transportLabels[src.transport]" severity="secondary" />
+              <p-tag [value]="modeLabels[src.mode]" [severity]="modeSeverity(src.mode)" />
+              @if (src.origin === 'adhoc') {
+                <p-tag value="ad-hoc" severity="info" />
+              }
+            </div>
+            <h4 class="source-card__name">{{ src.name }}</h4>
+            <p class="source-card__desc">{{ src.description }}</p>
+            <div class="source-card__meta">
+              <span><i class="pi pi-tag"></i> {{ src.category }}</span>
+              <span><i class="pi pi-sitemap"></i> {{ src.topic }}</span>
+            </div>
+            <div class="source-card__footer">
+              <p-button label="Open" icon="pi pi-arrow-right" size="small" (onClick)="open(src)" />
+              @if (src.origin === 'adhoc') {
+                <p-button
+                  icon="pi pi-pencil"
+                  [text]="true"
+                  severity="secondary"
+                  size="small"
+                  ariaLabel="Edit"
+                  (onClick)="edit(src)"
+                />
+                <p-button
+                  icon="pi pi-trash"
+                  [text]="true"
+                  severity="danger"
+                  size="small"
+                  ariaLabel="Delete"
+                  (onClick)="remove(src)"
+                />
+              }
+            </div>
+          </p-card>
+        }
+      </div>
+    </section>
+  } @empty {
+    <p class="catalog__empty">No data sources yet — add an ad-hoc source to get started.</p>
+  }
+
+  <app-adhoc-source-dialog (saved)="onSaved($event)" />
+</div>

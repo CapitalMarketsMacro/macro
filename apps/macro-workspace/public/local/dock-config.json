@@ -69,6 +69,13 @@
       "label": "Risk / PnL",
       "icon": "http://localhost:4202/icons/risk-pnl.svg",
       "appId": "macro-angular-risk-pnl"
+    },
+    {
+      "type": "item",
+      "id": "fav-prism-blotter",
+      "label": "Prism Blotter",
+      "icon": "http://localhost:4202/icons/prism.svg",
+      "appId": "prism-blotter"
     }
   ],
   "contentMenu": [
@@ -174,6 +181,20 @@
           "label": "Rates E-Trading Desktop",
           "icon": "http://localhost:4202/icons/platform.svg",
           "appId": "rates-desktop"
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "id": "blotters",
+      "label": "Blotters",
+      "children": [
+        {
+          "type": "item",
+          "id": "cm-prism-blotter",
+          "label": "Prism — Blotter as a Service",
+          "icon": "http://localhost:4202/icons/prism.svg",
+          "appId": "prism-blotter"
         }
       ]
     }
