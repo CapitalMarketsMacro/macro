@@ -33,7 +33,7 @@
     "category": "Analytics",
     "transport": "nats",
     "mode": "append",
-    "connection": { "transport": "nats", "servers": "ws://MontyUbuntu2604:8224" },
+    "connection": { "transport": "nats", "servers": "ws://localhost:9222" },
     "topic": "macro.analytics.>",
     "maxRows": 1000,
     "columnMode": "infer"
@@ -45,7 +45,7 @@
     "category": "FX",
     "transport": "nats",
     "mode": "streaming",
-    "connection": { "transport": "nats", "servers": "ws://MontyUbuntu2604:8224" },
+    "connection": { "transport": "nats", "servers": "ws://localhost:9222" },
     "topic": "macro.fx.quotes.>",
     "keyField": "symbol",
     "conflationMs": 250,
@@ -58,7 +58,7 @@
     "category": "Risk",
     "transport": "nats-js",
     "mode": "snapshot-update",
-    "connection": { "transport": "nats-js", "servers": "ws://MontyUbuntu2604:8224", "stream": "POSITIONS" },
+    "connection": { "transport": "nats-js", "servers": "ws://localhost:9222", "stream": "POSITIONS" },
     "topic": "macro.positions.>",
     "keyField": "bookId",
     "columnMode": "infer"
