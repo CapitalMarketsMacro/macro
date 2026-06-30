@@ -1,0 +1,63 @@
+# Prism broker lab — local AMPS / NATS / Solace for testing the Prism blotter.
+#
+#   docker compose -f tools/prism-broker-lab/docker-compose.yml up -d   (or: npm run prism:brokers)
+#   node tools/prism-broker-lab/feeder.mjs                              (or: npm run prism:feed)
+#   npm run start:prism   ->   http://localhost:4204
+#
+# Ports are chosen to match apps/prism/public/data-sources.json so the seeded
+# NATS + Solace sources work out of the box. See README.md.
+
+name: prism-broker-lab
+
+services:
+  # ── NATS (core + JetStream), with a WebSocket listener the browser connects to ──
+  nats:
+    image: nats:2.10-alpine
+    command: ['-c', '/etc/nats/nats.conf']
+    ports:
+      - '4222:4222' # client (TCP) — used by the feeder if you switch it to TCP
+      - '8222:8222' # monitoring  — http://localhost:8222
+      - '9222:9222' # WebSocket   — Prism + feeder connect here (ws://localhost:9222)
+    volumes:
+      - ./nats.conf:/etc/nats/nats.conf:ro
+      - nats-data:/data
+    restart: unless-stopped
+
+  # ── Solace PubSub+ standard (web messaging over WebSocket on 8008) ──
+  solace:
+    image: solace/solace-pubsub-standard:latest
+    shm_size: 1g
+    ulimits:
+      core: -1
+      nofile:
+        soft: 2448
+        hard: 6592
+    environment:
+      - username_admin_globalaccesslevel=admin
+      - username_admin_password=admin
+      - system_scaling_maxconnectioncount=100
+    ports:
+      - '8008:8008' # web messaging (ws)   — Prism + feeder connect here (ws://localhost:8008)
+      - '55555:55555' # SMF
+      - '8080:8080' # SEMP / admin UI       — http://localhost:8080 (admin/admin)
+    volumes:
+      - solace-data:/var/lib/solace
+    restart: unless-stopped
+
+  # ── AMPS is commercial — there is no public image. You have an AMPS instance on Linux:
+  # point the catalog's AMPS entries at ws://<your-linux-host>:9008/amps/json (edit
+  # apps/prism/public/data-sources.json or use the ad-hoc dialog). To run AMPS in Docker
+  # instead, uncomment below with your licensed image + a config that exposes the
+  # websocket/json transport on 9008 and SOW topics `fx_spot` and `orders`.
+  #
+  # amps:
+  #   image: <your-licensed-amps-image>
+  #   ports:
+  #     - '9008:9008'   # ws json transport — ws://localhost:9008/amps/json
+  #   volumes:
+  #     - ./amps-config.xml:/amps/config/config.xml:ro
+  #   restart: unless-stopped
+
+volumes:
+  nats-data:
+  solace-data:
