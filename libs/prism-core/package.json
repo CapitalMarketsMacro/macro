@@ -1,0 +1,25 @@
+{
+  "name": "@macro/prism-core",
+  "version": "0.0.1",
+  "description": "Framework-free core of the Prism blotter — model, capital-markets column inference, the transport→grid feed controller, and the data-source store. Consumed by apps/prism (Angular) and apps/prism-react.",
+  "private": true,
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "dependencies": {
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "@macro/logger": "*",
+    "@macro/macro-grid-format": "*",
+    "@macro/transports": "*",
+    "@macro/utils": "*",
+    "ag-grid-community": ">=33.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ag-grid-community": {
+      "optional": true
+    }
+  }
+}

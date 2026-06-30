@@ -184,6 +184,31 @@ describe('MacroReactGrid', () => {
     });
   });
 
+  // ── AG Grid 36 auto-generation passthrough ────────────────────────────────
+
+  describe('autoGenerateColumnDefs passthrough', () => {
+    it('omits columnDefs (prop + gridOptions) when auto-gen is on and no columns are supplied', () => {
+      render(<MacroReactGrid gridOptions={{ autoGenerateColumnDefs: true }} rowData={[{ a: 1 }]} />);
+
+      expect(capturedProps.columnDefs).toBeUndefined();
+      const opts = capturedProps.gridOptions as Record<string, unknown>;
+      expect(opts.columnDefs).toBeUndefined();
+      expect(opts.autoGenerateColumnDefs).toBe(true);
+    });
+
+    it('still binds columnDefs when columns ARE supplied (auto-gen gate requires empty columns)', () => {
+      render(<MacroReactGrid gridOptions={{ autoGenerateColumnDefs: true }} columns={[{ field: 'a' }]} />);
+
+      expect(capturedProps.columnDefs).toEqual([{ field: 'a' }]);
+    });
+
+    it('binds columnDefs normally when auto-gen is off (default — unchanged)', () => {
+      render(<MacroReactGrid columns={[{ field: 'a' }]} rowData={[{ a: 1 }]} />);
+
+      expect(capturedProps.columnDefs).toEqual([{ field: 'a' }]);
+    });
+  });
+
   // ── Options merging ───────────────────────────────────────────────────────
 
   describe('options merging', () => {

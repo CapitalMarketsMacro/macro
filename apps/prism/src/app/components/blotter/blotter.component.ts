@@ -8,16 +8,20 @@ import { Message } from 'primeng/message';
 import { FormsModule } from '@angular/forms';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import type { ColumnFormatMap } from '@macro/macro-grid-format';
-import { DataSourceRepository } from '../../services/data-source-repository.service';
-import { ActiveSourceService } from '../../services/active-source.service';
-import { FeedController, type FeedStatus } from '../../services/blotter-feed';
-import { applyInferredFormats, inferColumns } from '../../services/column-inference';
 import {
+  BlotterFeed,
   MODE_LABELS,
   TRANSPORT_LABELS,
+  applyInferredFormats,
+  inferColumns,
   type BlotterSource,
   type ColumnMode,
-} from '../../models/blotter-source';
+  type FeedState,
+  type FeedStatus,
+  type GridOps,
+} from '@macro/prism-core';
+import { DataSourceRepository } from '../../services/data-source-repository.service';
+import { ActiveSourceService } from '../../services/active-source.service';
 
 type Row = Record<string, unknown>;
 
@@ -43,6 +47,9 @@ export class BlotterComponent implements AfterViewInit, OnDestroy {
   readonly columnMode = signal<ColumnMode>('infer');
   readonly showGrid = signal(true);
 
+  /** Mirror of the framework-free feed state into a signal so the template stays reactive. */
+  private readonly feedState = signal<FeedState>({ status: 'idle', rowCount: 0, msgsPerSec: 0, error: null });
+
   readonly columnModeOptions = [
     { label: 'Infer', value: 'infer' as ColumnMode },
     { label: 'Auto (v36)', value: 'auto-gen' as ColumnMode },
@@ -60,7 +67,8 @@ export class BlotterComponent implements AfterViewInit, OnDestroy {
       : {},
   );
 
-  private feed?: FeedController;
+  private feed?: BlotterFeed;
+  private feedUnsub?: () => void;
 
   readonly getRowId = (params: GetRowIdParams): string => {
     const src = this.source();
@@ -70,16 +78,16 @@ export class BlotterComponent implements AfterViewInit, OnDestroy {
   };
 
   get status(): FeedStatus {
-    return this.feed?.status() ?? 'idle';
+    return this.feedState().status;
   }
   get rowCount(): number {
-    return this.feed?.rowCount() ?? 0;
+    return this.feedState().rowCount;
   }
   get msgsPerSec(): number {
-    return this.feed?.msgsPerSec() ?? 0;
+    return this.feedState().msgsPerSec;
   }
   get error(): string | null {
-    return this.feed?.error() ?? null;
+    return this.feedState().error;
   }
 
   statusSeverity(): 'success' | 'danger' | 'warn' | 'secondary' {
@@ -105,6 +113,7 @@ export class BlotterComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.feedUnsub?.();
     this.feed?.stop();
   }
 
@@ -115,6 +124,7 @@ export class BlotterComponent implements AfterViewInit, OnDestroy {
   }
 
   reconnect(): void {
+    this.feedUnsub?.();
     this.feed?.stop();
     // Recreate the grid component (setInitialRowData is one-shot per grid instance).
     this.showGrid.set(false);
@@ -133,7 +143,16 @@ export class BlotterComponent implements AfterViewInit, OnDestroy {
     const grid = this.grid();
     if (!src || !grid) return;
     this.columns.set([]);
-    this.feed = new FeedController(src, grid, (rec) => this.onFirstRecord(rec));
+    // Adapt the Angular grid's Subjects/method to the framework-free GridOps interface.
+    const ops: GridOps = {
+      addRows: (rows) => grid.addRows$.next(rows),
+      updateRows: (rows) => grid.updateRows$.next(rows),
+      deleteRows: (rows) => grid.deleteRows$.next(rows),
+      setInitialRowData: (rows) => grid.setInitialRowData(rows),
+    };
+    this.feed = new BlotterFeed(src, ops, (rec) => this.onFirstRecord(rec));
+    this.feedState.set(this.feed.getState());
+    this.feedUnsub = this.feed.subscribe(() => this.feedState.set(this.feed!.getState()));
     this.feed.start();
   }
 

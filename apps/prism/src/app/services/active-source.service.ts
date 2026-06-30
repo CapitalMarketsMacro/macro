@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import type { BlotterSource } from '../models/blotter-source';
+import type { BlotterSource } from '@macro/prism-core';
 
 /**
  * Holds the source the user is opening, so the catalog/dialog can hand it to the blotter route
