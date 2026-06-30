@@ -1,0 +1,85 @@
+[
+  {
+    "id": "amps-fx-spot",
+    "name": "AMPS FX Spot (SOW)",
+    "description": "G10 spot top-of-book — SOW snapshot then live ticks, updated in place by symbol.",
+    "category": "FX",
+    "transport": "amps",
+    "mode": "snapshot-update",
+    "connection": { "transport": "amps", "url": "ws://localhost:9008/amps/json" },
+    "topic": "fx_spot",
+    "keyField": "symbol",
+    "conflationMs": 150,
+    "columnMode": "infer"
+  },
+  {
+    "id": "amps-orders-blotter",
+    "name": "AMPS Orders (append)",
+    "description": "Live order / fill events appended as they arrive, capped at 5,000 rows.",
+    "category": "Orders",
+    "transport": "amps",
+    "mode": "append",
+    "connection": { "transport": "amps", "url": "ws://localhost:9008/amps/json" },
+    "topic": "orders",
+    "filter": "/status <> 'DONE'",
+    "maxRows": 5000,
+    "keyField": "orderId",
+    "columnMode": "infer"
+  },
+  {
+    "id": "nats-analytics",
+    "name": "NATS Analytics Stream",
+    "description": "Workspace analytics events over core NATS (live, no snapshot).",
+    "category": "Analytics",
+    "transport": "nats",
+    "mode": "append",
+    "connection": { "transport": "nats", "servers": "ws://localhost:9222" },
+    "topic": "macro.analytics.>",
+    "maxRows": 1000,
+    "columnMode": "infer"
+  },
+  {
+    "id": "nats-fx-stream",
+    "name": "NATS FX Quotes (streaming)",
+    "description": "High-frequency FX quotes over core NATS, conflated to 250ms per symbol.",
+    "category": "FX",
+    "transport": "nats",
+    "mode": "streaming",
+    "connection": { "transport": "nats", "servers": "ws://localhost:9222" },
+    "topic": "macro.fx.quotes.>",
+    "keyField": "symbol",
+    "conflationMs": 250,
+    "columnMode": "infer"
+  },
+  {
+    "id": "natsjs-positions",
+    "name": "JetStream Positions (snapshot)",
+    "description": "Durable positions — JetStream last-per-subject snapshot then live deltas by book.",
+    "category": "Risk",
+    "transport": "nats-js",
+    "mode": "snapshot-update",
+    "connection": { "transport": "nats-js", "servers": "ws://localhost:9222", "stream": "POSITIONS" },
+    "topic": "macro.positions.>",
+    "keyField": "bookId",
+    "columnMode": "infer"
+  },
+  {
+    "id": "solace-treasury",
+    "name": "Solace UST Prices (streaming)",
+    "description": "US Treasury prices over Solace (live, conflated to 300ms) — columns via v36 auto-generation.",
+    "category": "Rates",
+    "transport": "solace",
+    "mode": "streaming",
+    "connection": {
+      "transport": "solace",
+      "hostUrl": "ws://localhost:8008",
+      "vpnName": "default",
+      "userName": "default",
+      "password": "default"
+    },
+    "topic": "ust/prices/>",
+    "keyField": "cusip",
+    "conflationMs": 300,
+    "columnMode": "auto-gen"
+  }
+]

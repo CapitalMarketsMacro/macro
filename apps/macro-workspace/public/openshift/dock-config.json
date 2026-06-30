@@ -69,6 +69,13 @@
       "label": "Prism Blotter",
       "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/prism.svg",
       "appId": "prism-blotter"
+    },
+    {
+      "type": "item",
+      "id": "fav-prism-react-blotter",
+      "label": "Prism Blotter (React)",
+      "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/prism-react.svg",
+      "appId": "prism-react-blotter"
     }
   ],
   "contentMenu": [
@@ -174,6 +181,13 @@
           "label": "Prism — Blotter as a Service",
           "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/prism.svg",
           "appId": "prism-blotter"
+        },
+        {
+          "type": "item",
+          "id": "cm-prism-react-blotter",
+          "label": "Prism Blotter (React)",
+          "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/prism-react.svg",
+          "appId": "prism-react-blotter"
         }
       ]
     }

@@ -76,6 +76,13 @@
       "label": "Prism Blotter",
       "icon": "http://localhost:4202/icons/prism.svg",
       "appId": "prism-blotter"
+    },
+    {
+      "type": "item",
+      "id": "fav-prism-react-blotter",
+      "label": "Prism Blotter (React)",
+      "icon": "http://localhost:4202/icons/prism-react.svg",
+      "appId": "prism-react-blotter"
     }
   ],
   "contentMenu": [
@@ -195,6 +202,13 @@
           "label": "Prism — Blotter as a Service",
           "icon": "http://localhost:4202/icons/prism.svg",
           "appId": "prism-blotter"
+        },
+        {
+          "type": "item",
+          "id": "cm-prism-react-blotter",
+          "label": "Prism Blotter (React)",
+          "icon": "http://localhost:4202/icons/prism-react.svg",
+          "appId": "prism-react-blotter"
         }
       ]
     }
