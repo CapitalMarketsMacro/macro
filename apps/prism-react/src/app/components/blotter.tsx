@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Square } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ChevronDown, Database, Plus, RefreshCw, Square } from 'lucide-react';
 import type { ColDef, GetRowIdParams, GridOptions } from 'ag-grid-community';
 import { MacroReactGrid, type MacroReactGridRef } from '@macro/macro-react-grid';
 import type { ColumnFormatMap } from '@macro/macro-grid-format';
@@ -10,36 +10,69 @@ import {
   TRANSPORT_LABELS,
   applyInferredFormats,
   inferColumns,
+  type BlotterMode,
+  type BlotterSource,
   type ColumnMode,
   type FeedState,
   type GridOps,
 } from '@macro/prism-core';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useDataSourceStore } from '../data-source-context';
+import { useAllSources, useDataSourceStore } from '../data-source-context';
+import { SourcePicker } from './source-picker';
+import { AdHocSourceDialog } from './adhoc-source-dialog';
 
 type Row = Record<string, unknown>;
 const IDLE: FeedState = { status: 'idle', rowCount: 0, msgsPerSec: 0, error: null };
 
+const modeVariant = (m: BlotterMode): 'success' | 'warning' | 'destructive' =>
+  m === 'streaming' ? 'destructive' : m === 'append' ? 'warning' : 'success';
+
 export function Blotter() {
-  const store = useDataSourceStore();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const sourceId = params.get('source');
-  const source = useMemo(() => (sourceId ? store.get(sourceId) ?? null : null), [store, sourceId]);
+  // Reactive over the store so the blotter follows ad-hoc edits/deletes and the async catalog load.
+  const all = useAllSources();
+  const source = useMemo(
+    () => (sourceId ? all.find((s) => s.id === sourceId) ?? null : null),
+    [all, sourceId],
+  );
 
   const gridRef = useRef<MacroReactGridRef>(null);
   const feedRef = useRef<BlotterFeed | null>(null);
 
   const [columnMode, setColumnMode] = useState<ColumnMode>('infer');
+  const [modeSourceId, setModeSourceId] = useState<string | null>(null);
   const [columns, setColumns] = useState<ColDef[]>([]);
   const [formats, setFormats] = useState<ColumnFormatMap>({});
   const [rowData, setRowData] = useState<unknown[]>([]);
   const [feedState, setFeedState] = useState<FeedState>(IDLE);
-  const [gridKey, setGridKey] = useState(0);
+  const [reconnectNonce, setReconnectNonce] = useState(0);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editSource, setEditSource] = useState<BlotterSource | null>(null);
 
-  useEffect(() => {
-    if (source) setColumnMode(source.columnMode);
-  }, [source]);
+  // When SWITCHING to a different source, adopt its default column mode. Done during render (not in
+  // an effect) so columnMode is settled before the feed effect runs — avoids a double feed restart.
+  // Editing the same source in place keeps the user's current toggle.
+  if (source && source.id !== modeSourceId) {
+    setModeSourceId(source.id);
+    setColumnMode(source.columnMode);
+  }
+
+  // Remount the grid on every feed (re)start so AG Grid init-only options (getRowId, the auto-gen
+  // column strategy) are re-applied. Keyed by source + column mode + an explicit reconnect/edit nonce.
+  const gridKey = `${source?.id ?? 'none'}:${columnMode}:${reconnectNonce}`;
+
+  const switchSource = (src: BlotterSource) => navigate(`/blotter?source=${encodeURIComponent(src.id)}`);
+  const openNew = () => {
+    setEditSource(null);
+    setDialogOpen(true);
+  };
+  const openEdit = (src: BlotterSource) => {
+    setEditSource(src);
+    setDialogOpen(true);
+  };
 
   const getRowId = useCallback(
     (p: GetRowIdParams) => {
@@ -91,23 +124,51 @@ export function Blotter() {
       void feed.stop();
       feedRef.current = null;
     };
-  }, [source, columnMode, gridKey]);
+  }, [source, columnMode, reconnectNonce]);
 
-  const reconnect = () => setGridKey((k) => k + 1);
+  const reconnect = () => setReconnectNonce((n) => n + 1);
   const disconnect = () => void feedRef.current?.stop();
   const switchMode = (mode: ColumnMode) => {
     if (mode === columnMode) return;
-    setColumnMode(mode);
-    setGridKey((k) => k + 1); // remount the grid with the new column strategy
+    setColumnMode(mode); // gridKey includes columnMode, so this remounts with the new strategy
   };
+
+  const sourceDialog = (
+    <AdHocSourceDialog
+      open={dialogOpen}
+      source={editSource}
+      onOpenChange={setDialogOpen}
+      onSaved={(src) => {
+        setDialogOpen(false);
+        setReconnectNonce((n) => n + 1); // remount even when editing the active source in place
+        switchSource(src);
+      }}
+    />
+  );
 
   if (!source) {
     return (
-      <div className="flex flex-col items-center gap-4 pt-16 opacity-80">
-        <p>No source selected.</p>
-        <Button asChild>
-          <a href={`${import.meta.env.BASE_URL}sources`}>Back to catalog</a>
-        </Button>
+      <div className="flex flex-col items-center gap-3 pt-16 text-center">
+        <Database className="size-9 opacity-40" />
+        <p className="font-semibold text-lg m-0">No data source selected</p>
+        <p className="opacity-70 m-0">Pick a configured source — or define your own — to start the blotter.</p>
+        <div className="flex gap-2 mt-4">
+          <SourcePicker
+            activeId={null}
+            onSelect={switchSource}
+            onNew={openNew}
+            onEdit={openEdit}
+            trigger={
+              <Button>
+                Select data source <ChevronDown className="size-4" />
+              </Button>
+            }
+          />
+          <Button variant="outline" onClick={openNew}>
+            <Plus className="size-4" /> New data source
+          </Button>
+        </div>
+        {sourceDialog}
       </div>
     );
   }
@@ -124,14 +185,24 @@ export function Blotter() {
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex items-center gap-3 flex-wrap">
-        <a href={`${import.meta.env.BASE_URL}sources`} aria-label="Back to catalog" className="text-foreground">
-          <ArrowLeft className="size-5" />
-        </a>
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-lg">{source.name}</span>
-          <Badge variant="secondary">{TRANSPORT_LABELS[source.transport]}</Badge>
-          <Badge>{MODE_LABELS[source.mode]}</Badge>
-        </div>
+        <SourcePicker
+          activeId={source.id}
+          onSelect={switchSource}
+          onNew={openNew}
+          onEdit={openEdit}
+          trigger={
+            <button
+              type="button"
+              aria-label="Change data source"
+              className="flex items-center gap-2 -ml-2 rounded-md border border-transparent px-2 py-1 hover:bg-accent hover:border-border"
+            >
+              <span className="font-bold text-lg">{source.name}</span>
+              <Badge variant="secondary">{TRANSPORT_LABELS[source.transport]}</Badge>
+              <Badge variant={modeVariant(source.mode)}>{MODE_LABELS[source.mode]}</Badge>
+              <ChevronDown className="size-3.5 opacity-60" />
+            </button>
+          }
+        />
 
         <div className="flex items-center gap-3">
           <Badge variant={statusVariant}>{feedState.status}</Badge>
@@ -177,6 +248,8 @@ export function Blotter() {
           getRowId={getRowId}
         />
       </div>
+
+      {sourceDialog}
     </div>
   );
 }

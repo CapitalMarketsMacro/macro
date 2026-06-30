@@ -31,7 +31,7 @@ npm run start:prism            # Angular → http://localhost:4204
 npm run start:prism-react      # React   → http://localhost:4205
 ```
 
-In the app: open **NATS FX Quotes** (streaming), **JetStream Positions** (snapshot + updates), **NATS Analytics** (append), or **Solace UST Prices** (streaming). Then **Add ad-hoc source** to point at any broker/topic of your own.
+In the app: click the toolbar source picker and open **NATS FX Quotes** (streaming), **JetStream Positions** (snapshot + updates), **NATS Analytics** (append), or **Solace UST Prices** (streaming). Then **New data source** to point at any broker/topic of your own.
 
 Stop the brokers when done: `npm run prism:brokers:down` (add `-v` to wipe volumes).
 
@@ -53,9 +53,12 @@ The seed catalog lives at `apps/prism/public/data-sources.json` (Angular) and `a
 
 ## Using the blotter
 
-1. **Catalog** (`/sources`) — browse sources grouped by **Category / Type / Behavior**. Each card shows the transport + behaviour. Click **Open**.
-2. **Ad-hoc source** — click **Add ad-hoc source**, choose a transport, fill the connection + topic, pick a **behaviour** and (for keyed feeds) a **key field**. It's saved to your browser (localStorage) and opens immediately. Ad-hoc cards can be edited/deleted.
-3. **Blotter** (`/blotter?source=<id>`) — the live grid + a status bar (connection state, row count, msgs/sec), **Reconnect** / **Disconnect**, and a **column-mode toggle**.
+Prism opens straight to a **blotter** (`/blotter`); a fresh instance shows a **Select data source** prompt.
+
+1. **Source picker** — click the source name in the toolbar (or **Select data source** on an empty blotter) to open the picker: **search**, browse sources grouped by category, and switch the blotter to any of them **in place**. Ad-hoc sources have inline **edit** / **delete**. The chosen source is written to the URL (`/blotter?source=<id>`), so it persists when you save a blotter as part of an **OpenFin layout** — open several blotters, point each at a different source, and save them together; each restores its own source.
+2. **New / ad-hoc source** — **New data source** (in the picker or the empty state) opens a dialog: choose a transport, fill the connection + topic, pick a **behaviour** and (for keyed feeds) a **key field**. It's saved to your browser (localStorage) and opens immediately. Delete it later from the picker or the catalog (catalog sources are read-only).
+3. **Catalog** (`/sources`) — the full grid of every source grouped by **Category / Type / Behavior**, for browsing/managing them all at once. Reachable from the header nav or the picker's **Browse all**.
+4. **Toolbar** — connection status, row count, msgs/sec, **Reconnect** / **Disconnect**, and the **column-mode toggle**.
 
 ### Source behaviour (mode)
 - **Snapshot + Updates** — stable keyed rows; the snapshot seeds the grid, live messages update rows in place by `keyField` (positions, top-of-book, risk).

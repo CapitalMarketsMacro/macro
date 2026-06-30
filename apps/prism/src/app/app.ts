@@ -17,6 +17,7 @@ export class App {
   protected readonly theme = inject(ThemeService);
 
   protected readonly menuItems: MenuItem[] = [
+    { label: 'Blotter', icon: 'pi pi-table', routerLink: '/blotter' },
     { label: 'Catalog', icon: 'pi pi-database', routerLink: '/sources' },
   ];
 
