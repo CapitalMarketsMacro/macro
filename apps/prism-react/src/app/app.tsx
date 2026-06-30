@@ -21,12 +21,20 @@ function Shell() {
   return (
     <div className="flex flex-col h-screen">
       <header className="flex items-center gap-4 border-b px-4 py-2">
-        <NavLink to="/sources" className="flex items-baseline gap-2 no-underline text-foreground">
+        <NavLink to="/blotter" className="flex items-baseline gap-2 no-underline text-foreground">
           <Triangle className="size-5 text-primary" />
           <span className="text-lg font-bold">Prism</span>
           <span className="text-xs opacity-60">Blotter as a Service · React</span>
         </NavLink>
-        <nav className="ml-2">
+        <nav className="ml-2 flex items-center gap-1">
+          <NavLink
+            to="/blotter"
+            className={({ isActive }) =>
+              `text-sm px-2 py-1 rounded ${isActive ? 'bg-accent text-accent-foreground' : 'opacity-80'}`
+            }
+          >
+            Blotter
+          </NavLink>
           <NavLink
             to="/sources"
             className={({ isActive }) =>
@@ -45,9 +53,9 @@ function Shell() {
 
       <main className="flex-1 min-h-0 p-4 overflow-auto flex flex-col">
         <Routes>
-          <Route path="/sources" element={<SourceCatalog />} />
           <Route path="/blotter" element={<Blotter />} />
-          <Route path="*" element={<Navigate to="/sources" replace />} />
+          <Route path="/sources" element={<SourceCatalog />} />
+          <Route path="*" element={<Navigate to="/blotter" replace />} />
         </Routes>
       </main>
     </div>

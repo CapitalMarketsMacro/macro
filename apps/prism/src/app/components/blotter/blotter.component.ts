@@ -1,10 +1,14 @@
-import { AfterViewInit, Component, OnDestroy, computed, inject, signal, viewChild } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Component, OnDestroy, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs/operators';
 import type { ColDef, GetRowIdParams, GridOptions } from 'ag-grid-community';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 import { SelectButton } from 'primeng/selectbutton';
 import { Message } from 'primeng/message';
+import { Popover } from 'primeng/popover';
+import { InputText } from 'primeng/inputtext';
 import { FormsModule } from '@angular/forms';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import type { ColumnFormatMap } from '@macro/macro-grid-format';
@@ -14,6 +18,7 @@ import {
   TRANSPORT_LABELS,
   applyInferredFormats,
   inferColumns,
+  type BlotterMode,
   type BlotterSource,
   type ColumnMode,
   type FeedState,
@@ -22,21 +27,25 @@ import {
 } from '@macro/prism-core';
 import { DataSourceRepository } from '../../services/data-source-repository.service';
 import { ActiveSourceService } from '../../services/active-source.service';
+import { AdHocSourceDialogComponent } from '../adhoc-source-dialog/adhoc-source-dialog.component';
 
 type Row = Record<string, unknown>;
 
 @Component({
   selector: 'app-blotter',
   standalone: true,
-  imports: [RouterLink, FormsModule, MacroAngularGrid, Button, Tag, SelectButton, Message],
+  imports: [RouterLink, FormsModule, MacroAngularGrid, Button, Tag, SelectButton, Message, Popover, InputText, AdHocSourceDialogComponent],
   templateUrl: './blotter.component.html',
   styleUrl: './blotter.component.css',
 })
-export class BlotterComponent implements AfterViewInit, OnDestroy {
+export class BlotterComponent implements OnDestroy {
   private readonly grid = viewChild(MacroAngularGrid);
+  private readonly picker = viewChild.required<Popover>('picker');
+  private readonly dialog = viewChild.required(AdHocSourceDialogComponent);
   private readonly repo = inject(DataSourceRepository);
   private readonly activeSource = inject(ActiveSourceService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly transportLabels = TRANSPORT_LABELS;
   readonly modeLabels = MODE_LABELS;
@@ -46,6 +55,28 @@ export class BlotterComponent implements AfterViewInit, OnDestroy {
   readonly formats = signal<ColumnFormatMap>({});
   readonly columnMode = signal<ColumnMode>('infer');
   readonly showGrid = signal(true);
+
+  /** Filter text for the source picker popover. */
+  readonly pickerFilter = signal('');
+
+  /** Sources grouped by category, narrowed by the picker's filter text. */
+  readonly pickerGroups = computed(() => {
+    const q = this.pickerFilter().trim().toLowerCase();
+    const groups = this.repo.groupedByCategory();
+    if (!q) return groups;
+    return groups
+      .map((g) => ({
+        category: g.category,
+        sources: g.sources.filter(
+          (s) =>
+            s.name.toLowerCase().includes(q) ||
+            s.category.toLowerCase().includes(q) ||
+            s.topic.toLowerCase().includes(q) ||
+            this.transportLabels[s.transport].toLowerCase().includes(q),
+        ),
+      }))
+      .filter((g) => g.sources.length > 0);
+  });
 
   /** Mirror of the framework-free feed state into a signal so the template stays reactive. */
   private readonly feedState = signal<FeedState>({ status: 'idle', rowCount: 0, msgsPerSec: 0, error: null });
@@ -69,6 +100,35 @@ export class BlotterComponent implements AfterViewInit, OnDestroy {
 
   private feed?: BlotterFeed;
   private feedUnsub?: () => void;
+
+  /** `?source=<id>` from the URL — the deep-link / layout-persisted source for this instance. */
+  private readonly routeSourceId = toSignal(
+    this.route.queryParamMap.pipe(map((pm) => pm.get('source'))),
+    { initialValue: this.route.snapshot.queryParamMap.get('source') },
+  );
+
+  /** Reactive resolution of the URL id against the (async-loaded) repo + the in-memory active source. */
+  private readonly resolvedSource = computed<BlotterSource | null>(() => {
+    const id = this.routeSourceId();
+    const all = this.repo.all(); // re-resolve once the catalog finishes loading
+    if (id) return all.find((s) => s.id === id) ?? this.activeSource.active();
+    return this.activeSource.active();
+  });
+
+  /** Last source id we (re)built a feed for; guards the effect against redundant restarts. */
+  private appliedId: string | null | undefined = undefined;
+
+  constructor() {
+    // Switch the blotter in place whenever the resolved source changes (URL nav from the picker,
+    // deep link, or catalog load). Each switch tears down the old feed and remounts the grid.
+    effect(() => {
+      const src = this.resolvedSource();
+      const id = src?.id ?? null;
+      if (id === this.appliedId) return;
+      this.appliedId = id;
+      this.applySource(src);
+    });
+  }
 
   readonly getRowId = (params: GetRowIdParams): string => {
     const src = this.source();
@@ -104,14 +164,6 @@ export class BlotterComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  ngAfterViewInit(): void {
-    const src = this.resolveSource();
-    if (!src) return;
-    this.source.set(src);
-    this.columnMode.set(src.columnMode);
-    this.startFeed();
-  }
-
   ngOnDestroy(): void {
     this.feedUnsub?.();
     this.feed?.stop();
@@ -120,22 +172,75 @@ export class BlotterComponent implements AfterViewInit, OnDestroy {
   setColumnMode(mode: ColumnMode): void {
     if (mode === this.columnMode()) return;
     this.columnMode.set(mode);
-    this.reconnect(); // rebuild the grid with the new column strategy
+    this.restartGrid(); // rebuild the grid with the new column strategy
   }
 
   reconnect(): void {
+    if (this.source()) this.restartGrid();
+  }
+
+  disconnect(): void {
+    this.feed?.stop();
+  }
+
+  // ── source picker ──
+
+  /** Switch this blotter instance to another source (drives the URL so it persists in layouts). */
+  switchSource(src: BlotterSource): void {
+    this.picker().hide();
+    if (src.id === this.source()?.id) return;
+    this.activeSource.open(src);
+    this.router.navigate(['/blotter'], { queryParams: { source: src.id } });
+  }
+
+  newSource(): void {
+    this.picker().hide();
+    this.dialog().show();
+  }
+
+  editSource(src: BlotterSource, event: Event): void {
+    event.stopPropagation();
+    this.picker().hide();
+    this.dialog().show(src);
+  }
+
+  /** Delete an ad-hoc source; if it's the one on screen, drop back to the empty-state picker. */
+  removeSource(src: BlotterSource, event: Event): void {
+    event.stopPropagation();
+    const wasActive = src.id === this.source()?.id;
+    this.repo.removeAdhoc(src.id);
+    if (wasActive) {
+      this.activeSource.clear();
+      this.router.navigate(['/blotter']);
+    }
+  }
+
+  /** A new/edited ad-hoc source was saved from the dialog — open it. */
+  onSourceSaved(src: BlotterSource): void {
+    this.switchSource(src);
+  }
+
+  private applySource(src: BlotterSource | null): void {
     this.feedUnsub?.();
     this.feed?.stop();
-    // Recreate the grid component (setInitialRowData is one-shot per grid instance).
+    this.source.set(src);
+    if (!src) {
+      this.showGrid.set(false);
+      return;
+    }
+    this.columnMode.set(src.columnMode);
+    this.restartGrid();
+  }
+
+  /** Remount the grid (setInitialRowData is one-shot per grid instance), then start the feed. */
+  private restartGrid(): void {
+    this.feedUnsub?.();
+    this.feed?.stop();
     this.showGrid.set(false);
     setTimeout(() => {
       this.showGrid.set(true);
       setTimeout(() => this.startFeed(), 0);
     }, 0);
-  }
-
-  disconnect(): void {
-    this.feed?.stop();
   }
 
   private startFeed(): void {
@@ -150,10 +255,11 @@ export class BlotterComponent implements AfterViewInit, OnDestroy {
       deleteRows: (rows) => grid.deleteRows$.next(rows),
       setInitialRowData: (rows) => grid.setInitialRowData(rows),
     };
-    this.feed = new BlotterFeed(src, ops, (rec) => this.onFirstRecord(rec));
-    this.feedState.set(this.feed.getState());
-    this.feedUnsub = this.feed.subscribe(() => this.feedState.set(this.feed!.getState()));
-    this.feed.start();
+    const feed = new BlotterFeed(src, ops, (rec) => this.onFirstRecord(rec));
+    this.feed = feed;
+    this.feedState.set(feed.getState());
+    this.feedUnsub = feed.subscribe(() => this.feedState.set(feed.getState()));
+    feed.start();
   }
 
   private onFirstRecord(rec: Row): void {
@@ -163,12 +269,7 @@ export class BlotterComponent implements AfterViewInit, OnDestroy {
     if (this.columnMode() === 'infer') this.columns.set(columns);
   }
 
-  private resolveSource(): BlotterSource | null {
-    const id = this.route.snapshot.queryParamMap.get('source');
-    if (id) {
-      const found = this.repo.get(id);
-      if (found) return found;
-    }
-    return this.activeSource.active();
+  modeSeverity(mode: BlotterMode): 'success' | 'warn' | 'danger' {
+    return mode === 'streaming' ? 'danger' : mode === 'append' ? 'warn' : 'success';
   }
 }
