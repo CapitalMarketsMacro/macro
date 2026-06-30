@@ -86,6 +86,8 @@ function createMockGridApi(overrides: Partial<GridApi> = {}): GridApi {
     getColumn: jest.fn().mockReturnValue(null),
     getColumns: jest.fn().mockReturnValue([]),
     getColumnDefs: jest.fn().mockReturnValue([]),
+    getColumnState: jest.fn().mockReturnValue([]),
+    applyColumnState: jest.fn(),
     setGridOption: jest.fn(),
     ...overrides,
   } as unknown as GridApi;
@@ -208,7 +210,7 @@ describe('MacroAngularGrid', () => {
       expect(component.mergedGridOptions.pagination).toBe(true);
       expect(component.mergedGridOptions.paginationPageSize).toBe(10);
       expect(component.mergedGridOptions.animateRows).toBe(true);
-      expect(component.mergedGridOptions.enableRangeSelection).toBe(true);
+      expect(component.mergedGridOptions.cellSelection).toBe(true);
       expect(component.mergedGridOptions.defaultColDef).toEqual({
         sortable: true,
         filter: true,
@@ -617,6 +619,36 @@ describe('MacroAngularGrid', () => {
         defs: [{ colId: 'spread', calculatedExpression: '[bid] - [ask]' }],
       });
     });
+
+    it('captures Show Values As selections from column state into getGridState', () => {
+      const api = createMockGridApi({
+        getColumnState: jest.fn().mockReturnValue([
+          { colId: 'pnl', showValuesAs: 'percentOfGrandTotal' },
+          { colId: 'dv01' }, // no mode -> dropped
+        ]),
+      } as Partial<GridApi>);
+      component.onGridReady(makeGridReadyEvent(api));
+
+      expect(component.getGridState().showValuesAs).toEqual([
+        { colId: 'pnl', showValuesAs: 'percentOfGrandTotal' },
+      ]);
+    });
+
+    it('re-applies persisted Show Values As selections via applyColumnState (not setState)', () => {
+      component.onGridReady(makeGridReadyEvent(mockApi));
+
+      component.applyGridState({
+        columnOrder: ['a'],
+        showValuesAs: [{ colId: 'pnl', showValuesAs: 'percentOfParentRowTotal' }],
+      });
+
+      // Rides a column-state side-channel, NOT the native GridState envelope.
+      expect(mockApi.applyColumnState).toHaveBeenCalledWith({
+        state: [{ colId: 'pnl', showValuesAs: 'percentOfParentRowTotal' }],
+      });
+      // The side-channel key must be stripped from what reaches setState.
+      expect((mockApi.setState as jest.Mock).mock.calls[0][0]).not.toHaveProperty('showValuesAs');
+    });
   });
 
   // ── getGridApi ────────────────────────────────────────────────────────────
@@ -708,15 +740,18 @@ describe('MacroAngularGrid', () => {
       expect(component.defaultGridOptions.paginationPageSizeSelector).toEqual([10, 25, 50, 100]);
     });
 
-    it('should enable range selection and suppress cell focus', () => {
-      expect(component.defaultGridOptions.enableRangeSelection).toBe(true);
+    it('should enable cell (range) selection and suppress cell focus', () => {
+      expect(component.defaultGridOptions.cellSelection).toBe(true);
       expect(component.defaultGridOptions.suppressCellFocus).toBe(true);
     });
 
-    it('should enable animate rows and multiple row selection', () => {
+    it('should enable animate rows and multi-row selection (v36 object API)', () => {
       expect(component.defaultGridOptions.animateRows).toBe(true);
-      expect(component.defaultGridOptions.rowSelection).toBe('multiple');
-      expect(component.defaultGridOptions.suppressRowClickSelection).toBe(true);
+      expect(component.defaultGridOptions.rowSelection).toEqual({
+        mode: 'multiRow',
+        checkboxes: false,
+        enableClickSelection: false,
+      });
     });
   });
 });

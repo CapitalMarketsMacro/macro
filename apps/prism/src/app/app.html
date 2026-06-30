@@ -1,0 +1,25 @@
+<div class="prism-shell">
+  <p-menubar [model]="menuItems" class="prism-menubar">
+    <ng-template #start>
+      <a routerLink="/sources" class="prism-brand">
+        <i class="pi pi-prime"></i>
+        <span class="prism-brand__name">Prism</span>
+        <span class="prism-brand__tag">Blotter as a Service</span>
+      </a>
+    </ng-template>
+    <ng-template #end>
+      <p-button
+        [text]="true"
+        [rounded]="true"
+        severity="secondary"
+        [icon]="isDark ? 'pi pi-sun' : 'pi pi-moon'"
+        (onClick)="toggleTheme()"
+        ariaLabel="Toggle theme"
+      />
+    </ng-template>
+  </p-menubar>
+
+  <main class="prism-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -67,3 +67,6 @@ export {
   mergeCalculatedColumns,
 } from './lib/calculated-columns';
 export type { CalcColumnSchema } from './lib/calculated-columns';
+
+export { SHOW_VALUES_AS_KEY, serializeShowValuesAs } from './lib/show-values-as';
+export type { ShowValuesAsEntry } from './lib/show-values-as';

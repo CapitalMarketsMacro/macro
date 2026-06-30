@@ -104,10 +104,11 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 
 **OpenFin (macro-workspace):**
 
-- Platform manifest: `apps/macro-workspace/public/manifest.fin.json`
-- App registry in `customSettings.apps` array within manifest
-- View manifests: `apps/macro-workspace/public/*.fin.json`
-- Settings: `apps/macro-workspace/public/settings.json`
+- Config is **environment-scoped** under `apps/macro-workspace/public/{local,openshift}/`, selected by the `?env=` query param on the provider URL (default `local`). Local uses `http://localhost:42xx/...`; OpenShift uses `https://{{OPENSHIFT_*_HOST}}/...` tokens substituted at deploy time.
+- Platform manifest: `apps/macro-workspace/public/{local,openshift}/manifest.fin.json` (runtime/platform only — does **not** contain the app registry).
+- **App registry: `apps/macro-workspace/public/{local,openshift}/apps.json`** — the source of truth for store + dock + home. Each entry: `{appId, name, title, description, manifest, manifestType, icons, tags, category}`; the `category` field drives storefront navigation. (There is no `customSettings.apps` array.)
+- Dock: `dock-config.json` (`favorites[]` + `contentMenu[]` folders). Storefront: `storefront-config.json` (nav sections / landing / footer). Snap: `snap-config.json`. Entitlements: `entitlements.json`. `settings.json` holds only `platformSettings`.
+- View manifests: `apps/macro-workspace/public/{local,openshift}/<name>.fin.json` (`{ url, fdc3InteropApi: "2.0", interop: { currentContextGroup: "green" } }`).
 - FDC3 2.0 with `currentContextGroup: "green"` on all views
 - Workspace persistence via localStorage
 - View state persistence via `ViewStateService` / `useViewState()` hook
@@ -174,12 +175,15 @@ This repo has 6 MCP servers configured in `.mcp.json`:
 
 ## Adding a New Application
 
-1. Generate with NX: `npx nx generate @nx/angular:application <name> --directory=apps/<name>`
+> OpenFin config is environment-scoped under `apps/macro-workspace/public/{local,openshift}/` — do steps 4–6 in **both** env folders (local `http://localhost:42xx`, openshift `{{OPENSHIFT_*_HOST}}` tokens). All surfaces are config-driven, so no `libs/openfin` code change is needed.
+
+1. Generate with NX: `npx nx generate @nx/angular:application <name> --directory=apps/<name>` (pick a free serve port — 4200/4201/4202/4203 are taken)
 2. Import shared CSS from `@macro/macro-design` in the app's `styles.css`
 3. Use `@macro/*` libraries for grids, logging, messaging, theming
-4. Register in OpenFin manifest (`apps/macro-workspace/public/manifest.fin.json`)
-5. Create a view manifest (`apps/macro-workspace/public/<name>.fin.json`)
-6. Add path alias to `tsconfig.base.json` if creating a new lib
+4. Create a view manifest `public/{local,openshift}/<name>.fin.json` (`{ "url": "...", "fdc3InteropApi": "2.0", "interop": { "currentContextGroup": "green" } }`)
+5. Register the app in `public/{local,openshift}/apps.json` — add an entry with `appId`, `manifest` → the view-manifest URL, `manifestType: "view"`, `icons`, `tags`, and a `category`. This alone surfaces it in the store, home search, and as a launch target.
+6. Add a dock entry in `public/{local,openshift}/dock-config.json` (a `favorites[]` item and/or a `contentMenu` folder child), wire storefront nav in `storefront-config.json` (a nav item whose `category` matches — OpenFin caps nav at 3 sections / 5 items, and the dynamic Favorites section occupies one slot, so add categories as items in an existing section rather than a 4th section), and add an icon under `public/icons/`.
+7. Add a path alias to `tsconfig.base.json` only if creating a new lib
 
 ## Adding a New Shared Library
 
@@ -193,8 +197,11 @@ This repo has 6 MCP servers configured in `.mcp.json`:
 | ------------------------------------------------ | -------------------------------------------- |
 | `tsconfig.base.json`                             | All `@macro/*` path aliases                  |
 | `nx.json`                                        | Build targets, caching, plugins, generators  |
-| `apps/macro-workspace/public/manifest.fin.json`  | OpenFin app registry (11 registered apps)    |
-| `apps/macro-workspace/public/settings.json`      | Apps, dock, snap provider config             |
+| `apps/macro-workspace/public/{local,openshift}/apps.json` | OpenFin app registry (per-env; source of truth for store + dock + home) |
+| `apps/macro-workspace/public/{local,openshift}/dock-config.json` | Dock favorites + content menu (per-env)      |
+| `apps/macro-workspace/public/{local,openshift}/storefront-config.json` | Storefront nav sections / landing / footer (per-env) |
+| `apps/macro-workspace/public/{local,openshift}/manifest.fin.json` | OpenFin platform/runtime manifest (per-env; NOT the app registry) |
+| `apps/macro-workspace/public/{local,openshift}/settings.json` | `platformSettings` only (id, title, icon)    |
 | `libs/macro-design/src/lib/css/macro-design.css` | All CSS variables (`:root` + `.dark`)        |
 | `libs/macro-design/src/lib/ag-grid-theme.ts`     | AG Grid theme builder                        |
 | `libs/macro-design/src/lib/dark-mode.ts`         | Dark mode utilities                          |
@@ -203,6 +210,8 @@ This repo has 6 MCP servers configured in `.mcp.json`:
 | `apps/macro-angular/src/app/app.config.ts`       | Angular app providers (PrimeNG, zone config) |
 | `apps/macro-react/src/main.tsx`                  | React entry (PrimeReact provider config)     |
 | `apps/macro-workspace/src/app/app.config.ts`     | Workspace app config (zoneless)              |
+| `.github/copilot-instructions.md`                | Condensed AG Grid 36 / format-panel / calc / Show-Values-As rules + gotchas (auto-loaded by Copilot) |
+| `docs/copilot/ag-grid-36-format-panel-port.md`   | Full verbatim port guide for the above (engine, tool panel, persistence side-channels) |
 
 ## Common Pitfalls
 

@@ -55,6 +55,20 @@
       "label": "Analytics Dashboard",
       "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/platform.svg",
       "appId": "macro-analytics-dashboard"
+    },
+    {
+      "type": "item",
+      "id": "fav-risk-pnl",
+      "label": "Risk / PnL",
+      "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/risk-pnl.svg",
+      "appId": "macro-angular-risk-pnl"
+    },
+    {
+      "type": "item",
+      "id": "fav-prism-blotter",
+      "label": "Prism Blotter",
+      "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/prism.svg",
+      "appId": "prism-blotter"
     }
   ],
   "contentMenu": [
@@ -90,6 +104,13 @@
           "label": "FDC3 Instrument Viewer",
           "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/angular-app.svg",
           "appId": "macro-angular-fdc3-instrument-viewer"
+        },
+        {
+          "type": "item",
+          "id": "cm-risk-pnl",
+          "label": "Risk / PnL",
+          "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/risk-pnl.svg",
+          "appId": "macro-angular-risk-pnl"
         }
       ]
     },
@@ -139,6 +160,20 @@
           "label": "View 2 (FDC3 Listener)",
           "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/view-listener.svg",
           "appId": "macro-workspace-view2"
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "id": "blotters",
+      "label": "Blotters",
+      "children": [
+        {
+          "type": "item",
+          "id": "cm-prism-blotter",
+          "label": "Prism — Blotter as a Service",
+          "icon": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/prism.svg",
+          "appId": "prism-blotter"
         }
       ]
     }

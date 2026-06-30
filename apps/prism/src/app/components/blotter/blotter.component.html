@@ -1,0 +1,60 @@
+@if (source(); as src) {
+  <div class="blotter">
+    <div class="blotter__bar">
+      <a routerLink="/sources" class="blotter__back" aria-label="Back to catalog">
+        <i class="pi pi-arrow-left"></i>
+      </a>
+      <div class="blotter__title">
+        <span class="blotter__name">{{ src.name }}</span>
+        <p-tag [value]="transportLabels[src.transport]" severity="secondary" />
+        <p-tag [value]="modeLabels[src.mode]" />
+      </div>
+
+      <div class="blotter__status">
+        <p-tag [value]="status" [severity]="statusSeverity()" />
+        <span class="blotter__metric">{{ rowCount }} rows</span>
+        <span class="blotter__metric">{{ msgsPerSec }} msg/s</span>
+      </div>
+
+      <div class="blotter__actions">
+        <p-selectButton
+          [options]="columnModeOptions"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          [ngModel]="columnMode()"
+          (ngModelChange)="setColumnMode($event)"
+        />
+        <p-button icon="pi pi-refresh" label="Reconnect" [text]="true" size="small" (onClick)="reconnect()" />
+        <p-button
+          icon="pi pi-stop"
+          label="Disconnect"
+          [text]="true"
+          severity="secondary"
+          size="small"
+          (onClick)="disconnect()"
+        />
+      </div>
+    </div>
+
+    @if (error; as err) {
+      <p-message severity="error">{{ err }}</p-message>
+    }
+
+    <div class="blotter__grid">
+      @if (showGrid()) {
+        <lib-macro-angular-grid
+          [columns]="columns()"
+          [columnFormats]="seedFormats()"
+          [gridOptions]="gridOptions()"
+          [getRowId]="getRowId"
+        />
+      }
+    </div>
+  </div>
+} @else {
+  <div class="blotter__empty">
+    <p>No source selected.</p>
+    <p-button label="Back to catalog" icon="pi pi-arrow-left" routerLink="/sources" />
+  </div>
+}

@@ -17,7 +17,15 @@ export { SolaceTransport } from './lib/solace/solace-transport';
 export { SolaceTransport as SolaceClient } from './lib/solace/solace-transport';
 export type { SolaceConnectionOptions, SolacePublishOptions } from './lib/solace/solace-transport';
 
-// NATS transport
+// NATS transport (core)
 export { NatsTransport } from './lib/nats/nats-transport';
 export { NatsTransport as NatsClient } from './lib/nats/nats-transport';
 export type { NatsConnectionOptions } from './lib/nats/nats-transport';
+
+// NATS JetStream transport (snapshot + stream)
+export { NatsJetStreamTransport } from './lib/nats/nats-jetstream-transport';
+export { NatsJetStreamTransport as NatsJetStreamClient } from './lib/nats/nats-jetstream-transport';
+export type {
+  NatsJetStreamConnectionOptions,
+  JetStreamSnapshotOptions,
+} from './lib/nats/nats-jetstream-transport';

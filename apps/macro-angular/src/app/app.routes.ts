@@ -1,6 +1,7 @@
 import { Route } from '@angular/router';
 import { FxMarketDataComponent } from './fx-market-data/fx-market-data.component';
 import { TreasuryMicrostructureComponent } from './treasury-microstructure/treasury-microstructure.component';
+import { RiskPnlComponent } from './risk-pnl/risk-pnl.component';
 
 export const appRoutes: Route[] = [
   {
@@ -10,6 +11,10 @@ export const appRoutes: Route[] = [
   {
     path: 'treasury-microstructure',
     component: TreasuryMicrostructureComponent,
+  },
+  {
+    path: 'risk-pnl',
+    component: RiskPnlComponent,
   },
   {
     path: '',

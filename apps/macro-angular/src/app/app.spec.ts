@@ -99,16 +99,18 @@ describe('App (root component)', () => {
   // -----------------------------------------------------------------------
   // ngOnInit
   // -----------------------------------------------------------------------
-  it('should initialize menu items with two entries', () => {
+  it('should initialize menu items with three entries', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
     const items = fixture.componentInstance.menuItems;
-    expect(items).toHaveLength(2);
+    expect(items).toHaveLength(3);
     expect(items[0].label).toBe('FX Market Data');
     expect(items[0].routerLink).toBe('/fx-market-data');
     expect(items[1].label).toBe('Treasury Microstructure');
     expect(items[1].routerLink).toBe('/treasury-microstructure');
+    expect(items[2].label).toBe('Risk / PnL');
+    expect(items[2].routerLink).toBe('/risk-pnl');
   });
 
   it('should set logger global level and instance level on init', () => {

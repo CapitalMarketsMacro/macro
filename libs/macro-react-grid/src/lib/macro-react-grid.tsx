@@ -26,11 +26,13 @@ import {
   CALCULATED_COLUMNS_KEY,
   ColumnFormatStore,
   FORMAT_TOOL_PANEL_COMPONENT,
+  SHOW_VALUES_AS_KEY,
   buildCellStyle,
   buildValueFormatter,
   mergeCalculatedColumns,
   migrateMap,
   sameCalcSchema,
+  serializeShowValuesAs,
   withFormatPanel,
   type CalcColumnSchema,
   type ColumnFormatMap,
@@ -98,8 +100,13 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
     const defaultGridOptions: GridOptions = useMemo(() => ({
       defaultColDef: { sortable: true, filter: true, resizable: true },
       pagination: true, paginationPageSize: 10, paginationPageSizeSelector: [10, 25, 50, 100],
-      animateRows: true, rowSelection: 'multiple', suppressRowClickSelection: true,
-      enableRangeSelection: true, suppressCellFocus: true,
+      animateRows: true,
+      // v36 selection API (string rowSelection / enableRangeSelection / suppressRowClickSelection
+      // are deprecated). Preserves prior behaviour: multi-row mode, no checkbox column, no
+      // click-to-select; cell-range selection enabled.
+      rowSelection: { mode: 'multiRow', checkboxes: false, enableClickSelection: false },
+      cellSelection: true,
+      suppressCellFocus: true,
       // AG Grid 36 calculated columns: 'deferred' = validate + Apply/Cancel in the dialog.
       calculatedColumns: { applyMode: 'deferred' },
     }), []);
@@ -241,16 +248,18 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
         const defs = [...calcDefsRef.current.values()];
         const removed = [...calcRemovedRef.current];
         const calc = defs.length || removed.length ? (removed.length ? { defs, removed } : { defs }) : undefined;
+        const showValuesAs = serializeShowValuesAs(gridApiRef.current?.getColumnState());
         return {
           ...s,
           ...(formats ? { columnFormats: formats } : {}),
           ...(calc ? { [CALCULATED_COLUMNS_KEY]: calc } : {}),
+          ...(showValuesAs ? { [SHOW_VALUES_AS_KEY]: showValuesAs } : {}),
         };
       },
       applyGridState: (state: any) => {
         const api = gridApiRef.current;
         if (!api) return;
-        const { columnFormats: cf, [CALCULATED_COLUMNS_KEY]: calc, ...gs } = state ?? {};
+        const { columnFormats: cf, [CALCULATED_COLUMNS_KEY]: calc, [SHOW_VALUES_AS_KEY]: showValuesAs, ...gs } = state ?? {};
         // 1. Recreate calculated columns (reset the tracked set, so a saved "no calc columns"
         //    view removes any added at runtime) BEFORE setState so column-state can bind by colId.
         calcDefsRef.current = new Map((calc?.defs ?? []).map((s: CalcColumnSchema) => [s.colId, s]));
@@ -262,6 +271,8 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
         api.setGridOption('columnDefs', merged);
         // 2. Native state.
         api.setState(gs as GridState);
+        // 2b. Show Values As selections ride a side-channel (not in GridState) — re-apply via column state.
+        if (showValuesAs?.length) api.applyColumnState({ state: showValuesAs });
         // 3. Column formats. store.restore emits -> our store-change subscription re-bakes calc
         //    column formats into the colDefs and re-applies; regular columns are mutated in place.
         const map = migrateMap(cf ?? {});

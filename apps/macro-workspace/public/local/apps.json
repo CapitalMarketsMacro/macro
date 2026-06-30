@@ -121,6 +121,31 @@
       "category": "Rates"
     },
     {
+      "appId": "macro-angular-risk-pnl",
+      "name": "macro-angular-risk-pnl",
+      "title": "Risk / PnL",
+      "description": "Risk and PnL aggregated by desk, book and trader with Show Values As contributions",
+      "manifest": "http://localhost:4202/local/macro-angular-risk-pnl.fin.json",
+      "manifestType": "view",
+      "icons": [
+        {
+          "src": "http://localhost:4202/icons/risk-pnl.svg"
+        }
+      ],
+      "contactEmail": "contact@example.com",
+      "supportEmail": "support@example.com",
+      "publisher": "OpenFin",
+      "intents": [],
+      "images": [],
+      "tags": [
+        "view",
+        "angular",
+        "risk",
+        "pnl"
+      ],
+      "category": "Risk"
+    },
+    {
       "appId": "macro-react-view",
       "name": "macro-react-view",
       "title": "Macro React App",
@@ -290,6 +315,33 @@
         "figma-make"
       ],
       "category": "Design"
+    },
+    {
+      "appId": "prism-blotter",
+      "name": "prism-blotter",
+      "title": "Prism — Blotter as a Service",
+      "description": "Pick a Capital Markets data source (AMPS / NATS / JetStream / Solace) or define an ad-hoc one; snapshot + real-time AG Grid blotter.",
+      "manifest": "http://localhost:4202/local/prism.fin.json",
+      "manifestType": "view",
+      "icons": [
+        {
+          "src": "http://localhost:4202/icons/prism.svg"
+        }
+      ],
+      "contactEmail": "contact@example.com",
+      "supportEmail": "support@example.com",
+      "publisher": "OpenFin",
+      "intents": [],
+      "images": [],
+      "tags": [
+        "view",
+        "angular",
+        "blotter",
+        "amps",
+        "nats",
+        "solace"
+      ],
+      "category": "Blotters"
     }
   ]
 }

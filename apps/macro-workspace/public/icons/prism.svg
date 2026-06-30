@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="12" fill="#0f172a" />
+  <!-- incoming beam -->
+  <rect x="6" y="30" width="16" height="4" rx="2" fill="#94a3b8" />
+  <!-- prism -->
+  <path d="M30 14 L48 46 L12 46 Z" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linejoin="round" />
+  <!-- split spectrum into grid rows -->
+  <rect x="40" y="20" width="18" height="3" rx="1.5" fill="#22d3ee" />
+  <rect x="40" y="27" width="18" height="3" rx="1.5" fill="#3b82f6" />
+  <rect x="40" y="34" width="18" height="3" rx="1.5" fill="#a855f7" />
+  <rect x="40" y="41" width="18" height="3" rx="1.5" fill="#f43f5e" />
+</svg>

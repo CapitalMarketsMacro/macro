@@ -8,7 +8,9 @@
         "items": [
           { "id": "fx", "title": "FX", "category": "FX" },
           { "id": "rates", "title": "Rates", "category": "Rates" },
-          { "id": "commodities", "title": "Commodities", "category": "Commodities" }
+          { "id": "commodities", "title": "Commodities", "category": "Commodities" },
+          { "id": "risk", "title": "Risk", "category": "Risk" },
+          { "id": "blotters", "title": "Blotters", "category": "Blotters" }
         ]
       },
       {

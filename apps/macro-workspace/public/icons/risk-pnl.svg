@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Risk / PnL contribution pie: each slice = a desk's share of the total (Show Values As) -->
+  <path d="M32,32 L32,14 A18,18 0 0,1 41,47.59 Z" fill="#3b82f6"/>
+  <path d="M32,32 L41,47.59 A18,18 0 0,1 14.27,35.13 Z" fill="#22c55e"/>
+  <path d="M32,32 L14.27,35.13 A18,18 0 0,1 32,14 Z" fill="#f59e0b"/>
+  <!-- Centre hole for a clean donut read -->
+  <circle cx="32" cy="32" r="7" fill="#ffffff"/>
+</svg>

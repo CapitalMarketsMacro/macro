@@ -1,0 +1,7 @@
+{
+  "url": "https://{{OPENSHIFT_ANGULAR_HOST}}/risk-pnl",
+  "fdc3InteropApi": "2.0",
+  "interop": {
+    "currentContextGroup": "green"
+  }
+}
