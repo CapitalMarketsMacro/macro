@@ -1,0 +1,127 @@
+<p-dialog
+  header="Ad-hoc data source"
+  [modal]="true"
+  [style]="{ width: '36rem' }"
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+>
+  <form [formGroup]="form" class="adhoc-form">
+    <div class="adhoc-form__row">
+      <span class="adhoc-form__label">Name</span>
+      <input pInputText formControlName="name" placeholder="e.g. My FX Quotes" />
+    </div>
+
+    <div class="adhoc-form__grid">
+      <div class="adhoc-form__row">
+        <span class="adhoc-form__label">Transport</span>
+        <p-select formControlName="transport" [options]="transportOptions" optionLabel="label" optionValue="value" />
+      </div>
+      <div class="adhoc-form__row">
+        <span class="adhoc-form__label">Behavior</span>
+        <p-select formControlName="mode" [options]="modeOptions" optionLabel="label" optionValue="value" />
+      </div>
+      <div class="adhoc-form__row">
+        <span class="adhoc-form__label">Category</span>
+        <input pInputText formControlName="category" placeholder="Custom" />
+      </div>
+      <div class="adhoc-form__row">
+        <span class="adhoc-form__label">Columns</span>
+        <p-select formControlName="columnMode" [options]="columnModeOptions" optionLabel="label" optionValue="value" />
+      </div>
+    </div>
+
+    <!-- Connection (per transport) -->
+    @switch (transport) {
+      @case ('amps') {
+        <div class="adhoc-form__row">
+          <span class="adhoc-form__label">AMPS URL</span>
+          <input pInputText formControlName="url" placeholder="ws://host:9008/amps/json" />
+        </div>
+        <div class="adhoc-form__grid">
+          <div class="adhoc-form__row">
+            <span class="adhoc-form__label">Logon (optional)</span>
+            <input pInputText formControlName="logon" />
+          </div>
+          <div class="adhoc-form__row">
+            <span class="adhoc-form__label">Heartbeat (s)</span>
+            <p-inputnumber formControlName="heartbeat" [min]="0" />
+          </div>
+        </div>
+      }
+      @case ('solace') {
+        <div class="adhoc-form__grid">
+          <div class="adhoc-form__row">
+            <span class="adhoc-form__label">Host URL</span>
+            <input pInputText formControlName="hostUrl" placeholder="ws://host:8008" />
+          </div>
+          <div class="adhoc-form__row">
+            <span class="adhoc-form__label">VPN</span>
+            <input pInputText formControlName="vpnName" />
+          </div>
+          <div class="adhoc-form__row">
+            <span class="adhoc-form__label">User</span>
+            <input pInputText formControlName="userName" />
+          </div>
+          <div class="adhoc-form__row">
+            <span class="adhoc-form__label">Password</span>
+            <input pInputText type="password" formControlName="password" />
+          </div>
+        </div>
+      }
+      @default {
+        <!-- nats / nats-js -->
+        <div class="adhoc-form__grid">
+          <div class="adhoc-form__row">
+            <span class="adhoc-form__label">Servers</span>
+            <input pInputText formControlName="servers" placeholder="ws://host:8224" />
+          </div>
+          <div class="adhoc-form__row">
+            <span class="adhoc-form__label">Client name (optional)</span>
+            <input pInputText formControlName="clientName" />
+          </div>
+          @if (transport === 'nats-js') {
+            <div class="adhoc-form__row">
+              <span class="adhoc-form__label">Stream (optional)</span>
+              <input pInputText formControlName="stream" placeholder="resolved from subject if blank" />
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <div class="adhoc-form__row">
+      <span class="adhoc-form__label">{{ transport === 'amps' ? 'Topic' : 'Subject / topic' }}</span>
+      <input pInputText formControlName="topic" placeholder="e.g. macro.fx.quotes.>" />
+    </div>
+
+    <div class="adhoc-form__grid">
+      @if (transport === 'amps') {
+        <div class="adhoc-form__row">
+          <span class="adhoc-form__label">Filter (optional)</span>
+          <input pInputText formControlName="filter" placeholder="/status &lt;&gt; 'DONE'" />
+        </div>
+      }
+      @if (!isAppend) {
+        <div class="adhoc-form__row">
+          <span class="adhoc-form__label">Key field</span>
+          <input pInputText formControlName="keyField" placeholder="e.g. symbol" />
+        </div>
+        <div class="adhoc-form__row">
+          <span class="adhoc-form__label">Conflation (ms, optional)</span>
+          <p-inputnumber formControlName="conflationMs" [min]="0" />
+        </div>
+      }
+      @if (isAppend) {
+        <div class="adhoc-form__row">
+          <span class="adhoc-form__label">Max rows (optional)</span>
+          <p-inputnumber formControlName="maxRows" [min]="1" />
+        </div>
+      }
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <p-button label="Cancel" [text]="true" severity="secondary" (onClick)="cancel()" />
+    <p-button label="Open" icon="pi pi-arrow-right" [disabled]="!canSave()" (onClick)="save()" />
+  </ng-template>
+</p-dialog>

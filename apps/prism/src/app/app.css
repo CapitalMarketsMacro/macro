@@ -1,0 +1,30 @@
+.prism-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.prism-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 1rem;
+  overflow: auto;
+}
+
+.prism-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--foreground);
+}
+
+.prism-brand__name {
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.prism-brand__tag {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
