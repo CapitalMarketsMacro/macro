@@ -1,4 +1,3 @@
-import { signal } from '@angular/core';
 import { Subscription } from 'rxjs';
 import {
   AmpsTransport,
@@ -9,27 +8,46 @@ import {
   type TransportMessage,
 } from '@macro/transports';
 import { ConflationSubject } from '@macro/utils';
-import type { MacroAngularGrid } from '@macro/macro-angular-grid';
-import type { BlotterSource } from '../models/blotter-source';
+import type { BlotterSource } from './blotter-source';
 
 export type FeedStatus = 'idle' | 'connecting' | 'snapshot-loading' | 'live' | 'error' | 'stopped';
+
+/** Immutable status snapshot the host UI renders (Angular reads it via a signal bridge, React via useSyncExternalStore). */
+export interface FeedState {
+  status: FeedStatus;
+  rowCount: number;
+  msgsPerSec: number;
+  error: string | null;
+}
+
+/**
+ * The minimal grid surface {@link BlotterFeed} writes to. Each app adapts its grid:
+ *  - Angular `MacroAngularGrid`: addRows/updateRows/deleteRows → the `addRows$/updateRows$/deleteRows$`
+ *    Subjects; `setInitialRowData` → the method of the same name.
+ *  - React `MacroReactGrid`: addRows/updateRows/deleteRows → the ref Subjects; `setInitialRowData` →
+ *    set the `rowData` prop state (the React ref has no `setInitialRowData`).
+ */
+export interface GridOps {
+  addRows(rows: unknown[]): void;
+  updateRows(rows: unknown[]): void;
+  deleteRows(rows: unknown[]): void;
+  setInitialRowData(rows: unknown[]): void;
+}
 
 type Row = Record<string, unknown>;
 
 /**
  * Drives one blotter: instantiates the right core transport for a {@link BlotterSource}, connects,
- * and wires snapshot + live data into a {@link MacroAngularGrid} according to the source's `mode`:
+ * and wires snapshot + live data into a {@link GridOps} according to the source's `mode`:
  *  - AMPS → `sowAndSubscribe` (snapshot then stream).
  *  - NATS JetStream → `snapshotAndSubscribe` (last-per-subject snapshot then stream).
  *  - NATS core / Solace → live `subscribeAsObservable` (no snapshot).
- * One instance per blotter so each source gets its own connection (the Angular transport services
- * are root singletons and only hold a single connection).
+ * One instance per blotter so each source gets its own connection. Framework-free: status is a
+ * snapshot exposed via `getState()` + `subscribe()`.
  */
-export class FeedController {
-  readonly status = signal<FeedStatus>('idle');
-  readonly rowCount = signal(0);
-  readonly msgsPerSec = signal(0);
-  readonly error = signal<string | null>(null);
+export class BlotterFeed {
+  private state: FeedState = { status: 'idle', rowCount: 0, msgsPerSec: 0, error: null };
+  private readonly listeners = new Set<() => void>();
 
   private transport?: TransportClient;
   private subId?: string;
@@ -48,25 +66,37 @@ export class FeedController {
 
   constructor(
     private readonly source: BlotterSource,
-    private readonly grid: MacroAngularGrid,
+    private readonly grid: GridOps,
     /** Called once with the first record so the host can infer columns. */
     private readonly onColumns: (rec: Row) => void,
   ) {}
 
+  /** Current status snapshot (stable reference between changes — safe for useSyncExternalStore). */
+  readonly getState = (): FeedState => this.state;
+
+  /** Subscribe to status changes; returns an unsubscribe fn. */
+  readonly subscribe = (fn: () => void): (() => void) => {
+    this.listeners.add(fn);
+    return () => {
+      this.listeners.delete(fn);
+    };
+  };
+
+  private patch(next: Partial<FeedState>): void {
+    this.state = { ...this.state, ...next };
+    for (const l of this.listeners) l();
+  }
+
   async start(): Promise<void> {
     try {
-      this.status.set('connecting');
-      this.error.set(null);
+      this.patch({ status: 'connecting', error: null });
       this.transport = this.makeTransport();
-      this.transport.onError((e) => {
-        this.error.set(e.message);
-        this.status.set('error');
-      });
+      this.transport.onError((e) => this.patch({ error: e.message, status: 'error' }));
       await this.transport.connect(this.connectOpts());
 
       if (this.source.mode !== 'append' && (this.source.mode === 'streaming' || this.source.conflationMs != null)) {
         this.conflation = new ConflationSubject<string, Row>(this.source.conflationMs ?? 250);
-        this.subs.add(this.conflation.subscribeToConflated(({ value }) => this.grid.updateRows$.next([value])));
+        this.subs.add(this.conflation.subscribeToConflated(({ value }) => this.grid.updateRows([value])));
       }
 
       switch (this.source.transport) {
@@ -83,8 +113,7 @@ export class FeedController {
       }
       this.startRateMeter();
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : String(e));
-      this.status.set('error');
+      this.patch({ status: 'error', error: e instanceof Error ? e.message : String(e) });
     }
   }
 
@@ -94,7 +123,7 @@ export class FeedController {
     this.conflation?.complete();
     if (this.subId) await this.transport?.unsubscribe(this.subId).catch(() => undefined);
     await this.transport?.disconnect().catch(() => undefined);
-    this.status.set('stopped');
+    this.patch({ status: 'stopped' });
   }
 
   // ── transport wiring ──
@@ -123,7 +152,7 @@ export class FeedController {
   /** AMPS: SOW snapshot (buffered until `sowComplete`) then live, routed per mode. */
   private async wireAmps(): Promise<void> {
     const amps = this.transport as AmpsTransport;
-    this.status.set('snapshot-loading');
+    this.patch({ status: 'snapshot-loading' });
     const { observable, subscriptionId, sowComplete } = await amps.sowAndSubscribe(this.source.topic, this.source.filter);
     this.subId = subscriptionId;
     await this.consumeSnapshotThenLive(observable, sowComplete);
@@ -132,7 +161,7 @@ export class FeedController {
   /** NATS JetStream: last-per-subject snapshot then live, routed per mode. */
   private async wireNatsJs(): Promise<void> {
     const js = this.transport as NatsJetStreamTransport;
-    this.status.set('snapshot-loading');
+    this.patch({ status: 'snapshot-loading' });
     const { observable, subscriptionId, snapshotComplete } = await js.snapshotAndSubscribe(this.source.topic);
     this.subId = subscriptionId;
     await this.consumeSnapshotThenLive(observable, snapshotComplete);
@@ -143,7 +172,7 @@ export class FeedController {
     const { observable, subscriptionId } = await this.transport!.subscribeAsObservable(this.source.topic);
     this.subId = subscriptionId;
     this.subs.add(observable.subscribe((m) => this.route(this.read(m))));
-    this.status.set('live');
+    this.patch({ status: 'live' });
   }
 
   /** Shared snapshot handshake for AMPS / JetStream. */
@@ -167,7 +196,7 @@ export class FeedController {
     await complete;
     inSnapshot = false;
     this.seedSnapshot(snapshot);
-    this.status.set('live');
+    this.patch({ status: 'live' });
   }
 
   // ── routing ──
@@ -182,14 +211,14 @@ export class FeedController {
   /** Append: every message is a new immutable row (synthetic `__id`), trimmed to `maxRows`. */
   private routeAppend(rec: Row): void {
     const row = this.stampId(rec);
-    this.grid.addRows$.next([row]);
+    this.grid.addRows([row]);
     this.appendQueue.push(row);
     const max = this.source.maxRows;
     if (max && this.appendQueue.length > max) {
       const removed = this.appendQueue.splice(0, this.appendQueue.length - max);
-      this.grid.deleteRows$.next(removed);
+      this.grid.deleteRows(removed);
     }
-    this.rowCount.set(this.appendQueue.length);
+    this.patch({ rowCount: this.appendQueue.length });
   }
 
   /** Keyed (snapshot-update / streaming): add a row the first time a key is seen, then update it. */
@@ -197,12 +226,12 @@ export class FeedController {
     const key = this.keyOf(rec);
     if (!this.keys.has(key)) {
       this.keys.add(key);
-      this.grid.addRows$.next([rec]);
-      this.rowCount.set(this.keys.size);
+      this.grid.addRows([rec]);
+      this.patch({ rowCount: this.keys.size });
     } else if (this.conflation) {
       this.conflation.next({ key, value: rec });
     } else {
-      this.grid.updateRows$.next([rec]);
+      this.grid.updateRows([rec]);
     }
   }
 
@@ -211,11 +240,11 @@ export class FeedController {
       const seeded = snapshot.map((r) => this.stampId(r));
       this.appendQueue.push(...seeded);
       this.grid.setInitialRowData(seeded);
-      this.rowCount.set(this.appendQueue.length);
+      this.patch({ rowCount: this.appendQueue.length });
     } else {
       for (const r of snapshot) this.keys.add(this.keyOf(r));
       this.grid.setInitialRowData(snapshot);
-      this.rowCount.set(this.keys.size);
+      this.patch({ rowCount: this.keys.size });
     }
   }
 
@@ -245,7 +274,7 @@ export class FeedController {
 
   private startRateMeter(): void {
     this.rateTimer = setInterval(() => {
-      this.msgsPerSec.set(this.msgWindow);
+      this.patch({ msgsPerSec: this.msgWindow });
       this.msgWindow = 0;
     }, 1000);
   }
