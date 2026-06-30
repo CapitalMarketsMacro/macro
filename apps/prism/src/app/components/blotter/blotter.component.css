@@ -190,13 +190,17 @@
   display: flex;
   gap: 0.25rem;
   padding-right: 0.4rem;
-  opacity: 0;
+  opacity: 0.7;
   transition: opacity 0.12s ease;
 }
 
 .picker__item:hover .picker__item-actions,
 .picker__item:focus-within .picker__item-actions {
-  opacity: 0.85;
+  opacity: 1;
+}
+
+.picker__icon-btn--danger {
+  color: var(--red-500, #ef4444);
 }
 
 .picker__icon-btn {
