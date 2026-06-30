@@ -99,10 +99,11 @@ export function SourcePicker({ trigger, activeId, onSelect, onNew, onEdit }: Sou
                     </span>
                   </button>
                   {src.origin === 'adhoc' && (
-                    <span className="flex gap-1 pr-1 opacity-0 group-hover:opacity-90 focus-within:opacity-90 transition-opacity">
+                    <span className="flex gap-1 pr-1 opacity-70 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                       <button
                         type="button"
-                        aria-label="Edit"
+                        aria-label="Edit source"
+                        title="Edit"
                         className="p-1 rounded hover:bg-background"
                         onClick={(e) => handleEdit(src, e)}
                       >
@@ -110,8 +111,9 @@ export function SourcePicker({ trigger, activeId, onSelect, onNew, onEdit }: Sou
                       </button>
                       <button
                         type="button"
-                        aria-label="Delete"
-                        className="p-1 rounded hover:bg-background"
+                        aria-label="Delete source"
+                        title="Delete"
+                        className="p-1 rounded text-destructive hover:bg-destructive/10"
                         onClick={(e) => {
                           e.stopPropagation();
                           store.removeAdhoc(src.id);
