@@ -207,7 +207,7 @@ describe('MacroAngularGrid', () => {
       component.rowData = [{ a: 1 }];
       fixture.detectChanges();
 
-      expect(component.mergedGridOptions.pagination).toBe(true);
+      expect(component.mergedGridOptions.pagination).toBe(false);
       expect(component.mergedGridOptions.paginationPageSize).toBe(10);
       expect(component.mergedGridOptions.animateRows).toBe(true);
       expect(component.mergedGridOptions.cellSelection).toBe(true);
@@ -219,12 +219,12 @@ describe('MacroAngularGrid', () => {
     });
 
     it('should let user gridOptions override defaults', () => {
-      component.gridOptions = { pagination: false, paginationPageSize: 50 };
+      component.gridOptions = { pagination: true, paginationPageSize: 50 };
       component.columns = [{ field: 'x' }];
       component.rowData = [];
       fixture.detectChanges();
 
-      expect(component.mergedGridOptions.pagination).toBe(false);
+      expect(component.mergedGridOptions.pagination).toBe(true);
       expect(component.mergedGridOptions.paginationPageSize).toBe(50);
       // Non-overridden defaults remain
       expect(component.mergedGridOptions.animateRows).toBe(true);
@@ -343,12 +343,12 @@ describe('MacroAngularGrid', () => {
     });
 
     it('should re-merge grid options when gridOptions input changes', () => {
-      component.gridOptions = { pagination: false };
+      component.gridOptions = { pagination: true };
       component.ngOnChanges(
-        makeSimpleChanges({ gridOptions: { prev: {}, curr: { pagination: false } } })
+        makeSimpleChanges({ gridOptions: { prev: {}, curr: { pagination: true } } })
       );
 
-      expect(component.mergedGridOptions.pagination).toBe(false);
+      expect(component.mergedGridOptions.pagination).toBe(true);
     });
 
     it('should re-merge grid options when getRowId input changes', () => {
@@ -734,10 +734,13 @@ describe('MacroAngularGrid', () => {
       expect(component.defaultGridOptions.components?.['macroFormatToolPanel']).toBeDefined();
     });
 
-    it('should have pagination defaults', () => {
-      expect(component.defaultGridOptions.pagination).toBe(true);
+    it('should default pagination OFF with a status-bar toggle to enable it', () => {
+      expect(component.defaultGridOptions.pagination).toBe(false);
       expect(component.defaultGridOptions.paginationPageSize).toBe(10);
       expect(component.defaultGridOptions.paginationPageSizeSelector).toEqual([10, 25, 50, 100]);
+      const statusBar = component.defaultGridOptions.statusBar as { statusPanels: { statusPanel: string }[] };
+      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroPaginationToggle')).toBe(true);
+      expect(component.defaultGridOptions.components?.['macroPaginationToggle']).toBeDefined();
     });
 
     it('should enable cell (range) selection and suppress cell focus', () => {

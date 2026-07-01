@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
-import { AgGridReact } from 'ag-grid-react';
+import { useEffect, useMemo, useState, useRef, useImperativeHandle, forwardRef, useCallback, type ChangeEvent } from 'react';
+import { AgGridReact, type CustomStatusPanelProps } from 'ag-grid-react';
 import { Subject, Subscription } from 'rxjs';
 import {
   ColDef,
@@ -44,6 +44,38 @@ ModuleRegistry.registerModules([
   AllEnterpriseModule,
   IntegratedChartsModule.with(AgChartsEnterpriseModule)
 ]);
+
+/** Status-panel component key used in `statusBar.statusPanels` and `components`. */
+const MACRO_PAGINATION_TOGGLE = 'macroPaginationToggle';
+
+/**
+ * A subtle status-bar toggle that turns AG Grid pagination on/off at runtime. Rendered in the grid's
+ * own status bar so it reads as native. Pagination defaults OFF; flipping it calls setGridOption.
+ */
+function PaginationStatusPanel({ api }: CustomStatusPanelProps) {
+  const [on, setOn] = useState<boolean>(() => !!api.getGridOption('pagination'));
+  const toggle = (e: ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.checked;
+    setOn(next);
+    api.setGridOption('pagination', next);
+  };
+  return (
+    <label
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.35rem',
+        padding: '0 0.5rem',
+        fontSize: '0.8rem',
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <input type="checkbox" checked={on} onChange={toggle} style={{ cursor: 'pointer' }} aria-label="Toggle pagination" />
+      <span>Pagination</span>
+    </label>
+  );
+}
 
 export interface MacroReactGridProps {
   columns?: string | ColDef[];
@@ -95,11 +127,16 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       () => withFormatPanel({ toolPanels: ['columns', 'filters'], hiddenByDefault: false }, { store }),
       [store],
     );
-    const components = useMemo(() => ({ [FORMAT_TOOL_PANEL_COMPONENT]: MacroFormatToolPanel }), []);
+    const components = useMemo(
+      () => ({ [FORMAT_TOOL_PANEL_COMPONENT]: MacroFormatToolPanel, [MACRO_PAGINATION_TOGGLE]: PaginationStatusPanel }),
+      [],
+    );
 
     const defaultGridOptions: GridOptions = useMemo(() => ({
       defaultColDef: { sortable: true, filter: true, resizable: true },
-      pagination: true, paginationPageSize: 10, paginationPageSizeSelector: [10, 25, 50, 100],
+      // Pagination OFF by default; users flip it via the subtle status-bar toggle (feels native).
+      pagination: false, paginationPageSize: 10, paginationPageSizeSelector: [10, 25, 50, 100],
+      statusBar: { statusPanels: [{ statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' as const }] },
       animateRows: true,
       // v36 selection API (string rowSelection / enableRangeSelection / suppressRowClickSelection
       // are deprecated). Preserves prior behaviour: multi-row mode, no checkbox column, no
