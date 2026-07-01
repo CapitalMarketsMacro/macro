@@ -738,9 +738,20 @@ describe('MacroAngularGrid', () => {
       expect(component.defaultGridOptions.pagination).toBe(false);
       expect(component.defaultGridOptions.paginationPageSize).toBe(10);
       expect(component.defaultGridOptions.paginationPageSizeSelector).toEqual([10, 25, 50, 100]);
-      const statusBar = component.defaultGridOptions.statusBar as { statusPanels: { statusPanel: string }[] };
-      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroPaginationToggle')).toBe(true);
+      const panels = (
+        component.defaultGridOptions.statusBar as { statusPanels: { statusPanel: string }[] }
+      ).statusPanels.map((p) => p.statusPanel);
+      expect(panels).toContain('macroPaginationToggle');
       expect(component.defaultGridOptions.components?.['macroPaginationToggle']).toBeDefined();
+    });
+
+    it('should include native status-bar stats (row counts + aggregations)', () => {
+      const panels = (
+        component.defaultGridOptions.statusBar as { statusPanels: { statusPanel: string }[] }
+      ).statusPanels.map((p) => p.statusPanel);
+      expect(panels).toContain('agTotalAndFilteredRowCountComponent');
+      expect(panels).toContain('agSelectedRowCountComponent');
+      expect(panels).toContain('agAggregationComponent');
     });
 
     it('should enable cell (range) selection and suppress cell focus', () => {

@@ -226,9 +226,19 @@ describe('MacroReactGrid', () => {
         filter: true,
         resizable: true,
       });
-      // Pagination defaults OFF, with a status-bar toggle to enable it.
-      const statusBar = opts.statusBar as { statusPanels: { statusPanel: string }[] };
-      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroPaginationToggle')).toBe(true);
+      // Pagination defaults OFF, with a status-bar toggle to enable it — plus native row-count
+      // and aggregation (Count/Sum/Min/Max/Avg) status panels.
+      const panels = (opts.statusBar as { statusPanels: { statusPanel: string }[] }).statusPanels.map(
+        (p) => p.statusPanel,
+      );
+      expect(panels).toEqual(
+        expect.arrayContaining([
+          'agTotalAndFilteredRowCountComponent',
+          'agSelectedRowCountComponent',
+          'agAggregationComponent',
+          'macroPaginationToggle',
+        ]),
+      );
     });
 
     it('should let user gridOptions override defaults', () => {

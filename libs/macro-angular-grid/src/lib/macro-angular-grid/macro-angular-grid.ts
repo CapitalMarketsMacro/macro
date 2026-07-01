@@ -229,7 +229,20 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     pagination: false,
     paginationPageSize: 10,
     paginationPageSizeSelector: [10, 25, 50, 100],
-    statusBar: { statusPanels: [{ statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' }] },
+    // Native AG Grid status bar: filtered-of-total row count, selected-row count, aggregations
+    // (Count/Sum/Min/Max/Avg) for the selected cell range, and the pagination toggle.
+    statusBar: {
+      statusPanels: [
+        { statusPanel: 'agTotalAndFilteredRowCountComponent', align: 'left' },
+        { statusPanel: 'agSelectedRowCountComponent', align: 'left' },
+        {
+          statusPanel: 'agAggregationComponent',
+          statusPanelParams: { aggFuncs: ['count', 'sum', 'min', 'max', 'avg'] },
+          align: 'center',
+        },
+        { statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' },
+      ],
+    },
     animateRows: true,
     // v36 selection API (string rowSelection / enableRangeSelection / suppressRowClickSelection
     // are deprecated). Preserves prior behaviour: multi-row mode, no checkbox column, no
