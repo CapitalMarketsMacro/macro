@@ -67,6 +67,8 @@ Prism opens straight to a **blotter** (`/blotter`); a fresh instance shows a **S
 
 Only **AMPS** (SOW) and **NATS JetStream** (last-per-subject) deliver a true initial snapshot; NATS core and Solace are live-only (rows appear as they tick).
 
+**Array payloads** — if a message's payload is a JSON **array** of objects (a batch of rows), Prism expands each element into its own row automatically (snapshot or live). A single row is always an object, so this never misfires. The ad-hoc dialog has an **Expand array payloads into rows** toggle (on by default) — uncheck it only if you want the whole array treated as one record.
+
 ### Column building
 - **Infer** (default) — columns are inferred from the first record and capital-markets formatting is auto-applied (prices, yields → %, spreads → bps, qty → grouped ints, P&L → coloured, dates). Keeps the Format tool panel + calculated columns fully usable.
 - **Auto (v36)** — AG Grid v36 `autoGenerateColumnDefs`. Best for snapshot-seeded sources; toggle to **Infer** if a live-only source shows no columns.

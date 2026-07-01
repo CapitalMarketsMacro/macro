@@ -94,6 +94,17 @@
       <input pInputText formControlName="topic" placeholder="e.g. macro.fx.quotes.>" />
     </div>
 
+    <div class="adhoc-form__row adhoc-form__check">
+      <p-checkbox formControlName="expandArrays" [binary]="true" inputId="expandArrays" />
+      <label for="expandArrays" class="adhoc-form__check-label">
+        Expand array payloads into rows
+        <span class="adhoc-form__hint">
+          A message whose payload is a JSON array becomes one row per element. Uncheck to treat the
+          whole array as a single record.
+        </span>
+      </label>
+    </div>
+
     <div class="adhoc-form__grid">
       @if (transport === 'amps') {
         <div class="adhoc-form__row">

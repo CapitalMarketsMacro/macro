@@ -25,6 +25,7 @@ interface FormState {
   keyField: string;
   conflationMs: string;
   maxRows: string;
+  expandArrays: boolean;
   columnMode: ColumnMode;
   url: string;
   logon: string;
@@ -48,6 +49,7 @@ const EMPTY: FormState = {
   keyField: '',
   conflationMs: '',
   maxRows: '',
+  expandArrays: true,
   columnMode: 'infer',
   url: '',
   logon: '',
@@ -74,6 +76,7 @@ function fromSource(s: BlotterSource): FormState {
     keyField: s.keyField ?? '',
     conflationMs: s.conflationMs?.toString() ?? '',
     maxRows: s.maxRows?.toString() ?? '',
+    expandArrays: s.expandArrays !== false,
     columnMode: s.columnMode,
     url: c.transport === 'amps' ? c.url : '',
     logon: c.transport === 'amps' ? c.logon ?? '' : '',
@@ -161,6 +164,7 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
       ...(form.keyField ? { keyField: form.keyField } : {}),
       ...(num(form.conflationMs) != null ? { conflationMs: num(form.conflationMs) } : {}),
       ...(isAppend && num(form.maxRows) != null ? { maxRows: num(form.maxRows) } : {}),
+      ...(form.expandArrays === false ? { expandArrays: false } : {}),
     };
     const editing = source && source.origin === 'adhoc' ? source.id : null;
     let result: BlotterSource;
@@ -282,6 +286,22 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
           <Field label={form.transport === 'amps' ? 'Topic' : 'Subject / topic'}>
             <Input value={form.topic} onChange={(e) => set('topic', e.target.value)} placeholder="e.g. macro.fx.quotes.>" />
           </Field>
+
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={form.expandArrays}
+              onChange={(e) => set('expandArrays', e.target.checked)}
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="text-sm">Expand array payloads into rows</span>
+              <span className="text-xs opacity-60">
+                A message whose payload is a JSON array becomes one row per element. Uncheck to treat the
+                whole array as a single record.
+              </span>
+            </span>
+          </label>
 
           <div className="grid grid-cols-2 gap-3">
             {form.transport === 'amps' && (

@@ -4,6 +4,7 @@ import { Dialog } from 'primeng/dialog';
 import { Select } from 'primeng/select';
 import { InputText } from 'primeng/inputtext';
 import { InputNumber } from 'primeng/inputnumber';
+import { Checkbox } from 'primeng/checkbox';
 import { Button } from 'primeng/button';
 import { DataSourceRepository } from '../../services/data-source-repository.service';
 import {
@@ -19,7 +20,7 @@ import {
 @Component({
   selector: 'app-adhoc-source-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, Dialog, Select, InputText, InputNumber, Button],
+  imports: [ReactiveFormsModule, Dialog, Select, InputText, InputNumber, Checkbox, Button],
   templateUrl: './adhoc-source-dialog.component.html',
   styles: [
     `
@@ -45,6 +46,22 @@ import {
       .adhoc-form__row input,
       .adhoc-form__row :is(p-select, p-inputnumber) {
         width: 100%;
+      }
+      .adhoc-form__check {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 0.6rem;
+      }
+      .adhoc-form__check-label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
+      .adhoc-form__hint {
+        font-size: 0.75rem;
+        opacity: 0.6;
       }
     `,
   ],
@@ -79,6 +96,7 @@ export class AdHocSourceDialogComponent {
     keyField: [''],
     conflationMs: [null as number | null],
     maxRows: [null as number | null],
+    expandArrays: [true],
     columnMode: ['infer' as ColumnMode, Validators.required],
     // AMPS
     url: [''],
@@ -145,6 +163,7 @@ export class AdHocSourceDialogComponent {
       ...(v.keyField ? { keyField: v.keyField } : {}),
       ...(v.conflationMs != null ? { conflationMs: v.conflationMs } : {}),
       ...(v.mode === 'append' && v.maxRows != null ? { maxRows: v.maxRows } : {}),
+      ...(v.expandArrays === false ? { expandArrays: false } : {}),
     };
     const result = this.editingId
       ? this.updateExisting(this.editingId, payload)
@@ -205,6 +224,7 @@ export class AdHocSourceDialogComponent {
       keyField: source.keyField ?? '',
       conflationMs: source.conflationMs ?? null,
       maxRows: source.maxRows ?? null,
+      expandArrays: source.expandArrays !== false,
       columnMode: source.columnMode,
       url: c.transport === 'amps' ? c.url : '',
       logon: c.transport === 'amps' ? c.logon ?? '' : '',
