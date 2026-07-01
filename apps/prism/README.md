@@ -58,7 +58,7 @@ Prism opens straight to a **blotter** (`/blotter`); a fresh instance shows a **S
 1. **Source picker** — click the source name in the toolbar (or **Select data source** on an empty blotter) to open the picker: **search**, browse sources grouped by category, and switch the blotter to any of them **in place**. Ad-hoc sources have inline **edit** / **delete**. The chosen source is written to the URL (`/blotter?source=<id>`), so it persists when you save a blotter as part of an **OpenFin layout** — open several blotters, point each at a different source, and save them together; each restores its own source.
 2. **New / ad-hoc source** — **New data source** (in the picker or the empty state) opens a dialog: choose a transport, fill the connection + topic, pick a **behaviour** and (for keyed feeds) a **key field**. It's saved to your browser (localStorage) and opens immediately. Delete it later from the picker or the catalog (catalog sources are read-only).
 3. **Catalog** (`/sources`) — the full grid of every source grouped by **Category / Type / Behavior**, for browsing/managing them all at once. Reachable from the header nav or the picker's **Browse all**.
-4. **Toolbar** — connection status, row count, msgs/sec, **Reconnect** / **Disconnect**, and the **column-mode toggle**.
+4. **Toolbar & grid** — connection status, row count, msgs/sec, **Reconnect** / **Disconnect**, and the **column-mode toggle**. Pagination is **off by default**; flip it any time via the **Pagination** toggle in the grid's status bar (bottom-right).
 
 ### Source behaviour (mode)
 - **Snapshot + Updates** — stable keyed rows; the snapshot seeds the grid, live messages update rows in place by `keyField` (positions, top-of-book, risk).
@@ -66,6 +66,8 @@ Prism opens straight to a **blotter** (`/blotter`); a fresh instance shows a **S
 - **Streaming** — high-frequency keyed quotes, conflated (`conflationMs`) before painting.
 
 Only **AMPS** (SOW) and **NATS JetStream** (last-per-subject) deliver a true initial snapshot; NATS core and Solace are live-only (rows appear as they tick).
+
+**Array payloads** — if a message's payload is a JSON **array** of objects (a batch of rows), Prism expands each element into its own row automatically (snapshot or live). A single row is always an object, so this never misfires. The ad-hoc dialog has an **Expand array payloads into rows** toggle (on by default) — uncheck it only if you want the whole array treated as one record.
 
 ### Column building
 - **Infer** (default) — columns are inferred from the first record and capital-markets formatting is auto-applied (prices, yields → %, spreads → bps, qty → grouped ints, P&L → coloured, dates). Keeps the Format tool panel + calculated columns fully usable.

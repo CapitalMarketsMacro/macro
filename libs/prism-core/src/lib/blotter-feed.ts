@@ -171,7 +171,7 @@ export class BlotterFeed {
   private async wireLive(): Promise<void> {
     const { observable, subscriptionId } = await this.transport!.subscribeAsObservable(this.source.topic);
     this.subId = subscriptionId;
-    this.subs.add(observable.subscribe((m) => this.route(this.read(m))));
+    this.subs.add(observable.subscribe((m) => this.readRecords(m).forEach((r) => this.route(r))));
     this.patch({ status: 'live' });
   }
 
@@ -184,12 +184,14 @@ export class BlotterFeed {
     let inSnapshot = true;
     this.subs.add(
       observable.subscribe((m) => {
-        const rec = this.read(m);
+        const recs = this.readRecords(m);
         if (inSnapshot) {
-          this.maybeInferColumns(rec);
-          snapshot.push(rec);
+          for (const rec of recs) {
+            this.maybeInferColumns(rec);
+            snapshot.push(rec);
+          }
         } else {
-          this.route(rec);
+          for (const rec of recs) this.route(rec);
         }
       }),
     );
@@ -250,12 +252,29 @@ export class BlotterFeed {
 
   // ── helpers ──
 
-  private read(m: TransportMessage): Row {
+  /**
+   * Parse a transport message into one or more rows. A payload that is a JSON array is expanded so
+   * each element becomes its own row (unless the source opts out via `expandArrays: false`); a plain
+   * object payload is a single row. Non-object array elements are wrapped as `{ value }`.
+   */
+  private readRecords(m: TransportMessage): Row[] {
+    const payload = this.readPayload(m);
+    if (this.source.expandArrays !== false && Array.isArray(payload)) {
+      return payload.map((el) => this.asRow(el));
+    }
+    return [this.asRow(payload)];
+  }
+
+  private readPayload(m: TransportMessage): unknown {
     try {
-      return m.json<Row>();
+      return m.json<unknown>();
     } catch {
       return { value: m.data };
     }
+  }
+
+  private asRow(value: unknown): Row {
+    return value != null && typeof value === 'object' && !Array.isArray(value) ? (value as Row) : { value };
   }
 
   private keyOf(rec: Row): string {

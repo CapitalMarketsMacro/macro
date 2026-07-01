@@ -216,7 +216,7 @@ describe('MacroReactGrid', () => {
       render(<MacroReactGrid columns={[{ field: 'a' }]} rowData={[{ a: 1 }]} />);
 
       const opts = capturedProps.gridOptions as Record<string, unknown>;
-      expect(opts.pagination).toBe(true);
+      expect(opts.pagination).toBe(false);
       expect(opts.paginationPageSize).toBe(10);
       expect(opts.animateRows).toBe(true);
       expect(opts.cellSelection).toBe(true);
@@ -226,18 +226,21 @@ describe('MacroReactGrid', () => {
         filter: true,
         resizable: true,
       });
+      // Pagination defaults OFF, with a status-bar toggle to enable it.
+      const statusBar = opts.statusBar as { statusPanels: { statusPanel: string }[] };
+      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroPaginationToggle')).toBe(true);
     });
 
     it('should let user gridOptions override defaults', () => {
       render(
         <MacroReactGrid
           columns={[{ field: 'x' }]}
-          gridOptions={{ pagination: false, paginationPageSize: 50 }}
+          gridOptions={{ pagination: true, paginationPageSize: 50 }}
         />
       );
 
       const opts = capturedProps.gridOptions as Record<string, unknown>;
-      expect(opts.pagination).toBe(false);
+      expect(opts.pagination).toBe(true);
       expect(opts.paginationPageSize).toBe(50);
       // Non-overridden default
       expect(opts.animateRows).toBe(true);
