@@ -14,7 +14,7 @@ import {
   type BlotterSource,
   type ColumnMode,
   type TransportKind,
-} from '../../models/blotter-source';
+} from '@macro/prism-core';
 
 @Component({
   selector: 'app-adhoc-source-dialog',

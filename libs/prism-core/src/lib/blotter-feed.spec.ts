@@ -1,7 +1,6 @@
 import { Subject } from 'rxjs';
-import type { MacroAngularGrid } from '@macro/macro-angular-grid';
-import { FeedController } from './blotter-feed';
-import type { BlotterSource } from '../models/blotter-source';
+import { BlotterFeed, type GridOps } from './blotter-feed';
+import type { BlotterSource } from './blotter-source';
 
 // ── Mocks ────────────────────────────────────────────────────────────
 
@@ -64,20 +63,19 @@ const macro = () => new Promise((r) => setTimeout(r, 0));
 const msg = (obj: unknown) => ({ json: () => obj, data: JSON.stringify(obj), topic: 't' });
 const lastTransport = () => mockTransportInstances[mockTransportInstances.length - 1];
 
+/** A fake GridOps capturing what the feed writes (mirrors both grids' addRows$/updateRows$/etc.). */
 function makeGrid() {
-  const grid = {
-    addRows$: new Subject<unknown[]>(),
-    updateRows$: new Subject<unknown[]>(),
-    deleteRows$: new Subject<unknown[]>(),
-    setInitialRowData: jest.fn(),
-  };
   const adds: any[] = [];
   const updates: any[] = [];
   const removes: any[] = [];
-  grid.addRows$.subscribe((r) => adds.push(...r));
-  grid.updateRows$.subscribe((r) => updates.push(...r));
-  grid.deleteRows$.subscribe((r) => removes.push(...r));
-  return { grid: grid as unknown as MacroAngularGrid, adds, updates, removes, setInitial: grid.setInitialRowData };
+  const setInitial = jest.fn();
+  const grid: GridOps = {
+    addRows: (r) => adds.push(...r),
+    updateRows: (r) => updates.push(...r),
+    deleteRows: (r) => removes.push(...r),
+    setInitialRowData: setInitial,
+  };
+  return { grid, adds, updates, removes, setInitial };
 }
 
 const base: Omit<BlotterSource, 'transport' | 'mode' | 'connection'> = {
@@ -90,7 +88,7 @@ const base: Omit<BlotterSource, 'transport' | 'mode' | 'connection'> = {
 
 // ── Tests ────────────────────────────────────────────────────────────
 
-describe('FeedController', () => {
+describe('BlotterFeed', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockTransportInstances.length = 0;
@@ -106,7 +104,7 @@ describe('FeedController', () => {
       maxRows: 2,
       connection: { transport: 'nats', servers: 'ws://x' },
     };
-    const feed = new FeedController(source, grid, onColumns);
+    const feed = new BlotterFeed(source, grid, onColumns);
     await feed.start();
     const t = lastTransport();
 
@@ -117,10 +115,10 @@ describe('FeedController', () => {
     expect(adds).toHaveLength(3);
     expect(removes).toHaveLength(1);
     expect(removes[0]).toMatchObject({ a: 1 });
-    expect(feed.rowCount()).toBe(2);
+    expect(feed.getState().rowCount).toBe(2);
     expect(onColumns).toHaveBeenCalledTimes(1);
     expect(onColumns).toHaveBeenCalledWith({ a: 1 });
-    expect(feed.status()).toBe('live');
+    expect(feed.getState().status).toBe('live');
   });
 
   it('NATS snapshot-update (no snapshot): adds new keys, updates existing ones', async () => {
@@ -132,7 +130,7 @@ describe('FeedController', () => {
       keyField: 'symbol',
       connection: { transport: 'nats', servers: 'ws://x' },
     };
-    const feed = new FeedController(source, grid, jest.fn());
+    const feed = new BlotterFeed(source, grid, jest.fn());
     await feed.start();
     const t = lastTransport();
 
@@ -142,10 +140,10 @@ describe('FeedController', () => {
 
     expect(adds.map((r) => r.symbol)).toEqual(['EUR', 'JPY']);
     expect(updates).toEqual([{ symbol: 'EUR', px: 2 }]);
-    expect(feed.rowCount()).toBe(2);
+    expect(feed.getState().rowCount).toBe(2);
   });
 
-  it('streaming: conflated updates route to updateRows$ for known keys', async () => {
+  it('streaming: conflated updates route to updateRows for known keys', async () => {
     const { grid, adds, updates } = makeGrid();
     const source: BlotterSource = {
       ...base,
@@ -155,7 +153,7 @@ describe('FeedController', () => {
       conflationMs: 100,
       connection: { transport: 'nats', servers: 'ws://x' },
     };
-    const feed = new FeedController(source, grid, jest.fn());
+    const feed = new BlotterFeed(source, grid, jest.fn());
     await feed.start();
     const t = lastTransport();
 
@@ -174,12 +172,12 @@ describe('FeedController', () => {
       keyField: 'symbol',
       connection: { transport: 'amps', url: 'ws://x/amps/json' },
     };
-    const feed = new FeedController(source, grid, jest.fn());
+    const feed = new BlotterFeed(source, grid, jest.fn());
     const starting = feed.start();
     await macro(); // let start() reach `await sowComplete`
     const t = lastTransport();
     expect(t.sowAndSubscribe).toHaveBeenCalledWith('t', undefined);
-    expect(feed.status()).toBe('snapshot-loading');
+    expect(feed.getState().status).toBe('snapshot-loading');
 
     t.__sow.next(msg({ symbol: 'EUR', px: 1 }));
     t.__sow.next(msg({ symbol: 'JPY', px: 2 }));
@@ -190,10 +188,9 @@ describe('FeedController', () => {
       { symbol: 'EUR', px: 1 },
       { symbol: 'JPY', px: 2 },
     ]);
-    expect(feed.rowCount()).toBe(2);
-    expect(feed.status()).toBe('live');
+    expect(feed.getState().rowCount).toBe(2);
+    expect(feed.getState().status).toBe('live');
 
-    // live update for a key already in the snapshot -> updateRows$
     t.__sow.next(msg({ symbol: 'EUR', px: 9 }));
     expect(updates).toEqual([{ symbol: 'EUR', px: 9 }]);
   });
@@ -207,7 +204,7 @@ describe('FeedController', () => {
       keyField: 'bookId',
       connection: { transport: 'nats-js', servers: 'ws://x' },
     };
-    const feed = new FeedController(source, grid, jest.fn());
+    const feed = new BlotterFeed(source, grid, jest.fn());
     const starting = feed.start();
     await macro();
     const t = lastTransport();
@@ -218,10 +215,10 @@ describe('FeedController', () => {
     await starting;
 
     expect(setInitial).toHaveBeenCalledWith([{ bookId: 'B1', qty: 10 }]);
-    expect(feed.status()).toBe('live');
+    expect(feed.getState().status).toBe('live');
   });
 
-  it('stop() unsubscribes and disconnects', async () => {
+  it('notifies subscribers and stop() unsubscribes + disconnects', async () => {
     const { grid } = makeGrid();
     const source: BlotterSource = {
       ...base,
@@ -229,13 +226,17 @@ describe('FeedController', () => {
       mode: 'append',
       connection: { transport: 'nats', servers: 'ws://x' },
     };
-    const feed = new FeedController(source, grid, jest.fn());
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    const changes = jest.fn();
+    const off = feed.subscribe(changes);
     await feed.start();
+    expect(changes).toHaveBeenCalled();
     const t = lastTransport();
     await feed.stop();
 
     expect(t.unsubscribe).toHaveBeenCalledWith('sub-live');
     expect(t.disconnect).toHaveBeenCalled();
-    expect(feed.status()).toBe('stopped');
+    expect(feed.getState().status).toBe('stopped');
+    off();
   });
 });

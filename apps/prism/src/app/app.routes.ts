@@ -3,7 +3,9 @@ import { SourceCatalogComponent } from './components/source-catalog/source-catal
 import { BlotterComponent } from './components/blotter/blotter.component';
 
 export const appRoutes: Route[] = [
-  { path: 'sources', component: SourceCatalogComponent },
+  // The blotter is the primary surface: a fresh instance lands here and shows the source picker
+  // empty state. The full catalog stays available at /sources for browsing/managing all sources.
   { path: 'blotter', component: BlotterComponent },
-  { path: '', redirectTo: 'sources', pathMatch: 'full' },
+  { path: 'sources', component: SourceCatalogComponent },
+  { path: '', redirectTo: 'blotter', pathMatch: 'full' },
 ];

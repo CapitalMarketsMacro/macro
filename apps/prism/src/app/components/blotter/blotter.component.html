@@ -1,14 +1,12 @@
-@if (source(); as src) {
-  <div class="blotter">
-    <div class="blotter__bar">
-      <a routerLink="/sources" class="blotter__back" aria-label="Back to catalog">
-        <i class="pi pi-arrow-left"></i>
-      </a>
-      <div class="blotter__title">
-        <span class="blotter__name">{{ src.name }}</span>
+<div class="blotter">
+  <div class="blotter__bar">
+    @if (source(); as src) {
+      <button type="button" class="source-trigger" (click)="picker.toggle($event)" aria-label="Change data source">
+        <span class="source-trigger__name">{{ src.name }}</span>
         <p-tag [value]="transportLabels[src.transport]" severity="secondary" />
-        <p-tag [value]="modeLabels[src.mode]" />
-      </div>
+        <p-tag [value]="modeLabels[src.mode]" [severity]="modeSeverity(src.mode)" />
+        <i class="pi pi-chevron-down source-trigger__caret"></i>
+      </button>
 
       <div class="blotter__status">
         <p-tag [value]="status" [severity]="statusSeverity()" />
@@ -35,8 +33,16 @@
           (onClick)="disconnect()"
         />
       </div>
-    </div>
+    } @else {
+      <button type="button" class="source-trigger source-trigger--empty" (click)="picker.toggle($event)">
+        <i class="pi pi-database"></i>
+        <span>Select data source</span>
+        <i class="pi pi-chevron-down source-trigger__caret"></i>
+      </button>
+    }
+  </div>
 
+  @if (source()) {
     @if (error; as err) {
       <p-message severity="error">{{ err }}</p-message>
     }
@@ -51,10 +57,67 @@
         />
       }
     </div>
+  } @else {
+    <div class="blotter__empty">
+      <i class="pi pi-database blotter__empty-icon"></i>
+      <p class="blotter__empty-title">No data source selected</p>
+      <p class="blotter__empty-hint">Pick a configured source — or define your own — to start the blotter.</p>
+      <div class="blotter__empty-actions">
+        <p-button label="Select data source" icon="pi pi-list" (onClick)="picker.toggle($event)" />
+        <p-button label="New data source" icon="pi pi-plus" [outlined]="true" (onClick)="newSource()" />
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Subtle, in-place source picker shared by the toolbar trigger and the empty state. -->
+<p-popover #picker [dismissable]="true" styleClass="source-picker" (onShow)="searchInput.focus()">
+  <div class="picker">
+    <input
+      #searchInput
+      pInputText
+      type="text"
+      class="picker__search"
+      placeholder="Search data sources…"
+      [ngModel]="pickerFilter()"
+      (ngModelChange)="pickerFilter.set($event)"
+    />
+    <div class="picker__list">
+      @for (group of pickerGroups(); track group.category) {
+        <div class="picker__group">{{ group.category }}</div>
+        @for (src of group.sources; track src.id) {
+          <div class="picker__item" [class.picker__item--active]="src.id === source()?.id">
+            <button type="button" class="picker__item-main" (click)="switchSource(src)">
+              <span class="picker__item-name">{{ src.name }}</span>
+              <span class="picker__item-tags">
+                <p-tag [value]="transportLabels[src.transport]" severity="secondary" />
+                <p-tag [value]="modeLabels[src.mode]" [severity]="modeSeverity(src.mode)" />
+                @if (src.origin === 'adhoc') {
+                  <p-tag value="ad-hoc" severity="info" />
+                }
+              </span>
+            </button>
+            @if (src.origin === 'adhoc') {
+              <span class="picker__item-actions">
+                <button type="button" class="picker__icon-btn" aria-label="Edit" (click)="editSource(src, $event)">
+                  <i class="pi pi-pencil"></i>
+                </button>
+                <button type="button" class="picker__icon-btn picker__icon-btn--danger" aria-label="Delete" (click)="removeSource(src, $event)">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </span>
+            }
+          </div>
+        }
+      } @empty {
+        <p class="picker__empty">No sources match “{{ pickerFilter() }}”.</p>
+      }
+    </div>
+    <div class="picker__footer">
+      <p-button label="New data source" icon="pi pi-plus" size="small" (onClick)="newSource()" />
+      <a routerLink="/sources" class="picker__browse" (click)="picker.hide()">Browse all</a>
+    </div>
   </div>
-} @else {
-  <div class="blotter__empty">
-    <p>No source selected.</p>
-    <p-button label="Back to catalog" icon="pi pi-arrow-left" routerLink="/sources" />
-  </div>
-}
+</p-popover>
+
+<app-adhoc-source-dialog (saved)="onSourceSaved($event)" />

@@ -12,21 +12,41 @@
   flex-wrap: wrap;
 }
 
-.blotter__back {
-  color: var(--foreground);
-  text-decoration: none;
-  font-size: 1.1rem;
-}
-
-.blotter__title {
-  display: flex;
+/* Subtle source picker trigger — looks like a heading until hovered. */
+.source-trigger {
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  margin-left: -0.5rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius, 0.5rem);
+  cursor: pointer;
+  color: var(--foreground);
+  font: inherit;
 }
 
-.blotter__name {
+.source-trigger:hover,
+.source-trigger:focus-visible {
+  background: var(--muted, rgba(127, 127, 127, 0.12));
+  border-color: var(--border, rgba(127, 127, 127, 0.25));
+  outline: none;
+}
+
+.source-trigger__name {
   font-weight: 700;
   font-size: 1.1rem;
+}
+
+.source-trigger__caret {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.source-trigger--empty {
+  font-size: 0.95rem;
+  opacity: 0.85;
 }
 
 .blotter__status {
@@ -57,7 +77,172 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   padding-top: 4rem;
-  opacity: 0.8;
+  text-align: center;
+}
+
+.blotter__empty-icon {
+  font-size: 2.25rem;
+  opacity: 0.4;
+  margin-bottom: 0.5rem;
+}
+
+.blotter__empty-title {
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.blotter__empty-hint {
+  opacity: 0.7;
+  margin: 0;
+}
+
+.blotter__empty-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* ── source picker popover ── */
+.picker {
+  display: flex;
+  flex-direction: column;
+  width: min(26rem, 80vw);
+  max-height: min(28rem, 70vh);
+}
+
+.picker__search {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.picker__list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.picker__group {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.55;
+  padding: 0.5rem 0.25rem 0.2rem;
+}
+
+.picker__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: var(--radius, 0.5rem);
+}
+
+.picker__item:hover {
+  background: var(--muted, rgba(127, 127, 127, 0.12));
+}
+
+.picker__item--active {
+  border-color: var(--primary, #6366f1);
+}
+
+.picker__item-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.4rem 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius, 0.5rem);
+  cursor: pointer;
+  text-align: left;
+  color: var(--foreground);
+  font: inherit;
+}
+
+.picker__item-main:focus-visible {
+  outline: 2px solid var(--primary, #6366f1);
+  outline-offset: -2px;
+}
+
+.picker__item-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.picker__item-tags {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.picker__item-actions {
+  display: flex;
+  gap: 0.25rem;
+  padding-right: 0.4rem;
+  opacity: 0.7;
+  transition: opacity 0.12s ease;
+}
+
+.picker__item:hover .picker__item-actions,
+.picker__item:focus-within .picker__item-actions {
+  opacity: 1;
+}
+
+.picker__icon-btn--danger {
+  color: var(--red-500, #ef4444);
+}
+
+.picker__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.picker__icon-btn:hover,
+.picker__icon-btn:focus-visible {
+  background: var(--background, rgba(0, 0, 0, 0.06));
+  outline: none;
+}
+
+.picker__empty {
+  opacity: 0.6;
+  padding: 0.75rem 0.25rem;
+  font-size: 0.9rem;
+}
+
+.picker__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.6rem;
+  margin-top: 0.4rem;
+  border-top: 1px solid var(--border, rgba(127, 127, 127, 0.2));
+}
+
+.picker__browse {
+  font-size: 0.85rem;
+  color: var(--primary, #6366f1);
+  text-decoration: none;
+}
+
+.picker__browse:hover {
+  text-decoration: underline;
 }

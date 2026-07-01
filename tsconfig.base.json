@@ -10,70 +10,37 @@
     "importHelpers": true,
     "target": "es2015",
     "module": "esnext",
-    "lib": [
-      "es2020",
-      "dom"
-    ],
+    "lib": ["es2020", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@macro/logger": [
-        "libs/logger/src/index.ts"
-      ],
-      "@macro/mcp-core": [
-        "libs/mcp-core/src/index.ts"
-      ],
-      "@macro/utils": [
-        "libs/utils/src/index.ts"
-      ],
-      "@macro/macro-angular-grid": [
-        "libs/macro-angular-grid/src/index.ts"
-      ],
-      "@macro/macro-react-grid": [
-        "libs/macro-react-grid/src/index.ts"
-      ],
-      "@macro/openfin": [
-        "libs/openfin/src/index.ts"
-      ],
-      "@macro/openfin/theme-sync": [
-        "libs/openfin/src/lib/theme-sync.ts"
-      ],
-      "@macro/openfin/react": [
-        "libs/openfin/src/lib/react.ts"
-      ],
-      "@macro/transports": [
-        "libs/transports/src/index.ts"
-      ],
-      "@macro/transports/angular": [
-        "libs/transports/src/lib/angular/index.ts"
-      ],
-      "@macro/transports/react": [
-        "libs/transports/src/lib/react/index.ts"
-      ],
-      "@macro/macro-design": [
-        "libs/macro-design/src/index.ts"
-      ],
+      "@macro/logger": ["libs/logger/src/index.ts"],
+      "@macro/mcp-core": ["libs/mcp-core/src/index.ts"],
+      "@macro/utils": ["libs/utils/src/index.ts"],
+      "@macro/macro-angular-grid": ["libs/macro-angular-grid/src/index.ts"],
+      "@macro/macro-react-grid": ["libs/macro-react-grid/src/index.ts"],
+      "@macro/openfin": ["libs/openfin/src/index.ts"],
+      "@macro/openfin/theme-sync": ["libs/openfin/src/lib/theme-sync.ts"],
+      "@macro/openfin/react": ["libs/openfin/src/lib/react.ts"],
+      "@macro/transports": ["libs/transports/src/index.ts"],
+      "@macro/transports/angular": ["libs/transports/src/lib/angular/index.ts"],
+      "@macro/transports/react": ["libs/transports/src/lib/react/index.ts"],
+      "@macro/macro-design": ["libs/macro-design/src/index.ts"],
       "@macro/macro-design/angular": [
         "libs/macro-design/src/lib/angular/index.ts"
       ],
-      "@macro/macro-design/react": [
-        "libs/macro-design/src/lib/react/index.ts"
-      ],
-      "@macro/macro-grid-format": [
-        "libs/macro-grid-format/src/index.ts"
-      ],
+      "@macro/macro-design/react": ["libs/macro-design/src/lib/react/index.ts"],
+      "@macro/macro-grid-format": ["libs/macro-grid-format/src/index.ts"],
       "@macro/macro-grid-format/angular": [
         "libs/macro-grid-format/src/lib/angular/index.ts"
       ],
       "@macro/macro-grid-format/react": [
         "libs/macro-grid-format/src/lib/react/index.ts"
-      ]
+      ],
+      "@macro/prism-core": ["./libs/prism-core/src/index.ts"]
     },
     "ignoreDeprecations": "6.0"
   },
-  "exclude": [
-    "node_modules",
-    "tmp"
-  ]
+  "exclude": ["node_modules", "tmp"]
 }

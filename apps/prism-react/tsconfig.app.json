@@ -1,0 +1,41 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "baseUrl": ".",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@macro/logger": ["../../libs/logger/src/index.ts"],
+      "@macro/utils": ["../../libs/utils/src/index.ts"],
+      "@macro/prism-core": ["../../libs/prism-core/src/index.ts"],
+      "@macro/macro-react-grid": ["../../libs/macro-react-grid/src/index.ts"],
+      "@macro/transports": ["../../libs/transports/src/index.ts"],
+      "@macro/macro-design": ["../../libs/macro-design/src/index.ts"],
+      "@macro/macro-design/react": ["../../libs/macro-design/src/lib/react/index.ts"],
+      "@macro/macro-grid-format": ["../../libs/macro-grid-format/src/index.ts"],
+      "@macro/macro-grid-format/react": ["../../libs/macro-grid-format/src/lib/react/index.ts"]
+    },
+    "types": [
+      "node",
+      "@nx/react/typings/cssmodule.d.ts",
+      "@nx/react/typings/image.d.ts",
+      "vite/client"
+    ]
+  },
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/**/*.spec.tsx",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.js",
+    "src/**/*.test.js",
+    "src/**/*.spec.jsx",
+    "src/**/*.test.jsx",
+    "vite.config.ts",
+    "vite.config.mts",
+    "vitest.config.ts",
+    "vitest.config.mts"
+  ],
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
+}

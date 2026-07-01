@@ -342,6 +342,33 @@
         "solace"
       ],
       "category": "Blotters"
+    },
+    {
+      "appId": "prism-react-blotter",
+      "name": "prism-react-blotter",
+      "title": "Prism Blotter (React)",
+      "description": "React build of Prism — pick a Capital Markets data source (AMPS / NATS / JetStream / Solace) or define an ad-hoc one; snapshot + real-time AG Grid blotter.",
+      "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/prism-react.fin.json",
+      "manifestType": "view",
+      "icons": [
+        {
+          "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/icons/prism-react.svg"
+        }
+      ],
+      "contactEmail": "contact@example.com",
+      "supportEmail": "support@example.com",
+      "publisher": "OpenFin",
+      "intents": [],
+      "images": [],
+      "tags": [
+        "view",
+        "react",
+        "blotter",
+        "amps",
+        "nats",
+        "solace"
+      ],
+      "category": "Blotters"
     }
   ]
 }

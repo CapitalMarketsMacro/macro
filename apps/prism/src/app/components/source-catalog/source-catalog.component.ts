@@ -14,7 +14,7 @@ import {
   TRANSPORT_LABELS,
   type BlotterMode,
   type BlotterSource,
-} from '../../models/blotter-source';
+} from '@macro/prism-core';
 
 type GroupBy = 'category' | 'transport' | 'mode';
 
