@@ -136,7 +136,20 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       defaultColDef: { sortable: true, filter: true, resizable: true },
       // Pagination OFF by default; users flip it via the subtle status-bar toggle (feels native).
       pagination: false, paginationPageSize: 10, paginationPageSizeSelector: [10, 25, 50, 100],
-      statusBar: { statusPanels: [{ statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' as const }] },
+      // Native AG Grid status bar: filtered-of-total row count, selected-row count, aggregations
+      // (Count/Sum/Min/Max/Avg) for the selected cell range, and the pagination toggle.
+      statusBar: {
+        statusPanels: [
+          { statusPanel: 'agTotalAndFilteredRowCountComponent', align: 'left' as const },
+          { statusPanel: 'agSelectedRowCountComponent', align: 'left' as const },
+          {
+            statusPanel: 'agAggregationComponent',
+            statusPanelParams: { aggFuncs: ['count', 'sum', 'min', 'max', 'avg'] },
+            align: 'center' as const,
+          },
+          { statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' as const },
+        ],
+      },
       animateRows: true,
       // v36 selection API (string rowSelection / enableRangeSelection / suppressRowClickSelection
       // are deprecated). Preserves prior behaviour: multi-row mode, no checkbox column, no
