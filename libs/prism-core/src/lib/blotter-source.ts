@@ -50,6 +50,13 @@ export interface BlotterSource {
   conflationMs?: number;
   /** Row cap for `append` feeds (oldest trimmed past this). */
   maxRows?: number;
+  /**
+   * How to treat a message whose payload is a JSON array (a batch of rows). Defaults to `true`
+   * (auto): each array element becomes its own row; a plain object payload is one row. Set `false`
+   * to treat an array payload as a single record (the rare case where the array itself is the value).
+   * A single row is always an object, never a top-level array, so auto-expansion never misfires.
+   */
+  expandArrays?: boolean;
   columnMode: ColumnMode;
   /** Provenance: catalog entries are read-only; ad-hoc entries are editable/deletable. */
   origin?: 'catalog' | 'adhoc';

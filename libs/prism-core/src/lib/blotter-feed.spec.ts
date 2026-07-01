@@ -218,6 +218,94 @@ describe('BlotterFeed', () => {
     expect(feed.getState().status).toBe('live');
   });
 
+  it('array payload: expands a JSON array into one row per element (append)', async () => {
+    const { grid, adds } = makeGrid();
+    const onColumns = jest.fn();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'nats',
+      mode: 'append',
+      connection: { transport: 'nats', servers: 'ws://x' },
+    };
+    const feed = new BlotterFeed(source, grid, onColumns);
+    await feed.start();
+    const t = lastTransport();
+
+    t.__live.next(msg([{ a: 1 }, { a: 2 }, { a: 3 }]));
+
+    expect(adds).toHaveLength(3);
+    expect(adds.map((r) => r.a)).toEqual([1, 2, 3]);
+    expect(feed.getState().rowCount).toBe(3);
+    // Columns inferred from the FIRST element of the array, not the array itself.
+    expect(onColumns).toHaveBeenCalledTimes(1);
+    expect(onColumns).toHaveBeenCalledWith({ a: 1 });
+  });
+
+  it('array payload: upserts each element by key (snapshot-update)', async () => {
+    const { grid, adds, updates } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'nats',
+      mode: 'snapshot-update',
+      keyField: 'symbol',
+      connection: { transport: 'nats', servers: 'ws://x' },
+    };
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    await feed.start();
+    const t = lastTransport();
+
+    t.__live.next(msg([{ symbol: 'EUR', px: 1 }, { symbol: 'JPY', px: 2 }]));
+    t.__live.next(msg([{ symbol: 'EUR', px: 5 }])); // known key -> update
+
+    expect(adds.map((r) => r.symbol)).toEqual(['EUR', 'JPY']);
+    expect(updates).toEqual([{ symbol: 'EUR', px: 5 }]);
+    expect(feed.getState().rowCount).toBe(2);
+  });
+
+  it('expandArrays:false treats an array payload as a single record', async () => {
+    const { grid, adds } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'nats',
+      mode: 'append',
+      expandArrays: false,
+      connection: { transport: 'nats', servers: 'ws://x' },
+    };
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    await feed.start();
+    const t = lastTransport();
+
+    t.__live.next(msg([{ a: 1 }, { a: 2 }]));
+
+    expect(adds).toHaveLength(1);
+    expect(feed.getState().rowCount).toBe(1);
+  });
+
+  it('array payload in the JetStream snapshot seeds one row per element', async () => {
+    const { grid, setInitial } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'nats-js',
+      mode: 'snapshot-update',
+      keyField: 'bookId',
+      connection: { transport: 'nats-js', servers: 'ws://x' },
+    };
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    const starting = feed.start();
+    await macro();
+    const t = lastTransport();
+
+    t.__snap.next(msg([{ bookId: 'B1', qty: 10 }, { bookId: 'B2', qty: 20 }]));
+    t.__resolveSnap();
+    await starting;
+
+    expect(setInitial).toHaveBeenCalledWith([
+      { bookId: 'B1', qty: 10 },
+      { bookId: 'B2', qty: 20 },
+    ]);
+    expect(feed.getState().rowCount).toBe(2);
+  });
+
   it('notifies subscribers and stop() unsubscribes + disconnects', async () => {
     const { grid } = makeGrid();
     const source: BlotterSource = {
