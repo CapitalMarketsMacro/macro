@@ -42,6 +42,7 @@ import {
   type ShowValuesAsEntry,
 } from '@macro/macro-grid-format';
 import { MacroFormatToolPanelComponent } from '@macro/macro-grid-format/angular';
+import { MacroPaginationToggleComponent, MACRO_PAGINATION_TOGGLE } from '../pagination-toggle.component';
 
 // Register all ag-Grid modules (Community and Enterprise)
 ModuleRegistry.registerModules([
@@ -213,7 +214,10 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       filter: true,
       resizable: true,
     },
-    components: { [FORMAT_TOOL_PANEL_COMPONENT]: MacroFormatToolPanelComponent },
+    components: {
+      [FORMAT_TOOL_PANEL_COMPONENT]: MacroFormatToolPanelComponent,
+      [MACRO_PAGINATION_TOGGLE]: MacroPaginationToggleComponent,
+    },
     sideBar: withFormatPanel(
       { toolPanels: ['columns', 'filters'], hiddenByDefault: false },
       { store: this.formatStore },
@@ -221,9 +225,11 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     // AG Grid 36 calculated columns: users add/edit/remove via the column header menu.
     // 'deferred' = the dialog validates the expression and applies on Apply (safer for desks).
     calculatedColumns: { applyMode: 'deferred' },
-    pagination: true,
+    // Pagination OFF by default; users flip it via the subtle status-bar toggle (feels native).
+    pagination: false,
     paginationPageSize: 10,
     paginationPageSizeSelector: [10, 25, 50, 100],
+    statusBar: { statusPanels: [{ statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' }] },
     animateRows: true,
     // v36 selection API (string rowSelection / enableRangeSelection / suppressRowClickSelection
     // are deprecated). Preserves prior behaviour: multi-row mode, no checkbox column, no
@@ -451,7 +457,10 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       components: {
         ...this.gridOptions.components,
         [FORMAT_TOOL_PANEL_COMPONENT]: MacroFormatToolPanelComponent,
+        [MACRO_PAGINATION_TOGGLE]: MacroPaginationToggleComponent,
       },
+      // Default the status bar (pagination toggle) unless the consumer supplies their own.
+      statusBar: this.gridOptions.statusBar ?? this.defaultGridOptions.statusBar,
       sideBar: withFormatPanel(this.gridOptions.sideBar, { store: this.formatStore }),
     };
   }
