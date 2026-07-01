@@ -5,6 +5,9 @@
 @import '../../../libs/macro-design/src/lib/css/macro-etrading.css';
 @import '../../../libs/macro-design/src/lib/css/macro-design.css';
 
+/* PrimeIcons — required for the pi-* glyphs (PrimeNG menubar icons, etc.) */
+@import 'primeicons/primeicons.css';
+
 /* Apply Ubuntu as default font */
 body {
   font-family: 'Ubuntu', sans-serif;
