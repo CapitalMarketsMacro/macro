@@ -1,5 +1,5 @@
-import { render, act, cleanup } from '@testing-library/react';
-import { createRef } from 'react';
+import { render, act, cleanup, fireEvent } from '@testing-library/react';
+import { createRef, type ComponentType } from 'react';
 import { vi, describe, it, expect, beforeEach, afterEach, type Mock } from 'vitest';
 import { GridApi, GridState, GridReadyEvent, ColDef } from 'ag-grid-community';
 
@@ -225,10 +225,21 @@ describe('MacroReactGrid', () => {
         sortable: true,
         filter: true,
         resizable: true,
+        enableRowGroup: true,
+        enableValue: true,
+        enablePivot: true,
+        enableShowValuesAs: true,
       });
-      // Pagination defaults OFF, with a status-bar toggle to enable it.
+      // Pagination/grouping/pivot default OFF, with status-bar toggles to enable them.
+      expect(opts.rowGroupPanelShow).toBe('never');
+      expect(opts.pivotPanelShow).toBe('always');
       const statusBar = opts.statusBar as { statusPanels: { statusPanel: string }[] };
       expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroPaginationToggle')).toBe(true);
+      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroGroupingToggle')).toBe(true);
+      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroPivotToggle')).toBe(true);
+      const components = capturedProps.components as Record<string, unknown>;
+      expect(components['macroGroupingToggle']).toBeDefined();
+      expect(components['macroPivotToggle']).toBeDefined();
     });
 
     it('should let user gridOptions override defaults', () => {
@@ -626,6 +637,90 @@ describe('MacroReactGrid', () => {
       fireGridReady(mockApi);
 
       expect(ref.current?.getGridApi()).toBe(mockApi);
+    });
+  });
+
+  // ── Status-bar grouping / pivot toggles ───────────────────────────────────
+
+  describe('status-bar grouping / pivot toggles', () => {
+    type PanelComponent = ComponentType<{ api: GridApi }>;
+
+    /** Render the grid once to capture the registered status-panel components. */
+    function getPanel(key: string): PanelComponent {
+      render(<MacroReactGrid />);
+      return (capturedProps.components as Record<string, PanelComponent>)[key];
+    }
+
+    it('grouping toggle shows the row-group panel when checked (without touching existing groups)', () => {
+      const Panel = getPanel('macroGroupingToggle');
+      const api = createMockGridApi({ getGridOption: vi.fn().mockReturnValue('never') } as Partial<GridApi>);
+      const { getByLabelText } = render(<Panel api={api} />);
+
+      const checkbox = getByLabelText('Toggle row grouping') as HTMLInputElement;
+      expect(checkbox.checked).toBe(false);
+      fireEvent.click(checkbox);
+
+      expect(api.setGridOption).toHaveBeenCalledWith('rowGroupPanelShow', 'always');
+      expect(api.applyColumnState).not.toHaveBeenCalled();
+    });
+
+    it('grouping toggle hides the panel AND clears active row groups when unchecked', () => {
+      const Panel = getPanel('macroGroupingToggle');
+      const api = createMockGridApi({ getGridOption: vi.fn().mockReturnValue('always') } as Partial<GridApi>);
+      const { getByLabelText } = render(<Panel api={api} />);
+
+      const checkbox = getByLabelText('Toggle row grouping') as HTMLInputElement;
+      expect(checkbox.checked).toBe(true); // initialized from rowGroupPanelShow 'always'
+      fireEvent.click(checkbox);
+
+      expect(api.setGridOption).toHaveBeenCalledWith('rowGroupPanelShow', 'never');
+      expect(api.applyColumnState).toHaveBeenCalledWith({ defaultState: { rowGroup: false } });
+    });
+
+    it('pivot toggle flips pivotMode', () => {
+      const Panel = getPanel('macroPivotToggle');
+      const api = createMockGridApi({
+        getGridOption: vi.fn().mockReturnValue(false),
+        isDestroyed: vi.fn().mockReturnValue(false),
+      } as Partial<GridApi>);
+      const { getByLabelText } = render(<Panel api={api} />);
+
+      const checkbox = getByLabelText('Toggle pivot mode') as HTMLInputElement;
+      expect(checkbox.checked).toBe(false);
+      fireEvent.click(checkbox);
+
+      expect(api.setGridOption).toHaveBeenCalledWith('pivotMode', true);
+    });
+
+    it('pivot toggle stays in sync when pivot mode is flipped elsewhere (e.g. the columns tool panel)', () => {
+      const Panel = getPanel('macroPivotToggle');
+      let pivotMode = false;
+      const api = createMockGridApi({
+        getGridOption: vi.fn(() => pivotMode),
+        isDestroyed: vi.fn().mockReturnValue(false),
+      } as Partial<GridApi>);
+      const { getByLabelText } = render(<Panel api={api} />);
+
+      const [eventName, handler] = (api.addEventListener as Mock).mock.calls[0];
+      expect(eventName).toBe('columnPivotModeChanged');
+      pivotMode = true;
+      act(() => handler());
+
+      expect((getByLabelText('Toggle pivot mode') as HTMLInputElement).checked).toBe(true);
+    });
+
+    it('pivot toggle removes its grid event listener on unmount', () => {
+      const Panel = getPanel('macroPivotToggle');
+      const api = createMockGridApi({
+        getGridOption: vi.fn().mockReturnValue(false),
+        isDestroyed: vi.fn().mockReturnValue(false),
+      } as Partial<GridApi>);
+      const { unmount } = render(<Panel api={api} />);
+
+      unmount();
+
+      const [eventName, handler] = (api.addEventListener as Mock).mock.calls[0];
+      expect(api.removeEventListener).toHaveBeenCalledWith(eventName, handler);
     });
   });
 

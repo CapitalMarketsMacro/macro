@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef, useImperativeHandle, forwardRef, useCallback, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, useRef, useImperativeHandle, forwardRef, useCallback, type ChangeEvent, type CSSProperties } from 'react';
 import { AgGridReact, type CustomStatusPanelProps } from 'ag-grid-react';
 import { Subject, Subscription } from 'rxjs';
 import {
@@ -47,6 +47,20 @@ ModuleRegistry.registerModules([
 
 /** Status-panel component key used in `statusBar.statusPanels` and `components`. */
 const MACRO_PAGINATION_TOGGLE = 'macroPaginationToggle';
+/** Status-panel component key used in `statusBar.statusPanels` and `components`. */
+const MACRO_GROUPING_TOGGLE = 'macroGroupingToggle';
+/** Status-panel component key used in `statusBar.statusPanels` and `components`. */
+const MACRO_PIVOT_TOGGLE = 'macroPivotToggle';
+
+const TOGGLE_LABEL_STYLE: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '0.35rem',
+  padding: '0 0.5rem',
+  fontSize: '0.8rem',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+};
 
 /**
  * A subtle status-bar toggle that turns AG Grid pagination on/off at runtime. Rendered in the grid's
@@ -60,19 +74,61 @@ function PaginationStatusPanel({ api }: CustomStatusPanelProps) {
     api.setGridOption('pagination', next);
   };
   return (
-    <label
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '0.35rem',
-        padding: '0 0.5rem',
-        fontSize: '0.8rem',
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-      }}
-    >
+    <label style={TOGGLE_LABEL_STYLE}>
       <input type="checkbox" checked={on} onChange={toggle} style={{ cursor: 'pointer' }} aria-label="Toggle pagination" />
       <span>Pagination</span>
+    </label>
+  );
+}
+
+/**
+ * A subtle status-bar toggle for row grouping. ON shows the row-group drag panel
+ * (`rowGroupPanelShow: 'always'`) so users can drag column headers into it to group; OFF hides the
+ * panel AND clears any active row groups so the blotter visibly returns to a flat view.
+ */
+function GroupingStatusPanel({ api }: CustomStatusPanelProps) {
+  const [on, setOn] = useState<boolean>(() => {
+    const show = api.getGridOption('rowGroupPanelShow');
+    return show === 'always' || show === 'onlyWhenGrouping';
+  });
+  const toggle = (e: ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.checked;
+    setOn(next);
+    api.setGridOption('rowGroupPanelShow', next ? 'always' : 'never');
+    if (!next) api.applyColumnState({ defaultState: { rowGroup: false } });
+  };
+  return (
+    <label style={TOGGLE_LABEL_STYLE}>
+      <input type="checkbox" checked={on} onChange={toggle} style={{ cursor: 'pointer' }} aria-label="Toggle row grouping" />
+      <span>Grouping</span>
+    </label>
+  );
+}
+
+/**
+ * A subtle status-bar toggle for pivot mode. ON flips `pivotMode` so users can build a pivot via the
+ * columns tool panel / pivot drag strip (with Show Values As available on value columns); OFF returns
+ * to the flat/grouped view, keeping the pivot assignments for the next flip. Stays in sync when pivot
+ * mode is changed elsewhere (e.g. the columns tool panel's own Pivot Mode checkbox).
+ */
+function PivotStatusPanel({ api }: CustomStatusPanelProps) {
+  const [on, setOn] = useState<boolean>(() => !!api.getGridOption('pivotMode'));
+  useEffect(() => {
+    const sync = () => setOn(!!api.getGridOption('pivotMode'));
+    api.addEventListener('columnPivotModeChanged', sync);
+    return () => {
+      if (!api.isDestroyed()) api.removeEventListener('columnPivotModeChanged', sync);
+    };
+  }, [api]);
+  const toggle = (e: ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.checked;
+    setOn(next);
+    api.setGridOption('pivotMode', next);
+  };
+  return (
+    <label style={TOGGLE_LABEL_STYLE}>
+      <input type="checkbox" checked={on} onChange={toggle} style={{ cursor: 'pointer' }} aria-label="Toggle pivot mode" />
+      <span>Pivot</span>
     </label>
   );
 }
@@ -128,15 +184,35 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       [store],
     );
     const components = useMemo(
-      () => ({ [FORMAT_TOOL_PANEL_COMPONENT]: MacroFormatToolPanel, [MACRO_PAGINATION_TOGGLE]: PaginationStatusPanel }),
+      () => ({
+        [FORMAT_TOOL_PANEL_COMPONENT]: MacroFormatToolPanel,
+        [MACRO_PAGINATION_TOGGLE]: PaginationStatusPanel,
+        [MACRO_GROUPING_TOGGLE]: GroupingStatusPanel,
+        [MACRO_PIVOT_TOGGLE]: PivotStatusPanel,
+      }),
       [],
     );
 
     const defaultGridOptions: GridOptions = useMemo(() => ({
-      defaultColDef: { sortable: true, filter: true, resizable: true },
+      defaultColDef: {
+        sortable: true, filter: true, resizable: true,
+        // Every column can be dragged to Row Groups / Values / Pivot (tool panel + drag strips);
+        // enableShowValuesAs only surfaces the column-menu submenu on numeric/value columns.
+        enableRowGroup: true, enableValue: true, enablePivot: true, enableShowValuesAs: true,
+      },
       // Pagination OFF by default; users flip it via the subtle status-bar toggle (feels native).
       pagination: false, paginationPageSize: 10, paginationPageSizeSelector: [10, 25, 50, 100],
-      statusBar: { statusPanels: [{ statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' as const }] },
+      // Grouping/pivot OFF by default, flipped via the status-bar toggles. pivotPanelShow is
+      // initial-only config so it's declared here; the strip only renders while pivot mode is on.
+      rowGroupPanelShow: 'never' as const,
+      pivotPanelShow: 'always' as const,
+      statusBar: {
+        statusPanels: [
+          { statusPanel: MACRO_GROUPING_TOGGLE, align: 'right' as const },
+          { statusPanel: MACRO_PIVOT_TOGGLE, align: 'right' as const },
+          { statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' as const },
+        ],
+      },
       animateRows: true,
       // v36 selection API (string rowSelection / enableRangeSelection / suppressRowClickSelection
       // are deprecated). Preserves prior behaviour: multi-row mode, no checkbox column, no

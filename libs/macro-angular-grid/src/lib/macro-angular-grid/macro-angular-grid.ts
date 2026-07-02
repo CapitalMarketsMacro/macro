@@ -43,6 +43,12 @@ import {
 } from '@macro/macro-grid-format';
 import { MacroFormatToolPanelComponent } from '@macro/macro-grid-format/angular';
 import { MacroPaginationToggleComponent, MACRO_PAGINATION_TOGGLE } from '../pagination-toggle.component';
+import {
+  MacroGroupingToggleComponent,
+  MacroPivotToggleComponent,
+  MACRO_GROUPING_TOGGLE,
+  MACRO_PIVOT_TOGGLE,
+} from '../group-pivot-toggles.component';
 
 // Register all ag-Grid modules (Community and Enterprise)
 ModuleRegistry.registerModules([
@@ -213,10 +219,18 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       sortable: true,
       filter: true,
       resizable: true,
+      // Every column can be dragged to Row Groups / Values / Pivot (tool panel + drag strips);
+      // enableShowValuesAs only surfaces the column-menu submenu on numeric/value columns.
+      enableRowGroup: true,
+      enableValue: true,
+      enablePivot: true,
+      enableShowValuesAs: true,
     },
     components: {
       [FORMAT_TOOL_PANEL_COMPONENT]: MacroFormatToolPanelComponent,
       [MACRO_PAGINATION_TOGGLE]: MacroPaginationToggleComponent,
+      [MACRO_GROUPING_TOGGLE]: MacroGroupingToggleComponent,
+      [MACRO_PIVOT_TOGGLE]: MacroPivotToggleComponent,
     },
     sideBar: withFormatPanel(
       { toolPanels: ['columns', 'filters'], hiddenByDefault: false },
@@ -229,7 +243,17 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     pagination: false,
     paginationPageSize: 10,
     paginationPageSizeSelector: [10, 25, 50, 100],
-    statusBar: { statusPanels: [{ statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' }] },
+    // Grouping/pivot OFF by default, flipped via the status-bar toggles. pivotPanelShow is
+    // initial-only config so it's declared here; the strip only renders while pivot mode is on.
+    rowGroupPanelShow: 'never',
+    pivotPanelShow: 'always',
+    statusBar: {
+      statusPanels: [
+        { statusPanel: MACRO_GROUPING_TOGGLE, align: 'right' },
+        { statusPanel: MACRO_PIVOT_TOGGLE, align: 'right' },
+        { statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' },
+      ],
+    },
     animateRows: true,
     // v36 selection API (string rowSelection / enableRangeSelection / suppressRowClickSelection
     // are deprecated). Preserves prior behaviour: multi-row mode, no checkbox column, no
@@ -458,6 +482,8 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
         ...this.gridOptions.components,
         [FORMAT_TOOL_PANEL_COMPONENT]: MacroFormatToolPanelComponent,
         [MACRO_PAGINATION_TOGGLE]: MacroPaginationToggleComponent,
+        [MACRO_GROUPING_TOGGLE]: MacroGroupingToggleComponent,
+        [MACRO_PIVOT_TOGGLE]: MacroPivotToggleComponent,
       },
       // Default the status bar (pagination toggle) unless the consumer supplies their own.
       statusBar: this.gridOptions.statusBar ?? this.defaultGridOptions.statusBar,
