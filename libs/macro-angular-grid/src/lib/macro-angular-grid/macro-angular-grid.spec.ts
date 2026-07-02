@@ -215,6 +215,10 @@ describe('MacroAngularGrid', () => {
         sortable: true,
         filter: true,
         resizable: true,
+        enableRowGroup: true,
+        enableValue: true,
+        enablePivot: true,
+        enableShowValuesAs: true,
       });
     });
 
@@ -715,6 +719,10 @@ describe('MacroAngularGrid', () => {
         sortable: true,
         filter: true,
         resizable: true,
+        enableRowGroup: true,
+        enableValue: true,
+        enablePivot: true,
+        enableShowValuesAs: true,
       });
     });
 
@@ -743,6 +751,16 @@ describe('MacroAngularGrid', () => {
       ).statusPanels.map((p) => p.statusPanel);
       expect(panels).toContain('macroPaginationToggle');
       expect(component.defaultGridOptions.components?.['macroPaginationToggle']).toBeDefined();
+    });
+
+    it('should default grouping and pivot OFF with status-bar toggles to enable them', () => {
+      expect(component.defaultGridOptions.rowGroupPanelShow).toBe('never');
+      expect(component.defaultGridOptions.pivotPanelShow).toBe('always');
+      const statusBar = component.defaultGridOptions.statusBar as { statusPanels: { statusPanel: string }[] };
+      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroGroupingToggle')).toBe(true);
+      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroPivotToggle')).toBe(true);
+      expect(component.defaultGridOptions.components?.['macroGroupingToggle']).toBeDefined();
+      expect(component.defaultGridOptions.components?.['macroPivotToggle']).toBeDefined();
     });
 
     it('should include native status-bar stats (row counts + aggregations)', () => {

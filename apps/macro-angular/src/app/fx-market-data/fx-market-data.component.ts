@@ -42,35 +42,35 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       field: 'bid',
       headerName: 'Bid',
       width: 120,
-      valueFormatter: (params: any) => this.formatPrice(params.value, params.data.symbol),
+      valueFormatter: (params: any) => this.formatPrice(params.value, params.data?.symbol),
       cellStyle: { textAlign: 'right' }
     },
     {
       field: 'ask',
       headerName: 'Ask',
       width: 120,
-      valueFormatter: (params: any) => this.formatPrice(params.value, params.data.symbol),
+      valueFormatter: (params: any) => this.formatPrice(params.value, params.data?.symbol),
       cellStyle: { textAlign: 'right' }
     },
     {
       field: 'mid',
       headerName: 'Mid',
       width: 120,
-      valueFormatter: (params: any) => this.formatPrice(params.value, params.data.symbol),
+      valueFormatter: (params: any) => this.formatPrice(params.value, params.data?.symbol),
       cellStyle: { textAlign: 'right' }
     },
     {
       field: 'spread',
       headerName: 'Spread',
       width: 100,
-      valueFormatter: (params: any) => this.formatSpread(params.value, params.data.symbol),
+      valueFormatter: (params: any) => this.formatSpread(params.value, params.data?.symbol),
       cellStyle: { textAlign: 'right' }
     },
     {
       field: 'change',
       headerName: 'Change',
       width: 120,
-      valueFormatter: (params: any) => this.formatChange(params.value, params.data.symbol),
+      valueFormatter: (params: any) => this.formatChange(params.value, params.data?.symbol),
       cellStyle: (params: any): CellStyle => {
         const style: CellStyle = { textAlign: 'right' };
         if (params.value > 0) {
@@ -90,7 +90,8 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
       field: 'changePercent',
       headerName: 'Change %',
       width: 120,
-      valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}%`,
+      valueFormatter: (params: any) =>
+        params.value == null ? '' : `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}%`,
       cellStyle: (params: any): CellStyle => {
         const style: CellStyle = { textAlign: 'right' };
         if (params.value > 0) {
@@ -358,28 +359,32 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Format price for display
+   * Format price for display. Group rows have no data/value (unless aggregated), so both
+   * arguments may be undefined — return '' for missing values, default decimals for missing symbol.
    */
-  private formatPrice(value: number, symbol: string): string {
-    const isJPY = symbol.includes('JPY');
+  private formatPrice(value: number | null | undefined, symbol: string | undefined): string {
+    if (value == null) return '';
+    const isJPY = !!symbol?.includes('JPY');
     const decimals = isJPY ? 2 : 5;
     return value.toFixed(decimals);
   }
 
   /**
-   * Format spread for display
+   * Format spread for display (group-row safe, see formatPrice)
    */
-  private formatSpread(value: number, symbol: string): string {
-    const isJPY = symbol.includes('JPY');
+  private formatSpread(value: number | null | undefined, symbol: string | undefined): string {
+    if (value == null) return '';
+    const isJPY = !!symbol?.includes('JPY');
     const decimals = isJPY ? 2 : 5;
     return value.toFixed(decimals);
   }
 
   /**
-   * Format change for display
+   * Format change for display (group-row safe, see formatPrice)
    */
-  private formatChange(value: number, symbol: string): string {
-    const isJPY = symbol.includes('JPY');
+  private formatChange(value: number | null | undefined, symbol: string | undefined): string {
+    if (value == null) return '';
+    const isJPY = !!symbol?.includes('JPY');
     const decimals = isJPY ? 2 : 5;
     const sign = value >= 0 ? '+' : '';
     return `${sign}${value.toFixed(decimals)}`;
