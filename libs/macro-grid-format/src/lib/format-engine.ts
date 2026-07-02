@@ -23,7 +23,7 @@ const NEGATIVE_COLOR = 'var(--mkt-down, #dc2626)';
 
 const DEFAULT_LOCALE = 'en-US';
 
-function defaultDecimals(kind: FormatKind): number {
+export function defaultDecimals(kind: FormatKind): number {
   switch (kind) {
     case 'integer':
       return 0;

@@ -252,6 +252,37 @@ describe('MacroReactGrid', () => {
       expect(components['macroPivotToggle']).toBeDefined();
     });
 
+    it('adds Excel-style decimal step items to the column + context menus for numeric columns only', () => {
+      render(<MacroReactGrid />);
+      const opts = capturedProps.gridOptions as Record<string, any>;
+
+      const numericApi = createMockGridApi({
+        forEachNodeAfterFilterAndSort: vi.fn((cb: any) => cb({ group: false, data: { px: 1.5 } })),
+        getCellValue: vi.fn(({ useFormatter }: any) => (useFormatter ? '1.50' : 1.5)),
+      } as Partial<GridApi>);
+      const column = { getColId: () => 'px' };
+
+      const main = opts.getMainMenuItems({ api: numericApi, column, defaultItems: ['pinSubMenu'] });
+      expect(main[0]).toBe('pinSubMenu');
+      expect(main).toContain('separator');
+      expect(main.map((i: any) => i?.name)).toEqual(
+        expect.arrayContaining(['Increase Decimals', 'Decrease Decimals']),
+      );
+
+      const ctx = opts.getContextMenuItems({ api: numericApi, column, defaultItems: ['copy'] });
+      expect((ctx[0] as any).name).toBe('Increase Decimals');
+      expect(ctx).toContain('copy');
+
+      const textApi = createMockGridApi({
+        forEachNodeAfterFilterAndSort: vi.fn((cb: any) => cb({ group: false, data: { sym: 'EURUSD' } })),
+        getCellValue: vi.fn(() => 'EURUSD'),
+      } as Partial<GridApi>);
+      const mainText = opts.getMainMenuItems({
+        api: textApi, column: { getColId: () => 'sym' }, defaultItems: ['pinSubMenu'],
+      });
+      expect(mainText).toEqual(['pinSubMenu']);
+    });
+
     it('should let user gridOptions override defaults', () => {
       render(
         <MacroReactGrid

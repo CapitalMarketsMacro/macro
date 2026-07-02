@@ -772,6 +772,38 @@ describe('MacroAngularGrid', () => {
       expect(panels).toContain('agAggregationComponent');
     });
 
+    it('adds Excel-style decimal step items to the column + context menus for numeric columns only', () => {
+      const numericApi = createMockGridApi({
+        forEachNodeAfterFilterAndSort: jest.fn((cb: any) => cb({ group: false, data: { px: 1.5 } })),
+        getCellValue: jest.fn(({ useFormatter }: any) => (useFormatter ? '1.50' : 1.5)),
+      } as Partial<GridApi>);
+      const column = { getColId: () => 'px' };
+
+      const main = (component.defaultGridOptions.getMainMenuItems as any)({
+        api: numericApi, column, defaultItems: ['pinSubMenu'],
+      });
+      expect(main[0]).toBe('pinSubMenu');
+      expect(main).toContain('separator');
+      expect(main.map((i: any) => i?.name)).toEqual(
+        expect.arrayContaining(['Increase Decimals', 'Decrease Decimals']),
+      );
+
+      const ctx = (component.defaultGridOptions.getContextMenuItems as any)({
+        api: numericApi, column, defaultItems: ['copy'],
+      });
+      expect((ctx[0] as any).name).toBe('Increase Decimals');
+      expect(ctx).toContain('copy');
+
+      const textApi = createMockGridApi({
+        forEachNodeAfterFilterAndSort: jest.fn((cb: any) => cb({ group: false, data: { sym: 'EURUSD' } })),
+        getCellValue: jest.fn(() => 'EURUSD'),
+      } as Partial<GridApi>);
+      const mainText = (component.defaultGridOptions.getMainMenuItems as any)({
+        api: textApi, column: { getColId: () => 'sym' }, defaultItems: ['pinSubMenu'],
+      });
+      expect(mainText).toEqual(['pinSubMenu']);
+    });
+
     it('should enable cell (range) selection and suppress cell focus', () => {
       expect(component.defaultGridOptions.cellSelection).toBe(true);
       expect(component.defaultGridOptions.suppressCellFocus).toBe(true);
