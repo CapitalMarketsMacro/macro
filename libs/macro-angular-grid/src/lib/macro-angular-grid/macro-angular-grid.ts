@@ -247,8 +247,18 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     // initial-only config so it's declared here; the strip only renders while pivot mode is on.
     rowGroupPanelShow: 'never',
     pivotPanelShow: 'always',
+    // Status bar: native filtered-of-total row count, selected-row count, and cell-range
+    // aggregations (Count/Sum/Min/Max/Avg) on the left/center; the grouping/pivot/pagination
+    // toggles on the right.
     statusBar: {
       statusPanels: [
+        { statusPanel: 'agTotalAndFilteredRowCountComponent', align: 'left' },
+        { statusPanel: 'agSelectedRowCountComponent', align: 'left' },
+        {
+          statusPanel: 'agAggregationComponent',
+          statusPanelParams: { aggFuncs: ['count', 'sum', 'min', 'max', 'avg'] },
+          align: 'center',
+        },
         { statusPanel: MACRO_GROUPING_TOGGLE, align: 'right' },
         { statusPanel: MACRO_PIVOT_TOGGLE, align: 'right' },
         { statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' },

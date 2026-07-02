@@ -230,13 +230,23 @@ describe('MacroReactGrid', () => {
         enablePivot: true,
         enableShowValuesAs: true,
       });
-      // Pagination/grouping/pivot default OFF, with status-bar toggles to enable them.
+      // Pagination/grouping/pivot default OFF, with status-bar toggles to enable them — plus
+      // native row-count and aggregation (Count/Sum/Min/Max/Avg) status panels.
       expect(opts.rowGroupPanelShow).toBe('never');
       expect(opts.pivotPanelShow).toBe('always');
-      const statusBar = opts.statusBar as { statusPanels: { statusPanel: string }[] };
-      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroPaginationToggle')).toBe(true);
-      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroGroupingToggle')).toBe(true);
-      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroPivotToggle')).toBe(true);
+      const panels = (opts.statusBar as { statusPanels: { statusPanel: string }[] }).statusPanels.map(
+        (p) => p.statusPanel,
+      );
+      expect(panels).toEqual(
+        expect.arrayContaining([
+          'agTotalAndFilteredRowCountComponent',
+          'agSelectedRowCountComponent',
+          'agAggregationComponent',
+          'macroGroupingToggle',
+          'macroPivotToggle',
+          'macroPaginationToggle',
+        ]),
+      );
       const components = capturedProps.components as Record<string, unknown>;
       expect(components['macroGroupingToggle']).toBeDefined();
       expect(components['macroPivotToggle']).toBeDefined();

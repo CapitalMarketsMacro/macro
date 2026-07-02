@@ -206,8 +206,18 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       // initial-only config so it's declared here; the strip only renders while pivot mode is on.
       rowGroupPanelShow: 'never' as const,
       pivotPanelShow: 'always' as const,
+      // Status bar: native filtered-of-total row count, selected-row count, and cell-range
+      // aggregations (Count/Sum/Min/Max/Avg) on the left/center; the grouping/pivot/pagination
+      // toggles on the right.
       statusBar: {
         statusPanels: [
+          { statusPanel: 'agTotalAndFilteredRowCountComponent', align: 'left' as const },
+          { statusPanel: 'agSelectedRowCountComponent', align: 'left' as const },
+          {
+            statusPanel: 'agAggregationComponent',
+            statusPanelParams: { aggFuncs: ['count', 'sum', 'min', 'max', 'avg'] },
+            align: 'center' as const,
+          },
           { statusPanel: MACRO_GROUPING_TOGGLE, align: 'right' as const },
           { statusPanel: MACRO_PIVOT_TOGGLE, align: 'right' as const },
           { statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' as const },
