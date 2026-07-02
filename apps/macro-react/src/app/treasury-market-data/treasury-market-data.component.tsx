@@ -226,8 +226,9 @@ export function TreasuryMarketDataComponent() {
       { field: 'cusip', headerName: 'CUSIP', width: 120, pinned: 'left' as const },
       { field: 'securityType', headerName: 'Type', width: 100 },
       { field: 'maturity', headerName: 'Maturity', width: 120 },
-      { field: 'yearsToMaturity', headerName: 'YTM', width: 100, valueFormatter: (params: any) => params.value.toFixed(2) },
-      { field: 'coupon', headerName: 'Coupon', width: 100, valueFormatter: (params: any) => `${params.value.toFixed(2)}%` },
+      // Formatters guard params.value — group rows have no value unless the column is aggregated.
+      { field: 'yearsToMaturity', headerName: 'YTM', width: 100, valueFormatter: (params: any) => params.value?.toFixed(2) ?? '' },
+      { field: 'coupon', headerName: 'Coupon', width: 100, valueFormatter: (params: any) => (params.value == null ? '' : `${params.value.toFixed(2)}%`) },
       {
         field: 'price',
         headerName: 'Price',
@@ -239,7 +240,7 @@ export function TreasuryMarketDataComponent() {
         field: 'yield',
         headerName: 'Yield',
         width: 120,
-        valueFormatter: (params: any) => `${params.value.toFixed(4)}%`,
+        valueFormatter: (params: any) => (params.value == null ? '' : `${params.value.toFixed(4)}%`),
         cellStyle: { textAlign: 'right' }
       },
       {
@@ -260,14 +261,15 @@ export function TreasuryMarketDataComponent() {
         field: 'spread',
         headerName: 'Spread',
         width: 100,
-        valueFormatter: (params: any) => params.value.toFixed(4),
+        valueFormatter: (params: any) => params.value?.toFixed(4) ?? '',
         cellStyle: { textAlign: 'right' }
       },
       {
         field: 'change',
         headerName: 'Change',
         width: 120,
-        valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}`,
+        valueFormatter: (params: any) =>
+          params.value == null ? '' : `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}`,
         cellStyle: (params: any) => {
           if (params.value > 0) return { color: 'green', textAlign: 'right' };
           if (params.value < 0) return { color: 'red', textAlign: 'right' };
@@ -283,7 +285,8 @@ export function TreasuryMarketDataComponent() {
         field: 'changePercent',
         headerName: 'Change %',
         width: 120,
-        valueFormatter: (params: any) => `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}%`,
+        valueFormatter: (params: any) =>
+          params.value == null ? '' : `${params.value >= 0 ? '+' : ''}${params.value.toFixed(4)}%`,
         cellStyle: (params: any) => {
           if (params.value > 0) return { color: 'green', textAlign: 'right' };
           if (params.value < 0) return { color: 'red', textAlign: 'right' };
@@ -299,21 +302,21 @@ export function TreasuryMarketDataComponent() {
         field: 'volume',
         headerName: 'Volume',
         width: 120,
-        valueFormatter: (params: any) => `${params.value.toFixed(2)}M`,
+        valueFormatter: (params: any) => (params.value == null ? '' : `${params.value.toFixed(2)}M`),
         cellStyle: { textAlign: 'right' }
       },
       {
         field: 'duration',
         headerName: 'Duration',
         width: 120,
-        valueFormatter: (params: any) => params.value.toFixed(2),
+        valueFormatter: (params: any) => params.value?.toFixed(2) ?? '',
         cellStyle: { textAlign: 'right' }
       },
       {
         field: 'convexity',
         headerName: 'Convexity',
         width: 120,
-        valueFormatter: (params: any) => params.value.toFixed(2),
+        valueFormatter: (params: any) => params.value?.toFixed(2) ?? '',
         cellStyle: { textAlign: 'right' }
       },
       // Pre-defined calculated column (AG Grid 36). Users can add/edit/remove their own from the
