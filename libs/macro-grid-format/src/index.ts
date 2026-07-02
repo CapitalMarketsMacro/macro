@@ -70,3 +70,12 @@ export type { CalcColumnSchema } from './lib/calculated-columns';
 
 export { SHOW_VALUES_AS_KEY, serializeShowValuesAs } from './lib/show-values-as';
 export type { ShowValuesAsEntry } from './lib/show-values-as';
+
+export {
+  MIN_STEP_DECIMALS,
+  MAX_STEP_DECIMALS,
+  inferNumberSpec,
+  canStepDecimals,
+  stepColumnDecimals,
+  buildDecimalStepMenuItems,
+} from './lib/decimal-steps';
