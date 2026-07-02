@@ -18,6 +18,8 @@ import {
   type CalculatedColumnCreatedEvent,
   type CalculatedColumnExpressionChangedEvent,
   type CalculatedColumnRemovedEvent,
+  type GetContextMenuItemsParams,
+  type GetMainMenuItemsParams,
 } from 'ag-grid-community';
 import {
   AllEnterpriseModule,
@@ -31,6 +33,7 @@ import {
   FORMAT_TOOL_PANEL_COMPONENT,
   SHOW_VALUES_AS_KEY,
   buildCellStyle,
+  buildDecimalStepMenuItems,
   buildValueFormatter,
   mergeCalculatedColumns,
   migrateMap,
@@ -239,6 +242,18 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     // AG Grid 36 calculated columns: users add/edit/remove via the column header menu.
     // 'deferred' = the dialog validates the expression and applies on Apply (safer for desks).
     calculatedColumns: { applyMode: 'deferred' },
+    // Excel-style quick decimal stepping on numeric columns — appended to the column header
+    // menu and put first in the cell right-click menu. Rides the format store, so steps
+    // persist in `columnFormats` and the Format tool panel reflects them.
+    getMainMenuItems: (params: GetMainMenuItemsParams) => {
+      const items = buildDecimalStepMenuItems(this.formatStore, params.api, params.column?.getColId());
+      return items.length ? [...params.defaultItems, 'separator' as const, ...items] : params.defaultItems;
+    },
+    getContextMenuItems: (params: GetContextMenuItemsParams) => {
+      const items = buildDecimalStepMenuItems(this.formatStore, params.api, params.column?.getColId());
+      const defaults = params.defaultItems ?? [];
+      return items.length ? [...items, 'separator' as const, ...defaults] : defaults;
+    },
     // Pagination OFF by default; users flip it via the subtle status-bar toggle (feels native).
     pagination: false,
     paginationPageSize: 10,
