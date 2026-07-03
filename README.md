@@ -2,7 +2,7 @@
 
 
 
-NX 22.5 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace (HERE Core UI 23.2.19) into a unified platform with shared libraries for real-time market data, enterprise messaging, analytics, and FDC3 interoperability.
+NX 22.5 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace (HERE Core UI 24.0.19) into a unified platform with shared libraries for real-time market data, enterprise messaging, analytics, and FDC3 interoperability.
 
 
 
@@ -444,7 +444,7 @@ Compact 280x280 frameless window positioned top-right with:
 
 
 
-Powered by `@openfin/snap-sdk` 1.5.0. Drag windows near each other to snap; SHIFT to unstick.
+Powered by `@openfin/snap-sdk` 1.6.0. Drag windows near each other to snap; SHIFT to unstick.
 
 
 
@@ -453,6 +453,28 @@ Powered by `@openfin/snap-sdk` 1.5.0. Drag windows near each other to snap; SHIF
 
 
 ShowHideTabs, ColorLinking, PresetLayouts, LockUnlockPage, SaveMenu, Toggle Page Tabs, Toggle Theme, Upload Logs
+
+
+
+### Workspace v24 Browser Features
+
+
+
+Configured via the optional `browserSettings` block in `settings.json` (per-env); values mirror the SDK's `BrowserInitConfig` and flow straight into `WorkspacePlatform.init({ browser })` (`libs/openfin/src/lib/platform.service.ts`).
+
+- **Tab search** (`tabSearchButton`) -- searchable dropdown (chevron) on both the page and view tab strips for Chrome-like navigation across many tabs. Enabled for both locations by default.
+
+- **Duplicate page titles** (`allowDuplicatePageTitles: true`) -- repeating page types (e.g. multiple blotter pages) may intentionally share a title; no forced numeric suffixes. `pageId` stays the unique identifier.
+
+- **Success-indicator suppression** (`indicators.suppressWorkspaceSwitched` / `suppressWorkspaceSaved`) -- opt-in suppression of the green "Workspace Switched"/"Workspace Saved" toasts; both default to shown.
+
+- **Page pinning & locking** -- end-users pin favourite pages to the front of the tab strip via the built-in **Pin/Unpin** page-tab context-menu items (no platform code involved). Developers can platform-lock a page (non-closeable, fixed first position, locked layout) by setting `pinned: 'platform'` on any `Page` object passed to `Browser.createWindow` / page storage APIs.
+
+- **Transient / sticky toasts (Notification Center 2.15)** -- per-notification `toast: 'sticky' | 'transient' | 'none'` on `NotificationOptions` (default `transient`): sticky toasts stay on the desktop until interacted with, `none` lands in the Center only -- honored whether or not the Center is open. `NotificationsService.info/success/warning/error/critical(title, body, { toast })` pass it through; try the **Sticky / Transient / Silent** pills in the provider window's Expand panel. The Center itself is pinned to 2.15.0 in `dos.json` (`systemApps["notification-center"]`) while 2.15.0 is on the Beta channel.
+
+> **Beta-channel note:** while 24.0.19 is on the Beta channel, the RVM's Stable channel still serves the 23.2.x browser UI, which silently hides these features. Run `npm run dos` once (Windows, HKCU only) to pin the HERE Core UI system app to 24.0.19 via Desktop Owner Settings (`public/{local,openshift}/dos.json`), then restart OpenFin (`npm run stop:all`). Undo with `npm run dos:restore`.
+
+> Supertab Windows and the AI Center remain preview-only in 24.0.19 (`@openfin/here-supertabs` is not on public npm and `aiPanelOptions` is internal); they are intentionally not wired up here yet.
 
 
 
@@ -924,13 +946,13 @@ npm run build:<app>          # Build individual app
 
 | PrimeNG | 21.1.3 |
 
-| @openfin/workspace-platform | 23.2.19 |
+| @openfin/workspace-platform | 24.0.19 |
 
-| @openfin/snap-sdk | 1.5.0 |
+| @openfin/snap-sdk | 1.6.0 |
 
 | @nats-io/nats-core | 3.3.1 |
 
-| Runtime | 43.142.104.1 |
+| Runtime | 44.146.101.5 |
 
 | NX | 22.5 |
 

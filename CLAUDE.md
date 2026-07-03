@@ -107,7 +107,7 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 - Config is **environment-scoped** under `apps/macro-workspace/public/{local,openshift}/`, selected by the `?env=` query param on the provider URL (default `local`). Local uses `http://localhost:42xx/...`; OpenShift uses `https://{{OPENSHIFT_*_HOST}}/...` tokens substituted at deploy time.
 - Platform manifest: `apps/macro-workspace/public/{local,openshift}/manifest.fin.json` (runtime/platform only — does **not** contain the app registry).
 - **App registry: `apps/macro-workspace/public/{local,openshift}/apps.json`** — the source of truth for store + dock + home. Each entry: `{appId, name, title, description, manifest, manifestType, icons, tags, category}`; the `category` field drives storefront navigation. (There is no `customSettings.apps` array.)
-- Dock: `dock-config.json` (`favorites[]` + `contentMenu[]` folders). Storefront: `storefront-config.json` (nav sections / landing / footer). Snap: `snap-config.json`. Entitlements: `entitlements.json`. `settings.json` holds only `platformSettings`.
+- Dock: `dock-config.json` (`favorites[]` + `contentMenu[]` folders). Storefront: `storefront-config.json` (nav sections / landing / footer). Snap: `snap-config.json`. Entitlements: `entitlements.json`. `settings.json` holds `platformSettings` plus optional `browserSettings` (Workspace v24 browser options: `allowDuplicatePageTitles`, `indicators` suppression, `tabSearchButton`).
 - View manifests: `apps/macro-workspace/public/{local,openshift}/<name>.fin.json` (`{ url, fdc3InteropApi: "2.0", interop: { currentContextGroup: "green" } }`).
 - FDC3 2.0 with `currentContextGroup: "green"` on all views
 - Workspace persistence via localStorage
@@ -201,7 +201,7 @@ This repo has 6 MCP servers configured in `.mcp.json`:
 | `apps/macro-workspace/public/{local,openshift}/dock-config.json` | Dock favorites + content menu (per-env)      |
 | `apps/macro-workspace/public/{local,openshift}/storefront-config.json` | Storefront nav sections / landing / footer (per-env) |
 | `apps/macro-workspace/public/{local,openshift}/manifest.fin.json` | OpenFin platform/runtime manifest (per-env; NOT the app registry) |
-| `apps/macro-workspace/public/{local,openshift}/settings.json` | `platformSettings` only (id, title, icon)    |
+| `apps/macro-workspace/public/{local,openshift}/settings.json` | `platformSettings` (id, title, icon) + optional `browserSettings` (v24 browser options) |
 | `libs/macro-design/src/lib/css/macro-design.css` | All CSS variables (`:root` + `.dark`)        |
 | `libs/macro-design/src/lib/ag-grid-theme.ts`     | AG Grid theme builder                        |
 | `libs/macro-design/src/lib/dark-mode.ts`         | Dark mode utilities                          |

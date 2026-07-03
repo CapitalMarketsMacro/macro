@@ -1,0 +1,12 @@
+{
+  "desktopSettings": {
+    "systemApps": {
+      "workspace": {
+        "version": "24.0.19"
+      },
+      "notification-center": {
+        "version": "2.15.0"
+      }
+    }
+  }
+}

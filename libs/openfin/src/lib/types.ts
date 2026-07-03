@@ -49,8 +49,32 @@ export interface PlatformSettings {
   icon: string;
 }
 
+/**
+ * Workspace v24 browser options (settings.json → `browserSettings`, all optional).
+ * Field names mirror the SDK's `BrowserInitConfig` so values pass straight through
+ * to `WorkspacePlatform.init({ browser })`; absent fields fall back to code defaults.
+ */
+export interface BrowserSettings {
+  /** Allow multiple pages to share a title across windows (no forced numeric suffixes). SDK default: false. */
+  allowDuplicatePageTitles?: boolean;
+  /** Suppress the green success indicators (both SDK-default to false = shown). */
+  indicators?: {
+    /** Suppress "Workspace Switched" on every applyWorkspace. */
+    suppressWorkspaceSwitched?: boolean;
+    /** Suppress "Workspace Saved" on regular save only (save-as/rename unaffected). */
+    suppressWorkspaceSaved?: boolean;
+  };
+  /** Searchable tab dropdown (chevron) per tab strip; SDK-default is disabled, ours enables both. */
+  tabSearchButton?: {
+    pageTabs?: { enabled: boolean };
+    viewTabs?: { enabled: boolean };
+  };
+}
+
 export interface SettingsResponse {
   platformSettings: PlatformSettings;
+  /** Optional Workspace v24 browser options; omit to keep code defaults. */
+  browserSettings?: BrowserSettings;
 }
 
 /** Shape of apps.json — the app registry, loaded by AppsService. */

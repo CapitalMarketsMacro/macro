@@ -206,7 +206,27 @@ describe('PlatformService', () => {
 
       expect(mockOverrideService.createOverrideCallback).toHaveBeenCalled();
       const callArg = (init as jest.Mock).mock.calls[0][0];
-      expect(callArg.browser.overrideCallback).toBeDefined();
+      // v24: overrideCallback moved off deprecated browser.overrideCallback to the init root
+      expect(callArg.overrideCallback).toBeDefined();
+    });
+
+    it('should apply v24 browser settings and default tab search to enabled', async () => {
+      (init as jest.Mock).mockResolvedValue(undefined);
+
+      await firstValueFrom(
+        service.initializeWorkspacePlatform(platformSettings, undefined, undefined, {
+          allowDuplicatePageTitles: true,
+          indicators: { suppressWorkspaceSaved: true },
+        }),
+      );
+
+      const callArg = (init as jest.Mock).mock.calls[0][0];
+      expect(callArg.browser.allowDuplicatePageTitles).toBe(true);
+      expect(callArg.browser.indicators).toEqual({ suppressWorkspaceSaved: true });
+      expect(callArg.browser.defaultWindowOptions.workspacePlatform.tabSearchButton).toEqual({
+        pageTabs: { enabled: true },
+        viewTabs: { enabled: true },
+      });
     });
 
     it('should set icon on default window options', async () => {

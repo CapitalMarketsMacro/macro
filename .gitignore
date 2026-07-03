@@ -54,3 +54,6 @@ vitest.config.*.timestamp*
 
 # Claude Code — local, per-machine permission grants (not shared)
 .claude/settings.local.json
+
+# OpenFin Desktop Owner Settings backup (per-machine, written by scripts/dos.mjs)
+scripts/.dos-backup.json

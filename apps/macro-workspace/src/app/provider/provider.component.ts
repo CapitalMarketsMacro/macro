@@ -4,7 +4,7 @@ import { Subject, takeUntil } from 'rxjs';
 
 import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService, SettingsService } from '@macro/openfin';
 
-import type { ThemePresetInfo } from '@macro/openfin';
+import type { NotificationToastMode, ThemePresetInfo } from '@macro/openfin';
 
 import { Logger } from '@macro/logger';
 
@@ -342,7 +342,13 @@ export class ProviderComponent implements OnInit, OnDestroy {
 
 
 
-  sendTestNotification(level: 'info' | 'success' | 'warning' | 'error' | 'critical'): void {
+  sendTestNotification(
+
+    level: 'info' | 'success' | 'warning' | 'error' | 'critical',
+
+    toast?: NotificationToastMode,
+
+  ): void {
 
     const messages: Record<string, { title: string; body: string }> = {
 
@@ -360,7 +366,17 @@ export class ProviderComponent implements OnInit, OnDestroy {
 
     const { title, body } = messages[level];
 
-    this.notificationsService[level](title, body);
+    // NC 2.15: 'sticky' stays on screen until interacted with, 'transient' (default)
+    // fades, 'none' lands in the Notification Center only.
+    this.notificationsService[level](
+
+      toast ? `${title} (${toast} toast)` : title,
+
+      body,
+
+      toast ? { toast } : undefined,
+
+    );
 
   }
 

@@ -78,6 +78,7 @@ export class WorkspaceService {
           settings.platformSettings,
           themePalettes,
           this.storeService.getStoreCustomActions(),
+          settings.browserSettings,
         ).pipe(
           tap(() => nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'PlatformCreated' }).catch(() => {})),
           concatMap(() => this.awaitPlatformReady()),

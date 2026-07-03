@@ -3,5 +3,16 @@
     "id": "macro-workspace-platform",
     "title": "Macro Workspace Starter",
     "icon": "http://localhost:4202/MacroThemeCondensed/assets/favicon.svg"
+  },
+  "browserSettings": {
+    "allowDuplicatePageTitles": true,
+    "indicators": {
+      "suppressWorkspaceSwitched": false,
+      "suppressWorkspaceSaved": false
+    },
+    "tabSearchButton": {
+      "pageTabs": { "enabled": true },
+      "viewTabs": { "enabled": true }
+    }
   }
 }
