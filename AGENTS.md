@@ -1,18 +1,24 @@
-# CLAUDE.md - Macro Desktop MFE
+# AGENTS.md - Macro Desktop MFE
+
+> Kept in sync with `CLAUDE.md` (same content, different filename for non-Claude agents). When updating one, update both.
 
 ## Project Overview
 
-NX 22.7 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace into a unified platform with shared libraries for real-time market data, enterprise messaging, and FDC3 interoperability.
+NX 23 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace 24.0.19 (HERE Core UI, runtime 44.146.101.5) into a unified platform with shared libraries for real-time market data, enterprise messaging, and FDC3 interoperability.
 
 ## Quick Reference
 
-| App                | Port | Framework             | Command                           |
-| ------------------ | ---- | --------------------- | --------------------------------- |
-| macro-angular      | 4200 | Angular 21 (zoneful)  | `npm run start:angular`           |
-| macro-react        | 4201 | React 19 + Vite 8     | `npm run start:react`             |
-| macro-workspace    | 4202 | Angular 21 (zoneless) | `npm run start:workspace`         |
-| market-data-server | 3000 | Node.js WebSocket     | `npx nx serve market-data-server` |
-| All three apps     | -    | -                     | `npm start`                       |
+| App                    | Port | Framework             | Command                                  |
+| ---------------------- | ---- | --------------------- | ---------------------------------------- |
+| macro-angular          | 4200 | Angular 21 (zoneful)  | `npm run start:angular`                  |
+| macro-react            | 4201 | React 19 + Vite 8     | `npm run start:react`                    |
+| macro-workspace        | 4202 | Angular 21 (zoneless) | `npm run start:workspace`                |
+| macro-angular-fdc3     | 4203 | Angular 21 (zoneful)  | `npm run start:fdc3`                     |
+| prism                  | 4204 | Angular 21 (zoneful)  | `npm run start:prism`                    |
+| prism-react            | 4205 | React 19 + Vite 8     | `npm run start:prism-react`              |
+| capital-markets-themes | 4206 | React 19 + Vite 8     | `npm run start:capital-markets-themes`   |
+| market-data-server     | 3000 | Node.js WebSocket     | `npx nx serve market-data-server`        |
+| Core four apps         | -    | -                     | `npm start` (workspace, angular, react, fdc3) |
 
 Launch OpenFin: `npm run launch` (after workspace is serving on 4202)
 
@@ -24,16 +30,26 @@ macro/
 │   ├── macro-angular/          # Angular market data app (PrimeNG, AG Grid, AG Charts)
 │   ├── macro-react/            # React market data app (Shadcn/Radix, Tailwind, AG Grid, Recharts)
 │   ├── macro-workspace/        # OpenFin Workspace platform shell (Angular, zoneless)
+│   ├── macro-angular-fdc3/     # FDC3 instrument viewer (Angular)
+│   ├── prism/                  # Prism "Blotter as a Service" (Angular, PrimeNG)
+│   ├── prism-react/            # Prism blotter (React 19 + Vite, Shadcn/Radix)
+│   ├── capital-markets-themes/ # Theme showcase app (React 19 + Vite)
 │   ├── market-data-server/     # WebSocket server (simulated FX + Treasury data)
-│   └── macro-mcp/              # Custom MCP server for scaffolding
+│   ├── macro-mcp/              # MCP server (stdio) — thin entrypoint over @macro/mcp-core
+│   └── macro-mcp-agent/        # MCP server (HTTP/SSE) — same @macro/mcp-core, for remote deploy
 ├── libs/
 │   ├── macro-design/           # Shared design tokens, CSS variables, dark mode, AG Grid theme
 │   ├── logger/                 # Pino-based structured logging (@macro/logger)
-│   ├── transports/             # Unified messaging: AMPS, Solace, NATS (@macro/transports + /angular + /react)
+│   ├── mcp-core/               # Shared MCP tools/resources/prompts (@macro/mcp-core) — used by both MCP servers
+│   ├── transports/             # Unified messaging: AMPS, Solace, NATS incl. JetStream (@macro/transports + /angular + /react)
 │   ├── openfin/                # OpenFin Workspace services + Angular DI + Snap + Analytics (@macro/openfin)
-│   ├── utils/                # RxJS conflation utilities (@macro/utils)
-│   ├── macro-angular-grid/     # AG Grid 35 Enterprise Angular wrapper + column formatting
-│   └── macro-react-grid/       # AG Grid 35 Enterprise React wrapper + column formatting
+│   ├── utils/                  # RxJS conflation utilities (@macro/utils)
+│   ├── prism-core/             # Framework-free blotter core: sources, feeds, column inference (@macro/prism-core)
+│   ├── macro-grid-format/      # Framework-free column-format engine + tool panels (@macro/macro-grid-format)
+│   ├── macro-angular-grid/     # AG Grid 36 Enterprise Angular wrapper + column formatting
+│   └── macro-react-grid/       # AG Grid 36 Enterprise React wrapper + column formatting
+├── tools/
+│   └── prism-broker-lab/       # Docker NATS/Solace brokers + data feeder for Prism (npm run prism:brokers / prism:feed)
 ├── tsconfig.base.json          # Path aliases: @macro/* -> libs/*/src/index.ts
 ├── nx.json                     # NX config (defaultBase: master)
 └── package.json                # All scripts and dependencies
@@ -102,10 +118,13 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 
 **OpenFin (macro-workspace):**
 
-- Platform manifest: `apps/macro-workspace/public/manifest.fin.json`
-- App registry in `customSettings.apps` array within manifest
-- View manifests: `apps/macro-workspace/public/*.fin.json`
-- Settings: `apps/macro-workspace/public/settings.json`
+- Versions: `@openfin/workspace` + `@openfin/workspace-platform` **24.0.19** (HERE Core UI, currently Beta channel), `@openfin/core` + `@openfin/node-adapter` **44.101.5** (exact peer pair), manifest runtime **44.146.101.5**, bundled Notification Center **2.15.0**. Bump all of these in lockstep.
+- While 24.x is on the Beta channel, the browser/home UI must be pinned via Desktop Owner Settings: `dos.json` (per-env) pins the `workspace` and `notification-center` system apps; `npm run dos` sets the HKCU pointer (backs up any prior value), `npm run dos:restore` undoes it. Without the pin, the RVM serves the Stable 23.2.x UI and v24 features silently disappear.
+- Config is **environment-scoped** under `apps/macro-workspace/public/{local,openshift}/`, selected by the `?env=` query param on the provider URL (default `local`). Local uses `http://localhost:42xx/...`; OpenShift uses `https://{{OPENSHIFT_*_HOST}}/...` tokens substituted at deploy time.
+- Platform manifest: `apps/macro-workspace/public/{local,openshift}/manifest.fin.json` (runtime/platform only — does **not** contain the app registry).
+- **App registry: `apps/macro-workspace/public/{local,openshift}/apps.json`** — the source of truth for store + dock + home. Each entry: `{appId, name, title, description, manifest, manifestType, icons, tags, category}`; the `category` field drives storefront navigation. (There is no `customSettings.apps` array.)
+- Dock: `dock-config.json` (`favorites[]` + `contentMenu[]` folders). Storefront: `storefront-config.json` (nav sections / landing / footer). Snap: `snap-config.json`. Entitlements: `entitlements.json`. `settings.json` holds `platformSettings` plus optional `browserSettings` (Workspace v24 browser options: `allowDuplicatePageTitles`, `indicators` suppression, `tabSearchButton`).
+- View manifests: `apps/macro-workspace/public/{local,openshift}/<name>.fin.json` (`{ url, fdc3InteropApi: "2.0", interop: { currentContextGroup: "green" } }`).
 - FDC3 2.0 with `currentContextGroup: "green"` on all views
 - Workspace persistence via localStorage
 - View state persistence via `ViewStateService` / `useViewState()` hook
@@ -161,23 +180,27 @@ Default base branch is `master`.
 
 ## MCP Servers Available
 
-This repo has 6 MCP servers configured in `.mcp.json`:
+This repo has 5 MCP servers configured in `.mcp.json`:
 
 - **ag-mcp**: AG Grid documentation search
 - **primeng**: PrimeNG component documentation
-- **nx-mcp**: NX workspace commands
 - **angular-cli**: Angular CLI tools, best practices, documentation
 - **tailwindcss**: Tailwind CSS utilities and docs
-- **macro-mcp**: Custom scaffolding for new apps/libs in this monorepo
+- **macro-mcp**: Custom scaffolding for new apps/libs in this monorepo (requires a one-time `npm run build:mcp`)
+
+An **nx-mcp** server (NX workspace commands) is additionally provided by the NX Claude Code plugin.
 
 ## Adding a New Application
 
-1. Generate with NX: `npx nx generate @nx/angular:application <name> --directory=apps/<name>`
+> OpenFin config is environment-scoped under `apps/macro-workspace/public/{local,openshift}/` — do steps 4–6 in **both** env folders (local `http://localhost:42xx`, openshift `{{OPENSHIFT_*_HOST}}` tokens). All surfaces are config-driven, so no `libs/openfin` code change is needed.
+
+1. Generate with NX: `npx nx generate @nx/angular:application <name> --directory=apps/<name>` (pick a free serve port — 4200–4206 are taken)
 2. Import shared CSS from `@macro/macro-design` in the app's `styles.css`
 3. Use `@macro/*` libraries for grids, logging, messaging, theming
-4. Register in OpenFin manifest (`apps/macro-workspace/public/manifest.fin.json`)
-5. Create a view manifest (`apps/macro-workspace/public/<name>.fin.json`)
-6. Add path alias to `tsconfig.base.json` if creating a new lib
+4. Create a view manifest `public/{local,openshift}/<name>.fin.json` (`{ "url": "...", "fdc3InteropApi": "2.0", "interop": { "currentContextGroup": "green" } }`)
+5. Register the app in `public/{local,openshift}/apps.json` — add an entry with `appId`, `manifest` → the view-manifest URL, `manifestType: "view"`, `icons`, `tags`, and a `category`. This alone surfaces it in the store, home search, and as a launch target.
+6. Add a dock entry in `public/{local,openshift}/dock-config.json` (a `favorites[]` item and/or a `contentMenu` folder child), wire storefront nav in `storefront-config.json` (a nav item whose `category` matches — OpenFin caps nav at 3 sections / 5 items, and the dynamic Favorites section occupies one slot, so add categories as items in an existing section rather than a 4th section), and add an icon under `public/icons/`.
+7. Add a path alias to `tsconfig.base.json` only if creating a new lib
 
 ## Adding a New Shared Library
 
@@ -191,8 +214,12 @@ This repo has 6 MCP servers configured in `.mcp.json`:
 | ------------------------------------------------ | -------------------------------------------- |
 | `tsconfig.base.json`                             | All `@macro/*` path aliases                  |
 | `nx.json`                                        | Build targets, caching, plugins, generators  |
-| `apps/macro-workspace/public/manifest.fin.json`  | OpenFin app registry (11 registered apps)    |
-| `apps/macro-workspace/public/settings.json`      | Apps, dock, snap provider config             |
+| `apps/macro-workspace/public/{local,openshift}/apps.json` | OpenFin app registry (per-env; source of truth for store + dock + home) |
+| `apps/macro-workspace/public/{local,openshift}/dock-config.json` | Dock favorites + content menu (per-env)      |
+| `apps/macro-workspace/public/{local,openshift}/storefront-config.json` | Storefront nav sections / landing / footer (per-env) |
+| `apps/macro-workspace/public/{local,openshift}/manifest.fin.json` | OpenFin platform/runtime manifest (per-env; NOT the app registry) |
+| `apps/macro-workspace/public/{local,openshift}/settings.json` | `platformSettings` (id, title, icon) + optional `browserSettings` (v24 browser options) |
+| `apps/macro-workspace/public/{local,openshift}/dos.json` | Desktop Owner Settings: pins workspace 24.0.19 + notification-center 2.15.0 system apps (applied via `npm run dos`) |
 | `libs/macro-design/src/lib/css/macro-design.css` | All CSS variables (`:root` + `.dark`)        |
 | `libs/macro-design/src/lib/ag-grid-theme.ts`     | AG Grid theme builder                        |
 | `libs/macro-design/src/lib/dark-mode.ts`         | Dark mode utilities                          |
@@ -201,6 +228,8 @@ This repo has 6 MCP servers configured in `.mcp.json`:
 | `apps/macro-angular/src/app/app.config.ts`       | Angular app providers (PrimeNG, zone config) |
 | `apps/macro-react/src/main.tsx`                  | React entry (PrimeReact provider config)     |
 | `apps/macro-workspace/src/app/app.config.ts`     | Workspace app config (zoneless)              |
+| `.github/copilot-instructions.md`                | Condensed AG Grid 36 / format-panel / calc / Show-Values-As rules + gotchas (auto-loaded by Copilot) |
+| `docs/copilot/ag-grid-36-format-panel-port.md`   | Full verbatim port guide for the above (engine, tool panel, persistence side-channels) |
 
 ## Common Pitfalls
 
