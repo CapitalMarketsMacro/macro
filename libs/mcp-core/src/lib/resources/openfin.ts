@@ -3,7 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 const OPENFIN_DOC = `# OpenFin Integration
 
 ## Overview
-The Macro monorepo uses OpenFin's Workspace platform (Workspace 23.2.23, @openfin/core 43.104.1)
+The Macro monorepo uses OpenFin's Workspace platform (Workspace 24.0.19, @openfin/core 44.101.5)
 to host Angular and React LOB apps as views within a unified desktop experience.
 The \`macro-workspace\` app (port 4202) acts as the platform provider.
 

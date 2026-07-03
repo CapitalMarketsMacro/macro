@@ -2,7 +2,7 @@
 
 
 
-NX 22.5 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace (HERE Core UI 23.2.19) into a unified platform with shared libraries for real-time market data, enterprise messaging, analytics, and FDC3 interoperability.
+NX 22.5 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace (HERE Core UI 24.0.19) into a unified platform with shared libraries for real-time market data, enterprise messaging, analytics, and FDC3 interoperability.
 
 
 
@@ -444,7 +444,7 @@ Compact 280x280 frameless window positioned top-right with:
 
 
 
-Powered by `@openfin/snap-sdk` 1.5.0. Drag windows near each other to snap; SHIFT to unstick.
+Powered by `@openfin/snap-sdk` 1.6.0. Drag windows near each other to snap; SHIFT to unstick.
 
 
 
@@ -924,13 +924,13 @@ npm run build:<app>          # Build individual app
 
 | PrimeNG | 21.1.3 |
 
-| @openfin/workspace-platform | 23.2.19 |
+| @openfin/workspace-platform | 24.0.19 |
 
-| @openfin/snap-sdk | 1.5.0 |
+| @openfin/snap-sdk | 1.6.0 |
 
 | @nats-io/nats-core | 3.3.1 |
 
-| Runtime | 43.142.104.1 |
+| Runtime | 44.146.101.5 |
 
 | NX | 22.5 |
 
