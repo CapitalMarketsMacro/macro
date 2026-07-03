@@ -10,7 +10,7 @@ import {
 import { from, map, switchMap, type Observable } from 'rxjs';
 import type { App } from '@openfin/workspace';
 import type { LaunchService } from './launch.service';
-import type { PlatformSettings } from './types';
+import type { BrowserSettings, PlatformSettings } from './types';
 import { WorkspaceOverrideService, setViewTitle, THEME_CHANGED_TOPIC } from './workspace-override.service';
 import type { ThemePresetPalettes } from './theme-preset.service';
 import { themeConfig } from '@macro/macro-design';
@@ -137,6 +137,7 @@ export class PlatformService {
     platformSettings: PlatformSettings,
     themePalettes?: ThemePresetPalettes,
     additionalCustomActions?: Record<string, (payload: any) => Promise<void>>,
+    browserSettings?: BrowserSettings,
   ): Observable<void> {
     // JSON theme presets are loaded dynamically; fall back to compiled themeConfig
     const dark = themePalettes?.dark ?? themeConfig.dark;
@@ -144,8 +145,12 @@ export class PlatformService {
 
     return from(
       init({
+        overrideCallback: this.workspaceOverrideService.createOverrideCallback(),
         browser: {
-          overrideCallback: this.workspaceOverrideService.createOverrideCallback(),
+          // v24: repeating page types (blotters) may intentionally share a title
+          allowDuplicatePageTitles: browserSettings?.allowDuplicatePageTitles ?? false,
+          // v24: opt-in suppression of the "Workspace Switched"/"Workspace Saved" toasts
+          indicators: browserSettings?.indicators,
           defaultWindowOptions: {
             icon: platformSettings.icon,
             taskbarIcon: toTaskbarIcon(platformSettings.icon),
@@ -160,6 +165,11 @@ export class PlatformService {
               // Control tab sizing for dense capital markets layouts
               viewTabDimensions: { minWidth: '100px', maxWidth: '240px' },
               pageTabDimensions: { minWidth: '80px', maxWidth: '200px' },
+              // v24: searchable tab dropdown (chevron) on both tab strips
+              tabSearchButton: browserSettings?.tabSearchButton ?? {
+                pageTabs: { enabled: true },
+                viewTabs: { enabled: true },
+              },
             },
           },
         },

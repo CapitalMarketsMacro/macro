@@ -87,6 +87,12 @@
           <button class="pill pill-error" (click)="sendTestNotification('error')">Err</button>
           <button class="pill pill-critical" (click)="sendTestNotification('critical')">Crit</button>
         </div>
+        <!-- NC 2.15 toast modes: sticky stays until interacted with; silent -> Center only -->
+        <div class="pill-row">
+          <button class="pill pill-warning" (click)="sendTestNotification('warning', 'sticky')">Sticky</button>
+          <button class="pill pill-info" (click)="sendTestNotification('info', 'transient')">Transient</button>
+          <button class="pill pill-info" (click)="sendTestNotification('info', 'none')">Silent</button>
+        </div>
       </div>
     </div>
   }

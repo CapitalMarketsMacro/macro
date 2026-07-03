@@ -456,6 +456,28 @@ ShowHideTabs, ColorLinking, PresetLayouts, LockUnlockPage, SaveMenu, Toggle Page
 
 
 
+### Workspace v24 Browser Features
+
+
+
+Configured via the optional `browserSettings` block in `settings.json` (per-env); values mirror the SDK's `BrowserInitConfig` and flow straight into `WorkspacePlatform.init({ browser })` (`libs/openfin/src/lib/platform.service.ts`).
+
+- **Tab search** (`tabSearchButton`) -- searchable dropdown (chevron) on both the page and view tab strips for Chrome-like navigation across many tabs. Enabled for both locations by default.
+
+- **Duplicate page titles** (`allowDuplicatePageTitles: true`) -- repeating page types (e.g. multiple blotter pages) may intentionally share a title; no forced numeric suffixes. `pageId` stays the unique identifier.
+
+- **Success-indicator suppression** (`indicators.suppressWorkspaceSwitched` / `suppressWorkspaceSaved`) -- opt-in suppression of the green "Workspace Switched"/"Workspace Saved" toasts; both default to shown.
+
+- **Page pinning & locking** -- end-users pin favourite pages to the front of the tab strip via the built-in **Pin/Unpin** page-tab context-menu items (no platform code involved). Developers can platform-lock a page (non-closeable, fixed first position, locked layout) by setting `pinned: 'platform'` on any `Page` object passed to `Browser.createWindow` / page storage APIs.
+
+- **Transient / sticky toasts (Notification Center 2.15)** -- per-notification `toast: 'sticky' | 'transient' | 'none'` on `NotificationOptions` (default `transient`): sticky toasts stay on the desktop until interacted with, `none` lands in the Center only -- honored whether or not the Center is open. `NotificationsService.info/success/warning/error/critical(title, body, { toast })` pass it through; try the **Sticky / Transient / Silent** pills in the provider window's Expand panel. The Center itself is pinned to 2.15.0 in `dos.json` (`systemApps["notification-center"]`) while 2.15.0 is on the Beta channel.
+
+> **Beta-channel note:** while 24.0.19 is on the Beta channel, the RVM's Stable channel still serves the 23.2.x browser UI, which silently hides these features. Run `npm run dos` once (Windows, HKCU only) to pin the HERE Core UI system app to 24.0.19 via Desktop Owner Settings (`public/{local,openshift}/dos.json`), then restart OpenFin (`npm run stop:all`). Undo with `npm run dos:restore`.
+
+> Supertab Windows and the AI Center remain preview-only in 24.0.19 (`@openfin/here-supertabs` is not on public npm and `aiPanelOptions` is internal); they are intentionally not wired up here yet.
+
+
+
 ### Manifest Organization
 
 
