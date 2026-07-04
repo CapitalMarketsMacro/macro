@@ -134,6 +134,7 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 - Market data flows via WebSocket from `market-data-server` (port 3000)
 - FX endpoint: `ws://localhost:3000/marketData/fx` (15 G10 pairs, 1-sec ticks)
 - Treasury endpoint: `ws://localhost:3000/marketData/tsy` (11 securities, 1-sec ticks)
+- Prism tables endpoint: `ws://localhost:3000/prism` — JSON table protocol (on-connect `tables` list → `subscribe` → `snapshot` array → `update` row/rows) consumed by the Prism blotters' **WebSocket** source (`WsTableClient` in `@macro/prism-core`); tables `ust_market_data` (keyed by `symbol`) + `ust_trades` (append)
 - For high-frequency data, use `ConflationSubject` from `@macro/utils` (double-buffer algorithm)
 - Angular grid updates via `updateRows$` Subject on `MacroAngularGrid`
 - React grid updates via `ref.current?.updateRows$` Subject on `MacroReactGridRef`

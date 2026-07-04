@@ -1,4 +1,5 @@
 import { Component, inject, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
 import { Select } from 'primeng/select';
@@ -10,11 +11,13 @@ import { DataSourceRepository } from '../../services/data-source-repository.serv
 import {
   MODE_LABELS,
   TRANSPORT_LABELS,
+  discoverWsTables,
   type BlotterConnection,
   type BlotterMode,
   type BlotterSource,
   type ColumnMode,
   type TransportKind,
+  type WsTableInfo,
 } from '@macro/prism-core';
 
 @Component({
@@ -62,6 +65,18 @@ import {
       .adhoc-form__hint {
         font-size: 0.75rem;
         opacity: 0.6;
+      }
+      .adhoc-form__inline {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .adhoc-form__inline input {
+        flex: 1;
+      }
+      .adhoc-form__error {
+        font-size: 0.75rem;
+        color: var(--p-red-400, #f87171);
       }
     `,
   ],
@@ -111,7 +126,25 @@ export class AdHocSourceDialogComponent {
     vpnName: [''],
     userName: [''],
     password: [''],
+    // WebSocket
+    wsUrl: [''],
   });
+
+  /** Tables announced by a WebSocket table server (null until discovery has run). */
+  readonly wsTables = signal<WsTableInfo[] | null>(null);
+  readonly wsDiscovering = signal(false);
+  readonly wsDiscoverError = signal<string | null>(null);
+  /** Bumped per dialog session / URL change so a stale in-flight discovery can't mutate a newer one. */
+  private discoverEpoch = 0;
+
+  constructor() {
+    // Tables discovered for one URL are meaningless for another — drop them when the URL changes.
+    this.form.controls.wsUrl.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      this.discoverEpoch++;
+      this.wsTables.set(null);
+      this.wsDiscoverError.set(null);
+    });
+  }
 
   get transport(): TransportKind {
     return this.form.controls.transport.value;
@@ -121,14 +154,73 @@ export class AdHocSourceDialogComponent {
     return this.form.controls.mode.value === 'append';
   }
 
+  /**
+   * Open the dialog: no arg = create blank; an ad-hoc source = edit in place; a catalog source =
+   * duplicate (form pre-filled, saved as a NEW ad-hoc copy — the catalog itself is read-only).
+   */
   show(source?: BlotterSource): void {
     this.editingId = source && source.origin === 'adhoc' ? source.id : null;
+    this.discoverEpoch++; // invalidate any in-flight discovery from a previous dialog session
+    this.wsDiscovering.set(false);
     if (source) {
       this.patchFrom(source);
+      if (!this.editingId) {
+        this.form.patchValue({ name: `${source.name} (copy)` });
+      }
     } else {
       this.form.reset({ category: 'Custom', transport: 'nats', mode: 'streaming', columnMode: 'infer' });
     }
+    // After the form patch (which clears discovery state via the wsUrl subscription): when editing
+    // a WebSocket source, seed the table list with the saved table so the select shows it before
+    // (or without) re-discovery.
+    this.wsDiscoverError.set(null);
+    this.wsTables.set(source?.transport === 'websocket' && source.topic ? [{ name: source.topic }] : null);
     this.visible.set(true);
+  }
+
+  /** Discovered table names for the editable select — plain strings so the visible text IS the value. */
+  wsTableNames(): string[] {
+    return (this.wsTables() ?? []).map((t) => t.name).filter((n) => typeof n === 'string' && n.length > 0);
+  }
+
+  /** Connect to the WebSocket URL, read the announced tables, and populate the table select. */
+  async discoverTables(): Promise<void> {
+    const url = this.form.controls.wsUrl.value.trim();
+    if (!url || this.wsDiscovering()) return;
+    const epoch = ++this.discoverEpoch;
+    this.wsDiscovering.set(true);
+    this.wsDiscoverError.set(null);
+    try {
+      const tables = await discoverWsTables(url);
+      if (epoch !== this.discoverEpoch) return; // dialog re-opened / URL changed while in flight
+      this.wsTables.set(tables);
+      // Auto-pick the first table only when none is set — never clobber a chosen/typed table.
+      if (tables.length && !this.form.controls.topic.value) {
+        this.applyTableSuggestions(tables[0].name);
+      }
+    } catch (err) {
+      if (epoch !== this.discoverEpoch) return;
+      this.wsDiscoverError.set(err instanceof Error ? err.message : String(err));
+    } finally {
+      if (epoch === this.discoverEpoch) this.wsDiscovering.set(false);
+    }
+  }
+
+  /** onChange of the editable table select: adopt suggestions only for real option picks. */
+  onWsTableChange(event: { originalEvent?: Event; value?: unknown }): void {
+    // Typing in the editable input also fires onChange (per keystroke) — the form control already
+    // tracks the text, and a half-typed name must not adopt another table's key field / mode.
+    if (event.originalEvent?.type === 'input') return;
+    if (typeof event.value === 'string' && event.value) this.applyTableSuggestions(event.value);
+  }
+
+  /** Adopt the chosen table plus the server's suggested key field / mode. */
+  private applyTableSuggestions(name: string): void {
+    this.form.patchValue({ topic: name });
+    const table = this.wsTables()?.find((t) => t.name === name);
+    if (!table) return;
+    if (table.keyField) this.form.patchValue({ keyField: table.keyField });
+    if (table.mode && table.mode in MODE_LABELS) this.form.patchValue({ mode: table.mode as BlotterMode });
   }
 
   canSave(): boolean {
@@ -143,6 +235,8 @@ export class AdHocSourceDialogComponent {
         return !!v.servers;
       case 'solace':
         return !!(v.hostUrl && v.vpnName && v.userName);
+      case 'websocket':
+        return !!v.wsUrl;
       default:
         return false;
     }
@@ -209,6 +303,8 @@ export class AdHocSourceDialogComponent {
           userName: v.userName,
           password: v.password ?? '',
         };
+      case 'websocket':
+        return { transport: 'websocket', url: v.wsUrl };
     }
   }
 
@@ -236,6 +332,7 @@ export class AdHocSourceDialogComponent {
       vpnName: c.transport === 'solace' ? c.vpnName : '',
       userName: c.transport === 'solace' ? c.userName : '',
       password: c.transport === 'solace' ? c.password : '',
+      wsUrl: c.transport === 'websocket' ? c.url : '',
     });
   }
 }

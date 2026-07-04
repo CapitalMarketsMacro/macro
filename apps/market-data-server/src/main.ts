@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { URL } from 'url';
 import { FxMarketDataService } from './fx-market-data.service';
 import { TsyMarketDataService } from './tsy-market-data.service';
+import { PrismTableHub } from './prism-table-hub';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
@@ -21,6 +22,9 @@ const fxMarketDataService = new FxMarketDataService();
 
 // Treasury Market Data Service
 const tsyMarketDataService = new TsyMarketDataService();
+
+// Prism table hub (plain-WebSocket table protocol: discovery + subscribe + snapshot + updates)
+const prismTableHub = new PrismTableHub();
 
 // G10 currencies: USD, EUR, GBP, JPY, AUD, CAD, CHF, NZD, SEK, NOK
 const G10_CURRENCIES = [
@@ -47,10 +51,14 @@ wss.on('connection', (ws: WebSocket, request) => {
   else if (pathname === '/marketData/tsy') {
     handleTsyConnection(ws);
   }
+  // Route to the Prism table protocol handler
+  else if (pathname === '/prism') {
+    prismTableHub.handleConnection(ws);
+  }
   // Invalid path
   else {
     console.log(`Invalid path: ${pathname}`);
-    ws.close(1008, 'Invalid path. Use /marketData/fx or /marketData/tsy');
+    ws.close(1008, 'Invalid path. Use /marketData/fx, /marketData/tsy or /prism');
   }
 });
 
@@ -181,6 +189,7 @@ server.listen(PORT, () => {
   console.log(`WebSocket endpoints:`);
   console.log(`  - FX Market Data: ws://localhost:${PORT}/marketData/fx`);
   console.log(`  - Treasury Market Data: ws://localhost:${PORT}/marketData/tsy`);
+  console.log(`  - Prism Tables (table protocol): ws://localhost:${PORT}/prism`);
   console.log(`Publishing FX market data for G10 currencies: ${G10_CURRENCIES.join(', ')}`);
   console.log(`Publishing US Treasury market data for various maturities`);
 });

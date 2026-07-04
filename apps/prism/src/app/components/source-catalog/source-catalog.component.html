@@ -57,6 +57,15 @@
                   ariaLabel="Delete"
                   (onClick)="remove(src)"
                 />
+              } @else {
+                <p-button
+                  icon="pi pi-clone"
+                  [text]="true"
+                  severity="secondary"
+                  size="small"
+                  ariaLabel="Duplicate as ad-hoc"
+                  (onClick)="duplicate(src)"
+                />
               }
             </div>
           </p-card>

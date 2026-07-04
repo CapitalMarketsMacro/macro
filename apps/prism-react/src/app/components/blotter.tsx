@@ -158,6 +158,7 @@ export function Blotter() {
             onSelect={switchSource}
             onNew={openNew}
             onEdit={openEdit}
+            onDuplicate={openEdit} // the dialog turns a catalog source into a new ad-hoc copy
             trigger={
               <Button>
                 Select data source <ChevronDown className="size-4" />
@@ -190,6 +191,7 @@ export function Blotter() {
           onSelect={switchSource}
           onNew={openNew}
           onEdit={openEdit}
+          onDuplicate={openEdit} // the dialog turns a catalog source into a new ad-hoc copy
           trigger={
             <button
               type="button"
