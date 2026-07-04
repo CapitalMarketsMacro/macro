@@ -106,6 +106,18 @@
                   <i class="pi pi-trash"></i>
                 </button>
               </span>
+            } @else {
+              <span class="picker__item-actions">
+                <button
+                  type="button"
+                  class="picker__icon-btn"
+                  aria-label="Duplicate as ad-hoc"
+                  title="Duplicate as ad-hoc"
+                  (click)="duplicateSource(src, $event)"
+                >
+                  <i class="pi pi-clone"></i>
+                </button>
+              </span>
             }
           </div>
         }

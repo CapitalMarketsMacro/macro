@@ -154,12 +154,19 @@ export class AdHocSourceDialogComponent {
     return this.form.controls.mode.value === 'append';
   }
 
+  /**
+   * Open the dialog: no arg = create blank; an ad-hoc source = edit in place; a catalog source =
+   * duplicate (form pre-filled, saved as a NEW ad-hoc copy — the catalog itself is read-only).
+   */
   show(source?: BlotterSource): void {
     this.editingId = source && source.origin === 'adhoc' ? source.id : null;
     this.discoverEpoch++; // invalidate any in-flight discovery from a previous dialog session
     this.wsDiscovering.set(false);
     if (source) {
       this.patchFrom(source);
+      if (!this.editingId) {
+        this.form.patchValue({ name: `${source.name} (copy)` });
+      }
     } else {
       this.form.reset({ category: 'Custom', transport: 'nats', mode: 'streaming', columnMode: 'infer' });
     }

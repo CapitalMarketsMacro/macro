@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowRight, Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { MODE_LABELS, TRANSPORT_LABELS, type BlotterMode, type BlotterSource } from '@macro/prism-core';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -83,7 +83,7 @@ export function SourceCatalog() {
                   <Button size="sm" onClick={() => open(src)}>
                     Open <ArrowRight className="size-4" />
                   </Button>
-                  {src.origin === 'adhoc' && (
+                  {src.origin === 'adhoc' ? (
                     <>
                       <Button size="icon" variant="ghost" aria-label="Edit" onClick={() => edit(src)}>
                         <Pencil className="size-4" />
@@ -92,6 +92,16 @@ export function SourceCatalog() {
                         <Trash2 className="size-4" />
                       </Button>
                     </>
+                  ) : (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Duplicate as ad-hoc"
+                      title="Duplicate as ad-hoc"
+                      onClick={() => edit(src)}
+                    >
+                      <Copy className="size-4" />
+                    </Button>
                   )}
                 </CardFooter>
               </Card>

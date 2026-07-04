@@ -204,6 +204,13 @@ export class BlotterComponent implements OnDestroy {
     this.dialog().show(src);
   }
 
+  /** Catalog sources are read-only — open the dialog pre-filled to save an editable ad-hoc copy. */
+  duplicateSource(src: BlotterSource, event: Event): void {
+    event.stopPropagation();
+    this.picker().hide();
+    this.dialog().show(src);
+  }
+
   /** Delete an ad-hoc source; if it's the one on screen, drop back to the empty-state picker. */
   removeSource(src: BlotterSource, event: Event): void {
     event.stopPropagation();

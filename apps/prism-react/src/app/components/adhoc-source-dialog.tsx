@@ -115,14 +115,16 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
 
   useEffect(() => {
     if (open) {
+      // No source = create blank; an ad-hoc source = edit in place; a catalog source = duplicate
+      // (form pre-filled, saved as a NEW ad-hoc copy — the catalog itself is read-only).
       const editing = source && source.origin === 'adhoc';
       discoverSeq.current++; // invalidate any in-flight discovery from a previous dialog session
-      setForm(editing ? fromSource(source) : EMPTY);
+      setForm(source ? (editing ? fromSource(source) : { ...fromSource(source), name: `${source.name} (copy)` }) : EMPTY);
       setWsDiscovering(false);
       setWsDiscoverError(null);
-      // When editing a WebSocket source, seed the table list with the saved table so the
-      // quick-picks show it before (or without) re-discovery.
-      setWsTables(editing && source.transport === 'websocket' && source.topic ? [{ name: source.topic }] : null);
+      // When opening from an existing WebSocket source, seed the table list with its saved table
+      // so the quick-picks show it before (or without) re-discovery.
+      setWsTables(source?.transport === 'websocket' && source.topic ? [{ name: source.topic }] : null);
     }
   }, [open, source]);
 
