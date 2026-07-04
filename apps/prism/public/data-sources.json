@@ -81,5 +81,31 @@
     "keyField": "cusip",
     "conflationMs": 300,
     "columnMode": "auto-gen"
+  },
+  {
+    "id": "ws-ust-market-data",
+    "name": "WS UST Market Data (snapshot)",
+    "description": "Top-of-book for cash OTR Treasuries + CME futures over plain WebSocket — table snapshot then keyed in-place updates.",
+    "category": "Rates",
+    "transport": "websocket",
+    "mode": "snapshot-update",
+    "connection": { "transport": "websocket", "url": "ws://localhost:3000/prism" },
+    "topic": "ust_market_data",
+    "keyField": "symbol",
+    "conflationMs": 250,
+    "columnMode": "infer"
+  },
+  {
+    "id": "ws-ust-trades",
+    "name": "WS UST Trades (append)",
+    "description": "Trade prints for cash OTR Treasuries + CME futures over plain WebSocket — recent-history snapshot then live prints.",
+    "category": "Rates",
+    "transport": "websocket",
+    "mode": "append",
+    "connection": { "transport": "websocket", "url": "ws://localhost:3000/prism" },
+    "topic": "ust_trades",
+    "keyField": "tradeId",
+    "maxRows": 1000,
+    "columnMode": "infer"
   }
 ]

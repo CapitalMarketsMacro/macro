@@ -1,6 +1,6 @@
 # Prism — Blotter as a Service
 
-A config-driven **Capital Markets blotter**. Launch it, **pick a data source** (AMPS / NATS core / NATS JetStream / Solace) from a catalog — or define an **ad-hoc** one (connection + topic) — and get a **snapshot + real-time AG Grid** blotter. Sources are categorized by transport and by behaviour (live-ticking, snapshot-then-updates, append-heavy fills/orders).
+A config-driven **Capital Markets blotter**. Launch it, **pick a data source** (AMPS / NATS core / NATS JetStream / Solace / plain WebSocket) from a catalog — or define an **ad-hoc** one (connection + topic) — and get a **snapshot + real-time AG Grid** blotter. Sources are categorized by transport and by behaviour (live-ticking, snapshot-then-updates, append-heavy fills/orders).
 
 Two apps share one framework-free core (**`@macro/prism-core`**):
 
@@ -35,6 +35,10 @@ In the app: click the toolbar source picker and open **NATS FX Quotes** (streami
 
 Stop the brokers when done: `npm run prism:brokers:down` (add `-v` to wipe volumes).
 
+> **No Docker?** The two **WS UST** catalog sources need only the repo's Node market-data server:
+> `npx nx serve market-data-server` — then open **WS UST Market Data** (snapshot + keyed updates) or
+> **WS UST Trades** (append) from the picker. See [Plain WebSocket](#plain-websocket-table-protocol).
+
 > Requirements: **Node 18+** (Node 22+ recommended), **npm** (install with `--legacy-peer-deps`), and **Docker** (Docker Desktop on Windows) for the broker lab. Brokers expose **WebSocket** endpoints — browsers/OpenFin can only reach them over `ws://`.
 
 ---
@@ -46,6 +50,7 @@ Stop the brokers when done: `npm run prism:brokers:down` (add `-v` to wipe volum
 | `ws://localhost:9222` | NATS core + JetStream | WebSocket listener (not TCP 4222) |
 | `ws://localhost:8008` | Solace PubSub+ web messaging | admin UI at `http://localhost:8080` (admin/admin) |
 | `ws://localhost:9008/amps/json` | AMPS | **not** in Docker — see [AMPS](#amps) |
+| `ws://localhost:3000/prism` | Plain WebSocket (table protocol) | `npx nx serve market-data-server` — no Docker needed |
 
 The seed catalog lives at `apps/prism/public/data-sources.json` (Angular) and `apps/prism-react/public/data-sources.json` (React) and is pre-wired to these ports, so live data shows up with no edits. Full broker-lab docs: [`tools/prism-broker-lab/README.md`](../../tools/prism-broker-lab/README.md).
 
@@ -65,9 +70,9 @@ Prism opens straight to a **blotter** (`/blotter`); a fresh instance shows a **S
 - **Append** — every message is a new row (orders / fills / executions), trimmed to `maxRows`.
 - **Streaming** — high-frequency keyed quotes, conflated (`conflationMs`) before painting.
 
-Only **AMPS** (SOW) and **NATS JetStream** (last-per-subject) deliver a true initial snapshot; NATS core and Solace are live-only (rows appear as they tick).
+**AMPS** (SOW), **NATS JetStream** (last-per-subject) and **WebSocket** (table snapshot) deliver a true initial snapshot; NATS core and Solace are live-only (rows appear as they tick).
 
-**Array payloads** — if a message's payload is a JSON **array** of objects (a batch of rows), Prism expands each element into its own row automatically (snapshot or live). A single row is always an object, so this never misfires. The ad-hoc dialog has an **Expand array payloads into rows** toggle (on by default) — uncheck it only if you want the whole array treated as one record.
+**Array payloads** — if a message's payload is a JSON **array** of objects (a batch of rows), Prism expands each element into its own row automatically (snapshot or live). A single row is always an object, so this never misfires. The ad-hoc dialog has an **Expand array payloads into rows** toggle (on by default) — uncheck it only if you want the whole array treated as one record. WebSocket table sources **always** expand (there the array is protocol framing — snapshot / batch frames), so the toggle is hidden for them.
 
 ### Column building
 - **Infer** (default) — columns are inferred from the first record and capital-markets formatting is auto-applied (prices, yields → %, spreads → bps, qty → grouped ints, P&L → coloured, dates). Keeps the Format tool panel + calculated columns fully usable.
@@ -83,6 +88,32 @@ AMPS is commercial — there is **no public Docker image**, so it is not in the 
 2. Point Prism at it — edit `connection.url` for the AMPS entries in `public/data-sources.json`, **or** just use **Add ad-hoc source** at runtime (transport = AMPS, URL = `ws://<your-host>:9008/amps/json`, topic = your SOW topic, key field = the record's natural key).
 
 The seeded AMPS entries expect topics `fx_spot` (key `symbol`) and `orders`.
+
+---
+
+## Plain WebSocket (table protocol)
+
+For servers that are just a **WebSocket endpoint** (no broker), Prism speaks a small JSON table
+protocol (`WsTableClient` in `@macro/prism-core`):
+
+1. On connect the server announces its tables: `{ "type": "tables", "tables": [{ "name", "title", "description", "keyField", "mode" }] }`.
+2. The client subscribes: `{ "type": "subscribe", "table": "<name>" }`.
+3. The server acks (`subscribed`), sends a **snapshot as a JSON array** — `{ "type": "snapshot", "table", "rows": [...] }` —
+   then streams updates as a **single row** (`{ "type": "update", "table", "row": {...} }`) **or an array**
+   (`{ "type": "update", "table", "rows": [...] }`).
+
+In the **ad-hoc dialog**, pick transport **WebSocket**, enter the URL, click **Load tables**, and choose a
+table — the server's suggested key field and behaviour are filled in for you. The client is lenient with
+envelope-less servers too: a bare JSON array is a batch of rows, a bare object is one row, and the snapshot
+phase ends on the first live row if no `snapshot` frame ever arrives.
+
+The repo's **`market-data-server`** implements the protocol at `ws://localhost:3000/prism` with two tables
+over a shared US-rates universe (7 cash **OTR Treasuries** + 8 **CME futures**, Sep-26 contracts):
+
+| Table | Behaviour | Key | Contents |
+| --- | --- | --- | --- |
+| `ust_market_data` | Snapshot + Updates | `symbol` | Top-of-book (bid/ask/mid/last, 32nds displays, yields, OI) |
+| `ust_trades` | Append | `tradeId` | Trade prints (side, price, size, venue, counterparty) |
 
 ---
 
@@ -105,7 +136,7 @@ Find **Prism — Blotter as a Service** / **Prism Blotter (React)** in the store
 
 - **`@macro/prism-core`** (`libs/prism-core`, framework-free) — the shared brains: the `BlotterSource` model, `column-inference` (CM field-name heuristics → `@macro/macro-grid-format` specs), **`BlotterFeed`** (maps mode × transport onto a grid via a small `GridOps` interface; status via `getState()`/`subscribe()`), and **`DataSourceStore`** (catalog + localStorage ad-hoc; catalog fetch injected). The Angular app wraps it with signals; the React app with `useSyncExternalStore`.
 - **Grid** — `@macro/macro-angular-grid` / `@macro/macro-react-grid` (AG Grid 36 wrappers, streaming via `updateRows$`/`addRows$`, the Format tool panel, calculated columns, and the v36 auto-column passthrough).
-- **Transports** — `@macro/transports` (`AmpsTransport`, `NatsTransport`, `NatsJetStreamTransport`, `SolaceTransport`); high-frequency feeds are conflated with `ConflationSubject` from `@macro/utils`.
+- **Transports** — `@macro/transports` (`AmpsTransport`, `NatsTransport`, `NatsJetStreamTransport`, `SolaceTransport`); plain-WebSocket table sources use `WsTableClient` from `@macro/prism-core` itself (the protocol is Prism's own). High-frequency feeds are conflated with `ConflationSubject` from `@macro/utils`.
 
 ---
 

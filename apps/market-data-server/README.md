@@ -7,6 +7,7 @@ A WebSocket server that publishes real-time market data for FX and US Treasury s
 This Node.js application hosts WebSocket servers that stream:
 1. **FX Market Data** for G10 currencies
 2. **US Treasury Market Data** for various maturities
+3. **Prism tables** — a JSON *table protocol* endpoint (`/prism`) for the Prism blotters' plain-WebSocket source
 
 ### FX Market Data - G10 Currencies:
 - USD (US Dollar)
@@ -33,6 +34,32 @@ This Node.js application hosts WebSocket servers that stream:
 **Path**: `/marketData/tsy`
 
 **URL**: `ws://localhost:3000/marketData/tsy`
+
+### Prism Tables (table protocol)
+
+**Path**: `/prism`
+
+**URL**: `ws://localhost:3000/prism`
+
+On connect the server announces its tables; the client subscribes to one, gets a snapshot
+(JSON array), then live updates (single row or array):
+
+```
+server → { "type": "tables", "tables": [{ "name", "title", "description", "keyField", "mode" }] }
+client → { "type": "subscribe", "table": "ust_market_data" }     (also: listTables / unsubscribe)
+server → { "type": "subscribed", "table", "keyField", "mode" }
+server → { "type": "snapshot", "table", "rows": [ ... ] }
+server → { "type": "update", "table", "row": { ... } }           (or "rows": [ ... ] batches)
+server → { "type": "error", "message": "..." }                   (e.g. unknown table)
+```
+
+Two tables over a shared US-rates universe — 7 cash **OTR Treasuries** (2Y–30Y) + 8 **CME
+Treasury futures** (ZT/Z3N/ZF/ZN/TN/TWE/ZB/UB, Sep-26):
+
+| Table | Mode | Key | Contents |
+| --- | --- | --- | --- |
+| `ust_market_data` | snapshot-update | `symbol` | Top-of-book: bid/ask/mid/last (decimals + dealer 32nds displays), sizes, yields (cash), open interest (futures) — ticks every 500ms |
+| `ust_trades` | append | `tradeId` | Trade prints: side, price, size ($MM cash / contracts futures), yield, venue (BrokerTec / Dealerweb / Fenics UST / CME Globex), counterparty — a print every 0.6–1.8s, occasional bursts as arrays |
 
 ## Usage
 
