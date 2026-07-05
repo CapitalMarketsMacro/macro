@@ -39,6 +39,7 @@ export class ThemePresetService {
   }
 
   getActivePresetId(): string {
+    if (typeof localStorage === 'undefined') return 'macro-etrading'; // graceful no-op outside the browser
     try {
       return localStorage.getItem(STORAGE_KEY) ?? 'macro-etrading';
     } catch {
@@ -47,6 +48,7 @@ export class ThemePresetService {
   }
 
   setActivePresetId(id: string): void {
+    if (typeof localStorage === 'undefined') return;
     try {
       localStorage.setItem(STORAGE_KEY, id);
     } catch (error) {

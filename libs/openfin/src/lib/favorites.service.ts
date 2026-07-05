@@ -17,6 +17,7 @@ export interface FavoritesStore {
 /** Default localStorage-backed favorites store. */
 export class LocalStorageFavoritesStore implements FavoritesStore {
   async load(key: string): Promise<string[]> {
+    if (typeof localStorage === 'undefined') return []; // graceful no-op outside the browser
     try {
       const stored = localStorage.getItem(key);
       return stored ? (JSON.parse(stored) as string[]) : [];
@@ -26,6 +27,7 @@ export class LocalStorageFavoritesStore implements FavoritesStore {
   }
 
   async save(key: string, ids: string[]): Promise<void> {
+    if (typeof localStorage === 'undefined') return;
     try {
       localStorage.setItem(key, JSON.stringify(ids));
     } catch (error) {
