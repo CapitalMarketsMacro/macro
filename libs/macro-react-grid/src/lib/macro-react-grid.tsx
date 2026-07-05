@@ -54,6 +54,10 @@ const MACRO_PAGINATION_TOGGLE = 'macroPaginationToggle';
 const MACRO_GROUPING_TOGGLE = 'macroGroupingToggle';
 /** Status-panel component key used in `statusBar.statusPanels` and `components`. */
 const MACRO_PIVOT_TOGGLE = 'macroPivotToggle';
+/** Status-panel component key used in `statusBar.statusPanels` and `components`. */
+const MACRO_QUICK_FILTER_TOGGLE = 'macroQuickFilterToggle';
+/** Status-panel component key used in `statusBar.statusPanels` and `components`. */
+const MACRO_ADVANCED_FILTER_TOGGLE = 'macroAdvancedFilterToggle';
 
 const TOGGLE_LABEL_STYLE: CSSProperties = {
   display: 'inline-flex',
@@ -136,6 +140,117 @@ function PivotStatusPanel({ api }: CustomStatusPanelProps) {
   );
 }
 
+const QUICK_FILTER_INPUT_STYLE: CSSProperties = {
+  // Shrinks on narrow blotter tiles so the other toggles stay in view.
+  width: 'clamp(6rem, 18vw, 11rem)',
+  fontSize: '0.8rem',
+  padding: '0.15rem 0.45rem',
+  marginRight: '0.5rem',
+  // The input-specific theme tokens — same border/fill as the grid's own filter inputs,
+  // visible in dark mode (the plain border/background pair is ~1.1:1 there).
+  border: 'var(--ag-input-border, 1px solid #babfc7)',
+  borderRadius: 3,
+  background: 'var(--ag-input-background-color, transparent)',
+  color: 'inherit',
+  outline: 'none',
+};
+
+/**
+ * A subtle status-bar "Search" toggle for AG Grid's Quick Filter. Checking it reveals an inline
+ * search box (auto-focused) right next to the toggle — search lives with all the other grid
+ * controls, no app markup needed. Typing drives `quickFilterText` (all columns, all words must
+ * match); Escape clears; unchecking clears the filter too so no hidden filter lingers.
+ */
+function QuickFilterStatusPanel({ api }: CustomStatusPanelProps) {
+  const [on, setOn] = useState<boolean>(() => !!api.getGridOption('quickFilterText'));
+  const [text, setText] = useState<string>(() => api.getGridOption('quickFilterText') ?? '');
+  const [focused, setFocused] = useState(false); // inline styles can't express :focus
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const toggle = (e: ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.checked;
+    setOn(next);
+    if (next) {
+      setTimeout(() => inputRef.current?.focus()); // input mounts on the next render
+    } else {
+      setText('');
+      api.setGridOption('quickFilterText', '');
+    }
+  };
+  const onText = (e: ChangeEvent<HTMLInputElement>) => {
+    setText(e.target.value);
+    api.setGridOption('quickFilterText', e.target.value);
+  };
+  const clear = () => {
+    setText('');
+    api.setGridOption('quickFilterText', '');
+  };
+
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+      <label style={TOGGLE_LABEL_STYLE}>
+        <input type="checkbox" checked={on} onChange={toggle} style={{ cursor: 'pointer' }} aria-label="Toggle quick filter search" />
+        <span>Search</span>
+      </label>
+      {on && (
+        <input
+          ref={inputRef}
+          type="search"
+          value={text}
+          onChange={onText}
+          onKeyDown={(e) => e.key === 'Escape' && clear()}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder="Search all columns…"
+          aria-label="Quick filter text"
+          style={{
+            ...QUICK_FILTER_INPUT_STYLE,
+            // Visible focus indicator (WCAG 2.4.7) — mirrors the Angular twin's :focus rule.
+            ...(focused ? { borderColor: 'var(--ag-accent-color, #2196f3)' } : {}),
+          }}
+        />
+      )}
+    </span>
+  );
+}
+
+/**
+ * Fired at runtime whenever `enableAdvancedFilter` flips, but classified as an internal event in
+ * this AG Grid build's typings (excluded from the public `addEventListener` union) — cast the
+ * documented name so the toggle can still stay in sync with programmatic changes.
+ */
+const ADVANCED_FILTER_ENABLED_CHANGED = 'advancedFilterEnabledChanged' as unknown as Parameters<
+  GridApi['addEventListener']
+>[0];
+
+/**
+ * A subtle status-bar toggle for AG Grid Enterprise's Advanced Filter (the expression builder
+ * that appears above the grid). ON flips `enableAdvancedFilter`; note AG Grid then disables the
+ * per-column filters (native behaviour — the two are mutually exclusive), while the Quick Filter
+ * keeps working alongside. Stays in sync when advanced filter is enabled/disabled elsewhere.
+ */
+function AdvancedFilterStatusPanel({ api }: CustomStatusPanelProps) {
+  const [on, setOn] = useState<boolean>(() => !!api.getGridOption('enableAdvancedFilter'));
+  useEffect(() => {
+    const sync = () => setOn(!!api.getGridOption('enableAdvancedFilter'));
+    api.addEventListener(ADVANCED_FILTER_ENABLED_CHANGED, sync);
+    return () => {
+      if (!api.isDestroyed()) api.removeEventListener(ADVANCED_FILTER_ENABLED_CHANGED, sync);
+    };
+  }, [api]);
+  const toggle = (e: ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.checked;
+    setOn(next);
+    api.setGridOption('enableAdvancedFilter', next);
+  };
+  return (
+    <label style={TOGGLE_LABEL_STYLE}>
+      <input type="checkbox" checked={on} onChange={toggle} style={{ cursor: 'pointer' }} aria-label="Toggle advanced filter" />
+      <span>Adv Filter</span>
+    </label>
+  );
+}
+
 export interface MacroReactGridProps {
   columns?: string | ColDef[];
   rowData?: unknown[];
@@ -192,6 +307,8 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
         [MACRO_PAGINATION_TOGGLE]: PaginationStatusPanel,
         [MACRO_GROUPING_TOGGLE]: GroupingStatusPanel,
         [MACRO_PIVOT_TOGGLE]: PivotStatusPanel,
+        [MACRO_QUICK_FILTER_TOGGLE]: QuickFilterStatusPanel,
+        [MACRO_ADVANCED_FILTER_TOGGLE]: AdvancedFilterStatusPanel,
       }),
       [],
     );
@@ -210,8 +327,9 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       rowGroupPanelShow: 'never' as const,
       pivotPanelShow: 'always' as const,
       // Status bar: native filtered-of-total row count, selected-row count, and cell-range
-      // aggregations (Count/Sum/Min/Max/Avg) on the left/center; the grouping/pivot/pagination
-      // toggles on the right.
+      // aggregations (Count/Sum/Min/Max/Avg) on the left/center; the search/filter/grouping/
+      // pivot/pagination toggles on the right (Search first so its input expands into the
+      // free center space without shoving the other toggles).
       statusBar: {
         statusPanels: [
           { statusPanel: 'agTotalAndFilteredRowCountComponent', align: 'left' as const },
@@ -221,6 +339,8 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
             statusPanelParams: { aggFuncs: ['count', 'sum', 'min', 'max', 'avg'] },
             align: 'center' as const,
           },
+          { statusPanel: MACRO_QUICK_FILTER_TOGGLE, align: 'right' as const },
+          { statusPanel: MACRO_ADVANCED_FILTER_TOGGLE, align: 'right' as const },
           { statusPanel: MACRO_GROUPING_TOGGLE, align: 'right' as const },
           { statusPanel: MACRO_PIVOT_TOGGLE, align: 'right' as const },
           { statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' as const },

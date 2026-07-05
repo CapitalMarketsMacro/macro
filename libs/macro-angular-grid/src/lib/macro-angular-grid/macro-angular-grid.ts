@@ -52,6 +52,12 @@ import {
   MACRO_GROUPING_TOGGLE,
   MACRO_PIVOT_TOGGLE,
 } from '../group-pivot-toggles.component';
+import {
+  MacroQuickFilterToggleComponent,
+  MacroAdvancedFilterToggleComponent,
+  MACRO_QUICK_FILTER_TOGGLE,
+  MACRO_ADVANCED_FILTER_TOGGLE,
+} from '../filter-toggles.component';
 
 // Register all ag-Grid modules (Community and Enterprise)
 ModuleRegistry.registerModules([
@@ -234,6 +240,8 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       [MACRO_PAGINATION_TOGGLE]: MacroPaginationToggleComponent,
       [MACRO_GROUPING_TOGGLE]: MacroGroupingToggleComponent,
       [MACRO_PIVOT_TOGGLE]: MacroPivotToggleComponent,
+      [MACRO_QUICK_FILTER_TOGGLE]: MacroQuickFilterToggleComponent,
+      [MACRO_ADVANCED_FILTER_TOGGLE]: MacroAdvancedFilterToggleComponent,
     },
     sideBar: withFormatPanel(
       { toolPanels: ['columns', 'filters'], hiddenByDefault: false },
@@ -263,8 +271,9 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     rowGroupPanelShow: 'never',
     pivotPanelShow: 'always',
     // Status bar: native filtered-of-total row count, selected-row count, and cell-range
-    // aggregations (Count/Sum/Min/Max/Avg) on the left/center; the grouping/pivot/pagination
-    // toggles on the right.
+    // aggregations (Count/Sum/Min/Max/Avg) on the left/center; the search/filter/grouping/
+    // pivot/pagination toggles on the right (Search first so its input expands into the
+    // free center space without shoving the other toggles).
     statusBar: {
       statusPanels: [
         { statusPanel: 'agTotalAndFilteredRowCountComponent', align: 'left' },
@@ -274,6 +283,8 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
           statusPanelParams: { aggFuncs: ['count', 'sum', 'min', 'max', 'avg'] },
           align: 'center',
         },
+        { statusPanel: MACRO_QUICK_FILTER_TOGGLE, align: 'right' },
+        { statusPanel: MACRO_ADVANCED_FILTER_TOGGLE, align: 'right' },
         { statusPanel: MACRO_GROUPING_TOGGLE, align: 'right' },
         { statusPanel: MACRO_PIVOT_TOGGLE, align: 'right' },
         { statusPanel: MACRO_PAGINATION_TOGGLE, align: 'right' },
@@ -509,6 +520,8 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
         [MACRO_PAGINATION_TOGGLE]: MacroPaginationToggleComponent,
         [MACRO_GROUPING_TOGGLE]: MacroGroupingToggleComponent,
         [MACRO_PIVOT_TOGGLE]: MacroPivotToggleComponent,
+        [MACRO_QUICK_FILTER_TOGGLE]: MacroQuickFilterToggleComponent,
+        [MACRO_ADVANCED_FILTER_TOGGLE]: MacroAdvancedFilterToggleComponent,
       },
       // Default the status bar (pagination toggle) unless the consumer supplies their own.
       statusBar: this.gridOptions.statusBar ?? this.defaultGridOptions.statusBar,

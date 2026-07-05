@@ -242,6 +242,8 @@ describe('MacroReactGrid', () => {
           'agTotalAndFilteredRowCountComponent',
           'agSelectedRowCountComponent',
           'agAggregationComponent',
+          'macroQuickFilterToggle',
+          'macroAdvancedFilterToggle',
           'macroGroupingToggle',
           'macroPivotToggle',
           'macroPaginationToggle',
@@ -250,6 +252,8 @@ describe('MacroReactGrid', () => {
       const components = capturedProps.components as Record<string, unknown>;
       expect(components['macroGroupingToggle']).toBeDefined();
       expect(components['macroPivotToggle']).toBeDefined();
+      expect(components['macroQuickFilterToggle']).toBeDefined();
+      expect(components['macroAdvancedFilterToggle']).toBeDefined();
     });
 
     it('adds Excel-style decimal step items to the column + context menus for numeric columns only', () => {
