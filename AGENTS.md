@@ -170,6 +170,14 @@ npx nx run-many --target=build --all  # Build everything
 
 Output goes to `dist/` directory. The app list for `npm run build` lives in the `build:apps:ci` script in `package.json` — add new apps there so CI builds them.
 
+## Continuous Integration
+
+`.github/workflows/ci.yml` runs on pushes to `master`, on pull requests, and via manual dispatch: `npm ci` → `npm run build` → `npm run test` (Node 22, ubuntu-latest), then uploads `junit.xml` + `coverage/lcov.info` as the `test-reports` artifact.
+
+- Plain `npm ci` works because `.npmrc` sets `legacy-peer-deps=true` (TypeScript 6 is ahead of `@angular/build`'s declared peer range).
+- `scripts/test-ci.mjs` merges the reports even when tests fail (then exits non-zero), so CI publishers can pick them up on red builds.
+- Every test target must declare `{workspaceRoot}/reports/{projectName}-junit.xml` in its `outputs` — NX cache replays only restore declared outputs, and a missing declaration silently drops that project from the merged `junit.xml`.
+
 ## NX Commands
 
 ```bash
@@ -203,7 +211,8 @@ An **nx-mcp** server (NX workspace commands) is additionally provided by the NX 
 4. Create a view manifest `public/{local,openshift}/<name>.fin.json` (`{ "url": "...", "fdc3InteropApi": "2.0", "interop": { "currentContextGroup": "green" } }`)
 5. Register the app in `public/{local,openshift}/apps.json` — add an entry with `appId`, `manifest` → the view-manifest URL, `manifestType: "view"`, `icons`, `tags`, and a `category`. This alone surfaces it in the store, home search, and as a launch target.
 6. Add a dock entry in `public/{local,openshift}/dock-config.json` (a `favorites[]` item and/or a `contentMenu` folder child), wire storefront nav in `storefront-config.json` (a nav item whose `category` matches — OpenFin caps nav at 3 sections / 5 items, and the dynamic Favorites section occupies one slot, so add categories as items in an existing section rather than a 4th section), and add an icon under `public/icons/`.
-7. Add a path alias to `tsconfig.base.json` only if creating a new lib
+7. Register the app for CI: add it to the `build:apps:ci` script in `package.json` so `npm run build` builds it into `dist/apps/<name>`. Its tests are auto-discovered by `npm run test`, but declare `{workspaceRoot}/reports/{projectName}-junit.xml` in the test target's `outputs` so NX cache replays keep the merged JUnit report complete
+8. Add a path alias to `tsconfig.base.json` only if creating a new lib
 
 ## Adding a New Shared Library
 
@@ -231,6 +240,8 @@ An **nx-mcp** server (NX workspace commands) is additionally provided by the NX 
 | `apps/macro-angular/src/app/app.config.ts`       | Angular app providers (PrimeNG, zone config) |
 | `apps/macro-react/src/main.tsx`                  | React entry (PrimeReact provider config)     |
 | `apps/macro-workspace/src/app/app.config.ts`     | Workspace app config (zoneless)              |
+| `.github/workflows/ci.yml`                       | CI workflow: `npm ci` → `npm run build` → `npm run test` on master pushes + PRs; uploads `test-reports` artifact |
+| `scripts/test-ci.mjs`                            | `npm run test` runner — Jest/Vitest split, merges LCOV → `coverage/lcov.info` and JUnit → root `junit.xml` |
 | `.github/copilot-instructions.md`                | Condensed AG Grid 36 / format-panel / calc / Show-Values-As rules + gotchas (auto-loaded by Copilot) |
 | `docs/copilot/ag-grid-36-format-panel-port.md`   | Full verbatim port guide for the above (engine, tool panel, persistence side-channels) |
 
