@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [ci/actions-test]
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm run test
+
+      - name: Verify consolidated outputs
+        if: always()
+        run: |
+          echo "== dist/apps =="
+          ls dist/apps
+          echo "== coverage =="
+          test -s coverage/lcov.info && wc -l coverage/lcov.info
+          echo "== junit =="
+          test -s junit.xml && head -c 300 junit.xml && echo
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            junit.xml
+            coverage/lcov.info
