@@ -69,24 +69,30 @@ export class View2Component implements OnInit, OnDestroy {
       }
     );
 
-    this.makeProvider();
+    void this.makeProvider();
   }
 
   async makeProvider() {
-    // entity creates a channel and becomes the channelProvider
-    this.providerBus = await fin.InterApplicationBus.Channel.create(
-      'channelName'
-    );
+    // OpenFin APIs are unavailable outside the runtime (plain browser / tests) — no-op gracefully.
+    if (typeof fin === 'undefined') return;
+    try {
+      // entity creates a channel and becomes the channelProvider
+      this.providerBus = await fin.InterApplicationBus.Channel.create(
+        'channelName'
+      );
 
-    this.providerBus.onConnection((identity, payload) => {
-      // can reject a connection here by throwing an error
-      logger.info('Client connection request', { identity, payload });
-    });
+      this.providerBus.onConnection((identity, payload) => {
+        // can reject a connection here by throwing an error
+        logger.info('Client connection request', { identity, payload });
+      });
 
-    this.providerBus.register('example-topic', (payload, identity) => {
-      // register a callback for a 'topic' to which clients can dispatch an action
-      logger.info('Action dispatched by client', { identity, payload });
-    });
+      this.providerBus.register('example-topic', (payload, identity) => {
+        // register a callback for a 'topic' to which clients can dispatch an action
+        logger.info('Action dispatched by client', { identity, payload });
+      });
+    } catch (err) {
+      logger.warn('Could not create channel provider', err);
+    }
   }
 
   ngOnDestroy(): void {

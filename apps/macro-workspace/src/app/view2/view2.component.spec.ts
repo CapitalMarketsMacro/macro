@@ -325,12 +325,11 @@ describe('View2Component', () => {
       ).not.toThrow();
     });
 
-    it('should throw when fin is undefined', async () => {
+    it('gracefully no-ops when fin is undefined (plain browser / tests)', async () => {
       (globalThis as any).fin = undefined;
       const fixture = TestBed.createComponent(View2Component);
-      await expect(
-        fixture.componentInstance.makeProvider()
-      ).rejects.toThrow();
+      await expect(fixture.componentInstance.makeProvider()).resolves.toBeUndefined();
+      expect((fixture.componentInstance as any).providerBus).toBeUndefined();
     });
   });
 

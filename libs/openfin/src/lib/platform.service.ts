@@ -283,14 +283,12 @@ export class PlatformService {
                 resultDispatchBehavior: 'close',
               } as any);
 
-              console.log('[RenameView] popup result:', JSON.stringify(result), 'type:', typeof result.data, 'result.result:', result.result);
               const newTitle = (typeof result.data === 'string' ? result.data : typeof result.result === 'string' ? result.result : String(result.data ?? result.result ?? '')).trim();
               if (newTitle) {
                 // Track the title in our in-memory map (OpenFin updateOptions doesn't reliably persist customData)
                 setViewTitle(viewIdentity.name, newTitle);
                 // Set the document title in the view (updates the tab immediately)
                 await view.executeJavaScript(`document.title = ${JSON.stringify(newTitle)}`);
-                console.log('[RenameView] Saved', { viewName: viewIdentity.name, newTitle });
                 logger.info('View renamed', { view: viewIdentity.name, newTitle });
               }
             } catch (err) {

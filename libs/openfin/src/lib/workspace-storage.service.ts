@@ -12,6 +12,7 @@ export class WorkspaceStorageService {
   private readonly LAST_SAVED_KEY = 'workspace-platform-last-saved';
 
   async getWorkspaces(): Promise<Workspace[]> {
+    if (typeof localStorage === 'undefined') return []; // graceful no-op outside the browser
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
@@ -22,6 +23,7 @@ export class WorkspaceStorageService {
   }
 
   async saveWorkspaces(workspaces: Workspace[]): Promise<void> {
+    if (typeof localStorage === 'undefined') return;
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(workspaces));
     } catch (error) {
@@ -30,14 +32,17 @@ export class WorkspaceStorageService {
   }
 
   async getLastSavedWorkspaceId(): Promise<string | null> {
+    if (typeof localStorage === 'undefined') return null;
     return localStorage.getItem(this.LAST_SAVED_KEY);
   }
 
   async setLastSavedWorkspaceId(id: string): Promise<void> {
+    if (typeof localStorage === 'undefined') return;
     localStorage.setItem(this.LAST_SAVED_KEY, id);
   }
 
   async removeLastSavedWorkspaceId(): Promise<void> {
+    if (typeof localStorage === 'undefined') return;
     localStorage.removeItem(this.LAST_SAVED_KEY);
   }
 }
