@@ -5,5 +5,12 @@
   "projectType": "library",
   "tags": [],
   "// targets": "to see all targets run: nx show project macro-react-grid --web",
-  "targets": {}
+  "targets": {
+    "test": {
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}",
+        "{workspaceRoot}/reports/{projectName}-junit.xml"
+      ]
+    }
+  }
 }

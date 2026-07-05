@@ -73,7 +73,10 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}",
+        "{workspaceRoot}/reports/{projectName}-junit.xml"
+      ],
       "options": {
         "jestConfig": "apps/macro-angular-fdc3/jest.config.cts",
         "tsConfig": "apps/macro-angular-fdc3/tsconfig.spec.json"
