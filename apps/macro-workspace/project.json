@@ -76,7 +76,10 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}",
+        "{workspaceRoot}/reports/{projectName}-junit.xml"
+      ],
       "options": {
         "jestConfig": "apps/macro-workspace/jest.config.ts",
         "tsConfig": "apps/macro-workspace/tsconfig.spec.json"
