@@ -763,6 +763,14 @@ describe('MacroAngularGrid', () => {
       expect(component.defaultGridOptions.components?.['macroPivotToggle']).toBeDefined();
     });
 
+    it('should register quick-filter and advanced-filter status-bar toggles', () => {
+      const statusBar = component.defaultGridOptions.statusBar as { statusPanels: { statusPanel: string }[] };
+      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroQuickFilterToggle')).toBe(true);
+      expect(statusBar.statusPanels.some((p) => p.statusPanel === 'macroAdvancedFilterToggle')).toBe(true);
+      expect(component.defaultGridOptions.components?.['macroQuickFilterToggle']).toBeDefined();
+      expect(component.defaultGridOptions.components?.['macroAdvancedFilterToggle']).toBeDefined();
+    });
+
     it('should include native status-bar stats (row counts + aggregations)', () => {
       const panels = (
         component.defaultGridOptions.statusBar as { statusPanels: { statusPanel: string }[] }

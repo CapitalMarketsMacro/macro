@@ -138,12 +138,18 @@ export class ExampleComponent {
 The component includes the following default options:
 
 - **Sorting**: Enabled on all columns
-- **Filtering**: Enabled on all columns
+- **Filtering**: Enabled on all columns (column filters; see the status-bar toggles below for Quick/Advanced Filter)
 - **Resizing**: Enabled on all columns
-- **Pagination**: Enabled with page size selector (10, 25, 50, 100)
+- **Pagination**: OFF by default, with a page size selector (10, 25, 50, 100) once enabled
 - **Row Selection**: Multiple selection enabled
 - **Range Selection**: Enabled
 - **Animated Rows**: Enabled
+- **Status-bar toggles** (bottom-right, feel native to the grid):
+  - **Search** — reveals an inline quick-filter box (drives `quickFilterText`: filters every column, all words must match; Escape clears; unchecking clears the filter)
+  - **Adv Filter** — flips AG Grid Enterprise's Advanced Filter builder (`enableAdvancedFilter`; column filters are disabled by AG Grid while it is on, the quick filter keeps working)
+  - **Grouping** — shows the row-group drag panel; unchecking also clears active groups
+  - **Pivot** — flips pivot mode (stays in sync with the columns tool panel)
+  - **Pagination** — turns pagination on/off at runtime
 
 You can override any of these by providing custom `gridOptions`.
 
