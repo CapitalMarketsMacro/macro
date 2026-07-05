@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { MODE_LABELS, TRANSPORT_LABELS, type BlotterMode, type BlotterSource } from '@macro/prism-core';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,13 +18,15 @@ export interface SourcePickerProps {
   onNew: () => void;
   /** Open the ad-hoc dialog to edit an existing ad-hoc source. */
   onEdit: (src: BlotterSource) => void;
+  /** Open the ad-hoc dialog pre-filled from a read-only catalog source (saved as an ad-hoc copy). */
+  onDuplicate: (src: BlotterSource) => void;
 }
 
 const modeVariant = (m: BlotterMode): 'success' | 'warning' | 'destructive' =>
   m === 'streaming' ? 'destructive' : m === 'append' ? 'warning' : 'success';
 
-/** Subtle, in-place source switcher: search + grouped list + ad-hoc edit/delete + "New". */
-export function SourcePicker({ trigger, activeId, onSelect, onNew, onEdit }: SourcePickerProps) {
+/** Subtle, in-place source switcher: search + grouped list + ad-hoc edit/delete + catalog duplicate + "New". */
+export function SourcePicker({ trigger, activeId, onSelect, onNew, onEdit, onDuplicate }: SourcePickerProps) {
   const store = useDataSourceStore();
   const all = useAllSources();
   const [open, setOpen] = useState(false);
@@ -63,6 +65,11 @@ export function SourcePicker({ trigger, activeId, onSelect, onNew, onEdit }: Sou
     setOpen(false);
     onEdit(src);
   };
+  const handleDuplicate = (src: BlotterSource, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen(false);
+    onDuplicate(src);
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -98,7 +105,7 @@ export function SourcePicker({ trigger, activeId, onSelect, onNew, onEdit }: Sou
                       {src.origin === 'adhoc' && <Badge variant="outline">ad-hoc</Badge>}
                     </span>
                   </button>
-                  {src.origin === 'adhoc' && (
+                  {src.origin === 'adhoc' ? (
                     <span className="flex gap-1 pr-1 opacity-70 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                       <button
                         type="button"
@@ -120,6 +127,18 @@ export function SourcePicker({ trigger, activeId, onSelect, onNew, onEdit }: Sou
                         }}
                       >
                         <Trash2 className="size-3.5" />
+                      </button>
+                    </span>
+                  ) : (
+                    <span className="flex gap-1 pr-1 opacity-70 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        aria-label="Duplicate as ad-hoc"
+                        title="Duplicate as ad-hoc"
+                        className="p-1 rounded hover:bg-background"
+                        onClick={(e) => handleDuplicate(src, e)}
+                      >
+                        <Copy className="size-3.5" />
                       </button>
                     </span>
                   )}

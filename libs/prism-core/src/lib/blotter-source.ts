@@ -6,7 +6,17 @@ import type {
 } from '@macro/transports';
 
 /** Transport backing a data source. NATS appears twice: core (live) and JetStream (snapshot+stream). */
-export type TransportKind = 'amps' | 'nats' | 'nats-js' | 'solace';
+export type TransportKind = 'amps' | 'nats' | 'nats-js' | 'solace' | 'websocket';
+
+/**
+ * Connection options for a plain-WebSocket table server (see `ws-table-client.ts`): the server
+ * announces its tables on connect, the client subscribes to one (`BlotterSource.topic`), receives
+ * a snapshot (JSON array) and then live updates (single rows or arrays).
+ */
+export interface WebSocketConnectionOptions {
+  /** WebSocket endpoint, e.g. `ws://localhost:3000/prism`. */
+  url: string;
+}
 
 /**
  * How records map onto the grid:
@@ -27,7 +37,8 @@ export type AmpsConn = { transport: 'amps' } & AmpsConnectionOptions;
 export type NatsConn = { transport: 'nats' } & NatsConnectionOptions;
 export type NatsJsConn = { transport: 'nats-js' } & NatsJetStreamConnectionOptions;
 export type SolaceConn = { transport: 'solace' } & SolaceConnectionOptions;
-export type BlotterConnection = AmpsConn | NatsConn | NatsJsConn | SolaceConn;
+export type WsConn = { transport: 'websocket' } & WebSocketConnectionOptions;
+export type BlotterConnection = AmpsConn | NatsConn | NatsJsConn | SolaceConn | WsConn;
 
 /** A data source the blotter can connect to — from the seed catalog or user-defined (ad-hoc). */
 export interface BlotterSource {
@@ -40,7 +51,7 @@ export interface BlotterSource {
   transport: TransportKind;
   mode: BlotterMode;
   connection: BlotterConnection;
-  /** AMPS topic / NATS subject / JetStream subject / Solace topic. */
+  /** AMPS topic / NATS subject / JetStream subject / Solace topic / WebSocket table name. */
   topic: string;
   /** AMPS SOW/subscribe filter (AMPS only). */
   filter?: string;
@@ -55,6 +66,8 @@ export interface BlotterSource {
    * (auto): each array element becomes its own row; a plain object payload is one row. Set `false`
    * to treat an array payload as a single record (the rare case where the array itself is the value).
    * A single row is always an object, never a top-level array, so auto-expansion never misfires.
+   * Ignored for `websocket` sources, which always expand — there the array is protocol framing
+   * (snapshot / batch update frames), never a value.
    */
   expandArrays?: boolean;
   columnMode: ColumnMode;
@@ -67,6 +80,7 @@ export const TRANSPORT_LABELS: Record<TransportKind, string> = {
   nats: 'NATS',
   'nats-js': 'NATS JetStream',
   solace: 'Solace',
+  websocket: 'WebSocket',
 };
 
 export const MODE_LABELS: Record<BlotterMode, string> = {
@@ -81,4 +95,5 @@ export const SNAPSHOT_CAPABLE: Record<TransportKind, boolean> = {
   'nats-js': true,
   nats: false,
   solace: false,
+  websocket: true,
 };

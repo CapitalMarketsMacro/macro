@@ -57,6 +57,11 @@ export class SourceCatalogComponent {
     this.dialog().show(src);
   }
 
+  /** Catalog sources are read-only — open the dialog pre-filled to save an editable ad-hoc copy. */
+  duplicate(src: BlotterSource): void {
+    this.dialog().show(src);
+  }
+
   remove(src: BlotterSource): void {
     this.repo.removeAdhoc(src.id);
   }

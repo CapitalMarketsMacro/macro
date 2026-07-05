@@ -8,7 +8,8 @@ import {
   type TransportMessage,
 } from '@macro/transports';
 import { ConflationSubject } from '@macro/utils';
-import type { BlotterSource } from './blotter-source';
+import type { BlotterSource, WsConn } from './blotter-source';
+import { WsTableClient } from './ws-table-client';
 
 export type FeedStatus = 'idle' | 'connecting' | 'snapshot-loading' | 'live' | 'error' | 'stopped';
 
@@ -42,6 +43,7 @@ type Row = Record<string, unknown>;
  *  - AMPS → `sowAndSubscribe` (snapshot then stream).
  *  - NATS JetStream → `snapshotAndSubscribe` (last-per-subject snapshot then stream).
  *  - NATS core / Solace → live `subscribeAsObservable` (no snapshot).
+ *  - WebSocket → table protocol via {@link WsTableClient} (table snapshot then stream).
  * One instance per blotter so each source gets its own connection. Framework-free: status is a
  * snapshot exposed via `getState()` + `subscribe()`.
  */
@@ -50,6 +52,7 @@ export class BlotterFeed {
   private readonly listeners = new Set<() => void>();
 
   private transport?: TransportClient;
+  private wsClient?: WsTableClient;
   private subId?: string;
   private readonly subs = new Subscription();
   private conflation?: ConflationSubject<string, Row>;
@@ -63,6 +66,8 @@ export class BlotterFeed {
 
   private msgWindow = 0;
   private rateTimer?: ReturnType<typeof setInterval>;
+  /** Set by stop(): suppresses late connect/close errors from overwriting the 'stopped' state. */
+  private stopping = false;
 
   constructor(
     private readonly source: BlotterSource,
@@ -90,39 +95,51 @@ export class BlotterFeed {
   async start(): Promise<void> {
     try {
       this.patch({ status: 'connecting', error: null });
-      this.transport = this.makeTransport();
-      this.transport.onError((e) => this.patch({ error: e.message, status: 'error' }));
-      await this.transport.connect(this.connectOpts());
 
       if (this.source.mode !== 'append' && (this.source.mode === 'streaming' || this.source.conflationMs != null)) {
         this.conflation = new ConflationSubject<string, Row>(this.source.conflationMs ?? 250);
         this.subs.add(this.conflation.subscribeToConflated(({ value }) => this.grid.updateRows([value])));
       }
 
-      switch (this.source.transport) {
-        case 'amps':
-          await this.wireAmps();
-          break;
-        case 'nats-js':
-          await this.wireNatsJs();
-          break;
-        case 'nats':
-        case 'solace':
-          await this.wireLive();
-          break;
+      if (this.source.transport === 'websocket') {
+        await this.wireWebSocket();
+      } else {
+        this.transport = this.makeTransport();
+        this.transport.onError((e) => {
+          if (!this.stopping) this.patch({ error: e.message, status: 'error' });
+        });
+        await this.transport.connect(this.connectOpts());
+
+        switch (this.source.transport) {
+          case 'amps':
+            await this.wireAmps();
+            break;
+          case 'nats-js':
+            await this.wireNatsJs();
+            break;
+          case 'nats':
+          case 'solace':
+            await this.wireLive();
+            break;
+        }
       }
       this.startRateMeter();
     } catch (e) {
-      this.patch({ status: 'error', error: e instanceof Error ? e.message : String(e) });
+      this.conflation?.complete(); // don't leave the conflation interval ticking on a failed start
+      if (!this.stopping) {
+        this.patch({ status: 'error', error: e instanceof Error ? e.message : String(e) });
+      }
     }
   }
 
   async stop(): Promise<void> {
+    this.stopping = true;
     if (this.rateTimer) clearInterval(this.rateTimer);
     this.subs.unsubscribe();
     this.conflation?.complete();
     if (this.subId) await this.transport?.unsubscribe(this.subId).catch(() => undefined);
     await this.transport?.disconnect().catch(() => undefined);
+    await this.wsClient?.disconnect().catch(() => undefined);
     this.patch({ status: 'stopped' });
   }
 
@@ -139,6 +156,8 @@ export class BlotterFeed {
         return new NatsJetStreamTransport(name);
       case 'solace':
         return new SolaceTransport();
+      case 'websocket':
+        throw new Error('websocket sources are wired via WsTableClient, not a TransportClient');
     }
   }
 
@@ -163,6 +182,21 @@ export class BlotterFeed {
     const js = this.transport as NatsJetStreamTransport;
     this.patch({ status: 'snapshot-loading' });
     const { observable, subscriptionId, snapshotComplete } = await js.snapshotAndSubscribe(this.source.topic);
+    this.subId = subscriptionId;
+    await this.consumeSnapshotThenLive(observable, snapshotComplete);
+  }
+
+  /** WebSocket table protocol: connect, subscribe to the table (`topic`), snapshot then live. */
+  private async wireWebSocket(): Promise<void> {
+    const conn = this.source.connection as WsConn;
+    const client = new WsTableClient();
+    this.wsClient = client;
+    client.onError((e) => {
+      if (!this.stopping) this.patch({ error: e.message, status: 'error' });
+    });
+    await client.connect(conn.url);
+    this.patch({ status: 'snapshot-loading' });
+    const { observable, subscriptionId, snapshotComplete } = client.subscribeTable(this.source.topic);
     this.subId = subscriptionId;
     await this.consumeSnapshotThenLive(observable, snapshotComplete);
   }
@@ -256,10 +290,13 @@ export class BlotterFeed {
    * Parse a transport message into one or more rows. A payload that is a JSON array is expanded so
    * each element becomes its own row (unless the source opts out via `expandArrays: false`); a plain
    * object payload is a single row. Non-object array elements are wrapped as `{ value }`.
+   * WebSocket table sources ALWAYS expand — there the array is protocol framing (snapshot / batch
+   * frames), never a value.
    */
   private readRecords(m: TransportMessage): Row[] {
+    const expand = this.source.transport === 'websocket' || this.source.expandArrays !== false;
     const payload = this.readPayload(m);
-    if (this.source.expandArrays !== false && Array.isArray(payload)) {
+    if (expand && Array.isArray(payload)) {
       return payload.map((el) => this.asRow(el));
     }
     return [this.asRow(payload)];

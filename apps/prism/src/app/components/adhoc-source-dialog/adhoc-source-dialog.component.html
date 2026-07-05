@@ -48,6 +48,29 @@
           </div>
         </div>
       }
+      @case ('websocket') {
+        <div class="adhoc-form__row">
+          <span class="adhoc-form__label">WebSocket URL</span>
+          <div class="adhoc-form__inline">
+            <input pInputText formControlName="wsUrl" placeholder="ws://localhost:3000/prism" />
+            <p-button
+              label="Load tables"
+              icon="pi pi-list"
+              severity="secondary"
+              [loading]="wsDiscovering()"
+              [disabled]="!form.controls.wsUrl.value"
+              (onClick)="discoverTables()"
+            />
+          </div>
+          @if (wsDiscoverError(); as err) {
+            <span class="adhoc-form__error">{{ err }}</span>
+          } @else {
+            <span class="adhoc-form__hint">
+              The server announces its tables on connect — load them and pick one below.
+            </span>
+          }
+        </div>
+      }
       @case ('solace') {
         <div class="adhoc-form__grid">
           <div class="adhoc-form__row">
@@ -90,20 +113,34 @@
     }
 
     <div class="adhoc-form__row">
-      <span class="adhoc-form__label">{{ transport === 'amps' ? 'Topic' : 'Subject / topic' }}</span>
-      <input pInputText formControlName="topic" placeholder="e.g. macro.fx.quotes.>" />
+      @if (transport === 'websocket') {
+        <span class="adhoc-form__label">Table</span>
+        <p-select
+          formControlName="topic"
+          [options]="wsTableNames()"
+          [editable]="true"
+          placeholder="Load tables or type a table name"
+          (onChange)="onWsTableChange($event)"
+        />
+      } @else {
+        <span class="adhoc-form__label">{{ transport === 'amps' ? 'Topic' : 'Subject / topic' }}</span>
+        <input pInputText formControlName="topic" placeholder="e.g. macro.fx.quotes.>" />
+      }
     </div>
 
-    <div class="adhoc-form__row adhoc-form__check">
-      <p-checkbox formControlName="expandArrays" [binary]="true" inputId="expandArrays" />
-      <label for="expandArrays" class="adhoc-form__check-label">
-        Expand array payloads into rows
-        <span class="adhoc-form__hint">
-          A message whose payload is a JSON array becomes one row per element. Uncheck to treat the
-          whole array as a single record.
-        </span>
-      </label>
-    </div>
+    @if (transport !== 'websocket') {
+      <!-- WebSocket table sources always expand arrays — there they are protocol framing. -->
+      <div class="adhoc-form__row adhoc-form__check">
+        <p-checkbox formControlName="expandArrays" [binary]="true" inputId="expandArrays" />
+        <label for="expandArrays" class="adhoc-form__check-label">
+          Expand array payloads into rows
+          <span class="adhoc-form__hint">
+            A message whose payload is a JSON array becomes one row per element. Uncheck to treat the
+            whole array as a single record.
+          </span>
+        </label>
+      </div>
+    }
 
     <div class="adhoc-form__grid">
       @if (transport === 'amps') {

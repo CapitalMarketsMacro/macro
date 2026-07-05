@@ -42,6 +42,35 @@ jest.mock('@macro/transports', () => ({
   SolaceTransport: jest.fn().mockImplementation(() => mockMakeTransport()),
 }));
 
+const mockWsClientInstances: any[] = [];
+
+function mockMakeWsClient() {
+  const stream = new Subject<any>();
+  let resolveSnap!: () => void;
+  let rejectSnap!: (e: Error) => void;
+  const snapshotComplete = new Promise<void>((res, rej) => {
+    resolveSnap = res;
+    rejectSnap = rej;
+  });
+  const c: any = {
+    connect: jest.fn().mockResolvedValue(undefined),
+    disconnect: jest.fn().mockResolvedValue(undefined),
+    onError: jest.fn(),
+    subscribeTable: jest
+      .fn()
+      .mockImplementation((table: string) => ({ observable: stream.asObservable(), subscriptionId: `ws-table-${table}`, snapshotComplete })),
+    __stream: stream,
+    __resolveSnap: () => resolveSnap(),
+    __rejectSnap: (e: Error) => rejectSnap(e),
+  };
+  mockWsClientInstances.push(c);
+  return c;
+}
+
+jest.mock('./ws-table-client', () => ({
+  WsTableClient: jest.fn().mockImplementation(() => mockMakeWsClient()),
+}));
+
 // Conflation as an immediate passthrough so streaming updates are deterministic in tests.
 jest.mock('@macro/utils', () => ({
   ConflationSubject: jest.fn().mockImplementation(() => {
@@ -62,6 +91,7 @@ jest.mock('@macro/utils', () => ({
 const macro = () => new Promise((r) => setTimeout(r, 0));
 const msg = (obj: unknown) => ({ json: () => obj, data: JSON.stringify(obj), topic: 't' });
 const lastTransport = () => mockTransportInstances[mockTransportInstances.length - 1];
+const lastWsClient = () => mockWsClientInstances[mockWsClientInstances.length - 1];
 
 /** A fake GridOps capturing what the feed writes (mirrors both grids' addRows$/updateRows$/etc.). */
 function makeGrid() {
@@ -92,6 +122,7 @@ describe('BlotterFeed', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockTransportInstances.length = 0;
+    mockWsClientInstances.length = 0;
   });
 
   it('NATS append: appends each message and trims to maxRows', async () => {
@@ -304,6 +335,150 @@ describe('BlotterFeed', () => {
       { bookId: 'B2', qty: 20 },
     ]);
     expect(feed.getState().rowCount).toBe(2);
+  });
+
+  it('WebSocket: connects, subscribes to the table, seeds the snapshot, then streams keyed updates', async () => {
+    const { grid, updates, setInitial } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'websocket',
+      mode: 'snapshot-update',
+      keyField: 'symbol',
+      connection: { transport: 'websocket', url: 'ws://x/prism' },
+    };
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    const starting = feed.start();
+    await macro(); // let start() reach `await snapshotComplete`
+    const c = lastWsClient();
+    expect(c.connect).toHaveBeenCalledWith('ws://x/prism');
+    expect(c.subscribeTable).toHaveBeenCalledWith('t');
+    expect(feed.getState().status).toBe('snapshot-loading');
+
+    // Snapshot arrives as ONE message whose payload is a JSON array — one row per element.
+    c.__stream.next(msg([{ symbol: 'UST 2Y', px: 99.8 }, { symbol: 'ZTU6', px: 103.4 }]));
+    c.__resolveSnap();
+    await starting;
+
+    expect(setInitial).toHaveBeenCalledWith([
+      { symbol: 'UST 2Y', px: 99.8 },
+      { symbol: 'ZTU6', px: 103.4 },
+    ]);
+    expect(feed.getState().rowCount).toBe(2);
+    expect(feed.getState().status).toBe('live');
+
+    c.__stream.next(msg({ symbol: 'UST 2Y', px: 99.9 })); // single-row live update
+    expect(updates).toEqual([{ symbol: 'UST 2Y', px: 99.9 }]);
+  });
+
+  it('WebSocket append: seeds trade history then appends single prints and array bursts', async () => {
+    const { grid, adds, setInitial } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'websocket',
+      mode: 'append',
+      connection: { transport: 'websocket', url: 'ws://x/prism' },
+    };
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    const starting = feed.start();
+    await macro();
+    const c = lastWsClient();
+
+    c.__stream.next(msg([{ tradeId: 'T-1' }, { tradeId: 'T-2' }]));
+    c.__resolveSnap();
+    await starting;
+    expect(setInitial).toHaveBeenCalledWith([
+      expect.objectContaining({ tradeId: 'T-1' }),
+      expect.objectContaining({ tradeId: 'T-2' }),
+    ]);
+
+    c.__stream.next(msg({ tradeId: 'T-3' })); // single print
+    c.__stream.next(msg([{ tradeId: 'T-4' }, { tradeId: 'T-5' }])); // burst as array
+    expect(adds.map((r) => r.tradeId)).toEqual(['T-3', 'T-4', 'T-5']);
+    expect(feed.getState().rowCount).toBe(5);
+  });
+
+  it('WebSocket: stop() disconnects the table client', async () => {
+    const { grid } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'websocket',
+      mode: 'append',
+      connection: { transport: 'websocket', url: 'ws://x/prism' },
+    };
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    const starting = feed.start();
+    await macro();
+    const c = lastWsClient();
+    c.__resolveSnap();
+    await starting;
+
+    await feed.stop();
+    expect(c.disconnect).toHaveBeenCalled();
+    expect(feed.getState().status).toBe('stopped');
+  });
+
+  it('WebSocket: array frames always expand, even with expandArrays:false (protocol framing)', async () => {
+    const { grid, setInitial } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'websocket',
+      mode: 'append',
+      expandArrays: false,
+      connection: { transport: 'websocket', url: 'ws://x/prism' },
+    };
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    const starting = feed.start();
+    await macro();
+    const c = lastWsClient();
+
+    c.__stream.next(msg([{ tradeId: 'T-1' }, { tradeId: 'T-2' }]));
+    c.__resolveSnap();
+    await starting;
+
+    expect(setInitial).toHaveBeenCalledWith([
+      expect.objectContaining({ tradeId: 'T-1' }),
+      expect.objectContaining({ tradeId: 'T-2' }),
+    ]);
+    expect(feed.getState().rowCount).toBe(2);
+  });
+
+  it('WebSocket: stop() during snapshot-loading is not overwritten by the late connect rejection', async () => {
+    const { grid } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'websocket',
+      mode: 'append',
+      connection: { transport: 'websocket', url: 'ws://x/prism' },
+    };
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    const starting = feed.start();
+    await macro();
+    const c = lastWsClient();
+
+    await feed.stop();
+    c.__rejectSnap(new Error('WebSocket closed: client disconnect')); // late rejection after stop
+    await starting;
+
+    expect(feed.getState().status).toBe('stopped');
+    expect(feed.getState().error).toBeNull();
+  });
+
+  it('WebSocket: a rejected snapshot (e.g. unknown table) surfaces as an error state', async () => {
+    const { grid } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'websocket',
+      mode: 'append',
+      connection: { transport: 'websocket', url: 'ws://x/prism' },
+    };
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    const starting = feed.start();
+    await macro();
+    lastWsClient().__rejectSnap(new Error('Unknown table: t'));
+    await starting;
+
+    expect(feed.getState().status).toBe('error');
+    expect(feed.getState().error).toBe('Unknown table: t');
   });
 
   it('notifies subscribers and stop() unsubscribes + disconnects', async () => {
