@@ -153,12 +153,14 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 - Angular apps + libs: **Jest 30** (`@nx/jest`, `jest-preset-angular`)
 - React app + libs: **Vitest 4** (`@nx/vite`)
 - `@macro/macro-design`: Jest with jsdom environment
-- Run all: `npx nx run-many --target=test --all`
+- Run all (CI entry point): `npm run test` — runs every project with coverage via `scripts/test-ci.mjs`, then writes a **merged LCOV report to `coverage/lcov.info`** and a **merged JUnit report to `junit.xml`** at the repo root (per-project files land in `coverage/{apps,libs}/<name>/` and `reports/`)
+- Run all without coverage/reports: `npm run test:all` (`nx run-many --target=test --all`)
 - Run one: `npx nx test <project-name>` (e.g., `npx nx test logger`)
 
 ## Building
 
 ```bash
+npm run build                  # CI entry point: builds every app (production) into dist/apps/<name>
 npm run build:angular          # Build Angular app
 npm run build:react            # Build React app
 npm run build:workspace        # Build OpenFin workspace
@@ -166,7 +168,7 @@ npm run build:logger           # Build logger lib (for npm publish)
 npx nx run-many --target=build --all  # Build everything
 ```
 
-Output goes to `dist/` directory.
+Output goes to `dist/` directory. The app list for `npm run build` lives in the `build:apps:ci` script in `package.json` — add new apps there so CI builds them.
 
 ## NX Commands
 

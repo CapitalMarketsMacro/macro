@@ -5,5 +5,12 @@
   "projectType": "application",
   "tags": [],
   "// targets": "to see all targets run: nx show project prism-react --web",
-  "targets": {}
+  "targets": {
+    "test": {
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}",
+        "{workspaceRoot}/reports/{projectName}-junit.xml"
+      ]
+    }
+  }
 }

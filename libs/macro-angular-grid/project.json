@@ -8,7 +8,10 @@
   "targets": {
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}",
+        "{workspaceRoot}/reports/{projectName}-junit.xml"
+      ],
       "options": {
         "jestConfig": "libs/macro-angular-grid/jest.config.ts",
         "tsConfig": "libs/macro-angular-grid/tsconfig.spec.json"

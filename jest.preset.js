@@ -11,6 +11,12 @@ module.exports = {
       {
         outputDirectory: './reports',
         outputName: `${projectName}-junit.xml`,
+        // File-path-based suite/class names so merged reports stay unique
+        // across projects and CI publishers can link failures to files.
+        suiteNameTemplate: '{filepath}',
+        classNameTemplate: '{filepath}',
+        titleTemplate: '{classname} › {title}',
+        addFileAttribute: 'true',
       },
     ],
   ],
