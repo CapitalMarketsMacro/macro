@@ -76,7 +76,7 @@ export function SourceCatalog() {
                   <p className="text-sm opacity-70 min-h-10">{src.description}</p>
                   <div className="flex flex-col gap-1 text-xs opacity-70 mt-2">
                     <span>Category: {src.category}</span>
-                    <span className="truncate">Topic: {src.topic}</span>
+                    {src.topic && <span className="truncate">Topic: {src.topic}</span>}
                   </div>
                 </CardContent>
                 <CardFooter>

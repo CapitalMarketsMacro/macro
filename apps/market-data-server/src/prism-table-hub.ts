@@ -1,3 +1,4 @@
+import { IncomingMessage, ServerResponse } from 'http';
 import { WebSocket } from 'ws';
 import { UstMarketDataTable, UstTradesTable } from './prism-tables.service';
 
@@ -14,6 +15,10 @@ import { UstMarketDataTable, UstTradesTable } from './prism-tables.service';
  *  server -> client streaming:   { type: 'update', table, row: {...} }           // single row…
  *                                { type: 'update', table, rows: [...] }          // …or a batch array
  *  server -> client on problems: { type: 'error', message }
+ *
+ * REST mirror (snapshot-only, for the blotters' REST source):
+ *  GET /prism/tables         -> { tables: [...] }          (same catalog as the WS announce)
+ *  GET /prism/tables/<name>  -> [ ...rows ]                (bare JSON array snapshot)
  */
 
 interface TableMeta {
@@ -118,9 +123,10 @@ export class PrismTableHub {
   // ── streaming ──
 
   private tickMarketData(): void {
+    // Tick unconditionally so REST snapshots keep evolving even with no WS subscribers.
+    const updated = this.marketData.tick();
     const subs = this.subscribers.get('ust_market_data')!;
     if (subs.size === 0) return;
-    const updated = this.marketData.tick();
     // Mostly single-row updates; occasionally the whole tick as one batch array.
     if (updated.length > 1 && Math.random() < 0.25) {
       this.broadcast(subs, { type: 'update', table: 'ust_market_data', rows: updated });
@@ -145,6 +151,56 @@ export class PrismTableHub {
       }
       this.scheduleNextTrade();
     }, gap);
+  }
+
+  // ── REST mirror ──
+
+  /**
+   * Serve the snapshot-only REST endpoints. Returns false when the path is not ours so the
+   * caller can 404. CORS is wide open — the blotters run on other localhost ports.
+   */
+  handleRest(req: IncomingMessage, res: ServerResponse): boolean {
+    const url = new URL(req.url || '', `http://${req.headers.host ?? 'localhost'}`);
+    const path = url.pathname.replace(/\/+$/, '');
+    if (path !== '/prism/tables' && !path.startsWith('/prism/tables/')) return false;
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, { 'Access-Control-Allow-Methods': 'GET, OPTIONS' });
+      res.end();
+      return true;
+    }
+    if (req.method !== 'GET') {
+      this.sendJson(res, 405, { error: 'Only GET is supported' });
+      return true;
+    }
+    if (path === '/prism/tables') {
+      this.sendJson(res, 200, { tables: TABLES });
+      return true;
+    }
+    let name: string;
+    try {
+      name = decodeURIComponent(path.slice('/prism/tables/'.length));
+    } catch {
+      // Malformed percent-encoding (e.g. /prism/tables/%zz) must not crash the process.
+      this.sendJson(res, 400, { error: 'Malformed table name in URL' });
+      return true;
+    }
+    const meta = TABLES.find((t) => t.name === name);
+    if (!meta) {
+      this.sendJson(res, 404, { error: `Unknown table: ${name}. Available: ${TABLES.map((t) => t.name).join(', ')}` });
+      return true;
+    }
+    const rows = meta.name === 'ust_trades' ? this.trades.snapshot() : this.marketData.snapshot();
+    this.sendJson(res, 200, rows); // snapshots are bare JSON arrays
+    console.log(`REST snapshot served for "${meta.name}" (${rows.length} rows)`);
+    return true;
+  }
+
+  private sendJson(res: ServerResponse, status: number, payload: unknown): void {
+    const body = JSON.stringify(payload);
+    res.writeHead(status, { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) });
+    res.end(body);
   }
 
   // ── plumbing ──

@@ -8,3 +8,4 @@ export * from './lib/column-inference';
 export * from './lib/blotter-feed';
 export * from './lib/data-source-store';
 export * from './lib/ws-table-client';
+export * from './lib/rest-table-client';

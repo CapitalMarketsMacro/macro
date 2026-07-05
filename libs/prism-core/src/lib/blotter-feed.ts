@@ -8,8 +8,9 @@ import {
   type TransportMessage,
 } from '@macro/transports';
 import { ConflationSubject } from '@macro/utils';
-import type { BlotterSource, WsConn } from './blotter-source';
+import type { BlotterSource, RestConn, WsConn } from './blotter-source';
 import { WsTableClient } from './ws-table-client';
+import { RestSnapshotClient } from './rest-table-client';
 
 export type FeedStatus = 'idle' | 'connecting' | 'snapshot-loading' | 'live' | 'error' | 'stopped';
 
@@ -44,6 +45,8 @@ type Row = Record<string, unknown>;
  *  - NATS JetStream → `snapshotAndSubscribe` (last-per-subject snapshot then stream).
  *  - NATS core / Solace → live `subscribeAsObservable` (no snapshot).
  *  - WebSocket → table protocol via {@link WsTableClient} (table snapshot then stream).
+ *  - REST → snapshot-only via {@link RestSnapshotClient}; no stream — call {@link refresh} to
+ *    re-fetch and diff the new snapshot into the grid in place.
  * One instance per blotter so each source gets its own connection. Framework-free: status is a
  * snapshot exposed via `getState()` + `subscribe()`.
  */
@@ -53,6 +56,8 @@ export class BlotterFeed {
 
   private transport?: TransportClient;
   private wsClient?: WsTableClient;
+  private restClient?: RestSnapshotClient;
+  private refreshing = false;
   private subId?: string;
   private readonly subs = new Subscription();
   private conflation?: ConflationSubject<string, Row>;
@@ -96,13 +101,20 @@ export class BlotterFeed {
     try {
       this.patch({ status: 'connecting', error: null });
 
-      if (this.source.mode !== 'append' && (this.source.mode === 'streaming' || this.source.conflationMs != null)) {
+      // No conflation for snapshot-only REST — there is no stream, refresh() writes to the grid directly.
+      if (
+        this.source.transport !== 'rest' &&
+        this.source.mode !== 'append' &&
+        (this.source.mode === 'streaming' || this.source.conflationMs != null)
+      ) {
         this.conflation = new ConflationSubject<string, Row>(this.source.conflationMs ?? 250);
         this.subs.add(this.conflation.subscribeToConflated(({ value }) => this.grid.updateRows([value])));
       }
 
       if (this.source.transport === 'websocket') {
         await this.wireWebSocket();
+      } else if (this.source.transport === 'rest') {
+        await this.wireRest();
       } else {
         this.transport = this.makeTransport();
         this.transport.onError((e) => {
@@ -123,7 +135,7 @@ export class BlotterFeed {
             break;
         }
       }
-      this.startRateMeter();
+      if (this.source.transport !== 'rest') this.startRateMeter(); // snapshot-only: no msgs/sec
     } catch (e) {
       this.conflation?.complete(); // don't leave the conflation interval ticking on a failed start
       if (!this.stopping) {
@@ -158,6 +170,8 @@ export class BlotterFeed {
         return new SolaceTransport();
       case 'websocket':
         throw new Error('websocket sources are wired via WsTableClient, not a TransportClient');
+      case 'rest':
+        throw new Error('rest sources are wired via RestSnapshotClient, not a TransportClient');
     }
   }
 
@@ -199,6 +213,68 @@ export class BlotterFeed {
     const { observable, subscriptionId, snapshotComplete } = client.subscribeTable(this.source.topic);
     this.subId = subscriptionId;
     await this.consumeSnapshotThenLive(observable, snapshotComplete);
+  }
+
+  /** REST: one-shot snapshot (JSON array), no stream. Later data comes only from {@link refresh}. */
+  private async wireRest(): Promise<void> {
+    const conn = this.source.connection as RestConn;
+    this.restClient = new RestSnapshotClient();
+    this.patch({ status: 'snapshot-loading' });
+    const rows = (await this.restClient.fetchRows(conn.url, this.source.topic)).map((r) => this.asRow(r));
+    // stop() cannot abort an in-flight fetch — a late snapshot must not seed a stopped feed's grid.
+    if (this.stopping) return;
+    for (const rec of rows) this.maybeInferColumns(rec);
+    this.seedSnapshot(rows);
+    this.patch({ status: 'live' });
+  }
+
+  /**
+   * Re-fetch the REST snapshot and diff it into the grid in place: new keys are added, existing
+   * keys updated, and keys missing from the new snapshot removed (append mode replaces all rows).
+   * No-op for streaming transports — their data is already live.
+   */
+  async refresh(): Promise<void> {
+    const conn = this.source.connection;
+    if (conn.transport !== 'rest' || !this.restClient || this.refreshing || this.stopping) return;
+    // Only refresh a settled feed — racing the initial wireRest() fetch would double-insert rows.
+    if (this.state.status !== 'live' && this.state.status !== 'error') return;
+    this.refreshing = true;
+    try {
+      this.patch({ status: 'snapshot-loading', error: null });
+      const fetched = (await this.restClient.fetchRows(conn.url, this.source.topic)).map((r) => this.asRow(r));
+      if (this.stopping) return;
+      // Dedupe within the snapshot (last wins) — duplicate keys would double-insert as adds.
+      const rows =
+        this.source.mode === 'append' ? fetched : [...new Map(fetched.map((r) => [this.keyOf(r), r])).values()];
+      for (const rec of rows) this.maybeInferColumns(rec);
+      if (this.source.mode === 'append') {
+        const removed = this.appendQueue.splice(0);
+        if (removed.length) this.grid.deleteRows(removed);
+        const seeded = rows.map((r) => this.stampId(r));
+        this.appendQueue.push(...seeded);
+        this.grid.addRows(seeded);
+        this.patch({ rowCount: this.appendQueue.length, status: 'live' });
+      } else {
+        const keyField = this.source.keyField ?? 'id';
+        const nextKeys = new Set(rows.map((r) => this.keyOf(r)));
+        const adds = rows.filter((r) => !this.keys.has(this.keyOf(r)));
+        const updates = rows.filter((r) => this.keys.has(this.keyOf(r)));
+        // Removal only needs the row id — a stub with the key field satisfies getRowId.
+        const removedKeys = [...this.keys].filter((k) => !nextKeys.has(k));
+        if (adds.length) this.grid.addRows(adds);
+        if (updates.length) this.grid.updateRows(updates);
+        if (removedKeys.length) this.grid.deleteRows(removedKeys.map((k) => ({ [keyField]: k })));
+        this.keys.clear();
+        for (const k of nextKeys) this.keys.add(k);
+        this.patch({ rowCount: this.keys.size, status: 'live' });
+      }
+    } catch (e) {
+      if (!this.stopping) {
+        this.patch({ status: 'error', error: e instanceof Error ? e.message : String(e) });
+      }
+    } finally {
+      this.refreshing = false;
+    }
   }
 
   /** NATS core / Solace: live-only — no snapshot, every record routed per mode (upsert / append). */

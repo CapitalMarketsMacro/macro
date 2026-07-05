@@ -107,5 +107,17 @@
     "keyField": "tradeId",
     "maxRows": 1000,
     "columnMode": "infer"
+  },
+  {
+    "id": "rest-ust-market-data",
+    "name": "REST UST Market Data (snapshot)",
+    "description": "Top-of-book for cash OTR Treasuries + CME futures via REST — one-shot JSON-array snapshot, refresh manually from the toolbar.",
+    "category": "Rates",
+    "transport": "rest",
+    "mode": "snapshot-update",
+    "connection": { "transport": "rest", "url": "http://localhost:3000/prism/tables" },
+    "topic": "ust_market_data",
+    "keyField": "symbol",
+    "columnMode": "infer"
   }
 ]

@@ -36,7 +36,9 @@
             <p class="source-card__desc">{{ src.description }}</p>
             <div class="source-card__meta">
               <span><i class="pi pi-tag"></i> {{ src.category }}</span>
-              <span><i class="pi pi-sitemap"></i> {{ src.topic }}</span>
+              @if (src.topic) {
+                <span><i class="pi pi-sitemap"></i> {{ src.topic }}</span>
+              }
             </div>
             <div class="source-card__footer">
               <p-button label="Open" icon="pi pi-arrow-right" size="small" (onClick)="open(src)" />

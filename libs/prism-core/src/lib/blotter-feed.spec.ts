@@ -71,6 +71,22 @@ jest.mock('./ws-table-client', () => ({
   WsTableClient: jest.fn().mockImplementation(() => mockMakeWsClient()),
 }));
 
+const mockRestClientInstances: any[] = [];
+/** Snapshots served in order by the mocked RestSnapshotClient — push BEFORE start()/refresh(). */
+const restRowsQueue: unknown[][] = [];
+
+function mockMakeRestClient() {
+  const c: any = {
+    fetchRows: jest.fn().mockImplementation(() => Promise.resolve(restRowsQueue.length ? restRowsQueue.shift() : [])),
+  };
+  mockRestClientInstances.push(c);
+  return c;
+}
+
+jest.mock('./rest-table-client', () => ({
+  RestSnapshotClient: jest.fn().mockImplementation(() => mockMakeRestClient()),
+}));
+
 // Conflation as an immediate passthrough so streaming updates are deterministic in tests.
 jest.mock('@macro/utils', () => ({
   ConflationSubject: jest.fn().mockImplementation(() => {
@@ -92,6 +108,7 @@ const macro = () => new Promise((r) => setTimeout(r, 0));
 const msg = (obj: unknown) => ({ json: () => obj, data: JSON.stringify(obj), topic: 't' });
 const lastTransport = () => mockTransportInstances[mockTransportInstances.length - 1];
 const lastWsClient = () => mockWsClientInstances[mockWsClientInstances.length - 1];
+const lastRestClient = () => mockRestClientInstances[mockRestClientInstances.length - 1];
 
 /** A fake GridOps capturing what the feed writes (mirrors both grids' addRows$/updateRows$/etc.). */
 function makeGrid() {
@@ -123,6 +140,8 @@ describe('BlotterFeed', () => {
     jest.clearAllMocks();
     mockTransportInstances.length = 0;
     mockWsClientInstances.length = 0;
+    mockRestClientInstances.length = 0;
+    restRowsQueue.length = 0;
   });
 
   it('NATS append: appends each message and trims to maxRows', async () => {
@@ -479,6 +498,193 @@ describe('BlotterFeed', () => {
 
     expect(feed.getState().status).toBe('error');
     expect(feed.getState().error).toBe('Unknown table: t');
+  });
+
+  it('REST: fetches one snapshot, seeds it, infers columns, and reports live', async () => {
+    const { grid, setInitial } = makeGrid();
+    const onColumns = jest.fn();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'rest',
+      mode: 'snapshot-update',
+      keyField: 'symbol',
+      connection: { transport: 'rest', url: 'http://x/tables' },
+    };
+    restRowsQueue.push([
+      { symbol: 'UST 2Y', px: 99.8 },
+      { symbol: 'ZTU6', px: 103.4 },
+    ]);
+    const feed = new BlotterFeed(source, grid, onColumns);
+    await feed.start();
+
+    expect(lastRestClient().fetchRows).toHaveBeenCalledWith('http://x/tables', 't');
+    expect(setInitial).toHaveBeenCalledWith([
+      { symbol: 'UST 2Y', px: 99.8 },
+      { symbol: 'ZTU6', px: 103.4 },
+    ]);
+    expect(onColumns).toHaveBeenCalledTimes(1);
+    expect(onColumns).toHaveBeenCalledWith({ symbol: 'UST 2Y', px: 99.8 });
+    expect(feed.getState().rowCount).toBe(2);
+    expect(feed.getState().status).toBe('live');
+  });
+
+  it('REST refresh: diffs the new snapshot — adds new keys, updates existing, removes missing', async () => {
+    const { grid, adds, updates, removes, setInitial } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'rest',
+      mode: 'snapshot-update',
+      keyField: 'symbol',
+      connection: { transport: 'rest', url: 'http://x/tables' },
+    };
+    restRowsQueue.push(
+      [
+        { symbol: 'UST 2Y', px: 1 },
+        { symbol: 'UST 5Y', px: 2 },
+      ],
+      [
+        { symbol: 'UST 5Y', px: 9 }, // existing -> update
+        { symbol: 'ZTU6', px: 3 }, // new -> add
+        // UST 2Y missing -> remove
+      ],
+    );
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    await feed.start();
+    expect(feed.getState().rowCount).toBe(2);
+
+    await feed.refresh();
+    expect(updates).toEqual([{ symbol: 'UST 5Y', px: 9 }]);
+    expect(adds).toEqual([{ symbol: 'ZTU6', px: 3 }]);
+    expect(removes).toEqual([{ symbol: 'UST 2Y' }]);
+    expect(feed.getState().rowCount).toBe(2);
+    expect(feed.getState().status).toBe('live');
+    expect(setInitial).toHaveBeenCalledTimes(1); // only the initial snapshot seeds the grid
+  });
+
+  it('REST refresh in append mode replaces all rows', async () => {
+    const { grid, adds, removes } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'rest',
+      mode: 'append',
+      connection: { transport: 'rest', url: 'http://x/tables' },
+    };
+    restRowsQueue.push([{ tradeId: 'T-1' }], [{ tradeId: 'T-1' }, { tradeId: 'T-2' }]);
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    await feed.start(); // seeds T-1 via setInitialRowData
+
+    await feed.refresh();
+    expect(removes.map((r) => r.tradeId)).toEqual(['T-1']); // old rows dropped
+    expect(adds.map((r) => r.tradeId)).toEqual(['T-1', 'T-2']); // replaced wholesale
+    expect(feed.getState().rowCount).toBe(2);
+  });
+
+  it('REST: a failed refresh surfaces as an error state without touching the grid', async () => {
+    const { grid, adds, updates, removes } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'rest',
+      mode: 'snapshot-update',
+      keyField: 'symbol',
+      connection: { transport: 'rest', url: 'http://x/tables' },
+    };
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    await feed.start(); // empty snapshot
+    lastRestClient().fetchRows.mockRejectedValueOnce(new Error('http://x/tables responded 500 Server Error'));
+
+    await feed.refresh();
+    expect(feed.getState().status).toBe('error');
+    expect(feed.getState().error).toMatch(/500/);
+    expect(adds).toEqual([]);
+    expect(updates).toEqual([]);
+    expect(removes).toEqual([]);
+  });
+
+  it('REST: a late initial snapshot after stop() does not seed the grid or revive the feed', async () => {
+    const { grid, setInitial } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'rest',
+      mode: 'snapshot-update',
+      keyField: 'symbol',
+      connection: { transport: 'rest', url: 'http://x/tables' },
+    };
+    let release!: (rows: unknown[]) => void;
+    restRowsQueue.push(new Promise<unknown[]>((r) => (release = r)) as unknown as unknown[]);
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    const starting = feed.start();
+    await macro();
+    expect(feed.getState().status).toBe('snapshot-loading');
+
+    await feed.stop(); // user disconnects while the fetch is in flight
+    release([{ symbol: 'UST 2Y' }]); // ...then the slow endpoint finally answers
+    await starting;
+
+    expect(setInitial).not.toHaveBeenCalled();
+    expect(feed.getState().status).toBe('stopped');
+  });
+
+  it('REST: refresh() during the initial snapshot load is a no-op (no racing double-insert)', async () => {
+    const { grid } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'rest',
+      mode: 'snapshot-update',
+      keyField: 'symbol',
+      connection: { transport: 'rest', url: 'http://x/tables' },
+    };
+    let release!: (rows: unknown[]) => void;
+    restRowsQueue.push(new Promise<unknown[]>((r) => (release = r)) as unknown as unknown[]);
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    const starting = feed.start();
+    await macro();
+
+    await feed.refresh(); // status is 'snapshot-loading' — must not fire a second fetch
+    expect(lastRestClient().fetchRows).toHaveBeenCalledTimes(1);
+
+    release([{ symbol: 'UST 2Y' }]);
+    await starting;
+    expect(feed.getState().status).toBe('live');
+  });
+
+  it('REST refresh: duplicate keys within one snapshot dedupe last-wins', async () => {
+    const { grid, adds, updates } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'rest',
+      mode: 'snapshot-update',
+      keyField: 'symbol',
+      connection: { transport: 'rest', url: 'http://x/tables' },
+    };
+    restRowsQueue.push(
+      [],
+      [
+        { symbol: 'UST 2Y', px: 1 },
+        { symbol: 'UST 2Y', px: 2 }, // same key — last wins, single add
+      ],
+    );
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    await feed.start();
+
+    await feed.refresh();
+    expect(adds).toEqual([{ symbol: 'UST 2Y', px: 2 }]);
+    expect(updates).toEqual([]);
+    expect(feed.getState().rowCount).toBe(1);
+  });
+
+  it('REST: refresh() is a no-op for streaming transports', async () => {
+    const { grid, adds } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'nats',
+      mode: 'append',
+      connection: { transport: 'nats', servers: 'ws://x' },
+    };
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    await feed.start();
+    await feed.refresh(); // must not throw or touch anything
+    expect(adds).toEqual([]);
+    expect(feed.getState().status).toBe('live');
   });
 
   it('notifies subscribers and stop() unsubscribes + disconnects', async () => {

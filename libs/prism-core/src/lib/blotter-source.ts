@@ -6,7 +6,18 @@ import type {
 } from '@macro/transports';
 
 /** Transport backing a data source. NATS appears twice: core (live) and JetStream (snapshot+stream). */
-export type TransportKind = 'amps' | 'nats' | 'nats-js' | 'solace' | 'websocket';
+export type TransportKind = 'amps' | 'nats' | 'nats-js' | 'solace' | 'websocket' | 'rest';
+
+/**
+ * Connection options for a snapshot-only REST source (see `rest-table-client.ts`): `url` is either
+ * a table catalog (rows fetched from `url/<topic>`, tables discoverable via GET `url`) or, with an
+ * empty `topic`, the rows endpoint itself. The API returns rows as a JSON array; there is no
+ * stream — the blotter refreshes on demand (`BlotterFeed.refresh()`).
+ */
+export interface RestConnectionOptions {
+  /** REST endpoint, e.g. `http://localhost:3000/prism/tables`. */
+  url: string;
+}
 
 /**
  * Connection options for a plain-WebSocket table server (see `ws-table-client.ts`): the server
@@ -38,7 +49,8 @@ export type NatsConn = { transport: 'nats' } & NatsConnectionOptions;
 export type NatsJsConn = { transport: 'nats-js' } & NatsJetStreamConnectionOptions;
 export type SolaceConn = { transport: 'solace' } & SolaceConnectionOptions;
 export type WsConn = { transport: 'websocket' } & WebSocketConnectionOptions;
-export type BlotterConnection = AmpsConn | NatsConn | NatsJsConn | SolaceConn | WsConn;
+export type RestConn = { transport: 'rest' } & RestConnectionOptions;
+export type BlotterConnection = AmpsConn | NatsConn | NatsJsConn | SolaceConn | WsConn | RestConn;
 
 /** A data source the blotter can connect to — from the seed catalog or user-defined (ad-hoc). */
 export interface BlotterSource {
@@ -51,7 +63,7 @@ export interface BlotterSource {
   transport: TransportKind;
   mode: BlotterMode;
   connection: BlotterConnection;
-  /** AMPS topic / NATS subject / JetStream subject / Solace topic / WebSocket table name. */
+  /** AMPS topic / NATS subject / JetStream subject / Solace topic / WebSocket or REST table name (may be empty for REST when `connection.url` is the rows endpoint itself). */
   topic: string;
   /** AMPS SOW/subscribe filter (AMPS only). */
   filter?: string;
@@ -81,6 +93,7 @@ export const TRANSPORT_LABELS: Record<TransportKind, string> = {
   'nats-js': 'NATS JetStream',
   solace: 'Solace',
   websocket: 'WebSocket',
+  rest: 'REST API',
 };
 
 export const MODE_LABELS: Record<BlotterMode, string> = {
@@ -96,4 +109,15 @@ export const SNAPSHOT_CAPABLE: Record<TransportKind, boolean> = {
   nats: false,
   solace: false,
   websocket: true,
+  rest: true,
+};
+
+/** Snapshot-only transports: no live stream — data changes only via `BlotterFeed.refresh()`. */
+export const SNAPSHOT_ONLY: Record<TransportKind, boolean> = {
+  amps: false,
+  'nats-js': false,
+  nats: false,
+  solace: false,
+  websocket: false,
+  rest: true,
 };

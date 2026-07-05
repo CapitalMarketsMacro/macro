@@ -11,7 +11,8 @@ npm run prism:feed         # publish simulated market data
 npm run start:prism-react  # http://localhost:4205
 ```
 
-No Docker? `npx nx serve market-data-server` feeds the two plain-WebSocket **WS UST** catalog
-sources (table protocol on `ws://localhost:3000/prism`).
+No Docker? `npm run start:market-data-server` feeds the plain-WebSocket **WS UST** catalog sources
+(table protocol on `ws://localhost:3000/prism`) and the snapshot-only **REST UST** source
+(`http://localhost:3000/prism/tables`, manual Refresh in the toolbar).
 
 Full docs (sources, modes, AMPS, OpenFin, architecture, troubleshooting): see [`apps/prism/README.md`](../prism/README.md).
