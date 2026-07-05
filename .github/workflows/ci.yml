@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [ci/actions-test]
+    branches: [master]
+  pull_request:
   workflow_dispatch:
 
 jobs:
