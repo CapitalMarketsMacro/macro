@@ -73,6 +73,10 @@ export class View2Component implements OnInit, OnDestroy {
   }
 
   async makeProvider() {
+    if (typeof fin === 'undefined') {
+      logger.debug('Not running in OpenFin, skipping channel provider');
+      return;
+    }
     // entity creates a channel and becomes the channelProvider
     this.providerBus = await fin.InterApplicationBus.Channel.create(
       'channelName'
