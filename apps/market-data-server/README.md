@@ -53,6 +53,14 @@ server → { "type": "update", "table", "row": { ... } }           (or "rows": [
 server → { "type": "error", "message": "..." }                   (e.g. unknown table)
 ```
 
+The same tables are also served over **REST** (snapshot-only, CORS enabled, for the blotters' REST
+source — rows as **bare JSON arrays**):
+
+```
+GET http://localhost:3000/prism/tables            -> { "tables": [ ...catalog... ] }
+GET http://localhost:3000/prism/tables/<name>     -> [ ...rows ]        (404 for unknown tables)
+```
+
 Two tables over a shared US-rates universe — 7 cash **OTR Treasuries** (2Y–30Y) + 8 **CME
 Treasury futures** (ZT/Z3N/ZF/ZN/TN/TWE/ZB/UB, Sep-26):
 
@@ -66,14 +74,16 @@ Treasury futures** (ZT/Z3N/ZF/ZN/TN/TWE/ZB/UB, Sep-26):
 ### Start the server
 
 ```bash
-nx serve market-data-server
+npm run start:market-data-server   # or: nx serve market-data-server
 ```
 
-Or in production mode:
+Or build + run the compiled output directly (production mode):
 
 ```bash
-nx build market-data-server
-node dist/apps/market-data-server/main.js
+npm run exec:market-data-server
+# equivalent to:
+#   nx build market-data-server
+#   node dist/apps/market-data-server/apps/market-data-server/src/main.js
 ```
 
 ### Connect to FX Market Data WebSocket

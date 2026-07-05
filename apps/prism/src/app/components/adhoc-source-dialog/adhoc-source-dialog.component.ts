@@ -11,6 +11,7 @@ import { DataSourceRepository } from '../../services/data-source-repository.serv
 import {
   MODE_LABELS,
   TRANSPORT_LABELS,
+  discoverRestTables,
   discoverWsTables,
   type BlotterConnection,
   type BlotterMode,
@@ -128,22 +129,48 @@ export class AdHocSourceDialogComponent {
     password: [''],
     // WebSocket
     wsUrl: [''],
+    // REST
+    restUrl: [''],
   });
 
-  /** Tables announced by a WebSocket table server (null until discovery has run). */
-  readonly wsTables = signal<WsTableInfo[] | null>(null);
-  readonly wsDiscovering = signal(false);
-  readonly wsDiscoverError = signal<string | null>(null);
+  /** Tables announced by a WebSocket/REST table server (null until discovery has run). */
+  readonly tables = signal<WsTableInfo[] | null>(null);
+  readonly discovering = signal(false);
+  readonly discoverError = signal<string | null>(null);
   /** Bumped per dialog session / URL change so a stale in-flight discovery can't mutate a newer one. */
   private discoverEpoch = 0;
 
+  private prevTransport: TransportKind = 'nats';
+
   constructor() {
     // Tables discovered for one URL are meaningless for another — drop them when the URL changes.
-    this.form.controls.wsUrl.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
-      this.discoverEpoch++;
-      this.wsTables.set(null);
-      this.wsDiscoverError.set(null);
-    });
+    for (const control of [this.form.controls.wsUrl, this.form.controls.restUrl]) {
+      control.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+        this.discoverEpoch++;
+        this.tables.set(null);
+        this.discoverError.set(null);
+      });
+    }
+  }
+
+  /** 'table' transports pick a table by name; 'subject' transports subscribe to broker subjects. */
+  private static family(t: TransportKind): 'table' | 'subject' {
+    return t === 'websocket' || t === 'rest' ? 'table' : 'subject';
+  }
+
+  /** User switched transport (PrimeNG onChange — programmatic patches don't land here). */
+  onTransportChange(next: TransportKind): void {
+    const familyChanged =
+      AdHocSourceDialogComponent.family(this.prevTransport) !== AdHocSourceDialogComponent.family(next);
+    this.prevTransport = next;
+    // Discovered tables belong to the previous transport's endpoint.
+    this.discoverEpoch++;
+    this.tables.set(null);
+    this.discoverError.set(null);
+    // A broker subject is not a table name (and vice versa) — don't carry it across.
+    if (familyChanged) this.form.patchValue({ topic: '' });
+    // REST is snapshot-only — pin the behavior so append/streaming can't be picked.
+    if (next === 'rest') this.form.patchValue({ mode: 'snapshot-update' });
   }
 
   get transport(): TransportKind {
@@ -161,7 +188,7 @@ export class AdHocSourceDialogComponent {
   show(source?: BlotterSource): void {
     this.editingId = source && source.origin === 'adhoc' ? source.id : null;
     this.discoverEpoch++; // invalidate any in-flight discovery from a previous dialog session
-    this.wsDiscovering.set(false);
+    this.discovering.set(false);
     if (source) {
       this.patchFrom(source);
       if (!this.editingId) {
@@ -170,62 +197,72 @@ export class AdHocSourceDialogComponent {
     } else {
       this.form.reset({ category: 'Custom', transport: 'nats', mode: 'streaming', columnMode: 'infer' });
     }
-    // After the form patch (which clears discovery state via the wsUrl subscription): when editing
-    // a WebSocket source, seed the table list with the saved table so the select shows it before
-    // (or without) re-discovery.
-    this.wsDiscoverError.set(null);
-    this.wsTables.set(source?.transport === 'websocket' && source.topic ? [{ name: source.topic }] : null);
+    // After the form patch (which clears discovery state via the URL subscriptions): when opening
+    // from a WebSocket/REST source, seed the table list with the saved table so the select shows
+    // it before (or without) re-discovery.
+    this.discoverError.set(null);
+    this.tables.set(
+      (source?.transport === 'websocket' || source?.transport === 'rest') && source.topic
+        ? [{ name: source.topic }]
+        : null,
+    );
+    this.prevTransport = this.transport;
     this.visible.set(true);
   }
 
   /** Discovered table names for the editable select — plain strings so the visible text IS the value. */
-  wsTableNames(): string[] {
-    return (this.wsTables() ?? []).map((t) => t.name).filter((n) => typeof n === 'string' && n.length > 0);
+  tableNames(): string[] {
+    return (this.tables() ?? []).map((t) => t.name).filter((n) => typeof n === 'string' && n.length > 0);
   }
 
-  /** Connect to the WebSocket URL, read the announced tables, and populate the table select. */
+  /** Contact the WebSocket/REST endpoint, read the announced tables, and populate the table select. */
   async discoverTables(): Promise<void> {
-    const url = this.form.controls.wsUrl.value.trim();
-    if (!url || this.wsDiscovering()) return;
+    const isRest = this.transport === 'rest';
+    const url = (isRest ? this.form.controls.restUrl.value : this.form.controls.wsUrl.value).trim();
+    if (!url || this.discovering()) return;
     const epoch = ++this.discoverEpoch;
-    this.wsDiscovering.set(true);
-    this.wsDiscoverError.set(null);
+    this.discovering.set(true);
+    this.discoverError.set(null);
     try {
-      const tables = await discoverWsTables(url);
+      const tables = await (isRest ? discoverRestTables(url) : discoverWsTables(url));
       if (epoch !== this.discoverEpoch) return; // dialog re-opened / URL changed while in flight
-      this.wsTables.set(tables);
+      this.tables.set(tables);
       // Auto-pick the first table only when none is set — never clobber a chosen/typed table.
       if (tables.length && !this.form.controls.topic.value) {
         this.applyTableSuggestions(tables[0].name);
       }
     } catch (err) {
       if (epoch !== this.discoverEpoch) return;
-      this.wsDiscoverError.set(err instanceof Error ? err.message : String(err));
+      this.discoverError.set(err instanceof Error ? err.message : String(err));
     } finally {
-      if (epoch === this.discoverEpoch) this.wsDiscovering.set(false);
+      if (epoch === this.discoverEpoch) this.discovering.set(false);
     }
   }
 
   /** onChange of the editable table select: adopt suggestions only for real option picks. */
-  onWsTableChange(event: { originalEvent?: Event; value?: unknown }): void {
+  onTableChange(event: { originalEvent?: Event; value?: unknown }): void {
     // Typing in the editable input also fires onChange (per keystroke) — the form control already
     // tracks the text, and a half-typed name must not adopt another table's key field / mode.
     if (event.originalEvent?.type === 'input') return;
     if (typeof event.value === 'string' && event.value) this.applyTableSuggestions(event.value);
   }
 
-  /** Adopt the chosen table plus the server's suggested key field / mode. */
+  /** Adopt the chosen table plus the server's suggested key field / mode (REST stays snapshot-only). */
   private applyTableSuggestions(name: string): void {
     this.form.patchValue({ topic: name });
-    const table = this.wsTables()?.find((t) => t.name === name);
+    const table = this.tables()?.find((t) => t.name === name);
     if (!table) return;
     if (table.keyField) this.form.patchValue({ keyField: table.keyField });
-    if (table.mode && table.mode in MODE_LABELS) this.form.patchValue({ mode: table.mode as BlotterMode });
+    if (this.transport !== 'rest' && table.mode && table.mode in MODE_LABELS) {
+      this.form.patchValue({ mode: table.mode as BlotterMode });
+    }
   }
 
   canSave(): boolean {
     const v = this.form.getRawValue();
-    if (!v.name || !v.topic) return false;
+    if (!v.name) return false;
+    // REST may leave the table blank — the URL itself can be the rows endpoint.
+    if (!v.topic && v.transport !== 'rest') return false;
     if (v.mode !== 'append' && !v.keyField) return false;
     switch (v.transport) {
       case 'amps':
@@ -237,6 +274,8 @@ export class AdHocSourceDialogComponent {
         return !!(v.hostUrl && v.vpnName && v.userName);
       case 'websocket':
         return !!v.wsUrl;
+      case 'rest':
+        return !!v.restUrl;
       default:
         return false;
     }
@@ -255,7 +294,8 @@ export class AdHocSourceDialogComponent {
       columnMode: v.columnMode,
       ...(v.transport === 'amps' && v.filter ? { filter: v.filter } : {}),
       ...(v.keyField ? { keyField: v.keyField } : {}),
-      ...(v.conflationMs != null ? { conflationMs: v.conflationMs } : {}),
+      // Snapshot-only REST has no stream to conflate — drop a value left over from another transport.
+      ...(v.conflationMs != null && v.transport !== 'rest' ? { conflationMs: v.conflationMs } : {}),
       ...(v.mode === 'append' && v.maxRows != null ? { maxRows: v.maxRows } : {}),
       ...(v.expandArrays === false ? { expandArrays: false } : {}),
     };
@@ -305,6 +345,8 @@ export class AdHocSourceDialogComponent {
         };
       case 'websocket':
         return { transport: 'websocket', url: v.wsUrl };
+      case 'rest':
+        return { transport: 'rest', url: v.restUrl };
     }
   }
 
@@ -333,6 +375,7 @@ export class AdHocSourceDialogComponent {
       userName: c.transport === 'solace' ? c.userName : '',
       password: c.transport === 'solace' ? c.password : '',
       wsUrl: c.transport === 'websocket' ? c.url : '',
+      restUrl: c.transport === 'rest' ? c.url : '',
     });
   }
 }

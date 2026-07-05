@@ -14,11 +14,21 @@
     <div class="adhoc-form__grid">
       <div class="adhoc-form__row">
         <span class="adhoc-form__label">Transport</span>
-        <p-select formControlName="transport" [options]="transportOptions" optionLabel="label" optionValue="value" />
+        <p-select
+          formControlName="transport"
+          [options]="transportOptions"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="onTransportChange($event.value)"
+        />
       </div>
       <div class="adhoc-form__row">
         <span class="adhoc-form__label">Behavior</span>
-        <p-select formControlName="mode" [options]="modeOptions" optionLabel="label" optionValue="value" />
+        @if (transport !== 'rest') {
+          <p-select formControlName="mode" [options]="modeOptions" optionLabel="label" optionValue="value" />
+        } @else {
+          <span class="adhoc-form__hint">Snapshot only — refresh manually from the blotter toolbar.</span>
+        }
       </div>
       <div class="adhoc-form__row">
         <span class="adhoc-form__label">Category</span>
@@ -57,16 +67,40 @@
               label="Load tables"
               icon="pi pi-list"
               severity="secondary"
-              [loading]="wsDiscovering()"
+              [loading]="discovering()"
               [disabled]="!form.controls.wsUrl.value"
               (onClick)="discoverTables()"
             />
           </div>
-          @if (wsDiscoverError(); as err) {
+          @if (discoverError(); as err) {
             <span class="adhoc-form__error">{{ err }}</span>
           } @else {
             <span class="adhoc-form__hint">
               The server announces its tables on connect — load them and pick one below.
+            </span>
+          }
+        </div>
+      }
+      @case ('rest') {
+        <div class="adhoc-form__row">
+          <span class="adhoc-form__label">REST URL</span>
+          <div class="adhoc-form__inline">
+            <input pInputText formControlName="restUrl" placeholder="http://localhost:3000/prism/tables" />
+            <p-button
+              label="Load tables"
+              icon="pi pi-list"
+              severity="secondary"
+              [loading]="discovering()"
+              [disabled]="!form.controls.restUrl.value"
+              (onClick)="discoverTables()"
+            />
+          </div>
+          @if (discoverError(); as err) {
+            <span class="adhoc-form__error">{{ err }}</span>
+          } @else {
+            <span class="adhoc-form__hint">
+              GET the URL for the table catalog; rows come from <code>&lt;url&gt;/&lt;table&gt;</code> as a
+              JSON array. Leave the table blank if the URL itself returns the rows.
             </span>
           }
         </div>
@@ -113,14 +147,14 @@
     }
 
     <div class="adhoc-form__row">
-      @if (transport === 'websocket') {
-        <span class="adhoc-form__label">Table</span>
+      @if (transport === 'websocket' || transport === 'rest') {
+        <span class="adhoc-form__label">{{ transport === 'rest' ? 'Table (optional)' : 'Table' }}</span>
         <p-select
           formControlName="topic"
-          [options]="wsTableNames()"
+          [options]="tableNames()"
           [editable]="true"
           placeholder="Load tables or type a table name"
-          (onChange)="onWsTableChange($event)"
+          (onChange)="onTableChange($event)"
         />
       } @else {
         <span class="adhoc-form__label">{{ transport === 'amps' ? 'Topic' : 'Subject / topic' }}</span>
@@ -128,8 +162,8 @@
       }
     </div>
 
-    @if (transport !== 'websocket') {
-      <!-- WebSocket table sources always expand arrays — there they are protocol framing. -->
+    @if (transport !== 'websocket' && transport !== 'rest') {
+      <!-- WebSocket/REST table sources always expand arrays — there they are protocol framing. -->
       <div class="adhoc-form__row adhoc-form__check">
         <p-checkbox formControlName="expandArrays" [binary]="true" inputId="expandArrays" />
         <label for="expandArrays" class="adhoc-form__check-label">
@@ -154,10 +188,13 @@
           <span class="adhoc-form__label">Key field</span>
           <input pInputText formControlName="keyField" placeholder="e.g. symbol" />
         </div>
-        <div class="adhoc-form__row">
-          <span class="adhoc-form__label">Conflation (ms, optional)</span>
-          <p-inputnumber formControlName="conflationMs" [min]="0" />
-        </div>
+        @if (transport !== 'rest') {
+          <!-- No stream to conflate for snapshot-only REST. -->
+          <div class="adhoc-form__row">
+            <span class="adhoc-form__label">Conflation (ms, optional)</span>
+            <p-inputnumber formControlName="conflationMs" [min]="0" />
+          </div>
+        }
       }
       @if (isAppend) {
         <div class="adhoc-form__row">

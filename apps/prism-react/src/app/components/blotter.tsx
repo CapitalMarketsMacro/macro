@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronDown, Database, Plus, RefreshCw, Square } from 'lucide-react';
+import { ChevronDown, Database, Plus, RefreshCw, RotateCw, Square } from 'lucide-react';
 import type { ColDef, GetRowIdParams, GridOptions } from 'ag-grid-community';
 import { MacroReactGrid, type MacroReactGridRef } from '@macro/macro-react-grid';
 import type { ColumnFormatMap } from '@macro/macro-grid-format';
@@ -209,7 +209,8 @@ export function Blotter() {
         <div className="flex items-center gap-3">
           <Badge variant={statusVariant}>{feedState.status}</Badge>
           <span className="text-sm opacity-70">{feedState.rowCount} rows</span>
-          <span className="text-sm opacity-70">{feedState.msgsPerSec} msg/s</span>
+          {/* Snapshot-only REST has no stream — a frozen "0 msg/s" would read like a dead feed. */}
+          {source.transport !== 'rest' && <span className="text-sm opacity-70">{feedState.msgsPerSec} msg/s</span>}
         </div>
 
         <div className="ml-auto flex items-center gap-2 flex-wrap">
@@ -224,6 +225,15 @@ export function Blotter() {
               </button>
             ))}
           </div>
+          {source.transport === 'rest' && (
+            <Button
+              size="sm"
+              disabled={feedState.status !== 'live' && feedState.status !== 'error'}
+              onClick={() => void feedRef.current?.refresh()}
+            >
+              <RotateCw className="size-4" /> Refresh
+            </Button>
+          )}
           <Button variant="ghost" size="sm" onClick={reconnect}>
             <RefreshCw className="size-4" /> Reconnect
           </Button>

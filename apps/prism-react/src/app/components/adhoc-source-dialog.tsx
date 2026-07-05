@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   MODE_LABELS,
   TRANSPORT_LABELS,
+  discoverRestTables,
   discoverWsTables,
   type BlotterConnection,
   type BlotterMode,
@@ -40,6 +41,7 @@ interface FormState {
   userName: string;
   password: string;
   wsUrl: string;
+  restUrl: string;
 }
 
 const EMPTY: FormState = {
@@ -65,6 +67,7 @@ const EMPTY: FormState = {
   userName: '',
   password: '',
   wsUrl: '',
+  restUrl: '',
 };
 
 function fromSource(s: BlotterSource): FormState {
@@ -93,6 +96,7 @@ function fromSource(s: BlotterSource): FormState {
     userName: c.transport === 'solace' ? c.userName : '',
     password: c.transport === 'solace' ? c.password : '',
     wsUrl: c.transport === 'websocket' ? c.url : '',
+    restUrl: c.transport === 'rest' ? c.url : '',
   };
 }
 
@@ -106,10 +110,10 @@ export interface AdHocSourceDialogProps {
 export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHocSourceDialogProps) {
   const store = useDataSourceStore();
   const [form, setForm] = useState<FormState>(EMPTY);
-  /** Tables announced by a WebSocket table server (null until discovery has run). */
-  const [wsTables, setWsTables] = useState<WsTableInfo[] | null>(null);
-  const [wsDiscovering, setWsDiscovering] = useState(false);
-  const [wsDiscoverError, setWsDiscoverError] = useState<string | null>(null);
+  /** Tables announced by a WebSocket/REST table server (null until discovery has run). */
+  const [tables, setTables] = useState<WsTableInfo[] | null>(null);
+  const [discovering, setDiscovering] = useState(false);
+  const [discoverError, setDiscoverError] = useState<string | null>(null);
   /** Bumped per dialog session / URL change so a stale in-flight discovery can't mutate a newer one. */
   const discoverSeq = useRef(0);
 
@@ -120,63 +124,92 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
       const editing = source && source.origin === 'adhoc';
       discoverSeq.current++; // invalidate any in-flight discovery from a previous dialog session
       setForm(source ? (editing ? fromSource(source) : { ...fromSource(source), name: `${source.name} (copy)` }) : EMPTY);
-      setWsDiscovering(false);
-      setWsDiscoverError(null);
-      // When opening from an existing WebSocket source, seed the table list with its saved table
-      // so the quick-picks show it before (or without) re-discovery.
-      setWsTables(source?.transport === 'websocket' && source.topic ? [{ name: source.topic }] : null);
+      setDiscovering(false);
+      setDiscoverError(null);
+      // When opening from an existing WebSocket/REST source, seed the table list with its saved
+      // table so the quick-picks show it before (or without) re-discovery.
+      setTables(
+        (source?.transport === 'websocket' || source?.transport === 'rest') && source.topic
+          ? [{ name: source.topic }]
+          : null,
+      );
     }
   }, [open, source]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }));
 
-  /** Tables discovered for one URL are meaningless for another — drop them when the URL changes. */
-  const setWsUrl = (url: string) => {
-    discoverSeq.current++;
-    set('wsUrl', url);
-    setWsTables(null);
-    setWsDiscoverError(null);
+  /** 'table' transports pick a table by name; 'subject' transports subscribe to broker subjects. */
+  const family = (t: TransportKind) => (t === 'websocket' || t === 'rest' ? 'table' : 'subject');
+
+  /** User switched transport: reset discovery, drop cross-family topics, pin REST to snapshot-only. */
+  const setTransport = (t: TransportKind) => {
+    discoverSeq.current++; // discovered tables belong to the previous transport's endpoint
+    setTables(null);
+    setDiscoverError(null);
+    setForm((f) => ({
+      ...f,
+      transport: t,
+      // A broker subject is not a table name (and vice versa) — don't carry it across.
+      ...(family(f.transport) !== family(t) ? { topic: '' } : {}),
+      // REST is snapshot-only — pin the behavior so append/streaming can't be picked.
+      ...(t === 'rest' ? { mode: 'snapshot-update' as BlotterMode } : {}),
+    }));
   };
 
-  /** Adopt the chosen table plus the server's suggested key field / mode. */
-  const applyTable = (name: string, tables: WsTableInfo[] | null) => {
-    const table = tables?.find((t) => t.name === name);
+  /** Tables discovered for one URL are meaningless for another — drop them when the URL changes. */
+  const setDiscoveryUrl = (key: 'wsUrl' | 'restUrl', url: string) => {
+    discoverSeq.current++;
+    set(key, url);
+    setTables(null);
+    setDiscoverError(null);
+  };
+
+  /** Adopt the chosen table plus the server's suggested key field / mode (REST stays snapshot-only). */
+  const applyTable = (name: string, list: WsTableInfo[] | null) => {
+    const table = list?.find((t) => t.name === name);
     setForm((f) => ({
       ...f,
       topic: name,
       ...(table?.keyField ? { keyField: table.keyField } : {}),
-      ...(table?.mode && table.mode in MODE_LABELS ? { mode: table.mode as BlotterMode } : {}),
+      ...(f.transport !== 'rest' && table?.mode && table.mode in MODE_LABELS
+        ? { mode: table.mode as BlotterMode }
+        : {}),
     }));
   };
 
-  /** Connect to the WebSocket URL, read the announced tables, and populate the table quick-picks. */
+  /** Contact the WebSocket/REST endpoint, read the announced tables, and populate the quick-picks. */
   const discoverTables = async () => {
-    const url = form.wsUrl.trim();
-    if (!url || wsDiscovering) return;
+    const isRest = form.transport === 'rest';
+    const url = (isRest ? form.restUrl : form.wsUrl).trim();
+    if (!url || discovering) return;
     const seq = ++discoverSeq.current;
-    setWsDiscovering(true);
-    setWsDiscoverError(null);
+    setDiscovering(true);
+    setDiscoverError(null);
     try {
-      const tables = (await discoverWsTables(url)).filter((t) => typeof t.name === 'string' && t.name.length > 0);
+      const found = (await (isRest ? discoverRestTables(url) : discoverWsTables(url))).filter(
+        (t) => typeof t.name === 'string' && t.name.length > 0,
+      );
       if (seq !== discoverSeq.current) return; // dialog re-opened / URL changed while in flight
-      setWsTables(tables);
+      setTables(found);
       // Auto-pick the first table only when none is set — never clobber a chosen/typed table
       // (functional update: the topic may have been typed while discovery was in flight).
       setForm((f) => {
-        if (!tables.length || f.topic) return f;
-        const t0 = tables[0];
+        if (!found.length || f.topic) return f;
+        const t0 = found[0];
         return {
           ...f,
           topic: t0.name,
           ...(t0.keyField ? { keyField: t0.keyField } : {}),
-          ...(t0.mode && t0.mode in MODE_LABELS ? { mode: t0.mode as BlotterMode } : {}),
+          ...(f.transport !== 'rest' && t0.mode && t0.mode in MODE_LABELS
+            ? { mode: t0.mode as BlotterMode }
+            : {}),
         };
       });
     } catch (err) {
       if (seq !== discoverSeq.current) return;
-      setWsDiscoverError(err instanceof Error ? err.message : String(err));
+      setDiscoverError(err instanceof Error ? err.message : String(err));
     } finally {
-      if (seq === discoverSeq.current) setWsDiscovering(false);
+      if (seq === discoverSeq.current) setDiscovering(false);
     }
   };
 
@@ -184,7 +217,9 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
   const num = (s: string): number | undefined => (s.trim() === '' ? undefined : Number(s));
 
   const canSave = (): boolean => {
-    if (!form.name || !form.topic) return false;
+    if (!form.name) return false;
+    // REST may leave the table blank — the URL itself can be the rows endpoint.
+    if (!form.topic && form.transport !== 'rest') return false;
     if (form.mode !== 'append' && !form.keyField) return false;
     switch (form.transport) {
       case 'amps':
@@ -196,6 +231,8 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
         return !!(form.hostUrl && form.vpnName && form.userName);
       case 'websocket':
         return !!form.wsUrl;
+      case 'rest':
+        return !!form.restUrl;
       default:
         return false;
     }
@@ -223,6 +260,8 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
         return { transport: 'solace', hostUrl: form.hostUrl, vpnName: form.vpnName, userName: form.userName, password: form.password };
       case 'websocket':
         return { transport: 'websocket', url: form.wsUrl };
+      case 'rest':
+        return { transport: 'rest', url: form.restUrl };
     }
   };
 
@@ -238,7 +277,8 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
       columnMode: form.columnMode,
       ...(form.transport === 'amps' && form.filter ? { filter: form.filter } : {}),
       ...(form.keyField ? { keyField: form.keyField } : {}),
-      ...(num(form.conflationMs) != null ? { conflationMs: num(form.conflationMs) } : {}),
+      // Snapshot-only REST has no stream to conflate — drop a value left over from another transport.
+      ...(num(form.conflationMs) != null && form.transport !== 'rest' ? { conflationMs: num(form.conflationMs) } : {}),
       ...(isAppend && num(form.maxRows) != null ? { maxRows: num(form.maxRows) } : {}),
       ...(form.expandArrays === false ? { expandArrays: false } : {}),
     };
@@ -267,7 +307,7 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Transport">
-              <Select value={form.transport} onValueChange={(v) => set('transport', v as TransportKind)}>
+              <Select value={form.transport} onValueChange={(v) => setTransport(v as TransportKind)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -281,18 +321,24 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
               </Select>
             </Field>
             <Field label="Behavior">
-              <Select value={form.mode} onValueChange={(v) => set('mode', v as BlotterMode)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(MODE_LABELS) as BlotterMode[]).map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {MODE_LABELS[m]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {form.transport !== 'rest' ? (
+                <Select value={form.mode} onValueChange={(v) => set('mode', v as BlotterMode)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(MODE_LABELS) as BlotterMode[]).map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {MODE_LABELS[m]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <span className="text-xs opacity-60 pt-2">
+                  Snapshot only — refresh manually from the blotter toolbar.
+                </span>
+              )}
             </Field>
             <Field label="Category">
               <Input value={form.category} onChange={(e) => set('category', e.target.value)} placeholder="Custom" />
@@ -365,15 +411,15 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
                 <Input
                   className="flex-1"
                   value={form.wsUrl}
-                  onChange={(e) => setWsUrl(e.target.value)}
+                  onChange={(e) => setDiscoveryUrl('wsUrl', e.target.value)}
                   placeholder="ws://localhost:3000/prism"
                 />
-                <Button type="button" variant="secondary" disabled={!form.wsUrl || wsDiscovering} onClick={discoverTables}>
-                  {wsDiscovering ? 'Loading…' : 'Load tables'}
+                <Button type="button" variant="secondary" disabled={!form.wsUrl || discovering} onClick={discoverTables}>
+                  {discovering ? 'Loading…' : 'Load tables'}
                 </Button>
               </div>
-              {wsDiscoverError ? (
-                <span className="text-xs text-destructive">{wsDiscoverError}</span>
+              {discoverError ? (
+                <span className="text-xs text-destructive">{discoverError}</span>
               ) : (
                 <span className="text-xs opacity-60">
                   The server announces its tables on connect — load them and pick one below.
@@ -382,16 +428,40 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
             </Field>
           )}
 
-          {form.transport === 'websocket' ? (
-            <Field label="Table">
+          {form.transport === 'rest' && (
+            <Field label="REST URL">
+              <div className="flex gap-2">
+                <Input
+                  className="flex-1"
+                  value={form.restUrl}
+                  onChange={(e) => setDiscoveryUrl('restUrl', e.target.value)}
+                  placeholder="http://localhost:3000/prism/tables"
+                />
+                <Button type="button" variant="secondary" disabled={!form.restUrl || discovering} onClick={discoverTables}>
+                  {discovering ? 'Loading…' : 'Load tables'}
+                </Button>
+              </div>
+              {discoverError ? (
+                <span className="text-xs text-destructive">{discoverError}</span>
+              ) : (
+                <span className="text-xs opacity-60">
+                  GET the URL for the table catalog; rows come from &lt;url&gt;/&lt;table&gt; as a JSON array.
+                  Leave the table blank if the URL itself returns the rows.
+                </span>
+              )}
+            </Field>
+          )}
+
+          {form.transport === 'websocket' || form.transport === 'rest' ? (
+            <Field label={form.transport === 'rest' ? 'Table (optional)' : 'Table'}>
               <Input
                 value={form.topic}
                 onChange={(e) => set('topic', e.target.value)}
-                placeholder={wsTables?.length ? 'Pick a table below or type a name' : 'Load tables or type a table name'}
+                placeholder={tables?.length ? 'Pick a table below or type a name' : 'Load tables or type a table name'}
               />
-              {wsTables?.length ? (
+              {tables?.length ? (
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {wsTables
+                  {tables
                     .filter((t) => typeof t.name === 'string' && t.name.length > 0)
                     .map((t) => (
                       <Button
@@ -400,7 +470,7 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
                         size="sm"
                         variant={form.topic === t.name ? 'default' : 'outline'}
                         title={t.description}
-                        onClick={() => applyTable(t.name, wsTables)}
+                        onClick={() => applyTable(t.name, tables)}
                       >
                         {t.title ? `${t.title} (${t.name})` : t.name}
                       </Button>
@@ -414,8 +484,8 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
             </Field>
           )}
 
-          {/* WebSocket table sources always expand arrays — there they are protocol framing. */}
-          {form.transport !== 'websocket' && (
+          {/* WebSocket/REST table sources always expand arrays — there they are protocol framing. */}
+          {form.transport !== 'websocket' && form.transport !== 'rest' && (
             <label className="flex items-start gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -444,9 +514,12 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
                 <Field label="Key field">
                   <Input value={form.keyField} onChange={(e) => set('keyField', e.target.value)} placeholder="e.g. symbol" />
                 </Field>
-                <Field label="Conflation (ms, optional)">
-                  <Input type="number" value={form.conflationMs} onChange={(e) => set('conflationMs', e.target.value)} />
-                </Field>
+                {/* No stream to conflate for snapshot-only REST. */}
+                {form.transport !== 'rest' && (
+                  <Field label="Conflation (ms, optional)">
+                    <Input type="number" value={form.conflationMs} onChange={(e) => set('conflationMs', e.target.value)} />
+                  </Field>
+                )}
               </>
             )}
             {isAppend && (

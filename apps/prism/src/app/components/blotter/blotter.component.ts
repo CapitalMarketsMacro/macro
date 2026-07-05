@@ -183,6 +183,11 @@ export class BlotterComponent implements OnDestroy {
     this.feed?.stop();
   }
 
+  /** Snapshot-only REST sources: re-fetch and diff the snapshot into the grid in place. */
+  refreshSnapshot(): void {
+    void this.feed?.refresh();
+  }
+
   // ── source picker ──
 
   /** Switch this blotter instance to another source (drives the URL so it persists in layouts). */

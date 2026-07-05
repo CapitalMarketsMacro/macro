@@ -320,7 +320,7 @@
       "appId": "prism-blotter",
       "name": "prism-blotter",
       "title": "Prism — Blotter as a Service",
-      "description": "Pick a Capital Markets data source (AMPS / NATS / JetStream / Solace / WebSocket) or define an ad-hoc one; snapshot + real-time AG Grid blotter.",
+      "description": "Pick a Capital Markets data source (AMPS / NATS / JetStream / Solace / WebSocket / REST) or define an ad-hoc one; snapshot + real-time AG Grid blotter.",
       "manifest": "http://localhost:4202/local/prism.fin.json",
       "manifestType": "view",
       "icons": [
@@ -347,7 +347,7 @@
       "appId": "prism-react-blotter",
       "name": "prism-react-blotter",
       "title": "Prism Blotter (React)",
-      "description": "React build of Prism — pick a Capital Markets data source (AMPS / NATS / JetStream / Solace / WebSocket) or define an ad-hoc one; snapshot + real-time AG Grid blotter.",
+      "description": "React build of Prism — pick a Capital Markets data source (AMPS / NATS / JetStream / Solace / WebSocket / REST) or define an ad-hoc one; snapshot + real-time AG Grid blotter.",
       "manifest": "http://localhost:4202/local/prism-react.fin.json",
       "manifestType": "view",
       "icons": [

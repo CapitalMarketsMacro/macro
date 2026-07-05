@@ -15,7 +15,7 @@ NX 23 monorepo for **Capital Markets desktop applications**. Combines Angular 21
 | prism                  | 4204 | Angular 21 (zoneful)  | `npm run start:prism`                    |
 | prism-react            | 4205 | React 19 + Vite 8     | `npm run start:prism-react`              |
 | capital-markets-themes | 4206 | React 19 + Vite 8     | `npm run start:capital-markets-themes`   |
-| market-data-server     | 3000 | Node.js WebSocket     | `npx nx serve market-data-server`        |
+| market-data-server     | 3000 | Node.js WebSocket + REST | `npm run start:market-data-server`    |
 | Core four apps         | -    | -                     | `npm start` (workspace, angular, react, fdc3) |
 
 Launch OpenFin: `npm run launch` (after workspace is serving on 4202)
@@ -133,6 +133,7 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 - FX endpoint: `ws://localhost:3000/marketData/fx` (15 G10 pairs, 1-sec ticks)
 - Treasury endpoint: `ws://localhost:3000/marketData/tsy` (11 securities, 1-sec ticks)
 - Prism tables endpoint: `ws://localhost:3000/prism` — JSON table protocol (on-connect `tables` list → `subscribe` → `snapshot` array → `update` row/rows) consumed by the Prism blotters' **WebSocket** source (`WsTableClient` in `@macro/prism-core`); tables `ust_market_data` (keyed by `symbol`) + `ust_trades` (append)
+- Prism REST mirror: `http://localhost:3000/prism/tables` (catalog) + `/prism/tables/<name>` (rows as a bare JSON array, CORS on) — consumed by the blotters' snapshot-only **REST** source (`RestSnapshotClient` in `@macro/prism-core`; manual refresh via `BlotterFeed.refresh()` diffs the new snapshot in place)
 - For high-frequency data, use `ConflationSubject` from `@macro/utils` (double-buffer algorithm)
 - Angular grid updates via `updateRows$` Subject on `MacroAngularGrid`
 - React grid updates via `ref.current?.updateRows$` Subject on `MacroReactGridRef`

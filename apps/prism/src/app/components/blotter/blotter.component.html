@@ -11,7 +11,10 @@
       <div class="blotter__status">
         <p-tag [value]="status" [severity]="statusSeverity()" />
         <span class="blotter__metric">{{ rowCount }} rows</span>
-        <span class="blotter__metric">{{ msgsPerSec }} msg/s</span>
+        @if (src.transport !== 'rest') {
+          <!-- Snapshot-only REST has no stream — a frozen "0 msg/s" would read like a dead feed. -->
+          <span class="blotter__metric">{{ msgsPerSec }} msg/s</span>
+        }
       </div>
 
       <div class="blotter__actions">
@@ -23,6 +26,15 @@
           [ngModel]="columnMode()"
           (ngModelChange)="setColumnMode($event)"
         />
+        @if (src.transport === 'rest') {
+          <p-button
+            icon="pi pi-sync"
+            label="Refresh"
+            size="small"
+            [disabled]="status !== 'live' && status !== 'error'"
+            (onClick)="refreshSnapshot()"
+          />
+        }
         <p-button icon="pi pi-refresh" label="Reconnect" [text]="true" size="small" (onClick)="reconnect()" />
         <p-button
           icon="pi pi-stop"
