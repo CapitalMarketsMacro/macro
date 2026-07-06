@@ -1,4 +1,4 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { InstrumentViewerComponent } from './instrument-viewer.component';
 import { Subject, of } from 'rxjs';
 import { filter } from 'rxjs/operators';
@@ -57,24 +57,23 @@ describe('InstrumentViewerComponent', () => {
   it('should start with no current instrument', () => {
     const fixture = TestBed.createComponent(InstrumentViewerComponent);
     const component = fixture.componentInstance;
-    expect(component.currentInstrument).toBeNull();
+    expect(component.currentInstrument()).toBeNull();
   });
 
   it('should start with empty history', () => {
     const fixture = TestBed.createComponent(InstrumentViewerComponent);
     const component = fixture.componentInstance;
-    expect(component.contextHistory).toEqual([]);
+    expect(component.contextHistory()).toEqual([]);
   });
 
-  it('should show empty state when no instrument received', fakeAsync(() => {
+  it('should show empty state when no instrument received', async () => {
     const fixture = TestBed.createComponent(InstrumentViewerComponent);
     fixture.detectChanges();
-    tick();
-    fixture.detectChanges();
+    await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.empty-state')).toBeTruthy();
     expect(compiled.querySelector('.instrument-card')).toBeNull();
-  }));
+  });
 
   it('should extract base currency from ticker', () => {
     const fixture = TestBed.createComponent(InstrumentViewerComponent);
@@ -91,21 +90,20 @@ describe('InstrumentViewerComponent', () => {
   it('should return channel display name capitalized', () => {
     const fixture = TestBed.createComponent(InstrumentViewerComponent);
     const component = fixture.componentInstance;
-    component.channelColor = 'green';
+    component.channelColor.set('green');
     expect(component.getChannelDisplayName()).toBe('Green');
   });
 
   it('should return None when no channel', () => {
     const fixture = TestBed.createComponent(InstrumentViewerComponent);
     const component = fixture.componentInstance;
-    component.channelColor = null;
+    component.channelColor.set(null);
     expect(component.getChannelDisplayName()).toBe('None');
   });
 
-  it('should update current instrument when context is received', fakeAsync(() => {
+  it('should update current instrument when context is received', () => {
     const fixture = TestBed.createComponent(InstrumentViewerComponent);
     fixture.detectChanges();
-    tick(); // resolve registerContextListener promise
 
     contextSubject.next({
       type: 'fdc3.instrument',
@@ -114,14 +112,13 @@ describe('InstrumentViewerComponent', () => {
     });
 
     const component = fixture.componentInstance;
-    expect(component.currentInstrument).toBeTruthy();
-    expect(component.currentInstrument!.id.ticker).toBe('EURUSD');
-  }));
+    expect(component.currentInstrument()).toBeTruthy();
+    expect(component.currentInstrument()!.id.ticker).toBe('EURUSD');
+  });
 
-  it('should add to history when context is received', fakeAsync(() => {
+  it('should add to history when context is received', () => {
     const fixture = TestBed.createComponent(InstrumentViewerComponent);
     fixture.detectChanges();
-    tick();
 
     contextSubject.next({
       type: 'fdc3.instrument',
@@ -130,24 +127,23 @@ describe('InstrumentViewerComponent', () => {
     });
 
     const component = fixture.componentInstance;
-    expect(component.contextHistory.length).toBe(1);
-    expect(component.contextHistory[0].instrument.id.ticker).toBe('GBPUSD');
-  }));
+    expect(component.contextHistory().length).toBe(1);
+    expect(component.contextHistory()[0].instrument.id.ticker).toBe('GBPUSD');
+  });
 
-  it('should show instrument card after receiving context', fakeAsync(() => {
+  it('should show instrument card after receiving context', async () => {
     const fixture = TestBed.createComponent(InstrumentViewerComponent);
     fixture.detectChanges();
-    tick();
 
     contextSubject.next({
       type: 'fdc3.instrument',
       id: { ticker: 'USDJPY' },
       name: 'USD/JPY',
     });
-    fixture.detectChanges();
+    await fixture.whenStable();
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.instrument-card')).toBeTruthy();
     expect(compiled.querySelector('.empty-state')).toBeNull();
-  }));
+  });
 });

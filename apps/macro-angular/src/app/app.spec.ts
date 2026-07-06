@@ -103,7 +103,7 @@ describe('App (root component)', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
-    const items = fixture.componentInstance.menuItems;
+    const items = fixture.componentInstance.menuItems();
     expect(items).toHaveLength(3);
     expect(items[0].label).toBe('FX Market Data');
     expect(items[0].routerLink).toBe('/fx-market-data');

@@ -1,6 +1,6 @@
 <div style="display: flex; flex-direction: column; height: 100vh;">
   <div style="border-bottom: 1px solid var(--border, #e5e7eb);">
-    <p-menubar [model]="menuItems" styleClass="border-none">
+    <p-menubar [model]="menuItems()" styleClass="border-none">
       <ng-template #end>
         <button
           (click)="toggleTheme()"

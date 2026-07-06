@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { Logger, LogLevel } from '@macro/logger';
 import { Menubar } from 'primeng/menubar';
@@ -21,8 +21,9 @@ export class App implements OnInit {
   // Shared macro ThemeService (default 'macro' theme; syncs system + OpenFin).
   protected readonly theme = inject(ThemeService);
 
-  // Menu items for PrimeNG MenuBar
-  public menuItems: MenuItem[] = [];
+  // Menu items for PrimeNG MenuBar. Signal + fresh item objects per update: the router-events
+  // callback schedules no CD under zoneless, and the OnPush menubar needs a new reference anyway.
+  public menuItems = signal<MenuItem[]>([]);
 
   /** Current dark-mode state from the shared macro ThemeService. */
   get isDark(): boolean {
@@ -113,7 +114,7 @@ export class App implements OnInit {
    * Initialize menu items for PrimeNG MenuBar
    */
   private initializeMenuItems(): void {
-    this.menuItems = [
+    this.menuItems.set([
       {
         label: 'FX Market Data',
         icon: 'pi pi-chart-line',
@@ -129,18 +130,20 @@ export class App implements OnInit {
         icon: 'pi pi-chart-pie',
         routerLink: '/risk-pnl',
       },
-    ];
+    ]);
     
     // Subscribe to route changes to update active menu item
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
         const currentUrl = this.router.url;
-        this.menuItems.forEach(item => {
-          if (item.routerLink) {
-            item.styleClass = currentUrl === item.routerLink ? 'active-menu-item' : '';
-          }
-        });
+        this.menuItems.update((items) =>
+          items.map((item) =>
+            item.routerLink
+              ? { ...item, styleClass: currentUrl === item.routerLink ? 'active-menu-item' : '' }
+              : item
+          )
+        );
       });
   }
 }

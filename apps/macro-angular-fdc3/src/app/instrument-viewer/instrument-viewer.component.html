@@ -12,29 +12,29 @@
   </div>
 
   <!-- Current Instrument Card -->
-  @if (currentInstrument) {
+  @if (currentInstrument(); as inst) {
     <div class="instrument-card">
       <div class="instrument-header">
         <div class="ticker-display">
-          <span class="base-ccy">{{ getBase(currentInstrument.id.ticker) }}</span>
+          <span class="base-ccy">{{ getBase(inst.id.ticker) }}</span>
           <span class="separator">/</span>
-          <span class="quote-ccy">{{ getQuote(currentInstrument.id.ticker) }}</span>
+          <span class="quote-ccy">{{ getQuote(inst.id.ticker) }}</span>
         </div>
-        @if (currentInstrument.name) {
-          <div class="instrument-name">{{ currentInstrument.name }}</div>
+        @if (inst.name) {
+          <div class="instrument-name">{{ inst.name }}</div>
         }
       </div>
 
       <div class="instrument-details">
         <div class="detail-row">
           <span class="detail-label">Type</span>
-          <span class="detail-value">{{ currentInstrument.type }}</span>
+          <span class="detail-value">{{ inst.type }}</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Ticker</span>
-          <span class="detail-value">{{ currentInstrument.id.ticker }}</span>
+          <span class="detail-value">{{ inst.id.ticker }}</span>
         </div>
-        @for (key of currentInstrument.id | keyvalue; track key.key) {
+        @for (key of inst.id | keyvalue; track key.key) {
           @if (key.key !== 'ticker') {
             <div class="detail-row">
               <span class="detail-label">{{ key.key }}</span>
@@ -59,12 +59,12 @@
   }
 
   <!-- Context History -->
-  @if (contextHistory.length > 0) {
+  @if (contextHistory().length > 0) {
     <div class="history-section">
       <h3>Context History</h3>
       <div class="history-list">
-        @for (entry of contextHistory; track entry.receivedAt.getTime()) {
-          <div class="history-item" [class.latest]="entry === contextHistory[0]">
+        @for (entry of contextHistory(); track entry.receivedAt.getTime()) {
+          <div class="history-item" [class.latest]="$first">
             <span class="history-time">{{ formatTime(entry.receivedAt) }}</span>
             <span class="history-ticker">{{ entry.instrument.id.ticker }}</span>
             @if (entry.instrument.name) {

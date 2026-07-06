@@ -814,7 +814,7 @@ apps/rates-blotter/
 
 │   ├── app.ts                          # Root component
 
-│   ├── app.config.ts                   # provideZoneChangeDetection + router
+│   ├── app.config.ts                   # provideZonelessChangeDetection + router
 
 │   ├── app.routes.ts                   # Lazy-loaded data component
 

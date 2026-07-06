@@ -124,17 +124,17 @@ describe('TreasuryMicrostructureComponent', () => {
     const comp = createComponent();
     comp.ngOnInit();
 
-    expect(comp.tradeFrequencyOptions).toBeDefined();
-    expect(comp.tradeFrequencyOptions.series).toBeDefined();
+    expect(comp.tradeFrequencyOptions()).toBeDefined();
+    expect(comp.tradeFrequencyOptions().series).toBeDefined();
 
-    expect(comp.orderToTradeRatioOptions).toBeDefined();
-    expect(comp.orderToTradeRatioOptions.series).toBeDefined();
+    expect(comp.orderToTradeRatioOptions()).toBeDefined();
+    expect(comp.orderToTradeRatioOptions().series).toBeDefined();
 
-    expect(comp.quoteUpdateFrequencyOptions).toBeDefined();
-    expect(comp.quoteUpdateFrequencyOptions.series).toBeDefined();
+    expect(comp.quoteUpdateFrequencyOptions()).toBeDefined();
+    expect(comp.quoteUpdateFrequencyOptions().series).toBeDefined();
 
-    expect(comp.timeBetweenTradesOptions).toBeDefined();
-    expect(comp.timeBetweenTradesOptions.series).toBeDefined();
+    expect(comp.timeBetweenTradesOptions()).toBeDefined();
+    expect(comp.timeBetweenTradesOptions().series).toBeDefined();
   });
 
   // -----------------------------------------------------------------------
@@ -145,7 +145,7 @@ describe('TreasuryMicrostructureComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      const series = comp.tradeFrequencyOptions.series as any[];
+      const series = comp.tradeFrequencyOptions().series as any[];
       expect(series).toHaveLength(1);
       expect(series[0].type).toBe('bar');
       expect(series[0].xKey).toBe('timestamp');
@@ -156,7 +156,7 @@ describe('TreasuryMicrostructureComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      const series = comp.orderToTradeRatioOptions.series as any[];
+      const series = comp.orderToTradeRatioOptions().series as any[];
       expect(series).toHaveLength(1);
       expect(series[0].type).toBe('line');
       expect(series[0].yKey).toBe('orderToTradeRatio');
@@ -166,7 +166,7 @@ describe('TreasuryMicrostructureComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      const series = comp.quoteUpdateFrequencyOptions.series as any[];
+      const series = comp.quoteUpdateFrequencyOptions().series as any[];
       expect(series).toHaveLength(1);
       expect(series[0].type).toBe('line');
       expect(series[0].yKey).toBe('quoteUpdates');
@@ -176,7 +176,7 @@ describe('TreasuryMicrostructureComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      const series = comp.timeBetweenTradesOptions.series as any[];
+      const series = comp.timeBetweenTradesOptions().series as any[];
       expect(series).toHaveLength(1);
       expect(series[0].type).toBe('line');
       expect(series[0].yKey).toBe('timeBetweenTrades');
@@ -186,16 +186,16 @@ describe('TreasuryMicrostructureComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      expect(comp.tradeFrequencyOptions.animation).toEqual({
+      expect(comp.tradeFrequencyOptions().animation).toEqual({
         enabled: false,
       });
-      expect(comp.orderToTradeRatioOptions.animation).toEqual({
+      expect(comp.orderToTradeRatioOptions().animation).toEqual({
         enabled: false,
       });
-      expect(comp.quoteUpdateFrequencyOptions.animation).toEqual({
+      expect(comp.quoteUpdateFrequencyOptions().animation).toEqual({
         enabled: false,
       });
-      expect(comp.timeBetweenTradesOptions.animation).toEqual({
+      expect(comp.timeBetweenTradesOptions().animation).toEqual({
         enabled: false,
       });
     });
@@ -204,16 +204,16 @@ describe('TreasuryMicrostructureComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      expect(comp.tradeFrequencyOptions.legend).toEqual({
+      expect(comp.tradeFrequencyOptions().legend).toEqual({
         enabled: false,
       });
-      expect(comp.orderToTradeRatioOptions.legend).toEqual({
+      expect(comp.orderToTradeRatioOptions().legend).toEqual({
         enabled: false,
       });
-      expect(comp.quoteUpdateFrequencyOptions.legend).toEqual({
+      expect(comp.quoteUpdateFrequencyOptions().legend).toEqual({
         enabled: false,
       });
-      expect(comp.timeBetweenTradesOptions.legend).toEqual({
+      expect(comp.timeBetweenTradesOptions().legend).toEqual({
         enabled: false,
       });
     });
@@ -222,16 +222,16 @@ describe('TreasuryMicrostructureComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      expect(comp.tradeFrequencyOptions.title).toEqual({
+      expect(comp.tradeFrequencyOptions().title).toEqual({
         text: 'Trade Frequency per Interval',
       });
-      expect(comp.orderToTradeRatioOptions.title).toEqual({
+      expect(comp.orderToTradeRatioOptions().title).toEqual({
         text: 'Order-to-Trade Ratio',
       });
-      expect(comp.quoteUpdateFrequencyOptions.title).toEqual({
+      expect(comp.quoteUpdateFrequencyOptions().title).toEqual({
         text: 'Quote Update Frequency',
       });
-      expect(comp.timeBetweenTradesOptions.title).toEqual({
+      expect(comp.timeBetweenTradesOptions().title).toEqual({
         text: 'Time Between Trades',
       });
     });
@@ -240,16 +240,16 @@ describe('TreasuryMicrostructureComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      expect(comp.tradeFrequencyOptions.subtitle).toEqual({
+      expect(comp.tradeFrequencyOptions().subtitle).toEqual({
         text: 'Number of trades per 1-second interval',
       });
-      expect(comp.orderToTradeRatioOptions.subtitle).toEqual({
+      expect(comp.orderToTradeRatioOptions().subtitle).toEqual({
         text: 'Ratio of orders to executed trades',
       });
-      expect(comp.quoteUpdateFrequencyOptions.subtitle).toEqual({
+      expect(comp.quoteUpdateFrequencyOptions().subtitle).toEqual({
         text: 'Number of quote updates per interval',
       });
-      expect(comp.timeBetweenTradesOptions.subtitle).toEqual({
+      expect(comp.timeBetweenTradesOptions().subtitle).toEqual({
         text: 'Average time between trades (milliseconds)',
       });
     });
@@ -258,10 +258,10 @@ describe('TreasuryMicrostructureComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      expect(comp.tradeFrequencyOptions.theme).toBe('ag-default');
-      expect(comp.orderToTradeRatioOptions.theme).toBe('ag-default');
-      expect(comp.quoteUpdateFrequencyOptions.theme).toBe('ag-default');
-      expect(comp.timeBetweenTradesOptions.theme).toBe('ag-default');
+      expect(comp.tradeFrequencyOptions().theme).toBe('ag-default');
+      expect(comp.orderToTradeRatioOptions().theme).toBe('ag-default');
+      expect(comp.quoteUpdateFrequencyOptions().theme).toBe('ag-default');
+      expect(comp.timeBetweenTradesOptions().theme).toBe('ag-default');
     });
 
     it('should apply dark theme when dark mode is detected', () => {
@@ -269,10 +269,10 @@ describe('TreasuryMicrostructureComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      expect(comp.tradeFrequencyOptions.theme).toBe('ag-default-dark');
-      expect(comp.orderToTradeRatioOptions.theme).toBe('ag-default-dark');
-      expect(comp.quoteUpdateFrequencyOptions.theme).toBe('ag-default-dark');
-      expect(comp.timeBetweenTradesOptions.theme).toBe('ag-default-dark');
+      expect(comp.tradeFrequencyOptions().theme).toBe('ag-default-dark');
+      expect(comp.orderToTradeRatioOptions().theme).toBe('ag-default-dark');
+      expect(comp.quoteUpdateFrequencyOptions().theme).toBe('ag-default-dark');
+      expect(comp.timeBetweenTradesOptions().theme).toBe('ag-default-dark');
     });
   });
 
@@ -462,30 +462,30 @@ describe('TreasuryMicrostructureComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      expect(comp.tradeFrequencyOptions.data).toBeDefined();
-      expect(comp.tradeFrequencyOptions.data!.length).toBe(50);
+      expect(comp.tradeFrequencyOptions().data).toBeDefined();
+      expect(comp.tradeFrequencyOptions().data!.length).toBe(50);
 
-      expect(comp.orderToTradeRatioOptions.data).toBeDefined();
-      expect(comp.orderToTradeRatioOptions.data!.length).toBe(50);
+      expect(comp.orderToTradeRatioOptions().data).toBeDefined();
+      expect(comp.orderToTradeRatioOptions().data!.length).toBe(50);
 
-      expect(comp.quoteUpdateFrequencyOptions.data).toBeDefined();
-      expect(comp.quoteUpdateFrequencyOptions.data!.length).toBe(50);
+      expect(comp.quoteUpdateFrequencyOptions().data).toBeDefined();
+      expect(comp.quoteUpdateFrequencyOptions().data!.length).toBe(50);
 
-      expect(comp.timeBetweenTradesOptions.data).toBeDefined();
-      expect(comp.timeBetweenTradesOptions.data!.length).toBe(50);
+      expect(comp.timeBetweenTradesOptions().data).toBeDefined();
+      expect(comp.timeBetweenTradesOptions().data!.length).toBe(50);
     });
 
     it('should create new option objects (immutable update via clone)', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      const originalRef = comp.tradeFrequencyOptions;
+      const originalRef = comp.tradeFrequencyOptions();
 
       // Trigger an update cycle
       jest.advanceTimersByTime(1000);
 
       // The options object should be a new reference (clone)
-      expect(comp.tradeFrequencyOptions).not.toBe(originalRef);
+      expect(comp.tradeFrequencyOptions()).not.toBe(originalRef);
     });
   });
 
@@ -528,10 +528,10 @@ describe('TreasuryMicrostructureComponent', () => {
       (comp as any).currentTheme = 'ag-default-dark';
       (comp as any).updateChartThemes();
 
-      expect(comp.tradeFrequencyOptions.theme).toBe('ag-default-dark');
-      expect(comp.orderToTradeRatioOptions.theme).toBe('ag-default-dark');
-      expect(comp.quoteUpdateFrequencyOptions.theme).toBe('ag-default-dark');
-      expect(comp.timeBetweenTradesOptions.theme).toBe('ag-default-dark');
+      expect(comp.tradeFrequencyOptions().theme).toBe('ag-default-dark');
+      expect(comp.orderToTradeRatioOptions().theme).toBe('ag-default-dark');
+      expect(comp.quoteUpdateFrequencyOptions().theme).toBe('ag-default-dark');
+      expect(comp.timeBetweenTradesOptions().theme).toBe('ag-default-dark');
     });
 
     it('should switch back to light theme', () => {
@@ -539,12 +539,12 @@ describe('TreasuryMicrostructureComponent', () => {
       const comp = createComponent();
       comp.ngOnInit();
 
-      expect(comp.tradeFrequencyOptions.theme).toBe('ag-default-dark');
+      expect(comp.tradeFrequencyOptions().theme).toBe('ag-default-dark');
 
       (comp as any).currentTheme = 'ag-default';
       (comp as any).updateChartThemes();
 
-      expect(comp.tradeFrequencyOptions.theme).toBe('ag-default');
+      expect(comp.tradeFrequencyOptions().theme).toBe('ag-default');
     });
   });
 

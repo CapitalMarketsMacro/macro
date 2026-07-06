@@ -46,6 +46,9 @@ export class DataSourceRepository {
   }
 
   groupedByCategory(): { category: string; sources: BlotterSource[] }[] {
+    // Read the version signal so computeds built on this method (e.g. the blotter's
+    // pickerGroups) re-evaluate after ad-hoc CRUD and the async catalog load.
+    this.version();
     return this.store.groupedByCategory();
   }
 

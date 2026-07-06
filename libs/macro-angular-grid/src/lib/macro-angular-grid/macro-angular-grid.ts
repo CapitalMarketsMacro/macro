@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, PLATFORM_ID, inject } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, PLATFORM_ID, inject, signal } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import { Subject, Subscription } from 'rxjs';
 import { isPlatformBrowser, DOCUMENT } from '@angular/common';
@@ -132,10 +132,6 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
    */
   private isGridReady = false;
 
-  /**
-   * Pending initial row data to be set when grid becomes ready
-   */
-  private pendingInitialData?: unknown[];
 
   /**
    * Flag to track if initial data has been set
@@ -194,10 +190,14 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     // re-feed → re-emit → re-feed cycle freezes the grid.
     const prev = this.userCalcCols.get(colId);
     if (prev && !this.removedCalcCols.has(colId) && sameCalcSchema(prev, next)) return;
+    // Capture BEFORE recompute: adding the calc column makes effectiveColumnDefs non-empty,
+    // which would flip useAutoGen and defeat the auto-gen guard in the push below.
+    const wasAutoGen = this.useAutoGen;
     this.userCalcCols.set(colId, next);
     this.removedCalcCols.delete(colId);
     this.recomputeEffectiveColumns();
     this.formatStore.reconcile();
+    if (!wasAutoGen) this.pushEffectiveColumnDefs();
   };
 
   /** A user removed a calculated column via the dialog. */
@@ -208,9 +208,26 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     // Drop any user format on the removed calc column so it isn't persisted as a dangling
     // columnFormats entry (which would resurrect if a same-colId calc column is recreated).
     this.formatStore.clear(colId);
+    const wasAutoGen = this.useAutoGen;
     this.recomputeEffectiveColumns();
     this.formatStore.reconcile();
+    if (!wasAutoGen) this.pushEffectiveColumnDefs();
   };
+
+  /**
+   * Zoneless-safe imperative push of the re-baked defs: AG Grid event callbacks schedule no
+   * change detection, so the [columnDefs] binding won't flush on its own — apply through the
+   * API exactly like onStoreFormatsChanged does.
+   */
+  private pushEffectiveColumnDefs(): void {
+    if (this.applyingColumnDefs) return;
+    this.applyingColumnDefs = true;
+    try {
+      this.gridApi?.setGridOption('columnDefs', this.effectiveColumnDefs);
+    } finally {
+      this.applyingColumnDefs = false;
+    }
+  }
 
   // ── Calculated columns (AG Grid 36) ──
   /** Runtime-tracked user calc columns (created/edited via the dialog), keyed by colId. */
@@ -304,7 +321,8 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
    */
   public mergedGridOptions: GridOptions = {};
 
-  theme: Theme | undefined;
+  // Signal: updated from a MutationObserver callback, which schedules no CD under zoneless.
+  theme = signal<Theme | undefined>(undefined);
 
   ngOnInit(): void {
     // Bake mode: the store is a pure spec registry; we bake every format into the colDefs (one
@@ -337,7 +355,7 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
    * Update theme based on dark mode
    */
   private updateTheme(isDark: boolean): void {
-    this.theme = buildAgGridTheme(isDark);
+    this.theme.set(buildAgGridTheme(isDark));
   }
 
   /**
@@ -537,14 +555,6 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     this.isGridReady = true;
     this.logger.info('AG Grid is ready', { event });
 
-    // Set any pending initial data
-    if (this.pendingInitialData && !this.initialDataSet) {
-      // Update the rowData input property - Angular will update ag-grid via input binding
-      this.rowData = this.pendingInitialData;
-      this.initialDataSet = true;
-      this.pendingInitialData = undefined;
-    }
-
     // Apply any queued transactions
     this.flushTransactionQueue();
 
@@ -646,17 +656,17 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
-    // Update the rowData input property to keep binding in sync
-    // This will trigger Angular's change detection to update ag-grid via input binding
-    this.rowData = data;
     this.initialDataSet = true;
 
     if (this.isGridReady && this.gridApi) {
-      // Grid is ready, but we'll let the input binding handle it
-      // No need to call setGridOption since Angular will update via [rowData] binding
+      // Zoneless-safe: consumers call this from WebSocket/promise callbacks where no change
+      // detection is scheduled, so push through the grid API. Deliberately do NOT reassign
+      // this.rowData here — a later change-detection pass would re-fire the [rowData] binding
+      // with this (by then stale) seed array and revert every transaction applied since.
+      this.gridApi.setGridOption('rowData', data);
     } else {
-      // Grid not ready yet, store data to be set when ready
-      this.pendingInitialData = data;
+      // Grid not created yet: it initializes from the [rowData] binding.
+      this.rowData = data;
     }
   }
 
