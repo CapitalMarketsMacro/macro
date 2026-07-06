@@ -411,14 +411,16 @@ describe('MacroAngularGrid', () => {
       expect(component.rowData).toEqual([{ id: 1 }, { id: 2 }]);
     });
 
-    it('should not apply pending data if initial data was already set', () => {
+    it('should push initial data through the grid API when the grid is ready', () => {
       // Set initial data while grid IS ready
       const mockApi2 = createMockGridApi();
       component.onGridReady(makeGridReadyEvent(mockApi2));
       component.setInitialRowData([{ id: 1 }]);
 
-      // If onGridReady fires again (hypothetical), initialDataSet is already true
-      expect(component.rowData).toEqual([{ id: 1 }]);
+      // Imperative push only — the [rowData] binding must NOT be re-armed with the seed
+      // array (a later CD pass would force-reapply it and revert applied transactions).
+      expect(mockApi2.setGridOption).toHaveBeenCalledWith('rowData', [{ id: 1 }]);
+      expect(component.rowData).toEqual([]);
     });
   });
 
@@ -543,12 +545,14 @@ describe('MacroAngularGrid', () => {
       fixture.detectChanges();
     });
 
-    it('should set rowData immediately when grid is ready', () => {
+    it('should push rowData through the grid API when grid is ready', () => {
       const mockApi = createMockGridApi();
       component.onGridReady(makeGridReadyEvent(mockApi));
 
       component.setInitialRowData([{ id: 1 }]);
-      expect(component.rowData).toEqual([{ id: 1 }]);
+      expect(mockApi.setGridOption).toHaveBeenCalledWith('rowData', [{ id: 1 }]);
+      // The [rowData] binding must stay untouched (stale-seed revert guard).
+      expect(component.rowData).toEqual([]);
     });
 
     it('should store pending data when grid is not ready', () => {

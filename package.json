@@ -147,8 +147,7 @@
     "vaul": "^1.1.2",
     "vite": "^8.0.16",
     "ws": "^8.18.3",
-    "zod": "^4.3.6",
-    "zone.js": "~0.16.2"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@angular-devkit/core": "~21.2.16",

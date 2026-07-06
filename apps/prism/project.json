@@ -13,7 +13,7 @@
       "options": {
         "outputPath": "dist/apps/prism",
         "browser": "apps/prism/src/main.ts",
-        "polyfills": ["zone.js"],
+        "polyfills": [],
         "tsConfig": "apps/prism/tsconfig.app.json",
         "assets": [
           {

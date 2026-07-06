@@ -1,7 +1,7 @@
 <div class="macro-grid-container" #gridContainer>
   <ag-grid-angular
     [columnDefs]="gridColumnDefs"
-    [theme]="theme"
+    [theme]="theme()"
     [rowData]="rowData"
     [gridOptions]="mergedGridOptions"
     [getRowId]="getRowId"

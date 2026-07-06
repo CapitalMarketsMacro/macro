@@ -9,7 +9,7 @@ Apps run standalone in the browser during development and inside the OpenFin wor
 ## Project Structure
 \`\`\`
 apps/
-  macro-angular/        # Angular LOB app (port 4200, zoneful) — PrimeNG + AG Grid
+  macro-angular/        # Angular LOB app (port 4200, zoneless) — PrimeNG + AG Grid
   macro-react/          # React LOB app (port 4201) — Shadcn/Tailwind + AG Grid + Recharts
   macro-workspace/      # OpenFin workspace platform (port 4202, zoneless) — registers all views
   macro-angular-fdc3/   # Angular FDC3 demo app (port 4203)

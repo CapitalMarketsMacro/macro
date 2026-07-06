@@ -18,7 +18,7 @@ export function registerCreateAngularAppPrompt(server: McpServer): void {
       const port = '4204'; // 4200-4203 are taken by existing apps
 
       const text = `You are creating a new Angular LOB application called "${appName}" for ${businessDomain} in the Macro monorepo.
-It mirrors the current \`apps/macro-angular\` app: Angular 21 (zoneful), standalone
+It mirrors the current \`apps/macro-angular\` app: Angular 21 (zoneless), standalone
 components, PrimeNG (Aura), and the \`@macro/macro-design\` theme system via \`ThemeService\`.
 
 Follow these 10 steps exactly:
@@ -38,7 +38,7 @@ npx nx g @nx/angular:app apps/${appName} --name=${appName} --style=css --routing
 
 ## Step 3: Configure \`apps/${appName}/src/app/app.config.ts\`
 - Use \`providePrimeNG\` with Aura preset and \`darkModeSelector: '.dark'\`
-- Include \`provideRouter\`, \`provideAnimationsAsync\`, \`provideZoneChangeDetection\`
+- Include \`provideRouter\`, \`provideAnimationsAsync\`, \`provideZonelessChangeDetection\`
 - Include \`provideBrowserGlobalErrorListeners\`
 
 ## Step 4: Set up \`apps/${appName}/src/app/app.routes.ts\`

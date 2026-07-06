@@ -1,4 +1,13 @@
-import { ChangeDetectorRef, Component, ElementRef, OnDestroy, inject, viewChild } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Injector,
+  OnDestroy,
+  afterNextRender,
+  inject,
+  viewChild,
+} from '@angular/core';
 import type { IStatusPanelAngularComp } from 'ag-grid-angular';
 import type { GridApi, IStatusPanelParams } from 'ag-grid-community';
 
@@ -88,6 +97,7 @@ const TOGGLE_STYLES = `
 })
 export class MacroQuickFilterToggleComponent implements IStatusPanelAngularComp {
   private api!: GridApi;
+  private readonly injector = inject(Injector);
   private readonly box = viewChild<ElementRef<HTMLInputElement>>('box');
   on = false;
   text = '';
@@ -103,8 +113,9 @@ export class MacroQuickFilterToggleComponent implements IStatusPanelAngularComp 
   onToggle(event: Event): void {
     this.on = (event.target as HTMLInputElement).checked;
     if (this.on) {
-      // The input renders on the next change-detection pass — focus it then.
-      setTimeout(() => this.box()?.nativeElement.focus());
+      // Focus after the @if input has actually rendered — under zoneless CD a bare setTimeout
+      // can fire before the scheduled render, when the input doesn't exist yet.
+      afterNextRender(() => this.box()?.nativeElement.focus(), { injector: this.injector });
     } else {
       this.text = '';
       this.api.setGridOption('quickFilterText', '');

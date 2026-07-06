@@ -6,7 +6,7 @@ Two apps share one framework-free core (**`@macro/prism-core`**):
 
 | App | Stack | Dev port | Path |
 | --- | --- | --- | --- |
-| **Prism** (Angular) | Angular 21 (zoneful) + PrimeNG | **4204** | `apps/prism` |
+| **Prism** (Angular) | Angular 21 (zoneless) + PrimeNG | **4204** | `apps/prism` |
 | **Prism (React)** | React 19 + Vite + Shadcn/Radix | **4205** | `apps/prism-react` |
 
 ---

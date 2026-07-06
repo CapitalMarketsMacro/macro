@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Logger } from '@macro/logger';
 import { ContextService } from '@macro/openfin';
@@ -29,35 +29,31 @@ interface ContextHistoryEntry {
 export class InstrumentViewerComponent implements OnInit, OnDestroy {
   private logger = Logger.getLogger('InstrumentViewerComponent');
   private contextService = inject(ContextService);
-  private ngZone = inject(NgZone);
   private contextSub?: Subscription;
   private channelSub?: Subscription;
 
-  currentInstrument: InstrumentContext | null = null;
-  contextHistory: ContextHistoryEntry[] = [];
-  channelColor: string | null = null;
+  // Signals: FDC3/interop callbacks and the channel poll fire outside Angular, so only
+  // signal writes schedule change detection under zoneless.
+  currentInstrument = signal<InstrumentContext | null>(null);
+  contextHistory = signal<ContextHistoryEntry[]>([]);
+  channelColor = signal<string | null>(null);
   isListening = false;
 
   ngOnInit(): void {
     this.logger.info('Instrument Viewer component initialized');
 
     this.channelSub = this.contextService.currentChannel$.subscribe((channel) => {
-      this.ngZone.run(() => {
-        this.channelColor = channel;
-      });
+      this.channelColor.set(channel);
       this.logger.info('Channel changed', { channel });
     });
 
     this.contextSub = this.contextService
       .onContext<InstrumentContext>('fdc3.instrument')
       .subscribe((instrument) => {
-        this.ngZone.run(() => {
-          this.currentInstrument = instrument;
-          this.contextHistory.unshift({ instrument, receivedAt: new Date() });
-          if (this.contextHistory.length > 20) {
-            this.contextHistory.length = 20;
-          }
-        });
+        this.currentInstrument.set(instrument);
+        this.contextHistory.update((history) =>
+          [{ instrument, receivedAt: new Date() }, ...history].slice(0, 20)
+        );
         this.logger.info('Received instrument context', {
           ticker: instrument.id.ticker,
           name: instrument.name,
@@ -84,13 +80,15 @@ export class InstrumentViewerComponent implements OnInit, OnDestroy {
   }
 
   getChannelDisplayName(): string {
-    if (!this.channelColor) return 'None';
+    const channel = this.channelColor();
+    if (!channel) return 'None';
     // OpenFin channel IDs are like "green", "red", "orange", etc.
-    return this.channelColor.charAt(0).toUpperCase() + this.channelColor.slice(1);
+    return channel.charAt(0).toUpperCase() + channel.slice(1);
   }
 
   getChannelDotColor(): string {
-    if (!this.channelColor) return '#888';
+    const channel = this.channelColor();
+    if (!channel) return '#888';
     const colors: Record<string, string> = {
       green: '#00CC88',
       red: '#FF5E60',
@@ -99,7 +97,7 @@ export class InstrumentViewerComponent implements OnInit, OnDestroy {
       purple: '#B07CFF',
       yellow: '#FFD60A',
     };
-    return colors[this.channelColor] ?? '#888';
+    return colors[channel] ?? '#888';
   }
 
   formatTime(date: Date): string {

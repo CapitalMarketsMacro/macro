@@ -10,11 +10,11 @@ NX 23 monorepo for **Capital Markets desktop applications**. Combines Angular 21
 
 | App                    | Port | Framework             | Command                                  |
 | ---------------------- | ---- | --------------------- | ---------------------------------------- |
-| macro-angular          | 4200 | Angular 21 (zoneful)  | `npm run start:angular`                  |
+| macro-angular          | 4200 | Angular 21 (zoneless) | `npm run start:angular`                  |
 | macro-react            | 4201 | React 19 + Vite 8     | `npm run start:react`                    |
 | macro-workspace        | 4202 | Angular 21 (zoneless) | `npm run start:workspace`                |
-| macro-angular-fdc3     | 4203 | Angular 21 (zoneful)  | `npm run start:fdc3`                     |
-| prism                  | 4204 | Angular 21 (zoneful)  | `npm run start:prism`                    |
+| macro-angular-fdc3     | 4203 | Angular 21 (zoneless) | `npm run start:fdc3`                     |
+| prism                  | 4204 | Angular 21 (zoneless) | `npm run start:prism`                    |
 | prism-react            | 4205 | React 19 + Vite 8     | `npm run start:prism-react`              |
 | capital-markets-themes | 4206 | React 19 + Vite 8     | `npm run start:capital-markets-themes`   |
 | market-data-server     | 3000 | Node.js WebSocket + REST | `npm run start:market-data-server`    |
@@ -97,8 +97,7 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 **Angular (macro-angular, macro-workspace):**
 
 - All components are `standalone: true`
-- macro-angular uses `provideZoneChangeDetection({ eventCoalescing: true })` (zoneful)
-- macro-workspace uses `provideZonelessChangeDetection()` (zoneless)
+- ALL Angular apps are **zoneless** (`provideZonelessChangeDetection()`, no zone.js polyfill); async state that templates render must live in signals
 - PrimeNG 21 with Aura theme preset
 - Component files: `.ts` (class), `.html` (template), `.css` (styles)
 - Root component selector: `app-root`
@@ -238,7 +237,7 @@ An **nx-mcp** server (NX workspace commands) is additionally provided by the NX 
 | `libs/macro-design/src/lib/dark-mode.ts`         | Dark mode utilities                          |
 | `libs/macro-design/src/lib/theme.config.ts`      | Theme palettes for OpenFin                   |
 | `libs/openfin/src/index.ts`                      | All OpenFin service exports                  |
-| `apps/macro-angular/src/app/app.config.ts`       | Angular app providers (PrimeNG, zone config) |
+| `apps/macro-angular/src/app/app.config.ts`       | Angular app providers (PrimeNG, zoneless CD) |
 | `apps/macro-react/src/main.tsx`                  | React entry (PrimeReact provider config)     |
 | `apps/macro-workspace/src/app/app.config.ts`     | Workspace app config (zoneless)              |
 | `.github/workflows/ci.yml`                       | CI workflow: `npm ci` → `npm run build` → `npm run test` on master pushes + PRs; uploads `test-reports` artifact |
@@ -249,7 +248,7 @@ An **nx-mcp** server (NX workspace commands) is additionally provided by the NX 
 ## Common Pitfalls
 
 - Do NOT add `:root` or `.dark` CSS variable blocks in individual apps -- use `@macro/macro-design`
-- macro-workspace is **zoneless** (`provideZonelessChangeDetection`); macro-angular is **zoneful** (`provideZoneChangeDetection`) -- do not mix these up
+- ALL Angular apps are **zoneless** -- template-bound state updated from WebSocket/interval/FDC3/AG-Grid-event callbacks MUST be a signal (or pushed imperatively through a component API); a plain field mutation will never repaint
 - AG Grid Enterprise requires the license; both grid wrappers register `AllEnterpriseModule`
 - The React app uses `@/` path alias (mapped to `src/`) for Shadcn component imports
 - OpenFin APIs (`fin.*`) are only available when running inside the OpenFin runtime; services gracefully no-op in browsers

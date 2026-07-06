@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, PLATFORM_ID } from '@angular/core';
 import { Logger } from '@macro/logger';
 import { AgCharts } from 'ag-charts-angular';
 import type { AgCartesianChartOptions } from 'ag-charts-types';
@@ -31,11 +31,12 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
 
 
-  // Chart options for each metric
-  public tradeFrequencyOptions: AgCartesianChartOptions<MicrostructureDataPoint> = {};
-  public orderToTradeRatioOptions: AgCartesianChartOptions<MicrostructureDataPoint> = {};
-  public quoteUpdateFrequencyOptions: AgCartesianChartOptions<MicrostructureDataPoint> = {};
-  public timeBetweenTradesOptions: AgCartesianChartOptions<MicrostructureDataPoint> = {};
+  // Chart options for each metric. Signals: the 1s data interval and the theme
+  // MutationObserver run outside any change-detection trigger under zoneless CD.
+  public tradeFrequencyOptions = signal<AgCartesianChartOptions<MicrostructureDataPoint>>({});
+  public orderToTradeRatioOptions = signal<AgCartesianChartOptions<MicrostructureDataPoint>>({});
+  public quoteUpdateFrequencyOptions = signal<AgCartesianChartOptions<MicrostructureDataPoint>>({});
+  public timeBetweenTradesOptions = signal<AgCartesianChartOptions<MicrostructureDataPoint>>({});
 
   // Data storage
   private microstructureData: MicrostructureDataPoint[] = [];
@@ -113,27 +114,16 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
    * Update all chart themes
    */
   private updateChartThemes(): void {
-    this.tradeFrequencyOptions = {
-      ...this.tradeFrequencyOptions,
-      theme: this.currentTheme,
-    };
-    this.orderToTradeRatioOptions = {
-      ...this.orderToTradeRatioOptions,
-      theme: this.currentTheme,
-    };
-    this.quoteUpdateFrequencyOptions = {
-      ...this.quoteUpdateFrequencyOptions,
-      theme: this.currentTheme,
-    };
-    this.timeBetweenTradesOptions = {
-      ...this.timeBetweenTradesOptions,
-      theme: this.currentTheme,
-    };
+    const theme = this.currentTheme;
+    this.tradeFrequencyOptions.update((o) => ({ ...o, theme }));
+    this.orderToTradeRatioOptions.update((o) => ({ ...o, theme }));
+    this.quoteUpdateFrequencyOptions.update((o) => ({ ...o, theme }));
+    this.timeBetweenTradesOptions.update((o) => ({ ...o, theme }));
   }
 
   private initializeCharts(): void {
     // Trade Frequency Chart (Bar Chart)
-    this.tradeFrequencyOptions = {
+    this.tradeFrequencyOptions.set({
       theme: this.currentTheme,
       animation: {
         enabled: false
@@ -176,10 +166,10 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
       legend: {
         enabled: false,
       },
-    };
+    });
 
     // Order-to-Trade Ratio Chart (Line Chart)
-    this.orderToTradeRatioOptions = {
+    this.orderToTradeRatioOptions.set({
       theme: this.currentTheme,
       animation: {
         enabled: false
@@ -225,10 +215,10 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
       legend: {
         enabled: false,
       },
-    };
+    });
 
     // Quote Update Frequency Chart (Line Chart)
-    this.quoteUpdateFrequencyOptions = {
+    this.quoteUpdateFrequencyOptions.set({
       theme: this.currentTheme,
       animation: {
         enabled: false
@@ -274,10 +264,10 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
       legend: {
         enabled: false,
       },
-    };
+    });
 
     // Time Between Trades Chart (Line Chart)
-    this.timeBetweenTradesOptions = {
+    this.timeBetweenTradesOptions.set({
       theme: this.currentTheme,
       animation: {
         enabled: false
@@ -323,7 +313,7 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
       legend: {
         enabled: false,
       },
-    };
+    });
   }
 
   private generateInitialData(): void {
@@ -380,35 +370,20 @@ export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {
   }
 
   private updateChartData(): void {
-    // Update all charts with current data
-    // ag-Charts automatically re-renders when the data array is updated
-    // Just update the data property and Angular's change detection will handle the rest
+    // AG Charts wants a fresh options object per update (immutable options); the signal
+    // write is what schedules the render under zoneless change detection.
     const chartData = [...this.microstructureData];
-
-    // Directly update the data property - ag-Charts will automatically detect and update
-    if (this.tradeFrequencyOptions) {
-      const newOption = clone(this.tradeFrequencyOptions);
-      newOption.data = chartData;
-
-      this.tradeFrequencyOptions = newOption;
-    }
-    if (this.orderToTradeRatioOptions) {
-      this.orderToTradeRatioOptions.data = chartData;
-      const newOption = clone(this.orderToTradeRatioOptions);
-
-      this.orderToTradeRatioOptions = newOption;
-
-
-    }
-    if (this.quoteUpdateFrequencyOptions) {
-      this.quoteUpdateFrequencyOptions.data = chartData;
-      const newOption = clone(this.quoteUpdateFrequencyOptions);
-      this.quoteUpdateFrequencyOptions = newOption;
-    }
-    if (this.timeBetweenTradesOptions) {
-      this.timeBetweenTradesOptions.data = chartData;
-      const newOption = clone(this.timeBetweenTradesOptions);
-      this.timeBetweenTradesOptions = newOption;
+    for (const options of [
+      this.tradeFrequencyOptions,
+      this.orderToTradeRatioOptions,
+      this.quoteUpdateFrequencyOptions,
+      this.timeBetweenTradesOptions,
+    ]) {
+      options.update((o) => {
+        const next = clone(o);
+        next.data = chartData;
+        return next;
+      });
     }
   }
 }

@@ -12,7 +12,7 @@
       "options": {
         "outputPath": "dist/apps/macro-angular-fdc3",
         "browser": "apps/macro-angular-fdc3/src/main.ts",
-        "polyfills": ["zone.js"],
+        "polyfills": [],
         "tsConfig": "apps/macro-angular-fdc3/tsconfig.app.json",
         "assets": [
           {

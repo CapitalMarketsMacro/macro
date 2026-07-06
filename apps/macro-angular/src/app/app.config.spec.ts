@@ -30,7 +30,7 @@ describe('appConfig', () => {
 
   it('should have at least 4 providers', () => {
     // provideBrowserGlobalErrorListeners, provideAnimationsAsync,
-    // provideZoneChangeDetection, provideRouter, providePrimeNG
+    // provideZonelessChangeDetection, provideRouter, providePrimeNG
     expect(appConfig.providers.length).toBeGreaterThanOrEqual(4);
   });
 });

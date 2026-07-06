@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy, inject, signal } from '@angular/core';
 import { Logger } from '@macro/logger';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import type { ColumnFormatMap } from '@macro/macro-grid-format';
@@ -179,7 +179,8 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
     ['GBPCHF', 0.0005],
   ]);
 
-  public selectedSymbol: string | null = null;
+  // Signal: written from an AG Grid event callback, which schedules no CD under zoneless.
+  public selectedSymbol = signal<string | null>(null);
 
   public gridOptions: GridOptions = {
     onRowClicked: (event: RowClickedEvent<CurrencyPair>) => this.onRowClicked(event),
@@ -238,7 +239,7 @@ export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!event.data) return;
 
     const pair = event.data;
-    this.selectedSymbol = pair.symbol;
+    this.selectedSymbol.set(pair.symbol);
 
     this.contextService.broadcast({
       type: 'fdc3.instrument',
