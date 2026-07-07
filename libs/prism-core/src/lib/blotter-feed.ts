@@ -9,6 +9,7 @@ import {
 } from '@macro/transports';
 import { ConflationSubject } from '@macro/utils';
 import type { BlotterSource, RestConn, WsConn } from './blotter-source';
+import { mergeSample } from './column-inference';
 import { WsTableClient } from './ws-table-client';
 import { RestSnapshotClient } from './rest-table-client';
 
@@ -223,7 +224,7 @@ export class BlotterFeed {
     const rows = (await this.restClient.fetchRows(conn.url, this.source.topic)).map((r) => this.asRow(r));
     // stop() cannot abort an in-flight fetch — a late snapshot must not seed a stopped feed's grid.
     if (this.stopping) return;
-    for (const rec of rows) this.maybeInferColumns(rec);
+    this.inferFromBatch(rows);
     this.seedSnapshot(rows);
     this.patch({ status: 'live' });
   }
@@ -246,7 +247,7 @@ export class BlotterFeed {
       // Dedupe within the snapshot (last wins) — duplicate keys would double-insert as adds.
       const rows =
         this.source.mode === 'append' ? fetched : [...new Map(fetched.map((r) => [this.keyOf(r), r])).values()];
-      for (const rec of rows) this.maybeInferColumns(rec);
+      this.inferFromBatch(rows);
       if (this.source.mode === 'append') {
         const removed = this.appendQueue.splice(0);
         if (removed.length) this.grid.deleteRows(removed);
@@ -296,10 +297,7 @@ export class BlotterFeed {
       observable.subscribe((m) => {
         const recs = this.readRecords(m);
         if (inSnapshot) {
-          for (const rec of recs) {
-            this.maybeInferColumns(rec);
-            snapshot.push(rec);
-          }
+          for (const rec of recs) snapshot.push(rec);
         } else {
           for (const rec of recs) this.route(rec);
         }
@@ -307,6 +305,7 @@ export class BlotterFeed {
     );
     await complete;
     inSnapshot = false;
+    this.inferFromBatch(snapshot);
     this.seedSnapshot(snapshot);
     this.patch({ status: 'live' });
   }
@@ -402,6 +401,17 @@ export class BlotterFeed {
     if (this.firstRecordHandled) return;
     this.firstRecordHandled = true;
     this.onColumns(rec);
+  }
+
+  /**
+   * Snapshot batches infer from a MERGED sample (first non-null value per field across the first
+   * rows) so sparse fields — e.g. `yield`, null on futures but numeric on cash — still infer as
+   * numeric no matter which record happens to arrive first. Live-only feeds (no snapshot) still
+   * infer from their first record via {@link maybeInferColumns}.
+   */
+  private inferFromBatch(rows: Row[]): void {
+    if (!rows.length) return;
+    this.maybeInferColumns(mergeSample(rows));
   }
 
   private startRateMeter(): void {

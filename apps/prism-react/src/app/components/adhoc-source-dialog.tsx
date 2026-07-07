@@ -8,6 +8,7 @@ import {
   type BlotterMode,
   type BlotterSource,
   type ColumnMode,
+  type RollupConfig,
   type TransportKind,
   type WsTableInfo,
 } from '@macro/prism-core';
@@ -30,6 +31,8 @@ interface FormState {
   maxRows: string;
   expandArrays: boolean;
   columnMode: ColumnMode;
+  rollupGroupBy: string;
+  rollupEnabled: boolean;
   url: string;
   logon: string;
   heartbeat: string;
@@ -56,6 +59,8 @@ const EMPTY: FormState = {
   maxRows: '',
   expandArrays: true,
   columnMode: 'infer',
+  rollupGroupBy: '',
+  rollupEnabled: false,
   url: '',
   logon: '',
   heartbeat: '',
@@ -85,6 +90,8 @@ function fromSource(s: BlotterSource): FormState {
     maxRows: s.maxRows?.toString() ?? '',
     expandArrays: s.expandArrays !== false,
     columnMode: s.columnMode,
+    rollupGroupBy: s.rollup?.groupBy.join(', ') ?? '',
+    rollupEnabled: !!s.rollup?.enabled,
     url: c.transport === 'amps' ? c.url : '',
     logon: c.transport === 'amps' ? c.logon ?? '' : '',
     heartbeat: c.transport === 'amps' ? c.heartbeat?.toString() ?? '' : '',
@@ -265,6 +272,23 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
     }
   };
 
+  /**
+   * `"desk, book"` + flag → `{ rollup }` fragment, preserving settings the form doesn't surface.
+   * A blank hierarchy with "open rolled up" checked still persists — the blotter opens on the
+   * suggested hierarchy.
+   */
+  const buildRollup = (): { rollup: RollupConfig } | null => {
+    const groupBy = form.rollupGroupBy
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!groupBy.length && !form.rollupEnabled) return null;
+    // Keep aggregation overrides / expand levels / grand total from the opened source so an
+    // edit/duplicate round-trip doesn't drop them.
+    const { groupBy: _g, enabled: _e, ...extras } = source?.rollup ?? { groupBy: [] };
+    return { rollup: { ...extras, groupBy, ...(form.rollupEnabled ? { enabled: true } : {}) } };
+  };
+
   const save = () => {
     if (!canSave()) return;
     const payload: Omit<BlotterSource, 'id' | 'origin'> = {
@@ -281,6 +305,7 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
       ...(num(form.conflationMs) != null && form.transport !== 'rest' ? { conflationMs: num(form.conflationMs) } : {}),
       ...(isAppend && num(form.maxRows) != null ? { maxRows: num(form.maxRows) } : {}),
       ...(form.expandArrays === false ? { expandArrays: false } : {}),
+      ...(buildRollup() ?? {}),
     };
     const editing = source && source.origin === 'adhoc' ? source.id : null;
     let result: BlotterSource;
@@ -528,6 +553,34 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
               </Field>
             )}
           </div>
+
+          <Field label="Roll-up — group by (optional)">
+            <Input
+              value={form.rollupGroupBy}
+              onChange={(e) => set('rollupGroupBy', e.target.value)}
+              placeholder="e.g. desk, book, trader"
+            />
+            <span className="text-xs opacity-60">
+              Comma-separated fields, coarsest first — the blotter groups rows into that hierarchy with
+              summed/averaged numeric columns and a grand total. Leave blank and the toolbar's Roll-up
+              toggle will suggest one from the data.
+            </span>
+          </Field>
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={form.rollupEnabled}
+              onChange={(e) => set('rollupEnabled', e.target.checked)}
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="text-sm">Open rolled up</span>
+              <span className="text-xs opacity-60">
+                Start in the roll-up view instead of the flat tape (uses the suggested hierarchy when
+                group-by is blank).
+              </span>
+            </span>
+          </label>
         </div>
 
         <DialogFooter>

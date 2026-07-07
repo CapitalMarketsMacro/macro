@@ -149,7 +149,12 @@ function buildFromSample(sample: Record<string, unknown>, keyField?: string): In
   return { columns, formats };
 }
 
-function mergeSample(rows: Record<string, unknown>[], maxRows: number): Record<string, unknown> {
+/**
+ * Merge the first `maxRows` rows into one representative sample record: first non-null value per
+ * field wins, so sparse fields (e.g. `yield` null on futures but set on cash) still infer as
+ * numeric. Feed a snapshot batch through this before {@link inferColumns}.
+ */
+export function mergeSample(rows: Record<string, unknown>[], maxRows = 20): Record<string, unknown> {
   const sample: Record<string, unknown> = {};
   for (const row of rows.slice(0, maxRows)) {
     if (!row || typeof row !== 'object') continue;

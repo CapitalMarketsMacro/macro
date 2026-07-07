@@ -26,6 +26,15 @@
           [ngModel]="columnMode()"
           (ngModelChange)="setColumnMode($event)"
         />
+        <p-button
+          icon="pi pi-sitemap"
+          label="Roll-up"
+          size="small"
+          [outlined]="!rollupOn()"
+          [disabled]="!hasRollup()"
+          [title]="hasRollup() ? (rollupOn() ? 'Back to the flat view' : 'Group with subtotals (Risk/PnL style)') : 'No grouping fields detected yet'"
+          (onClick)="toggleRollup()"
+        />
         @if (src.transport === 'rest') {
           <p-button
             icon="pi pi-sync"
@@ -62,7 +71,7 @@
     <div class="blotter__grid">
       @if (showGrid()) {
         <lib-macro-angular-grid
-          [columns]="columns()"
+          [columns]="effectiveColumns()"
           [columnFormats]="seedFormats()"
           [gridOptions]="gridOptions()"
           [getRowId]="getRowId"

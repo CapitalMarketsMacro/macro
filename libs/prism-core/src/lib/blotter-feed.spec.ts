@@ -245,6 +245,31 @@ describe('BlotterFeed', () => {
     expect(updates).toEqual([{ symbol: 'EUR', px: 9 }]);
   });
 
+  it('snapshot inference merges the batch so sparse fields survive a null-first record', async () => {
+    const { grid } = makeGrid();
+    const onColumns = jest.fn();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'amps',
+      mode: 'snapshot-update',
+      keyField: 'symbol',
+      connection: { transport: 'amps', url: 'ws://x/amps/json' },
+    };
+    const feed = new BlotterFeed(source, grid, onColumns);
+    const starting = feed.start();
+    await macro();
+    const t = lastTransport();
+
+    // First record has yield: null (a futures print) — the cash record fills it in.
+    t.__sow.next(msg({ symbol: 'ZNU6', px: 111.2, yield: null }));
+    t.__sow.next(msg({ symbol: 'UST 10Y', px: 98.9, yield: 0.0438 }));
+    t.__resolveSow();
+    await starting;
+
+    expect(onColumns).toHaveBeenCalledTimes(1);
+    expect(onColumns).toHaveBeenCalledWith({ symbol: 'ZNU6', px: 111.2, yield: 0.0438 });
+  });
+
   it('JetStream: uses snapshotAndSubscribe and seeds the snapshot', async () => {
     const { grid, setInitial } = makeGrid();
     const source: BlotterSource = {

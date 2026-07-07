@@ -429,6 +429,12 @@ export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {
     if (changes['gridOptions'] || changes['getRowId']) {
       this.mergeGridOptions();
     }
+    // Declarative formats that arrive AFTER grid-ready (e.g. a blotter inferring them from the
+    // first live record) must still reach the store — onGridReady's seed only covers the value
+    // present at creation. The React wrapper already restores on prop change; mirror it.
+    if (changes['columnFormats'] && !changes['columnFormats'].firstChange && this.isGridReady && this.columnFormats) {
+      this.formatStore.restore(migrateMap(this.columnFormats));
+    }
   }
 
   /**

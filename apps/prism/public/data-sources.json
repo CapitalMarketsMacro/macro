@@ -98,7 +98,7 @@
   {
     "id": "ws-ust-trades",
     "name": "WS UST Trades (append)",
-    "description": "Trade prints for cash OTR Treasuries + CME futures over plain WebSocket — recent-history snapshot then live prints.",
+    "description": "Trade prints for cash OTR Treasuries + CME futures over plain WebSocket — opens rolled up Instrument Type → Symbol → Side with size totals; toggle Roll-up off for the flat tape.",
     "category": "Rates",
     "transport": "websocket",
     "mode": "append",
@@ -106,7 +106,12 @@
     "topic": "ust_trades",
     "keyField": "tradeId",
     "maxRows": 1000,
-    "columnMode": "infer"
+    "columnMode": "infer",
+    "rollup": {
+      "groupBy": ["instrumentType", "symbol", "side"],
+      "aggregations": { "size": "sum", "price": "avg" },
+      "enabled": true
+    }
   },
   {
     "id": "rest-ust-market-data",

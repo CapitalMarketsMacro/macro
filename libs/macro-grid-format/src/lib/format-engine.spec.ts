@@ -150,6 +150,14 @@ describe('format-engine buildValueFormatter', () => {
     expect(vf).toBeDefined();
     expect(norm(String(vf!({ value: 150.0, data: { sym: 'USDJPY' } } as never)))).toBe('150.000');
   });
+
+  it("unwraps AG Grid's rich aggregate results (avg on group/footer rows)", () => {
+    const vf = buildValueFormatter({ kind: 'number', decimals: 2, thousands: true });
+    // AG Grid's built-in 'avg' yields { count, value } so parent group levels can re-aggregate.
+    expect(norm(String(vf!({ value: { count: 3, value: 1234.5678 } } as never)))).toBe('1,234.57');
+    // Objects without a numeric payload still fall through to the null text.
+    expect(String(vf!({ value: { count: 3 } } as never))).toBe('');
+  });
 });
 
 describe('format-engine buildCellStyle', () => {

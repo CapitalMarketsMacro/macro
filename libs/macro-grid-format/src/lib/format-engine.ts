@@ -182,13 +182,25 @@ export function formatValue(value: unknown, spec: ColumnFormatSpec, rowData?: Re
 }
 
 /**
+ * AG Grid's built-in multi-level aggregations (`avg`, and `count` in some versions) yield a rich
+ * result object (`{ count, value, … }`) on group/footer rows so parent levels can re-aggregate.
+ * Unwrap the numeric payload so aggregated cells format like leaf cells.
+ */
+function unwrapAggValue(value: unknown): unknown {
+  if (value != null && typeof value === 'object' && typeof (value as { value?: unknown }).value === 'number') {
+    return (value as { value: number }).value;
+  }
+  return value;
+}
+
+/**
  * Build an AG Grid `valueFormatter` from a spec, or `undefined` when the kind does not change
  * the displayed value (`text` only styles the cell — its column keeps its own value display).
  */
 export function buildValueFormatter(spec: ColumnFormatSpec): ValueFormatterFunc | undefined {
   if (spec.kind === 'text') return undefined;
   return (params: ValueFormatterParams) =>
-    formatValue(params?.value, spec, params?.data as Record<string, unknown> | undefined);
+    formatValue(unwrapAggValue(params?.value), spec, params?.data as Record<string, unknown> | undefined);
 }
 
 function resolveSignColor(value: unknown, mode: ColorMode): string | undefined {

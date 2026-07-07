@@ -506,6 +506,13 @@ export const MacroReactGrid = forwardRef<MacroReactGridRef, MacroReactGridProps>
       if (columnFormats) store.restore(migrateMap(columnFormats));
     }, [reconcile, store, columnFormats, onCalcUpserted, onCalcRemoved]);
 
+    // Declarative formats that arrive AFTER grid-ready (e.g. a blotter inferring them from the
+    // first live record) must still reach the store — onGridReady's seed only covers the value
+    // present at creation. Pass a stable (memoized) map: each new identity replaces the store.
+    useEffect(() => {
+      if (gridApi && columnFormats) store.restore(migrateMap(columnFormats));
+    }, [gridApi, store, columnFormats]);
+
     useImperativeHandle(ref, () => ({
       applyTransaction: (t: RowNodeTransaction) => {
         const api = gridApiRef.current;
