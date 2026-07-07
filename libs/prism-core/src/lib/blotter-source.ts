@@ -4,6 +4,7 @@ import type {
   NatsJetStreamConnectionOptions,
   SolaceConnectionOptions,
 } from '@macro/transports';
+import type { RollupConfig } from './rollup';
 
 /** Transport backing a data source. NATS appears twice: core (live) and JetStream (snapshot+stream). */
 export type TransportKind = 'amps' | 'nats' | 'nats-js' | 'solace' | 'websocket' | 'rest';
@@ -83,6 +84,11 @@ export interface BlotterSource {
    */
   expandArrays?: boolean;
   columnMode: ColumnMode;
+  /**
+   * Optional roll-up view (group-by hierarchy + aggregated measures, Risk/PnL style). When absent
+   * the blotter still offers a toggle with a suggestion inferred from the payload's field names.
+   */
+  rollup?: RollupConfig;
   /** Provenance: catalog entries are read-only; ad-hoc entries are editable/deletable. */
   origin?: 'catalog' | 'adhoc';
 }

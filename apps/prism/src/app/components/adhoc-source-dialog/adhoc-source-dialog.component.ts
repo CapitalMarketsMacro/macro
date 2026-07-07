@@ -17,6 +17,7 @@ import {
   type BlotterMode,
   type BlotterSource,
   type ColumnMode,
+  type RollupConfig,
   type TransportKind,
   type WsTableInfo,
 } from '@macro/prism-core';
@@ -89,6 +90,11 @@ export class AdHocSourceDialogComponent {
   readonly saved = output<BlotterSource>();
   readonly visible = signal(false);
   private editingId: string | null = null;
+  /**
+   * Roll-up settings the form doesn't surface (aggregation overrides, expand levels, grand total) —
+   * captured from the opened source so an edit/duplicate round-trip doesn't drop them.
+   */
+  private rollupExtras: Omit<RollupConfig, 'groupBy' | 'enabled'> = {};
 
   readonly transportOptions = (Object.entries(TRANSPORT_LABELS) as [TransportKind, string][]).map(
     ([value, label]) => ({ value, label }),
@@ -114,6 +120,9 @@ export class AdHocSourceDialogComponent {
     maxRows: [null as number | null],
     expandArrays: [true],
     columnMode: ['infer' as ColumnMode, Validators.required],
+    // Roll-up (optional): comma-separated group-by hierarchy + open-rolled-up flag.
+    rollupGroupBy: [''],
+    rollupEnabled: [false],
     // AMPS
     url: [''],
     logon: [''],
@@ -195,6 +204,7 @@ export class AdHocSourceDialogComponent {
         this.form.patchValue({ name: `${source.name} (copy)` });
       }
     } else {
+      this.rollupExtras = {};
       this.form.reset({ category: 'Custom', transport: 'nats', mode: 'streaming', columnMode: 'infer' });
     }
     // After the form patch (which clears discovery state via the URL subscriptions): when opening
@@ -298,6 +308,7 @@ export class AdHocSourceDialogComponent {
       ...(v.conflationMs != null && v.transport !== 'rest' ? { conflationMs: v.conflationMs } : {}),
       ...(v.mode === 'append' && v.maxRows != null ? { maxRows: v.maxRows } : {}),
       ...(v.expandArrays === false ? { expandArrays: false } : {}),
+      ...(this.buildRollup(v.rollupGroupBy, v.rollupEnabled) ?? {}),
     };
     const result = this.editingId
       ? this.updateExisting(this.editingId, payload)
@@ -308,6 +319,16 @@ export class AdHocSourceDialogComponent {
 
   cancel(): void {
     this.visible.set(false);
+  }
+
+  /** `"desk, book"` + flag → `{ rollup }` fragment (with preserved extras), or null when blank. */
+  private buildRollup(groupByText: string, enabled: boolean): { rollup: RollupConfig } | null {
+    const groupBy = groupByText
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!groupBy.length) return null;
+    return { rollup: { ...this.rollupExtras, groupBy, ...(enabled ? { enabled: true } : {}) } };
   }
 
   private updateExisting(id: string, payload: Omit<BlotterSource, 'id' | 'origin'>): BlotterSource {
@@ -352,6 +373,8 @@ export class AdHocSourceDialogComponent {
 
   private patchFrom(source: BlotterSource): void {
     const c = source.connection;
+    const { groupBy: _groupBy, enabled: _enabled, ...rollupExtras } = source.rollup ?? { groupBy: [] };
+    this.rollupExtras = rollupExtras;
     this.form.reset({
       name: source.name,
       category: source.category,
@@ -364,6 +387,8 @@ export class AdHocSourceDialogComponent {
       maxRows: source.maxRows ?? null,
       expandArrays: source.expandArrays !== false,
       columnMode: source.columnMode,
+      rollupGroupBy: source.rollup?.groupBy.join(', ') ?? '',
+      rollupEnabled: !!source.rollup?.enabled,
       url: c.transport === 'amps' ? c.url : '',
       logon: c.transport === 'amps' ? c.logon ?? '' : '',
       heartbeat: c.transport === 'amps' ? c.heartbeat ?? null : null,

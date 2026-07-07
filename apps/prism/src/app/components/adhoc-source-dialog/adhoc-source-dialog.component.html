@@ -203,6 +203,23 @@
         </div>
       }
     </div>
+
+    <div class="adhoc-form__row">
+      <span class="adhoc-form__label">Roll-up — group by (optional)</span>
+      <input pInputText formControlName="rollupGroupBy" placeholder="e.g. desk, book, trader" />
+      <span class="adhoc-form__hint">
+        Comma-separated fields, coarsest first — the blotter groups rows into that hierarchy with
+        summed/averaged numeric columns and a grand total. Leave blank and the toolbar's Roll-up
+        toggle will suggest one from the data.
+      </span>
+    </div>
+    <div class="adhoc-form__row adhoc-form__check">
+      <p-checkbox formControlName="rollupEnabled" [binary]="true" inputId="rollupEnabled" />
+      <label for="rollupEnabled" class="adhoc-form__check-label">
+        Open rolled up
+        <span class="adhoc-form__hint">Start in the roll-up view instead of the flat tape.</span>
+      </label>
+    </div>
   </form>
 
   <ng-template #footer>
