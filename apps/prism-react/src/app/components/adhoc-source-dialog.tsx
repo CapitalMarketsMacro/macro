@@ -272,13 +272,17 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
     }
   };
 
-  /** `"desk, book"` + flag → `{ rollup }` fragment, preserving settings the form doesn't surface. */
+  /**
+   * `"desk, book"` + flag → `{ rollup }` fragment, preserving settings the form doesn't surface.
+   * A blank hierarchy with "open rolled up" checked still persists — the blotter opens on the
+   * suggested hierarchy.
+   */
   const buildRollup = (): { rollup: RollupConfig } | null => {
     const groupBy = form.rollupGroupBy
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
-    if (!groupBy.length) return null;
+    if (!groupBy.length && !form.rollupEnabled) return null;
     // Keep aggregation overrides / expand levels / grand total from the opened source so an
     // edit/duplicate round-trip doesn't drop them.
     const { groupBy: _g, enabled: _e, ...extras } = source?.rollup ?? { groupBy: [] };
@@ -571,7 +575,10 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
             />
             <span className="flex flex-col gap-0.5">
               <span className="text-sm">Open rolled up</span>
-              <span className="text-xs opacity-60">Start in the roll-up view instead of the flat tape.</span>
+              <span className="text-xs opacity-60">
+                Start in the roll-up view instead of the flat tape (uses the suggested hierarchy when
+                group-by is blank).
+              </span>
             </span>
           </label>
         </div>

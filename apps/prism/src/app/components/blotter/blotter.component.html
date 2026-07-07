@@ -31,8 +31,8 @@
           label="Roll-up"
           size="small"
           [outlined]="!rollupOn()"
-          [disabled]="!rollup()"
-          [title]="rollup() ? (rollupOn() ? 'Back to the flat view' : 'Group with subtotals (Risk/PnL style)') : 'No grouping fields detected yet'"
+          [disabled]="!hasRollup()"
+          [title]="hasRollup() ? (rollupOn() ? 'Back to the flat view' : 'Group with subtotals (Risk/PnL style)') : 'No grouping fields detected yet'"
           (onClick)="toggleRollup()"
         />
         @if (src.transport === 'rest') {

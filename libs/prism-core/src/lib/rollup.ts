@@ -61,16 +61,22 @@ const GROUP_PRIORITY: RegExp[] = [
   /(ccy|currency)$/,
 ];
 
-/** Fields that average when rolled up (a summed price/yield is meaningless). */
-const AVG_RX =
-  /(price|px|bid|ask|mid|last|open|high|low|close|yield|rate|coupon|spread|nav|strike|vol\b|volatility|pct|percent|change|score)/;
-/** Fields that sum — checked before {@link AVG_RX} so e.g. `volume` is not caught by `vol`. */
+/** Unambiguous per-unit quantities — always average (a summed discountRate is meaningless). */
+const STRONG_AVG_RX = /(rate|yield|price|coupon|spread)/;
+/** Fields that sum. Lookbehinds keep `discount`/`cashflow` out of the wrong bucket. */
 const SUM_RX =
-  /(pnl|p&l|qty|quantity|size|volume|notional|amount|nominal|face|value|exposure|dv01|delta|gamma|vega|theta|position|balance|count)/;
+  /(pnl|p&l|qty|quantity|size|flow|volume|notional|amount|nominal|face|value|exposure|dv01|delta|gamma|vega|theta|position|balance|(?<!dis)count|fee|charge|commission)/;
+/** Fields that average. `(?<!f)low` spares `cashflow`; `(?<!ex)change` spares `exchangeFee`. */
+const AVG_RX =
+  /(px|bid|ask|mid|last|open|high|(?<!f)low|close|nav|strike|factor|vol(atility|_?\d|$)|(?<!ex)change|pct|percent|score)/;
 
-/** Default aggregation for a numeric field, by name: explicit sums first, then averages, else sum. */
+/**
+ * Default aggregation for a numeric field, by name: unambiguous per-unit fields (rates, prices)
+ * average, then explicit sums (sizes, flows), then remaining per-unit shapes, else sum.
+ */
 export function aggForField(field: string): RollupAggFunc {
   const n = field.toLowerCase();
+  if (STRONG_AVG_RX.test(n)) return 'avg';
   if (SUM_RX.test(n)) return 'sum';
   if (AVG_RX.test(n)) return 'avg';
   return 'sum';
@@ -125,6 +131,22 @@ export function applyRollupToColumns<T extends ColDef | ColGroupDef>(defs: T[], 
   });
 }
 
+/**
+ * Fill a (possibly partial) source-authored config with name-inferred aggregations for numeric
+ * columns it doesn't cover. Keeps configured roll-ups consistent between the infer and v36
+ * auto-gen column paths: auto-generated defs are bare `{ field }` objects with no numeric type,
+ * so {@link applyRollupToColumns}' type-based fallback never fires there — a complete
+ * aggregation map (from the inferred columns, which always exist) closes that gap.
+ */
+export function completeRollup(rollup: RollupConfig, columns: (ColDef | ColGroupDef)[]): RollupConfig {
+  const aggregations: Record<string, RollupAggFunc> = { ...(rollup.aggregations ?? {}) };
+  forEachLeaf(columns, (c) => {
+    if (!c.field || rollup.groupBy.includes(c.field) || c.type !== 'numericColumn') return;
+    aggregations[c.field] ??= aggForField(c.field);
+  });
+  return { ...rollup, aggregations };
+}
+
 /** `'Desk / Book / Trader'` — the auto group column header for a roll-up. */
 export function rollupGroupHeader(rollup: RollupConfig): string {
   return rollup.groupBy.map(titleCase).join(' / ');
@@ -169,8 +191,9 @@ function isGroupCandidate(c: ColDef, opts: SuggestRollupOptions): boolean {
   if (!field || c.type === 'numericColumn') return false;
   if (field === '__id') return false;
   const n = field.toLowerCase();
-  // Ids and timestamps never group meaningfully.
-  if (field.endsWith('Id') || n === 'id' || n.endsWith('_id')) return false;
+  // Ids and timestamps never group meaningfully (`Id`/`ID` suffix on the original casing so
+  // `bid`/`grid`/`mid` survive but `bookingID` is caught).
+  if (/(Id|ID)$/.test(field) || n === 'id' || n.endsWith('_id')) return false;
   if (isDateLike(n)) return false;
   // On keyed modes every leaf is unique per key — grouping by the key yields one row per group.
   if (opts.mode !== 'append' && opts.keyField && field === opts.keyField) return false;

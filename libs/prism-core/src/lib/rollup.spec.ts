@@ -2,6 +2,7 @@ import type { ColDef, ColGroupDef } from 'ag-grid-community';
 import {
   aggForField,
   applyRollupToColumns,
+  completeRollup,
   rollupGridOptions,
   rollupGroupHeader,
   suggestRollup,
@@ -47,6 +48,18 @@ describe('aggForField', () => {
   it('defaults unknown numerics to sum', () => {
     expect(aggForField('foo')).toBe('sum');
   });
+
+  it('classifies substring look-alikes correctly', () => {
+    expect(aggForField('discountRate')).toBe('avg'); // 'rate' beats the 'count' inside 'discount'
+    expect(aggForField('discountFactor')).toBe('avg');
+    expect(aggForField('cashflow')).toBe('sum'); // not caught by 'low'
+    expect(aggForField('exchangeFee')).toBe('sum'); // not caught by 'change'
+    expect(aggForField('netChange')).toBe('avg');
+    expect(aggForField('dayLow')).toBe('avg');
+    expect(aggForField('vol30d')).toBe('avg');
+    expect(aggForField('implVol')).toBe('avg');
+    expect(aggForField('orderCount')).toBe('sum');
+  });
 });
 
 describe('suggestRollup', () => {
@@ -75,6 +88,7 @@ describe('suggestRollup', () => {
       col('tradeId'),
       col('order_id'),
       col('id'),
+      col('bookingID'), // uppercase suffix — must not surface via the /book/ pattern
       col('tradeDate'),
       col('timestamp'),
       col('maturity'),
@@ -148,6 +162,25 @@ describe('applyRollupToColumns', () => {
     const children = (out[0] as ColGroupDef).children as ColDef[];
     expect(children[0]).toMatchObject({ rowGroup: true, rowGroupIndex: 0 });
     expect(children[1]).toMatchObject({ aggFunc: 'sum' });
+  });
+});
+
+describe('completeRollup', () => {
+  it('fills inferred aggregations for numeric columns the config does not cover', () => {
+    const config: RollupConfig = { groupBy: ['symbol'], aggregations: { size: 'sum' }, enabled: true };
+    const out = completeRollup(config, [col('symbol'), col('size', true), col('yield', true), col('side')]);
+    expect(out.aggregations).toEqual({ size: 'sum', yield: 'avg' });
+    expect(out.groupBy).toEqual(['symbol']);
+    expect(out.enabled).toBe(true);
+    expect(config.aggregations).toEqual({ size: 'sum' }); // input untouched
+  });
+
+  it('never overrides explicit aggregations and skips grouped fields', () => {
+    const out = completeRollup({ groupBy: ['desk'], aggregations: { price: 'max' } }, [
+      col('desk'),
+      col('price', true),
+    ]);
+    expect(out.aggregations).toEqual({ price: 'max' });
   });
 });
 

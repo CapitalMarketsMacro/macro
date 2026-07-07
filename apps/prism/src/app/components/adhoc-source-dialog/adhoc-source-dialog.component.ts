@@ -321,13 +321,16 @@ export class AdHocSourceDialogComponent {
     this.visible.set(false);
   }
 
-  /** `"desk, book"` + flag → `{ rollup }` fragment (with preserved extras), or null when blank. */
+  /**
+   * `"desk, book"` + flag → `{ rollup }` fragment (with preserved extras). A blank hierarchy with
+   * "open rolled up" checked still persists — the blotter opens on the suggested hierarchy.
+   */
   private buildRollup(groupByText: string, enabled: boolean): { rollup: RollupConfig } | null {
     const groupBy = groupByText
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
-    if (!groupBy.length) return null;
+    if (!groupBy.length && !enabled) return null;
     return { rollup: { ...this.rollupExtras, groupBy, ...(enabled ? { enabled: true } : {}) } };
   }
 
