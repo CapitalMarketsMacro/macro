@@ -42,7 +42,7 @@ macro/
 │   ├── transports/             # Unified messaging: AMPS, Solace, NATS incl. JetStream (@macro/transports + /angular + /react)
 │   ├── openfin/                # OpenFin Workspace services + Angular DI + Snap + Analytics (@macro/openfin)
 │   ├── utils/                  # RxJS conflation utilities (@macro/utils)
-│   ├── prism-core/             # Framework-free blotter core: sources, feeds, column inference (@macro/prism-core)
+│   ├── prism-core/             # Framework-free blotter core: sources, feeds, column inference, roll-ups (@macro/prism-core)
 │   ├── macro-grid-format/      # Framework-free column-format engine + tool panels (@macro/macro-grid-format)
 │   ├── macro-angular-grid/     # AG Grid 36 Enterprise Angular wrapper + column formatting
 │   └── macro-react-grid/       # AG Grid 36 Enterprise React wrapper + column formatting
@@ -133,6 +133,7 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 - Treasury endpoint: `ws://localhost:3000/marketData/tsy` (11 securities, 1-sec ticks)
 - Prism tables endpoint: `ws://localhost:3000/prism` — JSON table protocol (on-connect `tables` list → `subscribe` → `snapshot` array → `update` row/rows) consumed by the Prism blotters' **WebSocket** source (`WsTableClient` in `@macro/prism-core`); tables `ust_market_data` (keyed by `symbol`) + `ust_trades` (append)
 - Prism REST mirror: `http://localhost:3000/prism/tables` (catalog) + `/prism/tables/<name>` (rows as a bare JSON array, CORS on) — consumed by the blotters' snapshot-only **REST** source (`RestSnapshotClient` in `@macro/prism-core`; manual refresh via `BlotterFeed.refresh()` diffs the new snapshot in place)
+- Prism roll-ups: a blotter source may carry `rollup: { groupBy, aggregations?, enabled?, expandLevels?, grandTotal? }` (`RollupConfig` in `@macro/prism-core`) — the blotters render a Risk/PnL-style grouped view (hidden `rowGroup` columns, sum/avg measures, bottom grand-total row). Sources without one get a suggestion inferred from field names (`suggestRollup`); the toolbar Roll-up toggle flips flat ⇄ grouped and both ad-hoc dialogs expose group-by + "Open rolled up" (blank group-by + enabled opens on the suggestion)
 - For high-frequency data, use `ConflationSubject` from `@macro/utils` (double-buffer algorithm)
 - Angular grid updates via `updateRows$` Subject on `MacroAngularGrid`
 - React grid updates via `ref.current?.updateRows$` Subject on `MacroReactGridRef`
@@ -252,6 +253,8 @@ An **nx-mcp** server (NX workspace commands) is additionally provided by the NX 
 - OpenFin APIs (`fin.*`) are only available when running inside the OpenFin runtime; services gracefully no-op in browsers
 - PrimeReact is on alpha (`11.0.0-alpha.10`) -- check for breaking changes
 - The `clone` library is used in AG Charts for immutable option updates
+- AG Grid's built-in `avg` aggregation yields a rich `{ count, value }` object on group/footer rows (so parent levels can re-aggregate) — `@macro/macro-grid-format` value formatters unwrap it; custom formatters must too, or aggregated cells render blank/raw
+- In blotter `onColumnRowGroupChanged`-style grid handlers, filter by `event.source` — the wrappers' own columnDefs pushes fire `gridOptionsChanged`/`gridInitializing`; only user gestures (`api`, `uiColumnDragged`, …) should drive app state
 
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
