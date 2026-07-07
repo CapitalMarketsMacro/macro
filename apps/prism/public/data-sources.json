@@ -114,6 +114,39 @@
     }
   },
   {
+    "id": "ws-irs-risk-pnl",
+    "name": "WS IRS Risk / PnL",
+    "description": "Interest Rate Swaps desk risk & P&L — OIS positions (SOFR/€STR/SONIA/TONA) with DV01, KR01 buckets and a tying P&L explain, repriced live as the par curves move. Opens rolled up Desk → Book → Trader.",
+    "category": "Risk",
+    "transport": "websocket",
+    "mode": "snapshot-update",
+    "connection": { "transport": "websocket", "url": "ws://localhost:3000/prism" },
+    "topic": "irs_risk_pnl",
+    "keyField": "tradeId",
+    "conflationMs": 250,
+    "columnMode": "infer",
+    "rollup": {
+      "groupBy": ["desk", "book", "trader"],
+      "enabled": true
+    }
+  },
+  {
+    "id": "rest-irs-risk-pnl",
+    "name": "REST IRS Risk / PnL (snapshot)",
+    "description": "IRS desk risk & P&L via REST — one-shot snapshot of the swaps book, refresh manually from the toolbar; same Desk → Book → Trader roll-up.",
+    "category": "Risk",
+    "transport": "rest",
+    "mode": "snapshot-update",
+    "connection": { "transport": "rest", "url": "http://localhost:3000/prism/tables" },
+    "topic": "irs_risk_pnl",
+    "keyField": "tradeId",
+    "columnMode": "infer",
+    "rollup": {
+      "groupBy": ["desk", "book", "trader"],
+      "enabled": true
+    }
+  },
+  {
     "id": "rest-ust-market-data",
     "name": "REST UST Market Data (snapshot)",
     "description": "Top-of-book for cash OTR Treasuries + CME futures via REST — one-shot JSON-array snapshot, refresh manually from the toolbar.",

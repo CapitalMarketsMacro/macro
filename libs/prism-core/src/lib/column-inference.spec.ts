@@ -21,9 +21,15 @@ describe('column-inference', () => {
       expect(specForField('coupon', 0.05)).toEqual({ kind: 'percent', decimals: 3 });
     });
 
-    it('maps spreads and bps/dv01 to basis points', () => {
+    it('maps spreads and bps to basis points', () => {
       expect(specForField('spread', 0.0001)).toEqual({ kind: 'basisPoints', decimals: 1 });
-      expect(specForField('dv01', 1200)).toMatchObject({ kind: 'basisPoints', signDisplay: 'always' });
+      expect(specForField('spreadBps', 1.5)).toMatchObject({ kind: 'basisPoints', signDisplay: 'always' });
+    });
+
+    it('maps DV01/PV01/KR01 dollar sensitivities to signed integers, not basis points', () => {
+      expect(specForField('dv01', 12500)).toEqual({ kind: 'integer', thousands: true, colorMode: 'posneg' });
+      expect(specForField('pv01', -8200)).toMatchObject({ kind: 'integer' });
+      expect(specForField('kr01_10y', 4100)).toMatchObject({ kind: 'integer' });
     });
 
     it('maps change-percent to a coloured percent', () => {
