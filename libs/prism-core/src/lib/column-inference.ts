@@ -69,7 +69,11 @@ export function specForField(name: string, value: unknown, keyField?: string): C
   const fxLike = !!keyField && /(symbol|pair|ccypair|ccy_pair)/i.test(keyField);
 
   // Numeric heuristics (first match wins).
-  if (n.includes('bps') || n.includes('basis') || n.includes('dv01')) {
+  // DV01/PV01/KR01 are dollar sensitivities PER basis point, not basis points — plain signed $.
+  if (n.includes('dv01') || n.includes('pv01') || n.includes('kr01') || n.includes('bpv')) {
+    return { kind: 'integer', thousands: true, colorMode: 'posneg' };
+  }
+  if (n.includes('bps') || n.includes('basis')) {
     return { kind: 'basisPoints', decimals: 1, signDisplay: 'always', colorMode: 'posneg' };
   }
   if (n.includes('spread')) {

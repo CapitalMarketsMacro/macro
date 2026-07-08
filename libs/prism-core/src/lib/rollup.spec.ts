@@ -139,6 +139,20 @@ describe('applyRollupToColumns', () => {
     expect(out[1]).toMatchObject({ aggFunc: 'sum', enableValue: true }); // inferred
   });
 
+  it("excludes numeric fields marked 'none' from aggregation (per-currency notionals)", () => {
+    const out = applyRollupToColumns([col('notional', true), col('notionalUsd', true)], {
+      groupBy: ['desk'],
+      aggregations: { notional: 'none' },
+    });
+    expect((out[0] as ColDef).aggFunc).toBeUndefined();
+    expect(out[1]).toMatchObject({ aggFunc: 'sum', enableValue: true });
+  });
+
+  it("completeRollup preserves explicit 'none' entries", () => {
+    const out = completeRollup({ groupBy: ['desk'], aggregations: { notional: 'none' } }, [col('notional', true)]);
+    expect(out.aggregations).toEqual({ notional: 'none' });
+  });
+
   it('leaves non-measure leaves groupable but un-aggregated', () => {
     const [out] = applyRollupToColumns([col('trader')], rollup);
     expect(out).toMatchObject({ enableRowGroup: true });

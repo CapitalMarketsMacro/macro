@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { WebSocket } from 'ws';
 import { UstMarketDataTable, UstTradesTable } from './prism-tables.service';
+import { IrsRiskPnlTable } from './irs-risk-pnl.service';
 
 /**
  * Prism Table Hub — plain-WebSocket "table" protocol handler for /prism.
@@ -45,22 +46,47 @@ const TABLES: TableMeta[] = [
     keyField: 'symbol',
     mode: 'snapshot-update',
   },
+  {
+    name: 'irs_risk_pnl',
+    title: 'IRS Risk & PnL',
+    description:
+      'Interest Rate Swaps desk risk/PnL — one row per OIS position (SOFR/€STR/SONIA/TONA) with DV01, KR01 buckets and a tying P&L explain (carry / roll-down / curve / new trades / fees / residual); desk → book → trader hierarchy, keyed in-place repricing as the par curves move.',
+    keyField: 'tradeId',
+    mode: 'snapshot-update',
+  },
 ];
 
 const MARKET_DATA_TICK_MS = 500;
+const IRS_RISK_TICK_MS = 1000;
 const TRADE_MIN_GAP_MS = 600;
 const TRADE_MAX_GAP_MS = 1800;
 
 export class PrismTableHub {
   private readonly marketData = new UstMarketDataTable();
   private readonly trades = new UstTradesTable(this.marketData);
+  private readonly irsRisk = new IrsRiskPnlTable();
   private readonly subscribers = new Map<string, Set<WebSocket>>(TABLES.map((t) => [t.name, new Set<WebSocket>()]));
   private tradeTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
     // Global tickers: every subscriber sees the same table state.
     setInterval(() => this.tickMarketData(), MARKET_DATA_TICK_MS);
+    setInterval(() => this.tickIrsRisk(), IRS_RISK_TICK_MS);
     this.scheduleNextTrade();
+  }
+
+  /** Current snapshot for a known table name (the source of truth for WS subscribe + REST). */
+  private snapshotOf(name: string): unknown[] {
+    switch (name) {
+      case 'ust_trades':
+        return this.trades.snapshot();
+      case 'ust_market_data':
+        return this.marketData.snapshot();
+      case 'irs_risk_pnl':
+        return this.irsRisk.snapshot();
+      default:
+        return [];
+    }
   }
 
   handleConnection(ws: WebSocket): void {
@@ -115,7 +141,7 @@ export class PrismTableHub {
     }
     this.subscribers.get(meta.name)!.add(ws);
     this.send(ws, { type: 'subscribed', table: meta.name, keyField: meta.keyField, mode: meta.mode });
-    const rows = meta.name === 'ust_trades' ? this.trades.snapshot() : this.marketData.snapshot();
+    const rows = this.snapshotOf(meta.name);
     this.send(ws, { type: 'snapshot', table: meta.name, rows });
     console.log(`Client subscribed to /prism table "${meta.name}" (snapshot: ${rows.length} rows)`);
   }
@@ -135,6 +161,15 @@ export class PrismTableHub {
         this.broadcast(subs, { type: 'update', table: 'ust_market_data', row });
       }
     }
+  }
+
+  private tickIrsRisk(): void {
+    // Tick unconditionally so REST snapshots keep evolving even with no WS subscribers.
+    const updated = this.irsRisk.tick();
+    const subs = this.subscribers.get('irs_risk_pnl')!;
+    if (subs.size === 0 || updated.length === 0) return;
+    // A curve-point move reprices a set of positions at once — send it as one batch.
+    this.broadcast(subs, { type: 'update', table: 'irs_risk_pnl', rows: updated });
   }
 
   private scheduleNextTrade(): void {
@@ -191,7 +226,7 @@ export class PrismTableHub {
       this.sendJson(res, 404, { error: `Unknown table: ${name}. Available: ${TABLES.map((t) => t.name).join(', ')}` });
       return true;
     }
-    const rows = meta.name === 'ust_trades' ? this.trades.snapshot() : this.marketData.snapshot();
+    const rows = this.snapshotOf(meta.name);
     this.sendJson(res, 200, rows); // snapshots are bare JSON arrays
     console.log(`REST snapshot served for "${meta.name}" (${rows.length} rows)`);
     return true;
