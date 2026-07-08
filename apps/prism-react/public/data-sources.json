@@ -6,7 +6,10 @@
     "category": "FX",
     "transport": "amps",
     "mode": "snapshot-update",
-    "connection": { "transport": "amps", "url": "ws://localhost:9008/amps/json" },
+    "connection": {
+      "transport": "amps",
+      "url": "ws://localhost:9008/amps/json"
+    },
     "topic": "fx_spot",
     "keyField": "symbol",
     "conflationMs": 150,
@@ -19,7 +22,10 @@
     "category": "Orders",
     "transport": "amps",
     "mode": "append",
-    "connection": { "transport": "amps", "url": "ws://localhost:9008/amps/json" },
+    "connection": {
+      "transport": "amps",
+      "url": "ws://localhost:9008/amps/json"
+    },
     "topic": "orders",
     "filter": "/status <> 'DONE'",
     "maxRows": 5000,
@@ -33,7 +39,10 @@
     "category": "Analytics",
     "transport": "nats",
     "mode": "append",
-    "connection": { "transport": "nats", "servers": "ws://localhost:9222" },
+    "connection": {
+      "transport": "nats",
+      "servers": "ws://localhost:9222"
+    },
     "topic": "macro.analytics.>",
     "maxRows": 1000,
     "columnMode": "infer"
@@ -45,7 +54,10 @@
     "category": "FX",
     "transport": "nats",
     "mode": "streaming",
-    "connection": { "transport": "nats", "servers": "ws://localhost:9222" },
+    "connection": {
+      "transport": "nats",
+      "servers": "ws://localhost:9222"
+    },
     "topic": "macro.fx.quotes.>",
     "keyField": "symbol",
     "conflationMs": 250,
@@ -58,7 +70,11 @@
     "category": "Risk",
     "transport": "nats-js",
     "mode": "snapshot-update",
-    "connection": { "transport": "nats-js", "servers": "ws://localhost:9222", "stream": "POSITIONS" },
+    "connection": {
+      "transport": "nats-js",
+      "servers": "ws://localhost:9222",
+      "stream": "POSITIONS"
+    },
     "topic": "macro.positions.>",
     "keyField": "bookId",
     "columnMode": "infer"
@@ -89,7 +105,10 @@
     "category": "Rates",
     "transport": "websocket",
     "mode": "snapshot-update",
-    "connection": { "transport": "websocket", "url": "ws://localhost:3000/prism" },
+    "connection": {
+      "transport": "websocket",
+      "url": "ws://localhost:3000/prism"
+    },
     "topic": "ust_market_data",
     "keyField": "symbol",
     "conflationMs": 250,
@@ -102,14 +121,20 @@
     "category": "Rates",
     "transport": "websocket",
     "mode": "append",
-    "connection": { "transport": "websocket", "url": "ws://localhost:3000/prism" },
+    "connection": {
+      "transport": "websocket",
+      "url": "ws://localhost:3000/prism"
+    },
     "topic": "ust_trades",
     "keyField": "tradeId",
     "maxRows": 1000,
     "columnMode": "infer",
     "rollup": {
       "groupBy": ["instrumentType", "symbol", "side"],
-      "aggregations": { "size": "sum", "price": "avg" },
+      "aggregations": {
+        "size": "sum",
+        "price": "avg"
+      },
       "enabled": true
     }
   },
@@ -120,14 +145,20 @@
     "category": "Risk",
     "transport": "websocket",
     "mode": "snapshot-update",
-    "connection": { "transport": "websocket", "url": "ws://localhost:3000/prism" },
+    "connection": {
+      "transport": "websocket",
+      "url": "ws://localhost:3000/prism"
+    },
     "topic": "irs_risk_pnl",
     "keyField": "tradeId",
     "conflationMs": 250,
     "columnMode": "infer",
     "rollup": {
       "groupBy": ["desk", "book", "trader"],
-      "enabled": true
+      "enabled": true,
+      "aggregations": {
+        "notional": "none"
+      }
     }
   },
   {
@@ -137,13 +168,19 @@
     "category": "Risk",
     "transport": "rest",
     "mode": "snapshot-update",
-    "connection": { "transport": "rest", "url": "http://localhost:3000/prism/tables" },
+    "connection": {
+      "transport": "rest",
+      "url": "http://localhost:3000/prism/tables"
+    },
     "topic": "irs_risk_pnl",
     "keyField": "tradeId",
     "columnMode": "infer",
     "rollup": {
       "groupBy": ["desk", "book", "trader"],
-      "enabled": true
+      "enabled": true,
+      "aggregations": {
+        "notional": "none"
+      }
     }
   },
   {
@@ -153,7 +190,10 @@
     "category": "Rates",
     "transport": "rest",
     "mode": "snapshot-update",
-    "connection": { "transport": "rest", "url": "http://localhost:3000/prism/tables" },
+    "connection": {
+      "transport": "rest",
+      "url": "http://localhost:3000/prism/tables"
+    },
     "topic": "ust_market_data",
     "keyField": "symbol",
     "columnMode": "infer"

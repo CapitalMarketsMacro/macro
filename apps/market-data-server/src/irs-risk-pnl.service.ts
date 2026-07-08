@@ -92,7 +92,8 @@ export interface IrsRiskPnlRow {
   index: string; // SOFR / ESTR / SONIA / TONA
   tenor: Tenor;
   payReceive: PayReceive; // fixed leg direction
-  notional: number; // in trade ccy
+  notional: number; // in trade ccy — do NOT sum across currencies
+  notionalUsd: number; // USD-converted notional, the aggregatable one
   fixedRate: number; // fraction (0.0381 = 3.81%)
   parRate: number; // current market par rate for the ccy/tenor, fraction
   effectiveDate: string; // YYYY-MM-DD
@@ -113,7 +114,7 @@ export interface IrsRiskPnlRow {
   dayPnl: number;
   mtdPnl: number;
   ytdPnl: number;
-  carryPnl: number; // coupon accrual + price alignment interest
+  carryPnl: number; // (fixed − compounded overnight) accrual + PAI — signed by direction
   rollDownPnl: number; // curve roll-down
   curvePnl: number; // delta P&L from market moves
   newTradePnl: number; // day-one P&L on today's trades
@@ -152,6 +153,10 @@ export class IrsRiskPnlTable {
   /** Live par curves the sim walks, keyed `${ccy}:${tenor}`, as fractions. */
   private readonly curves = new Map<string, number>();
   private tradeSeq = 700_000;
+  /** Ticks until the accelerated "day roll" folds the day P&L into MTD/YTD and resets. */
+  private ticksToDayRoll = IrsRiskPnlTable.DAY_ROLL_TICKS;
+  /** ~20 minutes at a 1s tick = one simulated trading day, so dayPnl stays bounded. */
+  private static readonly DAY_ROLL_TICKS = 1200;
 
   constructor() {
     for (const ccy of Object.keys(BASE_CURVES) as Ccy[]) {
@@ -180,7 +185,11 @@ export class IrsRiskPnlTable {
    * total P&L move. Returns the repriced rows.
    */
   tick(): IrsRiskPnlRow[] {
-    const moved = new Map<string, number>(); // `${ccy}:${tenor}` -> Δ (fraction)
+    if (--this.ticksToDayRoll <= 0) {
+      this.ticksToDayRoll = IrsRiskPnlTable.DAY_ROLL_TICKS;
+      return this.rollDay();
+    }
+    const moved = new Map<string, number>(); // `${ccy}:${tenor}` -> net Δ (fraction)
     const points = 1 + Math.floor(Math.random() * 2);
     const keys = [...this.curves.keys()];
     for (let i = 0; i < points; i++) {
@@ -192,7 +201,8 @@ export class IrsRiskPnlTable {
       const drift = (base - current) * 0.02;
       const delta = rand(-1, 1) * 0.00004 + drift; // ±0.4bp
       this.curves.set(key, current + delta);
-      moved.set(key, delta);
+      // Accumulate — pick() samples with replacement, and repricing must see the NET move.
+      moved.set(key, (moved.get(key) ?? 0) + delta);
     }
 
     const updated: IrsRiskPnlRow[] = [];
@@ -204,11 +214,43 @@ export class IrsRiskPnlTable {
     return updated;
   }
 
+  /**
+   * Accelerated start-of-day: zero every day P&L component on every position (MTD/YTD already
+   * accumulated tick-by-tick, so they simply keep growing from here). Returns all rows.
+   */
+  private rollDay(): IrsRiskPnlRow[] {
+    const updated: IrsRiskPnlRow[] = [];
+    for (const row of this.rows.values()) {
+      const next: IrsRiskPnlRow = {
+        ...row,
+        dayPnl: 0,
+        carryPnl: 0,
+        rollDownPnl: 0,
+        curvePnl: 0,
+        newTradePnl: 0,
+        feesPnl: 0,
+        residualPnl: 0,
+        updated: new Date().toISOString(),
+      };
+      this.rows.set(next.tradeId, next);
+      updated.push(next);
+    }
+    return updated;
+  }
+
+  /** Compounded-overnight proxy for a currency: its 2Y par less ~15bp of term premium. */
+  private overnightRate(ccy: Ccy): number {
+    return this.curves.get(`${ccy}:2Y`)! - 0.0015;
+  }
+
   private reprice(row: IrsRiskPnlRow, curveDelta: number): IrsRiskPnlRow {
     const deltaBp = curveDelta * 10_000;
     // Bond-style DV01 sign: P&L = -Δbp × dv01, plus the gamma (convexity) term.
     const curveMove = -deltaBp * row.dv01 + 0.5 * row.gamma * deltaBp * deltaBp;
-    const carryAccrual = Math.abs(row.dv01) * rand(0.001, 0.004); // slow positive accrual
+    // Carry = (fixed − compounded overnight) accrual, signed by direction: the receiver earns the
+    // spread the payer pays away — a flat pay/receive book carries flat, not uniformly positive.
+    const dir = row.payReceive === 'RCV' ? 1 : -1;
+    const carryAccrual = dir * (row.fixedRate - this.overnightRate(row.ccy)) * row.notionalUsd * 0.0001 * rand(0.6, 1.4);
     const rollAccrual = row.dv01 * rand(0, 0.0015);
     const residual = curveMove * rand(-0.01, 0.01);
 
@@ -243,28 +285,32 @@ export class IrsRiskPnlTable {
     // Traded some time in the past year — fixed rate near where par was then.
     const fixedRate = round(parRate + rand(-0.004, 0.004), 6);
     const notional = Math.round(rand(25, 750)) * 1_000_000 * (ccy === 'JPY' ? 150 : 1);
+    const notionalUsd = Math.round(notional * FX_TO_USD[ccy]);
 
     // DV01 ≈ notional × annuity (≈ tenor years × ~0.92 discounting haircut) × 1bp, in USD.
     const years = TENOR_YEARS[tenor];
-    const dv01Abs = round(notional * FX_TO_USD[ccy] * years * 0.92 * 0.0001, 0);
+    const dv01Abs = round(notionalUsd * years * 0.92 * 0.0001, 0);
     const sign = payReceive === 'RCV' ? 1 : -1; // receive-fixed = long duration
     const dv01 = sign * dv01Abs;
     const gamma = round(sign * dv01Abs * 0.0007 * years, 1);
 
     const kr01s = { kr01_2y: 0, kr01_5y: 0, kr01_10y: 0, kr01_30y: 0 };
-    // Bulk of the risk in the position's own bucket, a sliver in the neighbours (curve shape risk).
+    // Bulk of the risk in the position's own bucket, the sliver in an ADJACENT bucket only —
+    // key-rate bumps are local, so a 2Y swap carries no 30Y key-rate sensitivity.
+    const BUCKETS = ['kr01_2y', 'kr01_5y', 'kr01_10y', 'kr01_30y'] as const;
     const own = kr01Bucket(tenor);
+    const ownIdx = BUCKETS.indexOf(own);
+    const neighbours = BUCKETS.filter((_, i) => Math.abs(i - ownIdx) === 1);
     kr01s[own] = round(dv01 * rand(0.88, 0.96), 0);
-    const spill = dv01 - kr01s[own];
-    const others = (Object.keys(kr01s) as (keyof typeof kr01s)[]).filter((k) => k !== own);
-    kr01s[pick(others)] = round(spill, 0);
+    kr01s[pick(neighbours)] = round(dv01 - kr01s[own], 0);
 
     // NPV: off-market by (par - fixed) × dv01-per-bp, receiver gains when par < fixed.
     const offMarketBp = (parRate - fixedRate) * 10_000;
     const npv = round(-sign * offMarketBp * dv01Abs + rand(-1, 1) * dv01Abs * 0.5, 0);
 
     const isNewToday = Math.random() < 0.2;
-    const carryPnl = round(dv01Abs * rand(0.05, 0.4), 0);
+    // Carry seed: direction × (fixed − overnight) spread accrued part-way through the day.
+    const carryPnl = round(sign * (fixedRate - this.overnightRate(ccy)) * notionalUsd * rand(0.01, 0.05), 0);
     const rollDownPnl = round(dv01 * rand(0, 0.15), 0);
     const curvePnl = round(dv01 * rand(-0.8, 0.8), 0);
     const newTradePnl = isNewToday ? round(dv01Abs * rand(0.02, 0.12), 0) : 0;
@@ -288,6 +334,7 @@ export class IrsRiskPnlTable {
       tenor,
       payReceive,
       notional,
+      notionalUsd,
       fixedRate,
       parRate: round(parRate, 6),
       effectiveDate: isoDate(effective),

@@ -2,8 +2,12 @@ import type { ColDef, ColGroupDef, GridOptions } from 'ag-grid-community';
 import type { BlotterMode } from './blotter-source';
 import { titleCase } from './column-inference';
 
-/** Aggregation applied to a measure column when the blotter is rolled up (AG Grid built-ins). */
-export type RollupAggFunc = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'first' | 'last';
+/**
+ * Aggregation applied to a measure column when the blotter is rolled up (AG Grid built-ins),
+ * or `'none'` to exclude a numeric field from aggregation entirely — e.g. a per-currency
+ * notional that must not be summed across books in different currencies.
+ */
+export type RollupAggFunc = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'first' | 'last' | 'none';
 
 /**
  * Optional roll-up view for a blotter source: group the flat payload into a hierarchy
@@ -182,7 +186,8 @@ function decorateLeaf(c: ColDef, rollup: RollupConfig): ColDef {
     return { ...c, rowGroup: true, rowGroupIndex: groupIndex, hide: true, enableRowGroup: true };
   }
   const agg = rollup.aggregations?.[field] ?? (c.type === 'numericColumn' ? aggForField(field) : undefined);
-  if (agg) return { ...c, aggFunc: agg, enableValue: true };
+  // An explicit 'none' opts a numeric field out of aggregation (blank at group level).
+  if (agg && agg !== 'none') return { ...c, aggFunc: agg, enableValue: true };
   return { ...c, enableRowGroup: true };
 }
 
