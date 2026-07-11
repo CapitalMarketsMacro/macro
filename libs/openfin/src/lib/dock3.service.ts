@@ -13,7 +13,10 @@ import type { DockConfigService } from './dock-config.service';
 import type { WorkspaceStorageService } from './workspace-storage.service';
 import { getAnalyticsNats } from './analytics-nats.service';
 import { toTaskbarIcon } from './icon-utils';
-import type { LobDockApp } from './storage/storage-types';
+import {
+  WELL_KNOWN_PREFERENCES,
+  type LobDockApp,
+} from './storage/storage-types';
 import type {
   PlatformSettings,
   Dock3Settings,
@@ -77,6 +80,9 @@ type ContentMenuNode = ContentMenuFolder | ContentMenuItem;
  */
 export class Dock3Service {
   private provider: Dock3Provider | null = null;
+  /** The live config object (loadConfig returns it; refreshPinnedApps mutates it). */
+  private activeConfig: Dock3Config | null = null;
+  private registryApps: App[] = [];
 
   constructor(
     private readonly launchService: LaunchService,
@@ -95,12 +101,13 @@ export class Dock3Service {
     // Overrides exist for tests/advanced callers that supply config directly.
     // The LOB fetch runs concurrently — it is an optional decoration and must not
     // serially extend the dock's registration window when the storage host is slow.
-    const [apps, dock3Settings, lobApps] = await Promise.all([
+    const [apps, dock3Settings, lobApps, pinnedIdsRaw] = await Promise.all([
       appsOverride ? Promise.resolve(appsOverride) : this.appsService.load(),
       dockOverride
         ? Promise.resolve(dockOverride)
         : this.dockConfigService.getDockConfig(),
       this.loadLobApps(),
+      this.loadPinnedAppIds(),
     ]);
     const favorites = this.buildFavorites(
       dock3Settings?.favorites,
@@ -121,6 +128,18 @@ export class Dock3Service {
     } catch (error) {
       logger.error(
         'LOB dock app merge failed — dock renders config-driven entries only',
+        error,
+      );
+    }
+
+    // Store-pinned apps ("Add to Dock" on Storefront cards) — appended last, from the
+    // per-user `dock-pinned-apps` preference (fetched concurrently above).
+    this.registryApps = apps ?? [];
+    try {
+      favorites.push(...this.buildPinnedFavorites(pinnedIdsRaw));
+    } catch (error) {
+      logger.warn(
+        'Could not append dock-pinned apps — dock renders without pins',
         error,
       );
     }
@@ -169,6 +188,8 @@ export class Dock3Service {
         },
       },
     };
+
+    this.activeConfig = config;
 
     logger.info('Initializing Dock3', {
       favoritesCount: favorites.length,
@@ -293,8 +314,75 @@ export class Dock3Service {
     if (this.provider) {
       await this.provider.shutdown();
       this.provider = null;
+      this.activeConfig = null;
       logger.info('Dock3 shut down');
     }
+  }
+
+  /** Pinned appIds from the per-user preference (fail-soft — dock renders without pins). */
+  private async loadPinnedAppIds(): Promise<string[]> {
+    if (!this.storageService) return [];
+    try {
+      const ids = await this.storageService.getPreference<string[]>(
+        WELL_KNOWN_PREFERENCES.dockPinnedApps,
+      );
+      return Array.isArray(ids) ? ids : [];
+    } catch (error) {
+      logger.warn(
+        'Could not load dock-pinned apps — dock renders without pins',
+        error,
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Live-apply a changed dock-pin set ("Add to Dock" on Storefront cards): replaces
+   * only the `pin:`-prefixed favorites on the ACTIVE config — preserving any
+   * in-session dock edits — and pushes it through the provider's `updateConfig`.
+   * The active config object is mutated too, so the `loadConfig` override keeps
+   * returning the pinned state on internal dock reloads.
+   */
+  async refreshPinnedApps(pinnedAppIds: string[]): Promise<void> {
+    if (!this.provider || !this.activeConfig) {
+      logger.warn(
+        'refreshPinnedApps called before dock init — pins apply on next start',
+      );
+      return;
+    }
+    const nonPinned = (this.activeConfig.favorites ?? []).filter(
+      (fav) => !String((fav as { id?: string }).id ?? '').startsWith('pin:'),
+    );
+    const favorites = [
+      ...nonPinned,
+      ...this.buildPinnedFavorites(pinnedAppIds),
+    ];
+    this.activeConfig.favorites = favorites as Dock3Config['favorites'];
+    await this.provider.updateConfig(this.activeConfig);
+    logger.info('Dock pins refreshed', { pinned: pinnedAppIds.length });
+  }
+
+  /** Map pinned appIds onto dock favorite items (unknown/duplicate ids skipped). */
+  private buildPinnedFavorites(pinnedAppIds: string[]): DockItemEntry[] {
+    const items: DockItemEntry[] = [];
+    const seen = new Set<string>();
+    for (const appId of pinnedAppIds) {
+      if (typeof appId !== 'string' || !appId || seen.has(appId)) continue;
+      seen.add(appId);
+      const app = this.registryApps.find((a) => a.appId === appId);
+      if (!app) {
+        logger.warn('Skipping dock pin for unknown appId', { appId });
+        continue;
+      }
+      items.push({
+        type: 'item',
+        id: `pin:${appId}`,
+        label: app.title ?? appId,
+        icon: app.icons?.[0]?.src ?? '',
+        itemData: { appId },
+      });
+    }
+    return items;
   }
 
   /** "Macro Tools" more-menu actions. */

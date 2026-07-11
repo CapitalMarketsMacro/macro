@@ -97,7 +97,8 @@ export class StorefrontConfigService extends BaseStorefrontConfigService {
 @Injectable({ providedIn: 'root' })
 export class AppsService extends BaseAppsService {
   constructor() {
-    super(configHttpWithStaticFallback(inject(HttpClient), 'apps.json'), () => resolveConfigUrl('apps.json'));
+    // WorkspaceStorageService enables LOB store apps published via /store-apps.
+    super(configHttpWithStaticFallback(inject(HttpClient), 'apps.json'), () => resolveConfigUrl('apps.json'), inject(WorkspaceStorageService));
   }
 }
 
@@ -153,6 +154,9 @@ export class StoreService extends BaseStoreService {
       inject(StorefrontConfigService),
       inject(EntitlementsService),
       inject(LaunchService),
+      // Storage + Dock3 enable the per-user "Add to Dock" card button.
+      inject(WorkspaceStorageService),
+      inject(Dock3Service),
     );
   }
 }

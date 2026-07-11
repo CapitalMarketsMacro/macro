@@ -108,12 +108,19 @@ export interface AppsConfig {
 /** An OpenFin App plus our enterprise metadata. `category` = business area (FX, Rates, …). */
 export type MacroApp = App & { category?: string };
 
-/** One navigation item = a business area rendered as an AppGrid (apps filtered by `category`). */
+/**
+ * One navigation item rendered as an AppGrid. Apps match on `category` OR any of the
+ * item's `tags` (case-insensitive) — LOB apps published via /store-apps can carry
+ * either, so a business-area item like FX shows category "FX" apps plus apps tagged
+ * "fx".
+ */
 export interface StorefrontNavItemConfig {
   id: string;
   title: string;
   /** Business-area key matched against each app's `category`; `'*'` = all apps. */
-  category: string;
+  category?: string;
+  /** Tag filter — ALSO shows apps carrying ANY of these tags (case-insensitive). */
+  tags?: string[];
 }
 
 export interface StorefrontNavSectionConfig {
@@ -187,4 +194,3 @@ export interface EntitlementsConfig {
   /** appId -> required entitlements (any-of). Missing/empty entry = launchable by everyone. */
   apps: Record<string, string[]>;
 }
-

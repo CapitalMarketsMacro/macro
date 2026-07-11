@@ -8,11 +8,22 @@ import type { EntitlementsService } from './entitlements.service';
 import type { LaunchService } from './launch.service';
 
 jest.mock('@macro/logger', () => ({
-  Logger: { getLogger: () => ({ info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() }) },
+  Logger: {
+    getLogger: () => ({
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    }),
+  },
 }));
 
 jest.mock('@openfin/workspace', () => ({
-  Storefront: { register: jest.fn(), show: jest.fn(), deregister: jest.fn().mockResolvedValue(undefined) },
+  Storefront: {
+    register: jest.fn(),
+    show: jest.fn(),
+    deregister: jest.fn().mockResolvedValue(undefined),
+  },
   StorefrontTemplate: { AppGrid: 'AppGrid', LandingPage: 'landingPage' },
 }));
 
@@ -21,6 +32,10 @@ jest.mock('@openfin/workspace-platform', () => ({
 }));
 
 import { Storefront } from '@openfin/workspace';
+import {
+  initWorkspaceStorage,
+  resetWorkspaceStorageForTests,
+} from './storage/storage-context';
 
 describe('StoreService', () => {
   let service: StoreService;
@@ -31,7 +46,11 @@ describe('StoreService', () => {
   let mockLaunchService: LaunchService;
   let mockStoreRegistration: { updateAppCardButtons: jest.Mock };
 
-  const platformSettings: PlatformSettings = { id: 'macro-workspace', title: 'Macro Workspace', icon: 'icon.png' };
+  const platformSettings: PlatformSettings = {
+    id: 'macro-workspace',
+    title: 'Macro Workspace',
+    icon: 'icon.png',
+  };
 
   const mockApps = [
     { appId: 'app-1', title: 'App One', category: 'FX' },
@@ -41,22 +60,43 @@ describe('StoreService', () => {
   const navConfig = {
     favoritesTitle: 'Favorites',
     sections: [
-      { id: 'markets', title: 'Markets', items: [{ id: 'fx', title: 'FX', category: 'FX' }] },
-      { id: 'library', title: 'All Apps', items: [{ id: 'all-apps', title: 'All Apps', category: '*' }] },
+      {
+        id: 'markets',
+        title: 'Markets',
+        items: [{ id: 'fx', title: 'FX', category: 'FX' }],
+      },
+      {
+        id: 'library',
+        title: 'All Apps',
+        items: [{ id: 'all-apps', title: 'All Apps', category: '*' }],
+      },
     ],
   };
 
   /** Build the expected decorated-app shape (favorite button + entitlement tooltip). */
   const decorate = (
     apps: any[],
-    opts: { favIds?: Set<string>; canLaunch?: (id: string) => boolean; required?: (id: string) => string[] } = {},
+    opts: {
+      favIds?: Set<string>;
+      canLaunch?: (id: string) => boolean;
+      required?: (id: string) => string[];
+    } = {},
   ) => {
-    const { favIds = new Set<string>(), canLaunch = () => true, required = () => [] } = opts;
+    const {
+      favIds = new Set<string>(),
+      canLaunch = () => true,
+      required = () => [],
+    } = opts;
     return apps.map((app) => ({
       ...app,
-      tooltip: canLaunch(app.appId) ? (app.tooltip ?? app.title) : `🔒 Requires entitlement: ${required(app.appId).join(', ')}`,
+      tooltip: canLaunch(app.appId)
+        ? (app.tooltip ?? app.title)
+        : `🔒 Requires entitlement: ${required(app.appId).join(', ')}`,
       secondaryButtons: [
-        { title: favIds.has(app.appId) ? '★ Unfavorite' : '☆ Favorite', action: { id: 'toggle-store-favorite' } },
+        {
+          title: favIds.has(app.appId) ? '★ Unfavorite' : '☆ Favorite',
+          action: { id: 'toggle-store-favorite' },
+        },
       ],
     }));
   };
@@ -66,10 +106,15 @@ describe('StoreService', () => {
     (Storefront.show as jest.Mock).mockReset();
     ((Storefront as any).deregister as jest.Mock).mockClear();
 
-    mockStoreRegistration = { updateAppCardButtons: jest.fn().mockResolvedValue(undefined) };
+    mockStoreRegistration = {
+      updateAppCardButtons: jest.fn().mockResolvedValue(undefined),
+    };
     (Storefront.register as jest.Mock).mockResolvedValue(mockStoreRegistration);
 
-    mockAppsService = { getApps: jest.fn().mockReturnValue(mockApps), ensureLoaded: jest.fn().mockResolvedValue(undefined) } as unknown as AppsService;
+    mockAppsService = {
+      getApps: jest.fn().mockReturnValue(mockApps),
+      ensureLoaded: jest.fn().mockResolvedValue(undefined),
+    } as unknown as AppsService;
 
     mockFavoritesService = {
       getFavoriteIds: jest.fn().mockReturnValue(new Set()),
@@ -88,7 +133,9 @@ describe('StoreService', () => {
         text: 'Macro Workspace — Capital Markets',
         links: [{ title: 'Support', url: 'mailto:support@example.com' }],
       }),
-      getCardClickBehavior: jest.fn().mockResolvedValue('perform-primary-button-action'),
+      getCardClickBehavior: jest
+        .fn()
+        .mockResolvedValue('perform-primary-button-action'),
     } as unknown as StorefrontConfigService;
 
     mockEntitlementsService = {
@@ -97,7 +144,9 @@ describe('StoreService', () => {
       getRequiredEntitlements: jest.fn().mockReturnValue([]),
     } as unknown as EntitlementsService;
 
-    mockLaunchService = { launch: jest.fn().mockResolvedValue(true) } as unknown as LaunchService;
+    mockLaunchService = {
+      launch: jest.fn().mockResolvedValue(true),
+    } as unknown as LaunchService;
 
     service = new StoreService(
       mockAppsService,
@@ -125,31 +174,55 @@ describe('StoreService', () => {
 
       expect(nav.map((s: any) => s.id)).toEqual(['markets', 'library']);
       // FX item only contains FX-category apps
-      expect(nav[0].items[0].templateData.apps).toEqual(decorate([mockApps[0]]));
+      expect(nav[0].items[0].templateData.apps).toEqual(
+        decorate([mockApps[0]]),
+      );
       // All Apps (*) contains everything
       expect(nav[1].items[0].templateData.apps).toEqual(decorate(mockApps));
     });
 
     it('prepends a dynamic Favorites section when favorites exist', async () => {
-      (mockFavoritesService.getFavoriteIds as jest.Mock).mockReturnValue(new Set(['app-2']));
-      (mockFavoritesService.isFavorite as jest.Mock).mockImplementation((id: string) => id === 'app-2');
+      (mockFavoritesService.getFavoriteIds as jest.Mock).mockReturnValue(
+        new Set(['app-2']),
+      );
+      (mockFavoritesService.isFavorite as jest.Mock).mockImplementation(
+        (id: string) => id === 'app-2',
+      );
       await firstValueFrom(service.register(platformSettings));
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
       const nav = await provider.getNavigation();
 
       expect(nav[0].id).toBe('favorites');
       expect(nav[0].title).toBe('Favorites');
-      expect(nav[0].items[0].templateData.apps).toEqual(decorate([mockApps[1]], { favIds: new Set(['app-2']) }));
+      expect(nav[0].items[0].templateData.apps).toEqual(
+        decorate([mockApps[1]], { favIds: new Set(['app-2']) }),
+      );
     });
 
     it('caps navigation at the OpenFin max of 3 sections', async () => {
-      (mockFavoritesService.getFavoriteIds as jest.Mock).mockReturnValue(new Set(['app-1']));
-      (mockStorefrontConfigService.getNavigationConfig as jest.Mock).mockResolvedValue({
+      (mockFavoritesService.getFavoriteIds as jest.Mock).mockReturnValue(
+        new Set(['app-1']),
+      );
+      (
+        mockStorefrontConfigService.getNavigationConfig as jest.Mock
+      ).mockResolvedValue({
         favoritesTitle: 'Favorites',
         sections: [
-          { id: 's1', title: 'S1', items: [{ id: 'i1', title: 'I1', category: '*' }] },
-          { id: 's2', title: 'S2', items: [{ id: 'i2', title: 'I2', category: '*' }] },
-          { id: 's3', title: 'S3', items: [{ id: 'i3', title: 'I3', category: '*' }] },
+          {
+            id: 's1',
+            title: 'S1',
+            items: [{ id: 'i1', title: 'I1', category: '*' }],
+          },
+          {
+            id: 's2',
+            title: 'S2',
+            items: [{ id: 'i2', title: 'I2', category: '*' }],
+          },
+          {
+            id: 's3',
+            title: 'S3',
+            items: [{ id: 'i3', title: 'I3', category: '*' }],
+          },
         ],
       });
       await firstValueFrom(service.register(platformSettings));
@@ -165,15 +238,23 @@ describe('StoreService', () => {
     });
 
     it('marks non-entitled apps with a locked tooltip (still visible)', async () => {
-      (mockEntitlementsService.canLaunch as jest.Mock).mockImplementation((id: string) => id !== 'app-2');
-      (mockEntitlementsService.getRequiredEntitlements as jest.Mock).mockImplementation((id: string) =>
+      (mockEntitlementsService.canLaunch as jest.Mock).mockImplementation(
+        (id: string) => id !== 'app-2',
+      );
+      (
+        mockEntitlementsService.getRequiredEntitlements as jest.Mock
+      ).mockImplementation((id: string) =>
         id === 'app-2' ? ['rates-trader'] : [],
       );
       await firstValueFrom(service.register(platformSettings));
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
       const apps = await provider.getApps();
-      expect(apps.find((a: any) => a.appId === 'app-1').tooltip).toBe('App One');
-      expect(apps.find((a: any) => a.appId === 'app-2').tooltip).toBe('🔒 Requires entitlement: rates-trader');
+      expect(apps.find((a: any) => a.appId === 'app-1').tooltip).toBe(
+        'App One',
+      );
+      expect(apps.find((a: any) => a.appId === 'app-2').tooltip).toBe(
+        '🔒 Requires entitlement: rates-trader',
+      );
     });
 
     it('routes the storefront launch through the entitlement-gating LaunchService', async () => {
@@ -189,7 +270,9 @@ describe('StoreService', () => {
       const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
       const footer = await provider.getFooter();
       expect(footer.text).toBe('Macro Workspace — Capital Markets');
-      expect(footer.links).toEqual([{ title: 'Support', url: 'mailto:support@example.com' }]);
+      expect(footer.links).toEqual([
+        { title: 'Support', url: 'mailto:support@example.com' },
+      ]);
       expect(footer.logo.src).toBe('icon.png'); // falls back to platform icon
     });
 
@@ -223,30 +306,49 @@ describe('StoreService', () => {
     it.each([
       ['favorite', true, '★ Unfavorite'],
       ['unfavorite', false, '☆ Favorite'],
-    ])('toggling to %s persists it and flips the card button — without re-registering', async (_label, becomesFav, expectedTitle) => {
-      (mockFavoritesService.isFavorite as jest.Mock).mockReturnValue(becomesFav);
-      await firstValueFrom(service.register(platformSettings));
-      (Storefront.register as jest.Mock).mockClear();
-      const primaryButton = { title: 'Open', action: { id: 'launch-app' } };
+    ])(
+      'toggling to %s persists it and flips the card button — without re-registering',
+      async (_label, becomesFav, expectedTitle) => {
+        (mockFavoritesService.isFavorite as jest.Mock).mockReturnValue(
+          becomesFav,
+        );
+        await firstValueFrom(service.register(platformSettings));
+        (Storefront.register as jest.Mock).mockClear();
+        const primaryButton = { title: 'Open', action: { id: 'launch-app' } };
 
-      await service.getStoreCustomActions()['toggle-store-favorite']({ appId: 'app-1', primaryButton });
+        await service
+          .getStoreCustomActions()
+          ['toggle-store-favorite']({ appId: 'app-1', primaryButton });
 
-      expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith('app-1');
-      expect(mockStoreRegistration.updateAppCardButtons).toHaveBeenCalledWith({
-        appId: 'app-1',
-        primaryButton,
-        secondaryButtons: [{ title: expectedTitle, action: { id: 'toggle-store-favorite' } }],
-      });
-      // No re-register / deregister — that would destabilize the platform.
-      expect((Storefront as any).deregister).not.toHaveBeenCalled();
-      expect(Storefront.register).not.toHaveBeenCalled();
-    });
+        expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith(
+          'app-1',
+        );
+        expect(mockStoreRegistration.updateAppCardButtons).toHaveBeenCalledWith(
+          {
+            appId: 'app-1',
+            primaryButton,
+            secondaryButtons: [
+              { title: expectedTitle, action: { id: 'toggle-store-favorite' } },
+            ],
+          },
+        );
+        // No re-register / deregister — that would destabilize the platform.
+        expect((Storefront as any).deregister).not.toHaveBeenCalled();
+        expect(Storefront.register).not.toHaveBeenCalled();
+      },
+    );
 
     it('does not throw if updateAppCardButtons rejects (non-fatal)', async () => {
       await firstValueFrom(service.register(platformSettings));
-      mockStoreRegistration.updateAppCardButtons.mockRejectedValueOnce(new Error('boom'));
+      mockStoreRegistration.updateAppCardButtons.mockRejectedValueOnce(
+        new Error('boom'),
+      );
       await expect(
-        service.getStoreCustomActions()['toggle-store-favorite']({ appId: 'app-1', primaryButton: undefined as any }),
+        service
+          .getStoreCustomActions()
+          [
+            'toggle-store-favorite'
+          ]({ appId: 'app-1', primaryButton: undefined as any }),
       ).resolves.toBeUndefined();
       expect(mockFavoritesService.toggleFavorite).toHaveBeenCalledWith('app-1');
     });
@@ -266,6 +368,230 @@ describe('StoreService', () => {
       (Storefront.show as jest.Mock).mockResolvedValue(undefined);
       await service.show();
       expect(Storefront.show).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // ── tag-filtered navigation items (Showcase / LOB Apps) ──
+
+  describe('tag-filtered navigation', () => {
+    it('matches apps by category OR any item tag (case-insensitive union, no dupes)', async () => {
+      const tagApps = [
+        { appId: 'a', title: 'A', category: 'Showcase', tags: ['showcase'] },
+        { appId: 'b', title: 'B', category: 'FX', tags: ['lob'] }, // LOB app using category
+        { appId: 'c', title: 'C', category: 'LOB', tags: ['FX', 'lob'] }, // LOB app using a tag (mixed case)
+        { appId: 'd', title: 'D', category: 'Rates' },
+      ] as any[];
+      (mockAppsService.getApps as jest.Mock).mockReturnValue(tagApps);
+      (
+        mockStorefrontConfigService.getNavigationConfig as jest.Mock
+      ).mockResolvedValue({
+        sections: [
+          {
+            id: 'capital-markets',
+            title: 'Capital Markets',
+            items: [
+              { id: 'fx', title: 'FX', category: 'FX', tags: ['fx'] },
+              { id: 'showcase', title: 'Showcase', category: 'Showcase' },
+              { id: 'rates', title: 'Rates', tags: ['rates'] },
+            ],
+          },
+        ],
+      });
+
+      await firstValueFrom(service.register(platformSettings));
+      const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
+      const nav = await provider.getNavigation();
+      const items = nav[0].items;
+      // FX = category match (b) + case-insensitive tag match (c), no duplicates
+      expect(items[0].templateData.apps.map((a: any) => a.appId)).toEqual([
+        'b',
+        'c',
+      ]);
+      // plain category item unchanged
+      expect(items[1].templateData.apps.map((a: any) => a.appId)).toEqual([
+        'a',
+      ]);
+      // tags-only item matches nothing when no app carries the tag
+      expect(items[2].templateData.apps.map((a: any) => a.appId)).toEqual([]);
+    });
+  });
+
+  // ── "Add to Dock" card button (storage + dock3 wired) ──
+
+  describe('dock pin (Add to Dock)', () => {
+    let mockStorage: { getPreference: jest.Mock; setPreference: jest.Mock };
+    let mockDock3: { refreshPinnedApps: jest.Mock };
+    let lsStore: Record<string, string>;
+
+    beforeEach(() => {
+      // Hydration reads via the RAW storage client (throwing path) — back it with a
+      // mocked localStorage so the default local client serves the seeded pins.
+      lsStore = { 'macro:pref:dock-pinned-apps': JSON.stringify(['app-2']) };
+      (globalThis as any).localStorage = {
+        getItem: (key: string) => lsStore[key] ?? null,
+        setItem: (key: string, value: string) => {
+          lsStore[key] = value;
+        },
+        removeItem: (key: string) => {
+          delete lsStore[key];
+        },
+      };
+      resetWorkspaceStorageForTests();
+    });
+    afterEach(() => {
+      delete (globalThis as any).localStorage;
+      resetWorkspaceStorageForTests();
+    });
+
+    const buildPinnedService = () => {
+      mockStorage = {
+        getPreference: jest.fn().mockResolvedValue(['app-2']),
+        setPreference: jest.fn().mockResolvedValue(undefined),
+      };
+      mockDock3 = { refreshPinnedApps: jest.fn().mockResolvedValue(undefined) };
+      return new StoreService(
+        mockAppsService,
+        mockFavoritesService,
+        mockStorefrontConfigService,
+        mockEntitlementsService,
+        mockLaunchService,
+        mockStorage as any,
+        mockDock3 as any,
+      );
+    };
+
+    it('decorates cards with BOTH secondary buttons and reflects hydrated pins', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+      const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
+      const apps = await provider.getApps();
+
+      expect(apps[0].secondaryButtons).toEqual([
+        { title: '☆ Favorite', action: { id: 'toggle-store-favorite' } },
+        { title: '📌 Add to Dock', action: { id: 'toggle-dock-pin' } },
+      ]);
+      expect(apps[1].secondaryButtons[1]).toEqual({
+        title: '📌 Remove from Dock',
+        action: { id: 'toggle-dock-pin' },
+      });
+    });
+
+    it('toggle-dock-pin persists first, then refreshes the dock live and flips the button', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+
+      await pinned.getStoreCustomActions()['toggle-dock-pin']({
+        appId: 'app-1',
+        primaryButton: { title: 'Launch', action: { id: 'launch-app' } },
+      });
+
+      expect(mockStorage.setPreference).toHaveBeenCalledWith(
+        'dock-pinned-apps',
+        ['app-2', 'app-1'],
+      );
+      expect(mockDock3.refreshPinnedApps).toHaveBeenCalledWith([
+        'app-2',
+        'app-1',
+      ]);
+      expect(mockStoreRegistration.updateAppCardButtons).toHaveBeenCalledWith(
+        expect.objectContaining({
+          appId: 'app-1',
+          secondaryButtons: [
+            { title: '☆ Favorite', action: { id: 'toggle-store-favorite' } },
+            { title: '📌 Remove from Dock', action: { id: 'toggle-dock-pin' } },
+          ],
+        }),
+      );
+    });
+
+    it('leaves the dock and buttons unchanged when the pin write fails (writes-throw posture)', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+      mockStorage.setPreference.mockRejectedValue(new Error('storage down'));
+
+      await pinned
+        .getStoreCustomActions()
+        ['toggle-dock-pin']({ appId: 'app-1' });
+
+      expect(mockDock3.refreshPinnedApps).not.toHaveBeenCalled();
+      expect(mockStoreRegistration.updateAppCardButtons).not.toHaveBeenCalled();
+    });
+
+    it('unpins on second toggle', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+
+      await pinned
+        .getStoreCustomActions()
+        ['toggle-dock-pin']({ appId: 'app-2' });
+      expect(mockStorage.setPreference).toHaveBeenCalledWith(
+        'dock-pinned-apps',
+        [],
+      );
+      expect(mockDock3.refreshPinnedApps).toHaveBeenCalledWith([]);
+    });
+
+    it('serializes overlapping toggles so both pins compose (no last-write-wins)', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+      // Slow first persist: the second toggle must queue behind it and see its result.
+      let releaseFirst: () => void = () => undefined;
+      mockStorage.setPreference
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((resolve) => (releaseFirst = () => resolve())),
+        )
+        .mockResolvedValue(undefined);
+
+      const actions = pinned.getStoreCustomActions();
+      const first = actions['toggle-dock-pin']({ appId: 'app-1' });
+      const second = actions['toggle-dock-pin']({ appId: 'app-3' });
+      // Let toggle 1 reach its pending persist (the queue runs on microtasks)
+      // before releasing it — a sync release would hit the no-op placeholder.
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      releaseFirst();
+      await Promise.all([first, second]);
+
+      expect(mockStorage.setPreference).toHaveBeenNthCalledWith(
+        1,
+        'dock-pinned-apps',
+        ['app-2', 'app-1'],
+      );
+      expect(mockStorage.setPreference).toHaveBeenNthCalledWith(
+        2,
+        'dock-pinned-apps',
+        ['app-2', 'app-1', 'app-3'],
+      );
+    });
+
+    it('refuses toggles while pins are unhydrated (REST outage) so stored pins are never wiped', async () => {
+      // Simulate a REST backend that is down: hydration throws, pinsHydrated stays false.
+      const origFetch = globalThis.fetch;
+      (globalThis as { fetch: unknown }).fetch = jest
+        .fn()
+        .mockRejectedValue(new Error('storage down'));
+      initWorkspaceStorage(
+        {
+          defaultEnvironment: 'dev',
+          environments: {
+            dev: { mode: 'rest', baseUrl: 'http://storage.test/workspace/v1' },
+          },
+        },
+        { search: '' },
+      );
+      try {
+        const pinned = buildPinnedService();
+        await firstValueFrom(pinned.register(platformSettings));
+
+        await pinned
+          .getStoreCustomActions()
+          ['toggle-dock-pin']({ appId: 'app-1' });
+
+        expect(mockStorage.setPreference).not.toHaveBeenCalled();
+        expect(mockDock3.refreshPinnedApps).not.toHaveBeenCalled();
+      } finally {
+        (globalThis as { fetch: unknown }).fetch = origFetch;
+      }
     });
   });
 });

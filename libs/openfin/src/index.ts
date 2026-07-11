@@ -50,6 +50,7 @@ export type {
   ResolvedStorageEnvironment,
   LobDockApp,
   LobDockAppChild,
+  LobStoreApp,
 } from './lib/storage/storage-types';
 export { WELL_KNOWN_PREFERENCES } from './lib/storage/storage-types';
 export { LocalStorageWorkspaceStorageClient } from './lib/storage/local-storage-client';

@@ -19,9 +19,10 @@
       "images": [],
       "tags": [
         "view",
-        "openfin"
+        "openfin",
+        "showcase"
       ],
-      "category": "Workspace"
+      "category": "Showcase"
     },
     {
       "appId": "macro-workspace-view2",
@@ -42,9 +43,10 @@
       "images": [],
       "tags": [
         "view",
-        "openfin"
+        "openfin",
+        "showcase"
       ],
-      "category": "Workspace"
+      "category": "Showcase"
     },
     {
       "appId": "macro-angular-view",
@@ -66,9 +68,10 @@
       "tags": [
         "view",
         "angular",
-        "market-data"
+        "market-data",
+        "showcase"
       ],
-      "category": "Markets"
+      "category": "Showcase"
     },
     {
       "appId": "macro-angular-fx-market-data",
@@ -86,14 +89,19 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/screenshots/fx-market-data.png"
+        }
+      ],
       "tags": [
         "view",
         "angular",
         "fx",
-        "market-data"
+        "market-data",
+        "showcase"
       ],
-      "category": "FX"
+      "category": "Showcase"
     },
     {
       "appId": "macro-angular-treasury-microstructure",
@@ -111,14 +119,19 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/screenshots/treasury-microstructure.png"
+        }
+      ],
       "tags": [
         "view",
         "angular",
         "treasury",
-        "market-data"
+        "market-data",
+        "showcase"
       ],
-      "category": "Rates"
+      "category": "Showcase"
     },
     {
       "appId": "macro-angular-risk-pnl",
@@ -136,14 +149,19 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/screenshots/risk-pnl.png"
+        }
+      ],
       "tags": [
         "view",
         "angular",
         "risk",
-        "pnl"
+        "pnl",
+        "showcase"
       ],
-      "category": "Risk"
+      "category": "Showcase"
     },
     {
       "appId": "macro-react-view",
@@ -165,9 +183,10 @@
       "tags": [
         "view",
         "react",
-        "market-data"
+        "market-data",
+        "showcase"
       ],
-      "category": "Markets"
+      "category": "Showcase"
     },
     {
       "appId": "macro-react-treasury-market-data",
@@ -185,14 +204,19 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/screenshots/treasury-market-data.png"
+        }
+      ],
       "tags": [
         "view",
         "react",
         "treasury",
-        "market-data"
+        "market-data",
+        "showcase"
       ],
-      "category": "Rates"
+      "category": "Showcase"
     },
     {
       "appId": "macro-angular-fdc3-instrument-viewer",
@@ -215,9 +239,10 @@
         "view",
         "angular",
         "fdc3",
-        "instrument"
+        "instrument",
+        "showcase"
       ],
-      "category": "FX"
+      "category": "Showcase"
     },
     {
       "appId": "macro-react-commodities-dashboard",
@@ -235,14 +260,19 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/screenshots/commodities-dashboard.png"
+        }
+      ],
       "tags": [
         "view",
         "react",
         "commodities",
-        "market-data"
+        "market-data",
+        "showcase"
       ],
-      "category": "Commodities"
+      "category": "Showcase"
     },
     {
       "appId": "macro-analytics-dashboard",
@@ -264,9 +294,10 @@
       "tags": [
         "view",
         "analytics",
-        "monitoring"
+        "monitoring",
+        "showcase"
       ],
-      "category": "Analytics"
+      "category": "Showcase"
     },
     {
       "appId": "rates-desktop",
@@ -288,9 +319,10 @@
       "tags": [
         "platform",
         "rates",
-        "fixed-income"
+        "fixed-income",
+        "showcase"
       ],
-      "category": "Rates"
+      "category": "Showcase"
     },
     {
       "appId": "capital-markets-themes",
@@ -308,18 +340,23 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/screenshots/capital-markets-themes.png"
+        }
+      ],
       "tags": [
         "view",
         "react",
-        "figma-make"
+        "figma-make",
+        "showcase"
       ],
-      "category": "Design"
+      "category": "Showcase"
     },
     {
       "appId": "prism-blotter",
       "name": "prism-blotter",
-      "title": "Prism — Blotter as a Service",
+      "title": "Prism \u2014 Blotter as a Service",
       "description": "Pick a Capital Markets data source (AMPS / NATS / JetStream / Solace / WebSocket / REST) or define an ad-hoc one; snapshot + real-time AG Grid blotter.",
       "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/prism.fin.json",
       "manifestType": "view",
@@ -332,7 +369,11 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/screenshots/prism-blotter.png"
+        }
+      ],
       "tags": [
         "view",
         "angular",
@@ -347,7 +388,7 @@
       "appId": "prism-react-blotter",
       "name": "prism-react-blotter",
       "title": "Prism Blotter (React)",
-      "description": "React build of Prism — pick a Capital Markets data source (AMPS / NATS / JetStream / Solace / WebSocket / REST) or define an ad-hoc one; snapshot + real-time AG Grid blotter.",
+      "description": "React build of Prism \u2014 pick a Capital Markets data source (AMPS / NATS / JetStream / Solace / WebSocket / REST) or define an ad-hoc one; snapshot + real-time AG Grid blotter.",
       "manifest": "https://{{OPENSHIFT_WORKSPACE_HOST}}/openshift/prism-react.fin.json",
       "manifestType": "view",
       "icons": [
@@ -359,7 +400,11 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "https://{{OPENSHIFT_WORKSPACE_HOST}}/screenshots/prism-react-blotter.png"
+        }
+      ],
       "tags": [
         "view",
         "react",

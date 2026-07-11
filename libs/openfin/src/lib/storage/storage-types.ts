@@ -59,6 +59,56 @@ export interface WorkspaceStorageClient {
    * folder whose children come from the entry itself.
    */
   getLobDockApps(): Promise<LobDockApp[]>;
+
+  // ── LOB store apps (SHARED across users — read-only from the workspace side) ──
+  /**
+   * Full store apps published by lines of business (`PUT /store-apps/{appId}`).
+   * Merged into the app registry at load: they appear in the Storefront (with an
+   * app-details page fed by description/images/support fields), Home search, and
+   * are launchable per their `manifestType` (`view` → embedded view, `manifest` →
+   * another platform). Registry apps win on `appId` collisions.
+   */
+  getLobStoreApps(): Promise<LobStoreApp[]>;
+}
+
+/**
+ * A full store app published by a line of business via the Workspace Storage API —
+ * everything the Storefront needs: card icon, app-details screenshots, support
+ * contacts, and the launch manifest.
+ */
+export interface LobStoreApp {
+  /** Unique app id. Registry (apps.json) apps win on collisions. */
+  appId: string;
+  title: string;
+  /** Shown on the card and the app-details page. */
+  description?: string;
+  /** Manifest URL — a view manifest (`view`) or a platform manifest (`manifest`). */
+  manifest: string;
+  manifestType: 'view' | 'manifest';
+  /** Store card icon(s) — at least one required. */
+  icons: Array<{ src: string }>;
+  /** Screenshots for the app-details page. */
+  images?: Array<{ src: string }>;
+  /** Details-page fields. `publisher` defaults to `lob` when omitted. */
+  publisher?: string;
+  contactEmail?: string;
+  supportEmail?: string;
+  /**
+   * Extra tags — route the app into matching business-area nav items
+   * case-insensitively (e.g. `rates` → the Rates item); the platform additionally
+   * force-adds a `lob` tag as metadata.
+   */
+  tags?: string[];
+  /**
+   * Storefront business-area category (FX / Rates / Commodities / Risk / Spread /
+   * Middle Office). Optional — a matching tag works too; apps with neither still
+   * appear under All Apps and in Home search.
+   */
+  category?: string;
+  /** Owning line of business, e.g. "Rates". */
+  lob?: string;
+  /** Ordering among LOB store apps (ascending; undefined last; stable). */
+  sortOrder?: number;
 }
 
 /** One child launcher inside a `dropdown` LOB dock app. */
@@ -110,6 +160,8 @@ export const WELL_KNOWN_PREFERENCES = {
   themePreset: 'theme-preset',
   /** Record<viewName, title> — custom view tab titles (legacy key `macro:view-titles`). */
   viewTitles: 'view-titles',
+  /** string[] — appIds the user pinned to the dock from the Storefront. */
+  dockPinnedApps: 'dock-pinned-apps',
 } as const;
 
 /** How a storage environment persists data. */

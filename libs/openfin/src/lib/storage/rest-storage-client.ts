@@ -1,7 +1,11 @@
 import type { Page, Workspace } from '@openfin/workspace-platform';
 import type { DockProviderConfigWithIdentity } from '@openfin/workspace';
 import { Logger } from '@macro/logger';
-import type { LobDockApp, WorkspaceStorageClient } from './storage-types';
+import type {
+  LobDockApp,
+  LobStoreApp,
+  WorkspaceStorageClient,
+} from './storage-types';
 
 const logger = Logger.getLogger('RestWorkspaceStorageClient');
 
@@ -123,6 +127,10 @@ export class RestWorkspaceStorageClient implements WorkspaceStorageClient {
 
   async getLobDockApps(): Promise<LobDockApp[]> {
     return (await this.request<LobDockApp[]>('GET', '/dock-apps')) ?? [];
+  }
+
+  async getLobStoreApps(): Promise<LobStoreApp[]> {
+    return (await this.request<LobStoreApp[]>('GET', '/store-apps')) ?? [];
   }
 
   // ── preferences ──

@@ -707,4 +707,93 @@ describe('Dock3Service', () => {
       expect(config.favorites).toEqual([]);
     });
   });
+
+  // ── store-pinned apps ("Add to Dock" on Storefront cards) ──
+
+  describe('dock pins', () => {
+    let mockUpdateConfig: jest.Mock;
+
+    const buildPinnedService = (pinnedIds: unknown) => {
+      mockUpdateConfig = jest.fn().mockResolvedValue(undefined);
+      (Dock.init as jest.Mock).mockResolvedValue({
+        ready: Promise.resolve(),
+        shutdown: mockProviderShutdown,
+        getWindowSync: () => ({ updateOptions: mockUpdateOptions }),
+        updateConfig: mockUpdateConfig,
+      });
+      const mockStorage = {
+        getLobDockApps: jest.fn().mockResolvedValue([]),
+        getPreference: jest.fn().mockResolvedValue(pinnedIds),
+      };
+      return new Dock3Service(
+        mockLaunchService as any,
+        mockAppsService as any,
+        mockDockConfigService as any,
+        mockStorage as any,
+      );
+    };
+
+    it('appends pinned apps as pin:-namespaced favorites at init (unknown ids skipped)', async () => {
+      const apps = [makeApp('macro-angular-view', 'Macro Angular', 'm.json', 'icon.png')];
+      const pinned = buildPinnedService(['macro-angular-view', 'ghost-app', 'macro-angular-view']);
+      await pinned.init(platformSettings, apps);
+
+      const config = (Dock.init as jest.Mock).mock.calls[0][0].config;
+      expect(config.favorites).toEqual([
+        {
+          type: 'item',
+          id: 'pin:macro-angular-view',
+          label: 'Macro Angular',
+          icon: 'icon.png',
+          itemData: { appId: 'macro-angular-view' },
+        },
+      ]);
+    });
+
+    it('refreshPinnedApps live-updates the provider config and the loadConfig source', async () => {
+      const apps = [
+        makeApp('macro-angular-view', 'Macro Angular', 'm.json', 'icon.png'),
+        makeApp('prism-blotter', 'Prism', 'p.json', 'prism.png'),
+      ];
+      const pinned = buildPinnedService([]);
+      await pinned.init(platformSettings, apps);
+
+      await pinned.refreshPinnedApps(['prism-blotter']);
+
+      expect(mockUpdateConfig).toHaveBeenCalledTimes(1);
+      const updated = mockUpdateConfig.mock.calls[0][0];
+      expect(updated.favorites).toEqual([
+        { type: 'item', id: 'pin:prism-blotter', label: 'Prism', icon: 'prism.png', itemData: { appId: 'prism-blotter' } },
+      ]);
+      // loadConfig returns the SAME (mutated) config object, so dock reloads keep pins.
+      expect((Dock.init as jest.Mock).mock.calls[0][0].config.favorites).toEqual(updated.favorites);
+    });
+
+    it('is a warn-only no-op before init', async () => {
+      const pinned = buildPinnedService([]);
+      await expect(pinned.refreshPinnedApps(['x'])).resolves.toBeUndefined();
+    });
+
+    it('dock still renders when the pin preference read fails', async () => {
+      mockUpdateConfig = jest.fn();
+      (Dock.init as jest.Mock).mockResolvedValue({
+        ready: Promise.resolve(),
+        shutdown: mockProviderShutdown,
+        getWindowSync: () => ({ updateOptions: mockUpdateOptions }),
+        updateConfig: mockUpdateConfig,
+      });
+      const mockStorage = {
+        getLobDockApps: jest.fn().mockResolvedValue([]),
+        getPreference: jest.fn().mockRejectedValue(new Error('down')),
+      };
+      const pinned = new Dock3Service(
+        mockLaunchService as any,
+        mockAppsService as any,
+        mockDockConfigService as any,
+        mockStorage as any,
+      );
+      await pinned.init(platformSettings);
+      expect((Dock.init as jest.Mock).mock.calls[0][0].config.favorites).toEqual([]);
+    });
+  });
 });

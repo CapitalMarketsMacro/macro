@@ -4,6 +4,7 @@ import { Logger } from '@macro/logger';
 import {
   WELL_KNOWN_PREFERENCES,
   type LobDockApp,
+  type LobStoreApp,
   type WorkspaceStorageClient,
 } from './storage-types';
 
@@ -12,6 +13,7 @@ const logger = Logger.getLogger('LocalStorageWorkspaceStorageClient');
 const WORKSPACES_KEY = 'workspace-platform-workspaces';
 const PAGES_KEY = 'workspace-platform-pages';
 const LOB_DOCK_APPS_KEY = 'workspace-lob-dock-apps';
+const LOB_STORE_APPS_KEY = 'workspace-lob-store-apps';
 const DOCK_KEY_PREFIX = 'workspace-platform-dock';
 const FAVORITES_KEY_PREFIX = 'workspace-store-favorites';
 const PREFERENCE_KEY_PREFIX = 'macro:pref';
@@ -134,6 +136,10 @@ export class LocalStorageWorkspaceStorageClient
 
   async getLobDockApps(): Promise<LobDockApp[]> {
     return this.readArray<LobDockApp>(LOB_DOCK_APPS_KEY);
+  }
+
+  async getLobStoreApps(): Promise<LobStoreApp[]> {
+    return this.readArray<LobStoreApp>(LOB_STORE_APPS_KEY);
   }
 
   // ── preferences ──
