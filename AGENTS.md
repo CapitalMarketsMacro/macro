@@ -34,7 +34,7 @@ macro/
 │   ├── prism/                  # Prism "Blotter as a Service" (Angular, PrimeNG)
 │   ├── prism-react/            # Prism blotter (React 19 + Vite, Shadcn/Radix)
 │   ├── capital-markets-themes/ # Theme showcase app (React 19 + Vite)
-│   ├── market-data-server/     # WebSocket server (simulated FX + Treasury data)
+│   ├── market-data-server/     # WebSocket server (simulated FX + Treasury data) + Workspace Storage reference API
 │   ├── macro-mcp/              # MCP server (stdio) — thin entrypoint over @macro/mcp-core
 │   └── macro-mcp-agent/        # MCP server (HTTP/SSE) — same @macro/mcp-core, for remote deploy
 ├── libs/
@@ -42,7 +42,7 @@ macro/
 │   ├── logger/                 # Pino-based structured logging (@macro/logger)
 │   ├── mcp-core/               # Shared MCP tools/resources/prompts (@macro/mcp-core) — used by both MCP servers
 │   ├── transports/             # Unified messaging: AMPS, Solace, NATS incl. JetStream (@macro/transports + /angular + /react)
-│   ├── openfin/                # OpenFin Workspace services + Angular DI + Snap + Analytics (@macro/openfin)
+│   ├── openfin/                # OpenFin Workspace services + Angular DI + Snap + Analytics + unified Workspace Storage client (@macro/openfin)
 │   ├── utils/                  # RxJS conflation utilities (@macro/utils)
 │   ├── prism-core/             # Framework-free blotter core: sources, feeds, column inference, roll-ups (@macro/prism-core)
 │   ├── macro-grid-format/      # Framework-free column-format engine + tool panels (@macro/macro-grid-format)
@@ -122,10 +122,10 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 - Config is **environment-scoped** under `apps/macro-workspace/public/{local,openshift}/`, selected by the `?env=` query param on the provider URL (default `local`). Local uses `http://localhost:42xx/...`; OpenShift uses `https://{{OPENSHIFT_*_HOST}}/...` tokens substituted at deploy time.
 - Platform manifest: `apps/macro-workspace/public/{local,openshift}/manifest.fin.json` (runtime/platform only — does **not** contain the app registry).
 - **App registry: `apps/macro-workspace/public/{local,openshift}/apps.json`** — the source of truth for store + dock + home. Each entry: `{appId, name, title, description, manifest, manifestType, icons, tags, category}`; the `category` field drives storefront navigation. (There is no `customSettings.apps` array.)
-- Dock: `dock-config.json` (`favorites[]` + `contentMenu[]` folders). Storefront: `storefront-config.json` (nav sections / landing / footer). Snap: `snap-config.json`. Entitlements: `entitlements.json`. `settings.json` holds `platformSettings` plus optional `browserSettings` (Workspace v24 browser options: `allowDuplicatePageTitles`, `indicators` suppression, `tabSearchButton`).
+- Dock: `dock-config.json` (`favorites[]` + `contentMenu[]` folders). Storefront: `storefront-config.json` (nav sections / landing / footer). Snap: `snap-config.json`. Entitlements: `entitlements.json`. `settings.json` holds `platformSettings`, optional `browserSettings` (Workspace v24 browser options: `allowDuplicatePageTitles`, `indicators` suppression, `tabSearchButton`), and the `storage` block (unified-storage environments, below).
 - View manifests: `apps/macro-workspace/public/{local,openshift}/<name>.fin.json` (`{ url, fdc3InteropApi: "2.0", interop: { currentContextGroup: "green" } }`).
 - FDC3 2.0 with `currentContextGroup: "green"` on all views
-- Workspace persistence via localStorage
+- **Unified Workspace Storage API**: ALL user persistence (saved workspaces + layouts, pages, dock customization, store favorites, theme preset, view titles, last-saved pointer) routes through `WorkspaceStorageClient` (`libs/openfin/src/lib/storage/`) — `local` mode = this machine's localStorage (legacy keys preserved), `dev`/`uat`/`prod` = a per-environment REST service (base URL per env from settings.json's `storage` block, user-scoped via `X-User-Id`). Active env precedence: `?storageEnv=` → saved picker choice (`macro:storage-env`) → `defaultEnvironment` → `local`; the provider window has a Storage picker (switch → platform restart). In REST mode apps/dock-config/storefront-config/snap-config load from the service's `/config/*` with static-file fallback on outage; `settings.json` + `entitlements.json` are bootstrap-tier and ALWAYS load from the static per-env folder. Contract: `docs/api/workspace-storage-api.openapi.yaml` (phase 2 = Java Spring Boot + MongoDB); phase-1 reference implementation: market-data-server at `/workspace/v1`
 - View state persistence via `ViewStateService` / `useViewState()` hook
 
 ### Real-Time Data Patterns
@@ -137,6 +137,7 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 - Prism REST mirror: `http://localhost:3000/prism/tables` (catalog) + `/prism/tables/<name>` (rows as a bare JSON array, CORS on) — consumed by the blotters' snapshot-only **REST** source (`RestSnapshotClient` in `@macro/prism-core`; manual refresh via `BlotterFeed.refresh()` diffs the new snapshot in place)
 - IRS Risk & PnL table (`irs_risk_pnl`, WS + REST): simulated IR swaps desk book — one row per OIS position (SOFR/€STR/SONIA/TONA) booked desk → book → trader, with DV01 (USD/bp, bond-style sign), KR01 key-rate buckets that sum to DV01, and a P&L explain that ties out (`dayPnl ≡ carry + rollDown + curve + newTrade + fees + residual`); par-curve random walk reprices positions per (ccy, tenor) point, with an accelerated ~20-min day roll. Seeded `WS IRS Risk / PnL` + `REST IRS Risk / PnL` sources (category Risk) open rolled up. Per-currency `notional` must never be summed — `notionalUsd` is the aggregatable field
 - Prism roll-ups: a blotter source may carry `rollup: { groupBy, aggregations?, enabled?, expandLevels?, grandTotal? }` (`RollupConfig` in `@macro/prism-core`) — the blotters render a Risk/PnL-style grouped view (hidden `rowGroup` columns, sum/avg measures, bottom grand-total row). Sources without one get a suggestion inferred from field names (`suggestRollup`); the toolbar Roll-up toggle flips flat ⇄ grouped and both ad-hoc dialogs expose group-by + "Open rolled up" (blank group-by + enabled opens on the suggestion). An aggregation of `"none"` excludes a numeric field from group totals (e.g. mixed-currency notionals)
+- Workspace Storage reference API: `http://localhost:3000/workspace/v1` — phase-1 implementation of the unified storage contract (workspaces / pages / dock / favorites / preferences per `X-User-Id`, plus `/config/*` passthrough; ETag/If-Match, RFC 9457 `problem+json` errors, debounced file persistence to `.workspace-store.json`)
 - For high-frequency data, use `ConflationSubject` from `@macro/utils` (double-buffer algorithm)
 - Angular grid updates via `updateRows$` Subject on `MacroAngularGrid`
 - React grid updates via `ref.current?.updateRows$` Subject on `MacroReactGridRef`
@@ -232,7 +233,8 @@ An **nx-mcp** server (NX workspace commands) is additionally provided by the NX 
 | `apps/macro-workspace/public/{local,openshift}/dock-config.json` | Dock favorites + content menu (per-env)      |
 | `apps/macro-workspace/public/{local,openshift}/storefront-config.json` | Storefront nav sections / landing / footer (per-env) |
 | `apps/macro-workspace/public/{local,openshift}/manifest.fin.json` | OpenFin platform/runtime manifest (per-env; NOT the app registry) |
-| `apps/macro-workspace/public/{local,openshift}/settings.json` | `platformSettings` (id, title, icon) + optional `browserSettings` (v24 browser options) |
+| `apps/macro-workspace/public/{local,openshift}/settings.json` | `platformSettings` + optional `browserSettings` + `storage` block (unified-storage environments: local/dev/uat/prod service URLs, `defaultEnvironment`) |
+| `docs/api/workspace-storage-api.openapi.yaml`    | Workspace Storage API contract (OpenAPI 3.1) — phase-2 Spring Boot + MongoDB implements it; phase-1 reference lives in market-data-server at `/workspace/v1` |
 | `apps/macro-workspace/public/{local,openshift}/dos.json` | Desktop Owner Settings: pins workspace 24.0.19 + notification-center 2.15.0 system apps (applied via `npm run dos`) |
 | `libs/macro-design/src/lib/css/macro-design.css` | All CSS variables (`:root` + `.dark`)        |
 | `libs/macro-design/src/lib/ag-grid-theme.ts`     | AG Grid theme builder                        |
@@ -257,6 +259,7 @@ An **nx-mcp** server (NX workspace commands) is additionally provided by the NX 
 - PrimeReact is on alpha (`11.0.0-alpha.10`) -- check for breaking changes
 - The `clone` library is used in AG Charts for immutable option updates
 - AG Grid's built-in `avg` aggregation yields a rich `{ count, value }` object on group/footer rows (so parent levels can re-aggregate) — `@macro/macro-grid-format` value formatters unwrap it; custom formatters must too, or aggregated cells render blank/raw
+- Workspace storage posture: reads DEGRADE (log + empty result — an outage must never brick platform boot), writes THROW (a failed save must never look successful) — keep that split in storage-backed features. Never route `settings.json`/`entitlements.json` through the storage API: they bootstrap it
 - In blotter `onColumnRowGroupChanged`-style grid handlers, filter by `event.source` — the wrappers' own columnDefs pushes fire `gridOptionsChanged`/`gridInitializing`; only user gestures (`api`, `uiColumnDragged`, …) should drive app state
 
 <!-- nx configuration start-->
