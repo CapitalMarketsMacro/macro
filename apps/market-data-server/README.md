@@ -99,6 +99,10 @@ Spring Boot + MongoDB service speaking the same wire contract.
 | `GET /dock-apps/{id}` | One LOB dock app (200 + `ETag`) or 404 |
 | `PUT /dock-apps/{id}` | Publish/replace a LOB dock app — 201/200; 400 unless `id`/`label`/`iconUrl` are non-empty and `type` is `icon` (with `url`) or `dropdown` (with non-empty `children`, each with `id`/`label`/`url`) |
 | `DELETE /dock-apps/{id}` | 204, or 404 when absent |
+| `GET /store-apps` | LOB store apps (**not user-scoped** — publisher-facing, shared across all users): list sorted by `sortOrder` ascending, undefined last (stable); empty array when none (never 404) |
+| `GET /store-apps/{appId}` | One LOB store app (200 + `ETag`) or 404 |
+| `PUT /store-apps/{appId}` | Publish/replace a LOB store app — 201/200; 400 unless `appId`/`title`/`manifest` are non-empty, `manifestType` is `view` \| `manifest`, and `icons` is a non-empty array of `{ src }`; optional `description`/`images[{src}]`/`publisher`/`contactEmail`/`supportEmail`/`tags[]`/`category`/`lob`/`sortOrder` are type-checked; unknown fields rejected |
+| `DELETE /store-apps/{appId}` | 204, or 404 when absent |
 
 Conventions: errors are `application/problem+json` (RFC 9457); single-resource GETs
 carry an `ETag`, and an optional `If-Match` on PUT/DELETE returns 412 on mismatch;

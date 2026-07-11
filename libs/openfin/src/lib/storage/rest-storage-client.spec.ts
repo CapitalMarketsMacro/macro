@@ -164,6 +164,23 @@ describe('RestWorkspaceStorageClient', () => {
     expect(init.method).toBe('GET');
   });
 
+  it('reads LOB store apps from the shared /store-apps collection', async () => {
+    fetchFn.mockResolvedValue(
+      makeResponse(200, [
+        {
+          appId: 'lob-a',
+          title: 'A',
+          manifest: 'http://x/a.fin.json',
+          manifestType: 'view',
+          icons: [{ src: 'http://x/a.svg' }],
+        },
+      ]),
+    );
+    const apps = await client.getLobStoreApps();
+    expect(apps).toHaveLength(1);
+    expect(lastCall().url).toBe('http://storage.test/workspace/v1/store-apps');
+  });
+
   it('handles 204 responses without parsing a body', async () => {
     fetchFn.mockResolvedValue(makeResponse(204));
     await expect(client.deleteWorkspace('ws-1')).resolves.toBeUndefined();

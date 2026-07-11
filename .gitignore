@@ -5,6 +5,9 @@ dist
 tmp
 out-tsc
 screenshots/
+# ...but app-details screenshots served by the workspace ARE assets, not build output
+!apps/macro-workspace/public/screenshots/
+!apps/macro-workspace/public/screenshots/**
 # dependencies
 node_modules
 

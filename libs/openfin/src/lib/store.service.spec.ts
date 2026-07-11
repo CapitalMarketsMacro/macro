@@ -21,6 +21,7 @@ jest.mock('@openfin/workspace-platform', () => ({
 }));
 
 import { Storefront } from '@openfin/workspace';
+import { initWorkspaceStorage, resetWorkspaceStorageForTests } from './storage/storage-context';
 
 describe('StoreService', () => {
   let service: StoreService;
@@ -266,6 +267,184 @@ describe('StoreService', () => {
       (Storefront.show as jest.Mock).mockResolvedValue(undefined);
       await service.show();
       expect(Storefront.show).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // ── tag-filtered navigation items (Showcase / LOB Apps) ──
+
+  describe('tag-filtered navigation', () => {
+    it('matches apps by ANY of the item tags (wins over category)', async () => {
+      const tagApps = [
+        { appId: 'a', title: 'A', category: 'FX', tags: ['showcase'] },
+        { appId: 'b', title: 'B', category: 'Rates', tags: ['lob'] },
+        { appId: 'c', title: 'C', category: 'FX' },
+      ] as any[];
+      (mockAppsService.getApps as jest.Mock).mockReturnValue(tagApps);
+      (mockStorefrontConfigService.getNavigationConfig as jest.Mock).mockResolvedValue({
+        sections: [
+          {
+            id: 'library',
+            title: 'Library',
+            items: [
+              { id: 'showcase', title: 'Showcase', tags: ['showcase'] },
+              { id: 'lob-apps', title: 'LOB Apps', tags: ['lob'] },
+              { id: 'fx', title: 'FX', category: 'FX' },
+            ],
+          },
+        ],
+      });
+
+      await firstValueFrom(service.register(platformSettings));
+      const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
+      const nav = await provider.getNavigation();
+      const items = nav[0].items;
+      expect(items[0].templateData.apps.map((a: any) => a.appId)).toEqual(['a']);
+      expect(items[1].templateData.apps.map((a: any) => a.appId)).toEqual(['b']);
+      // category items keep working alongside tag items
+      expect(items[2].templateData.apps.map((a: any) => a.appId)).toEqual(['a', 'c']);
+    });
+  });
+
+  // ── "Add to Dock" card button (storage + dock3 wired) ──
+
+  describe('dock pin (Add to Dock)', () => {
+    let mockStorage: { getPreference: jest.Mock; setPreference: jest.Mock };
+    let mockDock3: { refreshPinnedApps: jest.Mock };
+    let lsStore: Record<string, string>;
+
+    beforeEach(() => {
+      // Hydration reads via the RAW storage client (throwing path) — back it with a
+      // mocked localStorage so the default local client serves the seeded pins.
+      lsStore = { 'macro:pref:dock-pinned-apps': JSON.stringify(['app-2']) };
+      (globalThis as any).localStorage = {
+        getItem: (key: string) => lsStore[key] ?? null,
+        setItem: (key: string, value: string) => {
+          lsStore[key] = value;
+        },
+        removeItem: (key: string) => {
+          delete lsStore[key];
+        },
+      };
+      resetWorkspaceStorageForTests();
+    });
+    afterEach(() => {
+      delete (globalThis as any).localStorage;
+      resetWorkspaceStorageForTests();
+    });
+
+    const buildPinnedService = () => {
+      mockStorage = {
+        getPreference: jest.fn().mockResolvedValue(['app-2']),
+        setPreference: jest.fn().mockResolvedValue(undefined),
+      };
+      mockDock3 = { refreshPinnedApps: jest.fn().mockResolvedValue(undefined) };
+      return new StoreService(
+        mockAppsService,
+        mockFavoritesService,
+        mockStorefrontConfigService,
+        mockEntitlementsService,
+        mockLaunchService,
+        mockStorage as any,
+        mockDock3 as any,
+      );
+    };
+
+    it('decorates cards with BOTH secondary buttons and reflects hydrated pins', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+      const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
+      const apps = await provider.getApps();
+
+      expect(apps[0].secondaryButtons).toEqual([
+        { title: '☆ Favorite', action: { id: 'toggle-store-favorite' } },
+        { title: '📌 Add to Dock', action: { id: 'toggle-dock-pin' } },
+      ]);
+      expect(apps[1].secondaryButtons[1]).toEqual({ title: '📌 Remove from Dock', action: { id: 'toggle-dock-pin' } });
+    });
+
+    it('toggle-dock-pin persists first, then refreshes the dock live and flips the button', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+
+      await pinned.getStoreCustomActions()['toggle-dock-pin']({
+        appId: 'app-1',
+        primaryButton: { title: 'Launch', action: { id: 'launch-app' } },
+      });
+
+      expect(mockStorage.setPreference).toHaveBeenCalledWith('dock-pinned-apps', ['app-2', 'app-1']);
+      expect(mockDock3.refreshPinnedApps).toHaveBeenCalledWith(['app-2', 'app-1']);
+      expect(mockStoreRegistration.updateAppCardButtons).toHaveBeenCalledWith(
+        expect.objectContaining({
+          appId: 'app-1',
+          secondaryButtons: [
+            { title: '☆ Favorite', action: { id: 'toggle-store-favorite' } },
+            { title: '📌 Remove from Dock', action: { id: 'toggle-dock-pin' } },
+          ],
+        }),
+      );
+    });
+
+    it('leaves the dock and buttons unchanged when the pin write fails (writes-throw posture)', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+      mockStorage.setPreference.mockRejectedValue(new Error('storage down'));
+
+      await pinned.getStoreCustomActions()['toggle-dock-pin']({ appId: 'app-1' });
+
+      expect(mockDock3.refreshPinnedApps).not.toHaveBeenCalled();
+      expect(mockStoreRegistration.updateAppCardButtons).not.toHaveBeenCalled();
+    });
+
+    it('unpins on second toggle', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+
+      await pinned.getStoreCustomActions()['toggle-dock-pin']({ appId: 'app-2' });
+      expect(mockStorage.setPreference).toHaveBeenCalledWith('dock-pinned-apps', []);
+      expect(mockDock3.refreshPinnedApps).toHaveBeenCalledWith([]);
+    });
+
+    it('serializes overlapping toggles so both pins compose (no last-write-wins)', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+      // Slow first persist: the second toggle must queue behind it and see its result.
+      let releaseFirst: () => void = () => undefined;
+      mockStorage.setPreference
+        .mockImplementationOnce(() => new Promise<void>((resolve) => (releaseFirst = () => resolve())))
+        .mockResolvedValue(undefined);
+
+      const actions = pinned.getStoreCustomActions();
+      const first = actions['toggle-dock-pin']({ appId: 'app-1' });
+      const second = actions['toggle-dock-pin']({ appId: 'app-3' });
+      // Let toggle 1 reach its pending persist (the queue runs on microtasks)
+      // before releasing it — a sync release would hit the no-op placeholder.
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      releaseFirst();
+      await Promise.all([first, second]);
+
+      expect(mockStorage.setPreference).toHaveBeenNthCalledWith(1, 'dock-pinned-apps', ['app-2', 'app-1']);
+      expect(mockStorage.setPreference).toHaveBeenNthCalledWith(2, 'dock-pinned-apps', ['app-2', 'app-1', 'app-3']);
+    });
+
+    it('refuses toggles while pins are unhydrated (REST outage) so stored pins are never wiped', async () => {
+      // Simulate a REST backend that is down: hydration throws, pinsHydrated stays false.
+      const origFetch = globalThis.fetch;
+      (globalThis as { fetch: unknown }).fetch = jest.fn().mockRejectedValue(new Error('storage down'));
+      initWorkspaceStorage(
+        { defaultEnvironment: 'dev', environments: { dev: { mode: 'rest', baseUrl: 'http://storage.test/workspace/v1' } } },
+        { search: '' },
+      );
+      try {
+        const pinned = buildPinnedService();
+        await firstValueFrom(pinned.register(platformSettings));
+
+        await pinned.getStoreCustomActions()['toggle-dock-pin']({ appId: 'app-1' });
+
+        expect(mockStorage.setPreference).not.toHaveBeenCalled();
+        expect(mockDock3.refreshPinnedApps).not.toHaveBeenCalled();
+      } finally {
+        (globalThis as { fetch: unknown }).fetch = origFetch;
+      }
     });
   });
 });

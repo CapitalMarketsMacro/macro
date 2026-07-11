@@ -2,7 +2,7 @@ openapi: 3.1.0
 
 info:
   title: Macro Workspace Storage API
-  version: 1.1.0
+  version: 1.2.0
   contact:
     name: Macro Platform Team
     email: support@macro.example.com
@@ -26,6 +26,10 @@ info:
     - **LOB dock apps** (read-only to the platform) — custom dock apps published by
       lines of business (`/dock-apps`), **shared across all users** like platform
       config. LOB tooling writes them; the platform reads them at dock init.
+    - **LOB store apps** (read-only to the platform) — full storefront apps published
+      by lines of business (`/store-apps`), **shared across all users** like platform
+      config. LOB tooling writes them; the platform merges them into the app registry
+      at load (registry wins on `appId` collisions).
 
     The canonical TypeScript client is `RestWorkspaceStorageClient` in
     `libs/openfin/src/lib/storage/rest-storage-client.ts`; the client-side contract is
@@ -46,7 +50,7 @@ info:
     ## Authentication and user scoping (interim)
 
     Every route except `GET /health`, `GET /config/{configName}` and the `/dock-apps`
-    routes is **user-scoped**: resources belong to exactly one user and requests must
+    and `/store-apps` routes is **user-scoped**: resources belong to exactly one user and requests must
     carry the caller's identity in the `X-User-Id` request header (security scheme
     `userId`). The reference implementation defaults to `anonymous` when the header is
     absent.
@@ -63,10 +67,12 @@ info:
     `PUT /config/{configName}` is a phase-2 admin operation (the reference
     implementation returns `501 Not Implemented`).
 
-    The `/dock-apps` routes are likewise **not** user-scoped: LOB dock apps are shared
-    across all users of the deployment. `X-User-Id` is not required on them and is
-    ignored when sent. The reference implementation persists dock apps in the **same
-    store file** as user data, at the top level (not under any user), with the same
+    The `/dock-apps` and `/store-apps` routes are likewise **not** user-scoped: LOB
+    dock apps and LOB store apps are shared across all users of the deployment.
+    `X-User-Id` is not required on them and is ignored when sent. The reference
+    implementation persists both in the **same store file** as user data, at the top
+    level (not under any user) — dock apps under a `dockApps` key, store apps under a
+    `storeApps` key (older store files without these keys load fine) — with the same
     debounced file persistence.
 
     ## Concurrency (ETag / If-Match)
@@ -124,6 +130,11 @@ info:
       **No `userId` field** — dock apps are shared across users like config, but
       unlike config they are writable through this API (LOB publishing tooling), so
       validate the document shape on PUT as specified on `putDockApp`.
+    - **`storeApps` collection** — one document per LOB store app
+      (`{ appId, document, version, updatedAt }`, unique `{ appId: 1 }`).
+      **No `userId` field** — store apps are shared across users like dock apps and
+      likewise writable through this API (LOB publishing tooling), so validate the
+      document shape on PUT as specified on `putStoreApp`.
     - **Optimistic concurrency** — a monotonically increasing `version` field
       (`@Version` with Spring Data works) surfaced to HTTP as the `ETag` value
       (e.g. `ETag: "7"`); compare on `If-Match`, respond 412 on mismatch. Upserts bump
@@ -136,6 +147,10 @@ info:
 
     ## Changelog
 
+    - **1.2.0** — added the `/store-apps` resource: LOB-published full storefront
+      apps (`LobStoreApp`), shared across all users (not user-scoped), merged into
+      the app registry at platform load (registry wins on `appId` collisions; the
+      platform force-adds the `lob` tag for the "LOB Apps" nav item).
     - **1.1.0** — added the `/dock-apps` resource: LOB-published custom dock apps
       (`LobDockApp`), shared across all users (not user-scoped), read by the platform
       at dock init.
@@ -193,6 +208,16 @@ tags:
       across all users of the deployment; no X-User-Id is required (ignored when
       sent). The platform reads them at dock init and renders 'icon' entries as
       dock buttons and 'dropdown' entries as dock folders of child launchers.
+  - name: StoreApps
+    x-displayName: LOB Store Apps
+    description: >-
+      Full storefront apps published by lines of business — complete store cards
+      with details-page fields (description, screenshots, publisher, support
+      contacts). NOT user-scoped — shared across all users of the deployment; no
+      X-User-Id is required (ignored when sent). The platform merges them into the
+      app registry at load: they surface in the Storefront, Home search and as
+      launch targets; registry apps win on appId collisions, and the platform
+      force-adds the 'lob' tag so the "LOB Apps" storefront nav item finds them.
   - name: Favorites
     x-displayName: Favorites
     description: >-
@@ -696,6 +721,200 @@ paths:
         '412':
           $ref: '#/components/responses/PreconditionFailed'
 
+  /store-apps:
+    get:
+      tags:
+        - StoreApps
+      operationId: listStoreApps
+      summary: List LOB store apps
+      description: >-
+        Returns every published LOB store app. NOT user-scoped — the same list is
+        returned to every caller and no `X-User-Id` is required (ignored when sent).
+        Returns `[]` (never 404) when none are published. Entries are sorted by
+        `sortOrder` ascending with entries lacking `sortOrder` last; the sort MUST
+        be stable so equal (or absent) `sortOrder` values keep their stored order.
+        The platform calls this at load and merges the results into the app
+        registry: registry apps win on `appId` collisions, and the platform
+        force-adds the `lob` tag so the "LOB Apps" storefront nav item finds them.
+      security: []
+      responses:
+        '200':
+          description: All published LOB store apps (possibly empty), sorted by sortOrder.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LobStoreApp'
+              examples:
+                two-lobs:
+                  summary: A 'view' app with screenshots (Rates) and a 'manifest' platform app (Credit)
+                  value:
+                    - appId: rates-swap-analytics
+                      title: Swap Analytics
+                      description: >-
+                        Intraday swap curve analytics with DV01 / KR01 breakdowns,
+                        published by the Rates line of business.
+                      manifest: http://localhost:4202/local/swap-analytics.fin.json
+                      manifestType: view
+                      icons:
+                        - src: http://localhost:4202/icons/treasury-market-data.svg
+                      images:
+                        - src: http://localhost:4202/screenshots/swap-analytics-grid.png
+                        - src: http://localhost:4202/screenshots/swap-analytics-curve.png
+                      publisher: Rates Desk Engineering
+                      contactEmail: rates-eng@macro.example.com
+                      supportEmail: rates-support@macro.example.com
+                      tags:
+                        - rates
+                        - analytics
+                      category: Rates
+                      lob: Rates
+                      sortOrder: 10
+                    - appId: credit-workbench
+                      title: Credit Workbench
+                      description: >-
+                        Standalone credit trading platform launched as its own
+                        OpenFin platform.
+                      manifest: https://credit.macro.example.com/manifest.fin.json
+                      manifestType: manifest
+                      icons:
+                        - src: https://credit.macro.example.com/icons/workbench.svg
+                      publisher: Credit Technology
+                      lob: Credit
+                      sortOrder: 20
+
+  /store-apps/{storeAppId}:
+    parameters:
+      - $ref: '#/components/parameters/StoreAppId'
+    get:
+      tags:
+        - StoreApps
+      operationId: getStoreApp
+      summary: Get one LOB store app
+      description: >-
+        Returns the LOB store app with the given id. NOT user-scoped; no `X-User-Id`
+        required. `404` when no store app is published under that id.
+      security: []
+      responses:
+        '200':
+          description: The published LOB store app.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LobStoreApp'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - StoreApps
+      operationId: putStoreApp
+      summary: Publish (create or replace) an LOB store app
+      description: >-
+        Full-document upsert keyed by the path id — the write path for LOB publishing
+        tooling (Postman/curl/pipelines); the platform itself only reads. NOT
+        user-scoped; no `X-User-Id` required (ignored when sent). Unlike the opaque
+        workspace/page/dock documents, the body IS validated. The server responds
+        `400 Bad Request` (problem+json with a helpful `detail`) when any of the
+        following are violated:
+
+
+        - `appId`, `title` and `manifest` are required non-empty strings.
+
+        - `manifestType` is required and must be `view` or `manifest`.
+
+        - `icons` is required and must be a non-empty array of `{ src }` entries,
+          each with a non-empty `src` string.
+
+        - Optional fields must carry the schema types when present: `description`,
+          `publisher`, `contactEmail`, `supportEmail`, `category` and `lob`
+          non-empty strings; `tags` an array of non-empty strings; `images` an
+          array of `{ src }` entries each with a non-empty `src` string;
+          `sortOrder` a finite number.
+
+        - Unknown fields are rejected (`additionalProperties: false`), at the top
+          level and inside `icons[]`/`images[]` entries (only `src` is allowed).
+
+        - `body.appId` MUST equal the path `{storeAppId}` (existing convention).
+
+
+        Responds `201` when the store app did not exist, `200` when it was replaced;
+        both carry the stored representation as the body.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LobStoreApp'
+      responses:
+        '200':
+          description: Existing store app replaced. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LobStoreApp'
+        '201':
+          description: Store app created. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LobStoreApp'
+        '400':
+          description: >-
+            Validation failed — missing/empty `appId`, `title` or `manifest`;
+            `manifestType` not `view`/`manifest`; `icons` missing, empty, or
+            containing an entry without a non-empty `src`; an optional field of
+            the wrong type (`description`/`publisher`/`contactEmail`/
+            `supportEmail`/`category`/`lob` not a non-empty string, `tags` not an
+            array of non-empty strings, `images` containing an entry without a
+            non-empty `src`, `sortOrder` not a finite number); an unknown field at
+            the top level or inside an `icons[]`/`images[]` entry; or `body.appId`
+            does not match the path id. The problem+json `detail` names the
+            offending field.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: "'icons' must be a non-empty array of { src } entries."
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+    delete:
+      tags:
+        - StoreApps
+      operationId: deleteStoreApp
+      summary: Unpublish an LOB store app
+      description: >-
+        Removes the store app for ALL users (the resource is shared). NOT
+        user-scoped; no `X-User-Id` required. `204` on success, `404` when the id
+        does not exist (the client treats 404 as success, making deletes idempotent
+        end-to-end).
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204':
+          description: Store app deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
   /favorites:
     get:
       tags:
@@ -1060,7 +1279,7 @@ components:
         bearer JWTs (`Authorization: Bearer <jwt>`, user id from the `sub` claim), at
         which point this header is ignored or validated against the token. Applied
         globally except `GET /health`, `GET /config/{configName}` and the
-        `/dock-apps` routes.
+        `/dock-apps` and `/store-apps` routes.
 
   parameters:
     WorkspaceId:
@@ -1099,6 +1318,15 @@ components:
         type: string
         minLength: 1
       example: rates-curve-monitor
+    StoreAppId:
+      name: storeAppId
+      in: path
+      required: true
+      description: LOB store app id (the `appId` field of the stored document).
+      schema:
+        type: string
+        minLength: 1
+      example: rates-swap-analytics
     PreferenceKey:
       name: key
       in: path
@@ -1524,6 +1752,155 @@ components:
           label: Credit Risk / PnL
           url: http://localhost:4205/
           iconUrl: http://localhost:4202/icons/react-app.svg
+
+    LobStoreApp:
+      type: object
+      description: >-
+        A full store app published by a line of business (`LobStoreApp` in
+        `libs/openfin/src/lib/storage/storage-types.ts`). Shared across all users —
+        NOT user-scoped. The platform merges these into the app registry at load, so
+        they surface in the Storefront (with an app-details page fed by
+        `description`, `images` and the support fields), Home search, and as launch
+        targets — `manifestType: view` launches the manifest as an embedded view,
+        `manifestType: manifest` launches it as another OpenFin platform. Registry
+        (apps.json) apps win on `appId` collisions, and the platform force-adds the
+        `lob` tag so the "LOB Apps" storefront nav item finds them. See the two
+        examples — a `view` app with screenshots and a `manifest` platform app.
+      required:
+        - appId
+        - title
+        - manifest
+        - manifestType
+        - icons
+      properties:
+        appId:
+          type: string
+          minLength: 1
+          description: >-
+            Unique app id. Must equal the path id on PUT. Registry apps win on
+            collisions.
+        title:
+          type: string
+          minLength: 1
+          description: Display title on the store card, app-details page and Home search.
+        manifest:
+          type: string
+          minLength: 1
+          format: uri
+          description: >-
+            Manifest URL — a view manifest (`manifestType: view`) or a platform
+            manifest (`manifestType: manifest`).
+        manifestType:
+          type: string
+          enum:
+            - view
+            - manifest
+          description: >-
+            `view` — launched as an embedded platform view; `manifest` — launched
+            as another OpenFin platform.
+        icons:
+          type: array
+          minItems: 1
+          description: Store card icon(s) — at least one required.
+          items:
+            $ref: '#/components/schemas/Image'
+        description:
+          type: string
+          minLength: 1
+          description: Shown on the card and the app-details page.
+        images:
+          type: array
+          description: Screenshots for the app-details page.
+          items:
+            $ref: '#/components/schemas/Image'
+        publisher:
+          type: string
+          minLength: 1
+          description: >-
+            Details-page publisher. The platform defaults it to the `lob` value
+            when omitted.
+        contactEmail:
+          type: string
+          minLength: 1
+          description: Details-page contact email.
+        supportEmail:
+          type: string
+          minLength: 1
+          description: Details-page support email.
+        tags:
+          type: array
+          description: >-
+            Extra tags (each a non-empty string); the platform always adds `lob`
+            so the "LOB Apps" nav item finds them.
+          items:
+            type: string
+            minLength: 1
+        category:
+          type: string
+          minLength: 1
+          description: >-
+            Storefront nav category (optional — LOB apps surface via the `lob`
+            tag regardless).
+        lob:
+          type: string
+          minLength: 1
+          description: Owning line of business, e.g. `Rates`.
+        sortOrder:
+          type: number
+          description: >-
+            Ordering among LOB store apps (ascending; entries without a sortOrder
+            sort last; ties keep stored order — stable sort).
+      additionalProperties: false
+      examples:
+        - appId: rates-swap-analytics
+          title: Swap Analytics
+          description: >-
+            Intraday swap curve analytics with DV01 / KR01 breakdowns, published
+            by the Rates line of business.
+          manifest: http://localhost:4202/local/swap-analytics.fin.json
+          manifestType: view
+          icons:
+            - src: http://localhost:4202/icons/treasury-market-data.svg
+          images:
+            - src: http://localhost:4202/screenshots/swap-analytics-grid.png
+            - src: http://localhost:4202/screenshots/swap-analytics-curve.png
+          publisher: Rates Desk Engineering
+          contactEmail: rates-eng@macro.example.com
+          supportEmail: rates-support@macro.example.com
+          tags:
+            - rates
+            - analytics
+          category: Rates
+          lob: Rates
+          sortOrder: 10
+        - appId: credit-workbench
+          title: Credit Workbench
+          description: Standalone credit trading platform launched as its own OpenFin platform.
+          manifest: https://credit.macro.example.com/manifest.fin.json
+          manifestType: manifest
+          icons:
+            - src: https://credit.macro.example.com/icons/workbench.svg
+          publisher: Credit Technology
+          lob: Credit
+          sortOrder: 20
+
+    Image:
+      type: object
+      description: >-
+        One image reference — a store-card icon or an app-details screenshot. Only
+        `src` is allowed; unknown fields inside `icons[]`/`images[]` entries are
+        rejected on LOB store app PUTs.
+      required:
+        - src
+      properties:
+        src:
+          type: string
+          minLength: 1
+          format: uri
+      additionalProperties: false
+      examples:
+        - src: http://localhost:4202/icons/treasury-market-data.svg
+        - src: http://localhost:4202/screenshots/swap-analytics-grid.png
 
     Favorites:
       type: object

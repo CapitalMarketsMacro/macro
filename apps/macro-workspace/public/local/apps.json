@@ -19,7 +19,8 @@
       "images": [],
       "tags": [
         "view",
-        "openfin"
+        "openfin",
+        "showcase"
       ],
       "category": "Workspace"
     },
@@ -42,7 +43,8 @@
       "images": [],
       "tags": [
         "view",
-        "openfin"
+        "openfin",
+        "showcase"
       ],
       "category": "Workspace"
     },
@@ -66,7 +68,8 @@
       "tags": [
         "view",
         "angular",
-        "market-data"
+        "market-data",
+        "showcase"
       ],
       "category": "Markets"
     },
@@ -86,12 +89,17 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "http://localhost:4202/screenshots/fx-market-data.png"
+        }
+      ],
       "tags": [
         "view",
         "angular",
         "fx",
-        "market-data"
+        "market-data",
+        "showcase"
       ],
       "category": "FX"
     },
@@ -111,12 +119,17 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "http://localhost:4202/screenshots/treasury-microstructure.png"
+        }
+      ],
       "tags": [
         "view",
         "angular",
         "treasury",
-        "market-data"
+        "market-data",
+        "showcase"
       ],
       "category": "Rates"
     },
@@ -136,12 +149,17 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "http://localhost:4202/screenshots/risk-pnl.png"
+        }
+      ],
       "tags": [
         "view",
         "angular",
         "risk",
-        "pnl"
+        "pnl",
+        "showcase"
       ],
       "category": "Risk"
     },
@@ -165,7 +183,8 @@
       "tags": [
         "view",
         "react",
-        "market-data"
+        "market-data",
+        "showcase"
       ],
       "category": "Markets"
     },
@@ -185,12 +204,17 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "http://localhost:4202/screenshots/treasury-market-data.png"
+        }
+      ],
       "tags": [
         "view",
         "react",
         "treasury",
-        "market-data"
+        "market-data",
+        "showcase"
       ],
       "category": "Rates"
     },
@@ -215,7 +239,8 @@
         "view",
         "angular",
         "fdc3",
-        "instrument"
+        "instrument",
+        "showcase"
       ],
       "category": "FX"
     },
@@ -235,12 +260,17 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "http://localhost:4202/screenshots/commodities-dashboard.png"
+        }
+      ],
       "tags": [
         "view",
         "react",
         "commodities",
-        "market-data"
+        "market-data",
+        "showcase"
       ],
       "category": "Commodities"
     },
@@ -264,7 +294,8 @@
       "tags": [
         "view",
         "analytics",
-        "monitoring"
+        "monitoring",
+        "showcase"
       ],
       "category": "Analytics"
     },
@@ -288,7 +319,8 @@
       "tags": [
         "platform",
         "rates",
-        "fixed-income"
+        "fixed-income",
+        "showcase"
       ],
       "category": "Rates"
     },
@@ -308,18 +340,23 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "http://localhost:4202/screenshots/capital-markets-themes.png"
+        }
+      ],
       "tags": [
         "view",
         "react",
-        "figma-make"
+        "figma-make",
+        "showcase"
       ],
       "category": "Design"
     },
     {
       "appId": "prism-blotter",
       "name": "prism-blotter",
-      "title": "Prism — Blotter as a Service",
+      "title": "Prism \u2014 Blotter as a Service",
       "description": "Pick a Capital Markets data source (AMPS / NATS / JetStream / Solace / WebSocket / REST) or define an ad-hoc one; snapshot + real-time AG Grid blotter.",
       "manifest": "http://localhost:4202/local/prism.fin.json",
       "manifestType": "view",
@@ -332,7 +369,11 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "http://localhost:4202/screenshots/prism-blotter.png"
+        }
+      ],
       "tags": [
         "view",
         "angular",
@@ -347,7 +388,7 @@
       "appId": "prism-react-blotter",
       "name": "prism-react-blotter",
       "title": "Prism Blotter (React)",
-      "description": "React build of Prism — pick a Capital Markets data source (AMPS / NATS / JetStream / Solace / WebSocket / REST) or define an ad-hoc one; snapshot + real-time AG Grid blotter.",
+      "description": "React build of Prism \u2014 pick a Capital Markets data source (AMPS / NATS / JetStream / Solace / WebSocket / REST) or define an ad-hoc one; snapshot + real-time AG Grid blotter.",
       "manifest": "http://localhost:4202/local/prism-react.fin.json",
       "manifestType": "view",
       "icons": [
@@ -359,7 +400,11 @@
       "supportEmail": "support@example.com",
       "publisher": "OpenFin",
       "intents": [],
-      "images": [],
+      "images": [
+        {
+          "src": "http://localhost:4202/screenshots/prism-react-blotter.png"
+        }
+      ],
       "tags": [
         "view",
         "react",

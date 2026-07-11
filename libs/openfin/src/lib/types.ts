@@ -108,12 +108,18 @@ export interface AppsConfig {
 /** An OpenFin App plus our enterprise metadata. `category` = business area (FX, Rates, …). */
 export type MacroApp = App & { category?: string };
 
-/** One navigation item = a business area rendered as an AppGrid (apps filtered by `category`). */
+/**
+ * One navigation item rendered as an AppGrid. Apps are matched by `tags` when present
+ * (any-tag match — lets one app appear under both its business-area category AND a
+ * cross-cutting item like Showcase or LOB Apps), else by `category`.
+ */
 export interface StorefrontNavItemConfig {
   id: string;
   title: string;
   /** Business-area key matched against each app's `category`; `'*'` = all apps. */
-  category: string;
+  category?: string;
+  /** Tag filter — the item shows apps carrying ANY of these tags. Wins over `category`. */
+  tags?: string[];
 }
 
 export interface StorefrontNavSectionConfig {
