@@ -145,6 +145,25 @@ describe('RestWorkspaceStorageClient', () => {
     });
   });
 
+  it('reads LOB dock apps from the shared /dock-apps collection', async () => {
+    fetchFn.mockResolvedValue(
+      makeResponse(200, [
+        {
+          id: 'lob-a',
+          label: 'A',
+          iconUrl: 'http://x/a.svg',
+          type: 'icon',
+          url: 'http://x/a',
+        },
+      ]),
+    );
+    const apps = await client.getLobDockApps();
+    expect(apps).toHaveLength(1);
+    const { url, init } = lastCall();
+    expect(url).toBe('http://storage.test/workspace/v1/dock-apps');
+    expect(init.method).toBe('GET');
+  });
+
   it('handles 204 responses without parsing a body', async () => {
     fetchFn.mockResolvedValue(makeResponse(204));
     await expect(client.deleteWorkspace('ws-1')).resolves.toBeUndefined();

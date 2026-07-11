@@ -26,6 +26,9 @@ import { dirname, join } from 'path';
  * default <cwd>/.workspace-store.json) via a debounced atomic write so demo data
  * survives restarts. /config/{name} serves the platform config JSON files from
  * WORKSPACE_CONFIG_DIR (default apps/macro-workspace/public/local) fresh per request.
+ * /dock-apps (LOB-published dock apps) is NOT user-scoped — shared across all users
+ * like /config, persisted at the top level of the same store file — and PUTs are
+ * validated against the fixed LobDockApp contract (see validateLobDockApp).
  */
 
 const PREFIX = '/workspace/v1';
@@ -52,6 +55,78 @@ interface PersistedUserStore {
   preferences?: Record<string, unknown>;
 }
 
+/**
+ * Validate a LOB dock app PUT body against the fixed client contract
+ * (`LobDockApp` in `@macro/openfin` storage-types). Returns a human-readable
+ * error string for the 400 problem detail, or null when the body is valid.
+ * (Body-id-matches-path-id is enforced by handleDocument, per convention.)
+ */
+const LOB_DOCK_APP_KEYS = new Set([
+  'id',
+  'label',
+  'iconUrl',
+  'type',
+  'url',
+  'children',
+  'tooltip',
+  'lob',
+  'sortOrder',
+]);
+const LOB_DOCK_APP_CHILD_KEYS = new Set(['id', 'label', 'url', 'iconUrl']);
+
+function validateLobDockApp(body: Record<string, unknown>): string | null {
+  const nonEmpty = (value: unknown): value is string =>
+    typeof value === 'string' && value.trim() !== '';
+  // The OpenAPI schema declares additionalProperties: false — enforce it so this
+  // shared resource never carries fields the platform (or phase 2) doesn't know.
+  for (const key of Object.keys(body)) {
+    if (!LOB_DOCK_APP_KEYS.has(key)) return `Unknown field "${key}"`;
+  }
+  for (const field of ['id', 'label', 'iconUrl'] as const) {
+    if (!nonEmpty(body[field]))
+      return `"${field}" is required and must be a non-empty string`;
+  }
+  // Optional fields must still carry the schema's types — this shared, unauthenticated
+  // resource feeds every user's dock, so schema-violating rows must never be stored.
+  if (body['tooltip'] !== undefined && !nonEmpty(body['tooltip']))
+    return '"tooltip" must be a non-empty string when present';
+  if (body['lob'] !== undefined && !nonEmpty(body['lob']))
+    return '"lob" must be a non-empty string when present';
+  if (
+    body['sortOrder'] !== undefined &&
+    (typeof body['sortOrder'] !== 'number' ||
+      !Number.isFinite(body['sortOrder']))
+  )
+    return '"sortOrder" must be a finite number when present';
+  const type = body['type'];
+  if (type !== 'icon' && type !== 'dropdown')
+    return '"type" must be "icon" or "dropdown"';
+  if (type === 'icon') {
+    if (!nonEmpty(body['url']))
+      return '"url" is required (non-empty string) when "type" is "icon"';
+    return null;
+  }
+  const children = body['children'];
+  if (!Array.isArray(children) || children.length === 0)
+    return '"children" is required (non-empty array) when "type" is "dropdown"';
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i] as Record<string, unknown> | null;
+    if (child === null || typeof child !== 'object' || Array.isArray(child))
+      return `children[${i}] must be an object with "id", "label" and "url"`;
+    for (const key of Object.keys(child)) {
+      if (!LOB_DOCK_APP_CHILD_KEYS.has(key))
+        return `Unknown field "children[${i}].${key}"`;
+    }
+    for (const field of ['id', 'label', 'url'] as const) {
+      if (!nonEmpty(child[field]))
+        return `children[${i}].${field} is required and must be a non-empty string`;
+    }
+    if (child['iconUrl'] !== undefined && !nonEmpty(child['iconUrl']))
+      return `children[${i}].iconUrl must be a non-empty string when present`;
+  }
+  return null;
+}
+
 /** configName -> file name inside WORKSPACE_CONFIG_DIR. NOT user-scoped (platform config per environment). */
 const CONFIG_FILES: Record<string, string> = {
   settings: 'settings.json',
@@ -64,6 +139,8 @@ const CONFIG_FILES: Record<string, string> = {
 
 export class WorkspaceStorageApi {
   private readonly users = new Map<string, UserStore>();
+  /** LOB dock apps — NOT user-scoped: published by lines of business, shared across all users. */
+  private readonly dockApps = new Map<string, unknown>();
   private readonly storeFile: string;
   private readonly configDir: string;
   private saveTimer?: ReturnType<typeof setTimeout>;
@@ -162,6 +239,7 @@ export class WorkspaceStorageApi {
         service: 'workspace-storage-api',
         uptimeSec: Math.round(process.uptime()),
         users: this.users.size,
+        dockApps: this.dockApps.size,
         persistedTo: this.storeFile,
       });
     }
@@ -176,6 +254,43 @@ export class WorkspaceStorageApi {
           `Config endpoints are /config/{name}. Known names: ${Object.keys(CONFIG_FILES).join(', ')}`,
         );
       return this.handleConfig(res, method, segments[1]);
+    }
+
+    // /dock-apps — NOT user-scoped: LOB-published dock apps shared across all
+    // users, like /config (X-User-Id is ignored; LOBs PUT, the platform GETs).
+    if (segments[0] === 'dock-apps') {
+      if (segments.length === 1) {
+        if (method !== 'GET')
+          return this.problem(
+            res,
+            405,
+            'Method Not Allowed',
+            `${method} is not supported on /dock-apps`,
+          );
+        // Never 404 — no published dock apps is just an empty list. Sorted by
+        // sortOrder ascending with undefined last; sort() is stable, so
+        // insertion order breaks ties.
+        const orderOf = (row: unknown): number => {
+          const value = (row as { sortOrder?: unknown } | null)?.sortOrder;
+          return typeof value === 'number' ? value : Number.POSITIVE_INFINITY;
+        };
+        const rows = [...this.dockApps.values()].sort((a, b) => {
+          const aOrder = orderOf(a);
+          const bOrder = orderOf(b);
+          return aOrder === bOrder ? 0 : aOrder < bOrder ? -1 : 1;
+        });
+        return this.sendJson(res, 200, rows);
+      }
+      if (segments.length === 2)
+        return this.handleDocument(
+          req,
+          res,
+          method,
+          this.dockApps,
+          segments[1],
+          'id',
+          validateLobDockApp,
+        );
     }
 
     // Everything below is user-scoped via the X-User-Id header (interim scheme).
@@ -318,7 +433,11 @@ export class WorkspaceStorageApi {
     );
   }
 
-  /** Generic single-document resource: /workspaces/{id}, /pages/{id}, /dock/{id}. */
+  /**
+   * Generic single-document resource: /workspaces/{id}, /pages/{id}, /dock/{id},
+   * /dock-apps/{id}. `validate` (optional) runs on PUT after the id-match check
+   * and returns a 400 problem detail string, or null when the body is valid.
+   */
   private async handleDocument(
     req: IncomingMessage,
     res: ServerResponse,
@@ -326,6 +445,7 @@ export class WorkspaceStorageApi {
     map: Map<string, unknown>,
     id: string,
     idField: string,
+    validate?: (body: Record<string, unknown>) => string | null,
   ): Promise<void> {
     const existing = map.get(id);
     switch (method) {
@@ -357,6 +477,10 @@ export class WorkspaceStorageApi {
             'Bad Request',
             `Body ${idField} ("${String(bodyId)}") must match the path id ("${id}")`,
           );
+        }
+        const invalid = validate?.(body as Record<string, unknown>);
+        if (invalid) {
+          return this.problem(res, 400, 'Bad Request', invalid);
         }
         if (!this.ifMatchOk(req, res, existing)) return;
         map.set(id, body);
@@ -709,6 +833,7 @@ export class WorkspaceStorageApi {
     try {
       const parsed = JSON.parse(raw) as {
         users?: Record<string, PersistedUserStore>;
+        dockApps?: Record<string, unknown>;
       };
       if (
         !parsed ||
@@ -731,8 +856,14 @@ export class WorkspaceStorageApi {
           preferences: new Map(Object.entries(user?.preferences ?? {})),
         });
       }
+      // Top-level (shared) LOB dock apps — tolerate older store files without the key.
+      if (parsed.dockApps && typeof parsed.dockApps === 'object') {
+        for (const [id, app] of Object.entries(parsed.dockApps)) {
+          this.dockApps.set(id, app);
+        }
+      }
       console.log(
-        `Workspace store loaded from ${this.storeFile} (${this.users.size} user(s))`,
+        `Workspace store loaded from ${this.storeFile} (${this.users.size} user(s), ${this.dockApps.size} dock app(s))`,
       );
     } catch (error) {
       console.warn(
@@ -740,6 +871,7 @@ export class WorkspaceStorageApi {
         error,
       );
       this.users.clear();
+      this.dockApps.clear();
     }
   }
 
@@ -771,6 +903,7 @@ export class WorkspaceStorageApi {
   private serialize(): {
     version: number;
     savedAt: string;
+    dockApps: Record<string, unknown>;
     users: Record<string, Required<PersistedUserStore>>;
   } {
     // Null-prototype container: a user id of "__proto__"/"constructor" must round-trip
@@ -787,6 +920,11 @@ export class WorkspaceStorageApi {
         preferences: Object.fromEntries(store.preferences),
       };
     }
-    return { version: 1, savedAt: new Date().toISOString(), users };
+    return {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      dockApps: Object.fromEntries(this.dockApps),
+      users,
+    };
   }
 }

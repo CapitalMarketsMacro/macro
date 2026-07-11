@@ -1,212 +1,161 @@
 {
   "favorites": [
     {
-      "type": "item",
-      "id": "fav-macro-angular",
-      "label": "Macro Angular",
-      "icon": "http://localhost:4202/icons/angular-app.svg",
-      "appId": "macro-angular-view"
+      "type": "folder",
+      "id": "showcase",
+      "label": "Showcase",
+      "icon": "http://localhost:4202/icons/platform.svg"
     },
     {
-      "type": "item",
-      "id": "fav-macro-react",
-      "label": "Macro React",
-      "icon": "http://localhost:4202/icons/react-app.svg",
-      "appId": "macro-react-view"
-    },
-    {
-      "type": "item",
-      "id": "fav-fx-market-data",
-      "label": "FX Market Data",
-      "icon": "http://localhost:4202/icons/fx-market-data.svg",
-      "appId": "macro-angular-fx-market-data"
-    },
-    {
-      "type": "item",
-      "id": "fav-treasury-market-data",
-      "label": "Treasury Market Data",
-      "icon": "http://localhost:4202/icons/treasury-market-data.svg",
-      "appId": "macro-react-treasury-market-data"
-    },
-    {
-      "type": "item",
-      "id": "fav-commodities-dashboard",
-      "label": "Commodities Dashboard",
-      "icon": "http://localhost:4202/icons/commodities-dashboard.svg",
-      "appId": "macro-react-commodities-dashboard"
-    },
-    {
-      "type": "item",
-      "id": "fav-treasury-microstructure",
-      "label": "Treasury Microstructure",
-      "icon": "http://localhost:4202/icons/treasury-microstructure.svg",
-      "appId": "macro-angular-treasury-microstructure"
-    },
-    {
-      "type": "item",
-      "id": "fav-fdc3-instrument-viewer",
-      "label": "FDC3 Instrument Viewer",
-      "icon": "http://localhost:4202/icons/angular-app.svg",
-      "appId": "macro-angular-fdc3-instrument-viewer"
-    },
-    {
-      "type": "item",
-      "id": "fav-analytics-dashboard",
-      "label": "Analytics Dashboard",
-      "icon": "http://localhost:4202/icons/platform.svg",
-      "appId": "macro-analytics-dashboard"
-    },
-    {
-      "type": "item",
-      "id": "fav-capital-markets-themes",
-      "label": "Capital Markets Theme",
-      "icon": "http://localhost:4202/icons/platform.svg",
-      "appId": "capital-markets-themes"
-    },
-    {
-      "type": "item",
-      "id": "fav-risk-pnl",
-      "label": "Risk / PnL",
-      "icon": "http://localhost:4202/icons/risk-pnl.svg",
-      "appId": "macro-angular-risk-pnl"
-    },
-    {
-      "type": "item",
-      "id": "fav-prism-blotter",
-      "label": "Prism Blotter",
-      "icon": "http://localhost:4202/icons/prism.svg",
-      "appId": "prism-blotter"
-    },
-    {
-      "type": "item",
-      "id": "fav-prism-react-blotter",
-      "label": "Prism Blotter (React)",
-      "icon": "http://localhost:4202/icons/prism-react.svg",
-      "appId": "prism-react-blotter"
+      "type": "folder",
+      "id": "prism",
+      "label": "Prism Blotters",
+      "icon": "http://localhost:4202/icons/prism.svg"
     }
   ],
   "contentMenu": [
     {
       "type": "folder",
-      "id": "angular-apps",
-      "label": "Angular Apps",
+      "id": "showcase",
+      "label": "Showcase",
       "children": [
         {
-          "type": "item",
-          "id": "cm-macro-angular",
-          "label": "Macro Angular App",
-          "icon": "http://localhost:4202/icons/angular-app.svg",
-          "appId": "macro-angular-view"
+          "type": "folder",
+          "id": "angular-apps",
+          "label": "Angular Apps",
+          "children": [
+            {
+              "type": "item",
+              "id": "cm-macro-angular",
+              "label": "Macro Angular App",
+              "icon": "http://localhost:4202/icons/angular-app.svg",
+              "appId": "macro-angular-view"
+            },
+            {
+              "type": "item",
+              "id": "cm-fx-market-data",
+              "label": "FX Market Data",
+              "icon": "http://localhost:4202/icons/fx-market-data.svg",
+              "appId": "macro-angular-fx-market-data"
+            },
+            {
+              "type": "item",
+              "id": "cm-treasury-microstructure",
+              "label": "Treasury Microstructure",
+              "icon": "http://localhost:4202/icons/treasury-microstructure.svg",
+              "appId": "macro-angular-treasury-microstructure"
+            },
+            {
+              "type": "item",
+              "id": "cm-fdc3-instrument-viewer",
+              "label": "FDC3 Instrument Viewer",
+              "icon": "http://localhost:4202/icons/angular-app.svg",
+              "appId": "macro-angular-fdc3-instrument-viewer"
+            },
+            {
+              "type": "item",
+              "id": "cm-risk-pnl",
+              "label": "Risk / PnL",
+              "icon": "http://localhost:4202/icons/risk-pnl.svg",
+              "appId": "macro-angular-risk-pnl"
+            }
+          ]
+        },
+        {
+          "type": "folder",
+          "id": "react-apps",
+          "label": "React Apps",
+          "children": [
+            {
+              "type": "item",
+              "id": "cm-macro-react",
+              "label": "Macro React App",
+              "icon": "http://localhost:4202/icons/react-app.svg",
+              "appId": "macro-react-view"
+            },
+            {
+              "type": "item",
+              "id": "cm-treasury-market-data",
+              "label": "Treasury Market Data",
+              "icon": "http://localhost:4202/icons/treasury-market-data.svg",
+              "appId": "macro-react-treasury-market-data"
+            },
+            {
+              "type": "item",
+              "id": "cm-commodities-dashboard",
+              "label": "Commodities Dashboard",
+              "icon": "http://localhost:4202/icons/commodities-dashboard.svg",
+              "appId": "macro-react-commodities-dashboard"
+            }
+          ]
+        },
+        {
+          "type": "folder",
+          "id": "workspace-views",
+          "label": "Workspace",
+          "children": [
+            {
+              "type": "item",
+              "id": "cm-view1",
+              "label": "View 1 (FDC3 Broadcaster)",
+              "icon": "http://localhost:4202/icons/view-broadcaster.svg",
+              "appId": "macro-workspace-view1"
+            },
+            {
+              "type": "item",
+              "id": "cm-view2",
+              "label": "View 2 (FDC3 Listener)",
+              "icon": "http://localhost:4202/icons/view-listener.svg",
+              "appId": "macro-workspace-view2"
+            }
+          ]
+        },
+        {
+          "type": "folder",
+          "id": "platforms",
+          "label": "Platforms",
+          "children": [
+            {
+              "type": "item",
+              "id": "cm-rates-desktop",
+              "label": "Rates E-Trading Desktop",
+              "icon": "http://localhost:4202/icons/platform.svg",
+              "appId": "rates-desktop"
+            }
+          ]
         },
         {
           "type": "item",
-          "id": "cm-fx-market-data",
-          "label": "FX Market Data",
-          "icon": "http://localhost:4202/icons/fx-market-data.svg",
-          "appId": "macro-angular-fx-market-data"
-        },
-        {
-          "type": "item",
-          "id": "cm-treasury-microstructure",
-          "label": "Treasury Microstructure",
-          "icon": "http://localhost:4202/icons/treasury-microstructure.svg",
-          "appId": "macro-angular-treasury-microstructure"
-        },
-        {
-          "type": "item",
-          "id": "cm-fdc3-instrument-viewer",
-          "label": "FDC3 Instrument Viewer",
-          "icon": "http://localhost:4202/icons/angular-app.svg",
-          "appId": "macro-angular-fdc3-instrument-viewer"
-        },
-        {
-          "type": "item",
-          "id": "cm-risk-pnl",
-          "label": "Risk / PnL",
-          "icon": "http://localhost:4202/icons/risk-pnl.svg",
-          "appId": "macro-angular-risk-pnl"
-        }
-      ]
-    },
-    {
-      "type": "folder",
-      "id": "react-apps",
-      "label": "React Apps",
-      "children": [
-        {
-          "type": "item",
-          "id": "cm-macro-react",
-          "label": "Macro React App",
-          "icon": "http://localhost:4202/icons/react-app.svg",
-          "appId": "macro-react-view"
-        },
-        {
-          "type": "item",
-          "id": "cm-treasury-market-data",
-          "label": "Treasury Market Data",
-          "icon": "http://localhost:4202/icons/treasury-market-data.svg",
-          "appId": "macro-react-treasury-market-data"
-        },
-        {
-          "type": "item",
-          "id": "cm-commodities-dashboard",
-          "label": "Commodities Dashboard",
-          "icon": "http://localhost:4202/icons/commodities-dashboard.svg",
-          "appId": "macro-react-commodities-dashboard"
-        }
-      ]
-    },
-    {
-      "type": "folder",
-      "id": "workspace-views",
-      "label": "Workspace",
-      "children": [
-        {
-          "type": "item",
-          "id": "cm-view1",
-          "label": "View 1 (FDC3 Broadcaster)",
-          "icon": "http://localhost:4202/icons/view-broadcaster.svg",
-          "appId": "macro-workspace-view1"
-        },
-        {
-          "type": "item",
-          "id": "cm-view2",
-          "label": "View 2 (FDC3 Listener)",
-          "icon": "http://localhost:4202/icons/view-listener.svg",
-          "appId": "macro-workspace-view2"
-        }
-      ]
-    },
-    {
-      "type": "folder",
-      "id": "platforms",
-      "label": "Platforms",
-      "children": [
-        {
-          "type": "item",
-          "id": "cm-rates-desktop",
-          "label": "Rates E-Trading Desktop",
+          "id": "cm-analytics-dashboard",
+          "label": "Analytics Dashboard",
           "icon": "http://localhost:4202/icons/platform.svg",
-          "appId": "rates-desktop"
+          "appId": "macro-analytics-dashboard"
+        },
+        {
+          "type": "item",
+          "id": "cm-capital-markets-themes",
+          "label": "Capital Markets Themes",
+          "icon": "http://localhost:4202/icons/platform.svg",
+          "appId": "capital-markets-themes"
         }
       ]
     },
     {
       "type": "folder",
-      "id": "blotters",
-      "label": "Blotters",
+      "id": "prism",
+      "label": "Prism Blotters",
       "children": [
         {
           "type": "item",
           "id": "cm-prism-blotter",
-          "label": "Prism — Blotter as a Service",
+          "label": "Prism (Angular)",
           "icon": "http://localhost:4202/icons/prism.svg",
           "appId": "prism-blotter"
         },
         {
           "type": "item",
           "id": "cm-prism-react-blotter",
-          "label": "Prism Blotter (React)",
+          "label": "Prism (React)",
           "icon": "http://localhost:4202/icons/prism-react.svg",
           "appId": "prism-react-blotter"
         }

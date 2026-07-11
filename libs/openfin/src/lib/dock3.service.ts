@@ -10,25 +10,47 @@ import { Logger } from '@macro/logger';
 import type { LaunchService } from './launch.service';
 import type { AppsService } from './apps.service';
 import type { DockConfigService } from './dock-config.service';
+import type { WorkspaceStorageService } from './workspace-storage.service';
 import { getAnalyticsNats } from './analytics-nats.service';
 import { toTaskbarIcon } from './icon-utils';
+import type { LobDockApp } from './storage/storage-types';
 import type {
   PlatformSettings,
   Dock3Settings,
   Dock3FavoriteEntry,
   Dock3ContentEntry,
+  Dock3Icon,
 } from './types';
 
 const logger = Logger.getLogger('Dock3Service');
 
-/** Dock favorite/content-menu item entry (matches OpenFin DockEntry 'item' variant) */
+/** More-menu custom actions (Dock 3.0 `moreMenuCustomOption`). */
+const MORE_MENU_ACTION_ANALYTICS = 'launch-analytics-dashboard';
+const MORE_MENU_ACTION_PROCESS_MANAGER = 'launch-process-manager';
+const PROCESS_MANAGER_MANIFEST =
+  'http://cdn.openfin.co/release/apps/openfin/processmanager/app.json';
+
+/** Dock favorite item entry (matches OpenFin DockEntry 'item' variant) */
 type DockItemEntry = {
   type: 'item';
   id: string;
-  icon: string;
+  icon: Dock3Icon;
   label: string;
   itemData?: any;
 };
+
+/**
+ * Dock favorite folder entry — renders as a DROPDOWN in the dock bar. Its children
+ * come from the content-menu folder with the same id (Dock 3.0 folder merging).
+ */
+type DockFolderEntry = {
+  type: 'folder';
+  id: string;
+  label: string;
+  icon?: Dock3Icon;
+};
+
+type DockFavoriteNode = DockItemEntry | DockFolderEntry;
 
 /** Content menu folder entry */
 type ContentMenuFolder = {
@@ -42,7 +64,7 @@ type ContentMenuFolder = {
 type ContentMenuItem = {
   type: 'item';
   id: string;
-  icon: string;
+  icon: Dock3Icon;
   label: string;
   itemData: any;
 };
@@ -60,6 +82,8 @@ export class Dock3Service {
     private readonly launchService: LaunchService,
     private readonly appsService: AppsService,
     private readonly dockConfigService: DockConfigService,
+    /** Optional: enables LOB dock apps published through the unified storage API. */
+    private readonly storageService?: WorkspaceStorageService,
   ) {}
 
   async init(
@@ -69,18 +93,37 @@ export class Dock3Service {
   ): Promise<void> {
     // Production passes no overrides → config comes from the injected services.
     // Overrides exist for tests/advanced callers that supply config directly.
-    const apps = appsOverride ?? (await this.appsService.load());
-    const dock3Settings = dockOverride ?? (await this.dockConfigService.getDockConfig());
+    // The LOB fetch runs concurrently — it is an optional decoration and must not
+    // serially extend the dock's registration window when the storage host is slow.
+    const [apps, dock3Settings, lobApps] = await Promise.all([
+      appsOverride ? Promise.resolve(appsOverride) : this.appsService.load(),
+      dockOverride
+        ? Promise.resolve(dockOverride)
+        : this.dockConfigService.getDockConfig(),
+      this.loadLobApps(),
+    ]);
     const favorites = this.buildFavorites(
       dock3Settings?.favorites,
       apps,
-      platformSettings.icon
+      platformSettings.icon,
     );
     const contentMenu = this.buildContentMenu(
       dock3Settings?.contentMenu,
       apps,
-      platformSettings.icon
+      platformSettings.icon,
     );
+
+    // LOB custom apps from the unified Workspace Storage API — merged after the
+    // config-driven entries. Fail-soft at every level: a storage outage, a poisoned
+    // record, or a merge bug means fewer/no LOB entries — NEVER a broken dock.
+    try {
+      this.appendLobApps(lobApps, favorites, contentMenu);
+    } catch (error) {
+      logger.error(
+        'LOB dock app merge failed — dock renders config-driven entries only',
+        error,
+      );
+    }
 
     const config: Dock3Config = {
       title: platformSettings.title,
@@ -102,17 +145,42 @@ export class Dock3Service {
           enableBookmarking: true,
         },
         hideDragHandle: false,
+        // Dock 3.0: the provider icon doubles as a content-menu dropdown button
+        // instead of being a plain drag region.
+        providerIconContentMenu: true,
+        moreMenu: {
+          quitPlatform: {
+            hidePlatformTitle: false,
+            skipDialog: false,
+          },
+          moreMenuCustomOption: {
+            label: 'Macro Tools',
+            options: [
+              {
+                tooltip: 'Analytics Dashboard',
+                action: MORE_MENU_ACTION_ANALYTICS,
+              },
+              {
+                tooltip: 'Process Manager',
+                action: MORE_MENU_ACTION_PROCESS_MANAGER,
+              },
+            ],
+          },
+        },
       },
     };
 
     logger.info('Initializing Dock3', {
       favoritesCount: favorites.length,
       contentMenuCount: contentMenu.length,
+      lobAppsCount: lobApps.length,
     });
 
     // Capture for use inside the Dock provider override below (where `this`
     // is the provider instance, not this Dock3Service).
     const launchService = this.launchService;
+    const launchMoreMenuAction = (action: string) =>
+      this.launchMoreMenuAction(action, apps);
 
     this.provider = await Dock.init({
       config,
@@ -138,14 +206,36 @@ export class Dock3Service {
             return config;
           }
 
+          override async moreMenuCustomOptionClicked(payload: {
+            action: string;
+            customData?: any;
+          }) {
+            getAnalyticsNats()
+              .publish({
+                source: 'Dock',
+                type: 'MoreMenu',
+                action: 'Click',
+                value: payload.action,
+              })
+              .catch(() => {});
+            await launchMoreMenuAction(payload.action);
+          }
+
           override async launchEntry(payload: LaunchDockEntryPayload) {
             const { entry } = payload;
             if (entry.type !== 'item') return;
-            getAnalyticsNats().publish({
-              source: 'Dock', type: 'App', action: 'Launch',
-              value: entry.label || entry.id,
-              data: { entryId: entry.id, appId: (entry.itemData as any)?.appId },
-            }).catch(() => {});
+            getAnalyticsNats()
+              .publish({
+                source: 'Dock',
+                type: 'App',
+                action: 'Launch',
+                value: entry.label || entry.id,
+                data: {
+                  entryId: entry.id,
+                  appId: (entry.itemData as any)?.appId,
+                },
+              })
+              .catch(() => {});
 
             const appId = entry.itemData?.appId as string | undefined;
             const url = entry.itemData?.url as string | undefined;
@@ -207,17 +297,211 @@ export class Dock3Service {
     }
   }
 
+  /** "Macro Tools" more-menu actions. */
+  private async launchMoreMenuAction(
+    action: string,
+    apps: App[] | undefined,
+  ): Promise<void> {
+    try {
+      if (action === MORE_MENU_ACTION_ANALYTICS) {
+        const analytics = apps?.find(
+          (a) => a.appId === 'macro-analytics-dashboard',
+        );
+        if (analytics) {
+          await this.launchService.launch(analytics);
+        } else {
+          logger.warn('Analytics dashboard app not found in the registry');
+        }
+        return;
+      }
+      if (action === MORE_MENU_ACTION_PROCESS_MANAGER) {
+        await fin.Application.startFromManifest(PROCESS_MANAGER_MANIFEST);
+        return;
+      }
+      logger.warn('Unknown more-menu action', { action });
+    } catch (err) {
+      logger.error('More-menu action failed', { action, err });
+    }
+  }
+
+  /** LOB apps sorted by sortOrder ascending, undefined last, stable for ties. */
+  private async loadLobApps(): Promise<LobDockApp[]> {
+    if (!this.storageService) return [];
+    try {
+      const apps = await this.storageService.getLobDockApps();
+      return apps
+        .map((app, index) => ({ app, index }))
+        .sort((a, b) => {
+          const ao = a.app.sortOrder ?? Number.MAX_SAFE_INTEGER;
+          const bo = b.app.sortOrder ?? Number.MAX_SAFE_INTEGER;
+          return ao !== bo ? ao - bo : a.index - b.index;
+        })
+        .map(({ app }) => app);
+    } catch (error) {
+      logger.warn(
+        'Could not load LOB dock apps — dock renders without them',
+        error,
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Merge LOB apps into the dock: `icon` → a favorites button (+ listed under the
+   * "LOB Apps" content folder, grouped by `lob`); `dropdown` → a favorites folder
+   * whose children live in a top-level content-menu folder with the SAME id
+   * (Dock 3.0 folder merging resolves the dropdown's children by id).
+   *
+   * All LOB-derived dock ids are NAMESPACED with `lob:` — publishers cannot know the
+   * platform's config-driven ids ('showcase', 'prism', …), and Dock 3.0 keys folder
+   * merging and bookmarking by entry id, so an un-namespaced collision would open the
+   * wrong dropdown. Only the favorites-folder/content-folder PAIR has to share an id.
+   * Malformed records are skipped per entry (warn) — never allowed to break the dock.
+   */
+  private appendLobApps(
+    lobApps: LobDockApp[],
+    favorites: DockFavoriteNode[],
+    contentMenu: ContentMenuNode[],
+  ): void {
+    if (!lobApps.length) return;
+
+    const iconApps: LobDockApp[] = [];
+    const seenIds = new Set<string>();
+
+    for (const app of lobApps) {
+      try {
+        if (
+          !app ||
+          typeof app.id !== 'string' ||
+          !app.id ||
+          typeof app.label !== 'string' ||
+          typeof app.iconUrl !== 'string'
+        ) {
+          logger.warn('Skipping malformed LOB dock app', { app });
+          continue;
+        }
+        if (seenIds.has(app.id)) {
+          logger.warn('Skipping duplicate LOB dock app id', { id: app.id });
+          continue;
+        }
+        seenIds.add(app.id);
+        const entryId = `lob:${app.id}`;
+
+        if (app.type === 'dropdown') {
+          const children = (Array.isArray(app.children) ? app.children : [])
+            .filter(
+              (child) => child && typeof child.url === 'string' && child.url,
+            )
+            .map<ContentMenuItem>((child, index) => ({
+              type: 'item',
+              id: `${entryId}:${child.id ?? index}`,
+              label: child.label,
+              icon: child.iconUrl || app.iconUrl,
+              itemData: { url: child.url },
+            }));
+          if (!children.length) {
+            logger.warn('Skipping LOB dropdown app without children', {
+              id: app.id,
+            });
+            continue;
+          }
+          favorites.push({
+            type: 'folder',
+            id: entryId,
+            label: app.label,
+            icon: app.iconUrl,
+          });
+          contentMenu.push({
+            type: 'folder',
+            id: entryId,
+            label: app.label,
+            children,
+          });
+          continue;
+        }
+
+        if (!app.url) {
+          logger.warn('Skipping LOB icon app without a url', { id: app.id });
+          continue;
+        }
+        favorites.push({
+          type: 'item',
+          id: entryId,
+          label: app.label,
+          icon: app.iconUrl,
+          itemData: { url: app.url },
+        });
+        iconApps.push(app);
+      } catch (error) {
+        logger.warn('Skipping LOB dock app that failed to map', {
+          id: (app as { id?: string })?.id,
+          error,
+        });
+      }
+    }
+
+    // Content-menu catalog of the single-icon LOB apps, grouped by owning LOB.
+    // Disjoint id prefixes for items vs group folders; non-string `lob` values are
+    // treated as ungrouped (server validates, but local-mode data bypasses it).
+    if (iconApps.length) {
+      const byLob = new Map<string | undefined, LobDockApp[]>();
+      for (const app of iconApps) {
+        const lob =
+          typeof app.lob === 'string' && app.lob.trim() ? app.lob : undefined;
+        const group = byLob.get(lob) ?? [];
+        group.push(app);
+        byLob.set(lob, group);
+      }
+      const toItem = (app: LobDockApp): ContentMenuItem => ({
+        type: 'item',
+        id: `lob:catalog:${app.id}`,
+        label: app.label,
+        icon: app.iconUrl,
+        itemData: { url: app.url },
+      });
+      const children: ContentMenuNode[] = [
+        ...(byLob.get(undefined) ?? []).map(toItem),
+      ];
+      const usedSlugs = new Set<string>();
+      for (const [lob, group] of byLob) {
+        if (lob === undefined) continue;
+        let slug = lob.toLowerCase().replace(/\s+/g, '-');
+        while (usedSlugs.has(slug)) slug = `${slug}-2`;
+        usedSlugs.add(slug);
+        children.push({
+          type: 'folder',
+          id: `lob:group:${slug}`,
+          label: lob,
+          children: group.map(toItem),
+        });
+      }
+      contentMenu.push({
+        type: 'folder',
+        id: 'lob-apps',
+        label: 'LOB Apps',
+        children,
+      });
+    }
+  }
+
   private buildFavorites(
     settingsFavorites: Dock3FavoriteEntry[] | undefined,
     apps: App[] | undefined,
-    defaultIcon: string
-  ): DockItemEntry[] {
+    defaultIcon: string,
+  ): DockFavoriteNode[] {
     if (!settingsFavorites?.length) return [];
 
-    return settingsFavorites.map((fav) => {
-      const app = fav.appId ? apps?.find((a) => a.appId === fav.appId) : undefined;
+    return settingsFavorites.map((fav): DockFavoriteNode => {
+      if (fav.type === 'folder') {
+        // A favorites folder is a dock DROPDOWN — its children come from the
+        // content-menu folder with the same id (Dock 3.0 folder merging).
+        return { type: 'folder', id: fav.id, label: fav.label, icon: fav.icon };
+      }
+      const app = fav.appId
+        ? apps?.find((a) => a.appId === fav.appId)
+        : undefined;
       return {
-        type: 'item' as const,
+        type: 'item',
         id: fav.id,
         label: fav.label,
         icon: fav.icon || app?.icons?.[0]?.src || defaultIcon,
@@ -232,17 +516,19 @@ export class Dock3Service {
   private buildContentMenu(
     settingsMenu: Dock3ContentEntry[] | undefined,
     apps: App[] | undefined,
-    defaultIcon: string
+    defaultIcon: string,
   ): ContentMenuNode[] {
     if (!settingsMenu?.length) return [];
 
-    return settingsMenu.map((entry) => this.mapContentEntry(entry, apps, defaultIcon));
+    return settingsMenu.map((entry) =>
+      this.mapContentEntry(entry, apps, defaultIcon),
+    );
   }
 
   private mapContentEntry(
     entry: Dock3ContentEntry,
     apps: App[] | undefined,
-    defaultIcon: string
+    defaultIcon: string,
   ): ContentMenuNode {
     if (entry.type === 'folder') {
       return {
@@ -250,12 +536,14 @@ export class Dock3Service {
         id: entry.id,
         label: entry.label,
         children: entry.children.map((child) =>
-          this.mapContentEntry(child, apps, defaultIcon)
+          this.mapContentEntry(child, apps, defaultIcon),
         ),
       };
     }
 
-    const app = entry.appId ? apps?.find((a) => a.appId === entry.appId) : undefined;
+    const app = entry.appId
+      ? apps?.find((a) => a.appId === entry.appId)
+      : undefined;
     return {
       type: 'item' as const,
       id: entry.id,

@@ -1,7 +1,7 @@
 import type { Page, Workspace } from '@openfin/workspace-platform';
 import type { DockProviderConfigWithIdentity } from '@openfin/workspace';
 import { Logger } from '@macro/logger';
-import type { WorkspaceStorageClient } from './storage-types';
+import type { LobDockApp, WorkspaceStorageClient } from './storage-types';
 
 const logger = Logger.getLogger('RestWorkspaceStorageClient');
 
@@ -117,6 +117,12 @@ export class RestWorkspaceStorageClient implements WorkspaceStorageClient {
 
   async saveFavorites(appIds: string[]): Promise<void> {
     await this.request('PUT', '/favorites', { appIds });
+  }
+
+  // ── LOB dock apps (shared resource — GET only from the platform; LOBs PUT via the API) ──
+
+  async getLobDockApps(): Promise<LobDockApp[]> {
+    return (await this.request<LobDockApp[]>('GET', '/dock-apps')) ?? [];
   }
 
   // ── preferences ──

@@ -167,7 +167,8 @@ export class DockService extends BaseDockService {
 @Injectable({ providedIn: 'root' })
 export class Dock3Service extends BaseDock3Service {
   constructor() {
-    super(inject(LaunchService), inject(AppsService), inject(DockConfigService));
+    // WorkspaceStorageService enables LOB dock apps published via the storage API.
+    super(inject(LaunchService), inject(AppsService), inject(DockConfigService), inject(WorkspaceStorageService));
   }
 }
 

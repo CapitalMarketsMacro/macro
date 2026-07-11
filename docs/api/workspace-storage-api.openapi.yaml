@@ -2,7 +2,7 @@ openapi: 3.1.0
 
 info:
   title: Macro Workspace Storage API
-  version: 1.0.0
+  version: 1.1.0
   contact:
     name: Macro Platform Team
     email: support@macro.example.com
@@ -23,6 +23,9 @@ info:
       documents (`settings`, `apps`, `dock-config`, `storefront-config`, `snap-config`,
       `entitlements`) that today ship as static files under
       `apps/macro-workspace/public/{local,openshift}/`.
+    - **LOB dock apps** (read-only to the platform) — custom dock apps published by
+      lines of business (`/dock-apps`), **shared across all users** like platform
+      config. LOB tooling writes them; the platform reads them at dock init.
 
     The canonical TypeScript client is `RestWorkspaceStorageClient` in
     `libs/openfin/src/lib/storage/rest-storage-client.ts`; the client-side contract is
@@ -42,10 +45,11 @@ info:
 
     ## Authentication and user scoping (interim)
 
-    Every route except `GET /health` and `GET /config/{configName}` is **user-scoped**:
-    resources belong to exactly one user and requests must carry the caller's identity in
-    the `X-User-Id` request header (security scheme `userId`). The reference
-    implementation defaults to `anonymous` when the header is absent.
+    Every route except `GET /health`, `GET /config/{configName}` and the `/dock-apps`
+    routes is **user-scoped**: resources belong to exactly one user and requests must
+    carry the caller's identity in the `X-User-Id` request header (security scheme
+    `userId`). The reference implementation defaults to `anonymous` when the header is
+    absent.
 
     > **Phase 2:** the plain-header scheme is interim and carries no proof of identity.
     > Phase 2 replaces it with a real identity token — OAuth 2.0 / OIDC bearer JWT
@@ -58,6 +62,12 @@ info:
     per-environment, identical for every user of that deployment.
     `PUT /config/{configName}` is a phase-2 admin operation (the reference
     implementation returns `501 Not Implemented`).
+
+    The `/dock-apps` routes are likewise **not** user-scoped: LOB dock apps are shared
+    across all users of the deployment. `X-User-Id` is not required on them and is
+    ignored when sent. The reference implementation persists dock apps in the **same
+    store file** as user data, at the top level (not under any user), with the same
+    debounced file persistence.
 
     ## Concurrency (ETag / If-Match)
 
@@ -109,6 +119,11 @@ info:
       (`{ name, document, version, updatedAt }`, unique `{ name: 1 }`), seeded per
       environment at deploy time; `PUT /config/{configName}` becomes the admin write
       path guarded by a role check.
+    - **`dockApps` collection** — one document per LOB dock app
+      (`{ dockAppId, document, version, updatedAt }`, unique `{ dockAppId: 1 }`).
+      **No `userId` field** — dock apps are shared across users like config, but
+      unlike config they are writable through this API (LOB publishing tooling), so
+      validate the document shape on PUT as specified on `putDockApp`.
     - **Optimistic concurrency** — a monotonically increasing `version` field
       (`@Version` with Spring Data works) surfaced to HTTP as the `ETag` value
       (e.g. `ETag: "7"`); compare on `If-Match`, respond 412 on mismatch. Upserts bump
@@ -118,6 +133,14 @@ info:
       with escaped input, or `$text` if you prefer an index-backed search).
     - Return the stored representation from `PUT` (200/201) — the TypeScript client
       requires a JSON body on non-204 successes.
+
+    ## Changelog
+
+    - **1.1.0** — added the `/dock-apps` resource: LOB-published custom dock apps
+      (`LobDockApp`), shared across all users (not user-scoped), read by the platform
+      at dock init.
+    - **1.0.0** — initial release: workspaces, pages, dock customization, favorites,
+      preferences, platform config, health.
 
 externalDocs:
   description: Client contract and reference implementation notes (repo sources)
@@ -163,6 +186,13 @@ tags:
     description: >-
       User dock customization, keyed by dock provider id
       (DockProviderConfigWithIdentity). User-scoped.
+  - name: DockApps
+    x-displayName: LOB Dock Apps
+    description: >-
+      Custom dock apps published by lines of business. NOT user-scoped — shared
+      across all users of the deployment; no X-User-Id is required (ignored when
+      sent). The platform reads them at dock init and renders 'icon' entries as
+      dock buttons and 'dropdown' entries as dock folders of child launchers.
   - name: Favorites
     x-displayName: Favorites
     description: >-
@@ -485,6 +515,182 @@ paths:
       responses:
         '204':
           description: Dock customization deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+  /dock-apps:
+    get:
+      tags:
+        - DockApps
+      operationId: listDockApps
+      summary: List LOB dock apps
+      description: >-
+        Returns every published LOB dock app. NOT user-scoped — the same list is
+        returned to every caller and no `X-User-Id` is required (ignored when sent).
+        Returns `[]` (never 404) when none are published. Entries are sorted by
+        `sortOrder` ascending with entries lacking `sortOrder` last; the sort MUST be
+        stable so equal (or absent) `sortOrder` values keep their stored order. The
+        platform calls this at dock init and renders `icon` entries as dock buttons
+        and `dropdown` entries as dock folders.
+      security: []
+      responses:
+        '200':
+          description: All published LOB dock apps (possibly empty), sorted by sortOrder.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LobDockApp'
+              examples:
+                two-lobs:
+                  summary: One icon app (Rates) and one dropdown app (Credit)
+                  value:
+                    - id: rates-curve-monitor
+                      label: Curve Monitor
+                      iconUrl: http://localhost:4202/icons/treasury-market-data.svg
+                      type: icon
+                      url: http://localhost:4201/treasury-market-data
+                      tooltip: Live treasury curve monitor
+                      lob: Rates
+                      sortOrder: 10
+                    - id: credit-desk-tools
+                      label: Credit Desk
+                      iconUrl: http://localhost:4202/icons/openfin.svg
+                      type: dropdown
+                      tooltip: Credit desk launchers
+                      lob: Credit
+                      sortOrder: 20
+                      children:
+                        - id: credit-blotter
+                          label: Credit Blotter
+                          url: http://localhost:4204/
+                        - id: credit-risk-pnl
+                          label: Credit Risk / PnL
+                          url: http://localhost:4205/
+                          iconUrl: http://localhost:4202/icons/react-app.svg
+
+  /dock-apps/{dockAppId}:
+    parameters:
+      - $ref: '#/components/parameters/DockAppId'
+    get:
+      tags:
+        - DockApps
+      operationId: getDockApp
+      summary: Get one LOB dock app
+      description: >-
+        Returns the LOB dock app with the given id. NOT user-scoped; no `X-User-Id`
+        required. `404` when no dock app is published under that id.
+      security: []
+      responses:
+        '200':
+          description: The published LOB dock app.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LobDockApp'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - DockApps
+      operationId: putDockApp
+      summary: Publish (create or replace) an LOB dock app
+      description: >-
+        Full-document upsert keyed by the path id — the write path for LOB publishing
+        tooling (Postman/curl/pipelines); the platform itself only reads. NOT
+        user-scoped; no `X-User-Id` required (ignored when sent). Unlike the opaque
+        workspace/page/dock documents, the body IS validated. The server responds
+        `400 Bad Request` (problem+json with a helpful `detail`) when any of the
+        following are violated:
+
+
+        - `id`, `label` and `iconUrl` are required non-empty strings.
+
+        - `type` is required and must be `icon` or `dropdown`.
+
+        - `type: icon` → `url` is required and non-empty.
+
+        - `type: dropdown` → `children` is required and a non-empty array, and every
+          child has non-empty `id`, `label` and `url`.
+
+        - Optional fields must carry the schema types when present: `tooltip`, `lob`
+          and `children[].iconUrl` non-empty strings; `sortOrder` a finite number.
+
+        - Unknown fields are rejected (`additionalProperties: false`), at the top
+          level and inside `children[]`.
+
+        - `body.id` MUST equal the path `{dockAppId}` (existing convention).
+
+
+        Responds `201` when the dock app did not exist, `200` when it was replaced;
+        both carry the stored representation as the body.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LobDockApp'
+      responses:
+        '200':
+          description: Existing dock app replaced. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LobDockApp'
+        '201':
+          description: Dock app created. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LobDockApp'
+        '400':
+          description: >-
+            Validation failed — missing/empty `id`, `label` or `iconUrl`; `type` not
+            `icon`/`dropdown`; `type: icon` without a non-empty `url`;
+            `type: dropdown` without a non-empty `children` array (or a child missing
+            `id`/`label`/`url`); or `body.id` does not match the path id. The
+            problem+json `detail` names the offending field.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                detail: "type 'icon' requires a non-empty 'url'."
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+    delete:
+      tags:
+        - DockApps
+      operationId: deleteDockApp
+      summary: Unpublish an LOB dock app
+      description: >-
+        Removes the dock app for ALL users (the resource is shared). NOT user-scoped;
+        no `X-User-Id` required. `204` on success, `404` when the id does not exist
+        (the client treats 404 as success, making deletes idempotent end-to-end).
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204':
+          description: Dock app deleted.
         '404':
           $ref: '#/components/responses/NotFound'
         '412':
@@ -853,7 +1059,8 @@ components:
         This carries no proof of identity — phase 2 replaces it with OAuth 2.0 / OIDC
         bearer JWTs (`Authorization: Bearer <jwt>`, user id from the `sub` claim), at
         which point this header is ignored or validated against the token. Applied
-        globally except `GET /health` and `GET /config/{configName}`.
+        globally except `GET /health`, `GET /config/{configName}` and the
+        `/dock-apps` routes.
 
   parameters:
     WorkspaceId:
@@ -883,6 +1090,15 @@ components:
         type: string
         minLength: 1
       example: macro-workspace-platform-dock
+    DockAppId:
+      name: dockAppId
+      in: path
+      required: true
+      description: LOB dock app id (the `id` field of the stored document).
+      schema:
+        type: string
+        minLength: 1
+      example: rates-curve-monitor
     PreferenceKey:
       name: key
       in: path
@@ -1170,6 +1386,144 @@ components:
               appId: macro-angular-fx-market-data
           workspaceComponents:
             - switchWorkspace
+
+    LobDockApp:
+      type: object
+      description: >-
+        A custom dock app published by a line of business (`LobDockApp` in
+        `libs/openfin/src/lib/storage/storage-types.ts`). Shared across all users —
+        NOT user-scoped. The platform reads these at dock init and renders
+        `type: icon` entries as single dock buttons and `type: dropdown` entries as
+        dock folders of child launchers.
+
+
+        **Conditional requirements** (enforced by the server on PUT; documented here
+        rather than modeled as a strict `oneOf` because the discriminated shapes
+        differ only in which optional fields become required): when `type` is `icon`,
+        `url` is REQUIRED and non-empty; when `type` is `dropdown`, `children` is
+        REQUIRED and a non-empty array whose every child has `id`, `label` and `url`.
+        See the two examples — one of each type.
+      required:
+        - id
+        - label
+        - iconUrl
+        - type
+      properties:
+        id:
+          type: string
+          minLength: 1
+          description: Unique dock app id. Must equal the path id on PUT.
+        label:
+          type: string
+          minLength: 1
+          description: Dock button / folder label.
+        iconUrl:
+          type: string
+          format: uri
+          minLength: 1
+          description: Dock button icon URL (required by contract).
+        type:
+          type: string
+          enum:
+            - icon
+            - dropdown
+          description: >-
+            `icon` — a single dock button launching `url`; `dropdown` — a dock
+            folder whose entries come from `children`.
+        url:
+          type: string
+          minLength: 1
+          format: uri
+          description: >-
+            URL opened as a platform view when the button is clicked. REQUIRED
+            (non-empty) when `type` is `icon`; ignored for `dropdown`.
+        children:
+          type: array
+          minItems: 1
+          description: >-
+            Child launchers. REQUIRED (non-empty) when `type` is `dropdown`;
+            ignored for `icon`.
+          items:
+            $ref: '#/components/schemas/LobDockAppChild'
+        tooltip:
+          type: string
+          description: >-
+            RESERVED — accepted and stored, but not currently rendered: Dock 3.0
+            entries have no hover-text field, so the dock shows the label. Kept in
+            the contract so publishers won't need a migration when the Dock SDK
+            grows tooltip support.
+        lob:
+          type: string
+          description: >-
+            Owning line of business, e.g. `Rates` — used for grouping in the
+            content menu.
+        sortOrder:
+          type: number
+          description: >-
+            Ordering among LOB entries appended to the dock (ascending; entries
+            without a sortOrder sort last; ties keep stored order — stable sort).
+      additionalProperties: false
+      examples:
+        - id: rates-curve-monitor
+          label: Curve Monitor
+          iconUrl: http://localhost:4202/icons/treasury-market-data.svg
+          type: icon
+          url: http://localhost:4201/treasury-market-data
+          tooltip: Live treasury curve monitor
+          lob: Rates
+          sortOrder: 10
+        - id: credit-desk-tools
+          label: Credit Desk
+          iconUrl: http://localhost:4202/icons/openfin.svg
+          type: dropdown
+          tooltip: Credit desk launchers
+          lob: Credit
+          sortOrder: 20
+          children:
+            - id: credit-blotter
+              label: Credit Blotter
+              url: http://localhost:4204/
+            - id: credit-risk-pnl
+              label: Credit Risk / PnL
+              url: http://localhost:4205/
+              iconUrl: http://localhost:4202/icons/react-app.svg
+
+    LobDockAppChild:
+      type: object
+      description: >-
+        One child launcher inside a `dropdown` LOB dock app (`LobDockAppChild` in
+        `libs/openfin/src/lib/storage/storage-types.ts`).
+      required:
+        - id
+        - label
+        - url
+      properties:
+        id:
+          type: string
+          minLength: 1
+          description: Unique id of the child within its parent.
+        label:
+          type: string
+          minLength: 1
+          description: Menu entry label.
+        url:
+          type: string
+          minLength: 1
+          format: uri
+          description: URL opened as a platform view when clicked (required by contract).
+        iconUrl:
+          type: string
+          format: uri
+          description: Optional icon (falls back to the parent's `iconUrl`).
+      additionalProperties: false
+      examples:
+        - id: credit-blotter
+          label: Credit Blotter
+          url: http://localhost:4204/
+        - id: credit-risk-pnl
+          label: Credit Risk / PnL
+          url: http://localhost:4205/
+          iconUrl: http://localhost:4202/icons/react-app.svg
 
     Favorites:
       type: object

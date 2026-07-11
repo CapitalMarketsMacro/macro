@@ -95,6 +95,10 @@ Spring Boot + MongoDB service speaking the same wire contract.
 | `GET/PUT/DELETE /preferences/{key}` | One preference: PUT body `{ value: <any JSON> }` → 201/200 |
 | `GET /config/{name}` | Platform config JSON (not user-scoped): `settings` \| `apps` \| `dock-config` \| `storefront-config` \| `snap-config` \| `entitlements` |
 | `PUT /config/{name}` | 501 — admin operation reserved for phase 2 |
+| `GET /dock-apps` | LOB dock apps (**not user-scoped** — publisher-facing, shared across all users): list sorted by `sortOrder` ascending, undefined last (stable); empty array when none (never 404) |
+| `GET /dock-apps/{id}` | One LOB dock app (200 + `ETag`) or 404 |
+| `PUT /dock-apps/{id}` | Publish/replace a LOB dock app — 201/200; 400 unless `id`/`label`/`iconUrl` are non-empty and `type` is `icon` (with `url`) or `dropdown` (with non-empty `children`, each with `id`/`label`/`url`) |
+| `DELETE /dock-apps/{id}` | 204, or 404 when absent |
 
 Conventions: errors are `application/problem+json` (RFC 9457); single-resource GETs
 carry an `ETag`, and an optional `If-Match` on PUT/DELETE returns 412 on mismatch;

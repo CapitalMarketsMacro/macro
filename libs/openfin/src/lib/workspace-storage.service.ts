@@ -2,7 +2,7 @@ import type { Page, Workspace } from '@openfin/workspace-platform';
 import type { DockProviderConfigWithIdentity } from '@openfin/workspace';
 import { Logger } from '@macro/logger';
 import { getWorkspaceStorage } from './storage/storage-context';
-import { WELL_KNOWN_PREFERENCES } from './storage/storage-types';
+import { WELL_KNOWN_PREFERENCES, type LobDockApp } from './storage/storage-types';
 
 /**
  * Facade over the active {@link WorkspaceStorageClient} — the single seam every
@@ -87,6 +87,17 @@ export class WorkspaceStorageService {
 
   async saveDockConfig(config: DockProviderConfigWithIdentity): Promise<void> {
     await getWorkspaceStorage().saveDockConfig(config);
+  }
+
+  // ── LOB dock apps (shared across users; reads degrade like all reads) ──
+
+  async getLobDockApps(): Promise<LobDockApp[]> {
+    try {
+      return await getWorkspaceStorage().getLobDockApps();
+    } catch (error) {
+      this.logger.error('Failed to get LOB dock apps from storage', { error });
+      return [];
+    }
   }
 
   // ── preferences ──
