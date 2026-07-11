@@ -473,4 +473,238 @@ describe('Dock3Service', () => {
       expect(mockLaunchService.launch).not.toHaveBeenCalled();
     });
   });
+
+  // ── favorites folders (dock dropdowns via content-menu folder merging) ──
+
+  describe('favorites folders', () => {
+    it('passes a folder favorite through as a dock dropdown entry', async () => {
+      const dock3Settings: Dock3Settings = {
+        favorites: [
+          { type: 'folder', id: 'showcase', label: 'Showcase', icon: 'http://x/showcase.svg' },
+          { type: 'item', id: 'fav-a', label: 'A', icon: 'http://x/a.svg', appId: 'app-a' },
+        ],
+        contentMenu: [],
+      };
+      await service.init(platformSettings, [], dock3Settings);
+
+      const config = (Dock.init as jest.Mock).mock.calls[0][0].config;
+      expect(config.favorites[0]).toEqual({
+        type: 'folder',
+        id: 'showcase',
+        label: 'Showcase',
+        icon: 'http://x/showcase.svg',
+      });
+      expect(config.favorites[1].type).toBe('item');
+    });
+  });
+
+  // ── Dock 3.0 uiConfig features ──
+
+  describe('Dock 3.0 uiConfig', () => {
+    it('enables providerIconContentMenu and the Macro Tools more-menu', async () => {
+      await service.init(platformSettings);
+
+      const config = (Dock.init as jest.Mock).mock.calls[0][0].config;
+      expect(config.uiConfig.providerIconContentMenu).toBe(true);
+      expect(config.uiConfig.moreMenu.moreMenuCustomOption.label).toBe('Macro Tools');
+      expect(config.uiConfig.moreMenu.moreMenuCustomOption.options.map((o: any) => o.action)).toEqual([
+        'launch-analytics-dashboard',
+        'launch-process-manager',
+      ]);
+    });
+
+    it('launches the process manager from the more-menu via fin', async () => {
+      const startFromManifest = jest.fn().mockResolvedValue(undefined);
+      (globalThis as any).fin = { Application: { startFromManifest } };
+      try {
+        await service.init(platformSettings);
+        const overrideFactory = (Dock.init as jest.Mock).mock.calls[0][0].override;
+        class MockBase {}
+        const provider = new (overrideFactory(MockBase as any))();
+
+        await provider.moreMenuCustomOptionClicked({ action: 'launch-process-manager' });
+        expect(startFromManifest).toHaveBeenCalledWith('http://cdn.openfin.co/release/apps/openfin/processmanager/app.json');
+      } finally {
+        delete (globalThis as any).fin;
+      }
+    });
+
+    it('logs and swallows more-menu failures (unknown action, launcher rejection)', async () => {
+      const analytics = makeApp('macro-analytics-dashboard', 'Analytics', 'http://host/analytics.fin.json');
+      mockLaunchService.launch.mockRejectedValue(new Error('launch failed'));
+      await service.init(platformSettings, [analytics]);
+      const overrideFactory = (Dock.init as jest.Mock).mock.calls[0][0].override;
+      class MockBase {}
+      const provider = new (overrideFactory(MockBase as any))();
+
+      await expect(provider.moreMenuCustomOptionClicked({ action: 'launch-analytics-dashboard' })).resolves.toBeUndefined();
+      await expect(provider.moreMenuCustomOptionClicked({ action: 'no-such-action' })).resolves.toBeUndefined();
+    });
+
+    it('passes theme-variant {light,dark} icons through favorites untouched', async () => {
+      const icon = { light: 'http://x/l.svg', dark: 'http://x/d.svg' };
+      const dock3Settings: Dock3Settings = {
+        favorites: [{ type: 'item', id: 'fav-t', label: 'Themed', icon, appId: undefined }],
+        contentMenu: [],
+      };
+      await service.init(platformSettings, [], dock3Settings);
+      const config = (Dock.init as jest.Mock).mock.calls[0][0].config;
+      expect(config.favorites[0].icon).toEqual(icon);
+    });
+
+    it('routes the analytics more-menu action through the launcher', async () => {
+      const analytics = makeApp('macro-analytics-dashboard', 'Analytics', 'http://host/analytics.fin.json');
+      await service.init(platformSettings, [analytics]);
+
+      const overrideFactory = (Dock.init as jest.Mock).mock.calls[0][0].override;
+      class MockBase {}
+      const Provider = overrideFactory(MockBase as any);
+      const provider = new Provider();
+
+      await provider.moreMenuCustomOptionClicked({ action: 'launch-analytics-dashboard' });
+      expect(mockLaunchService.launch).toHaveBeenCalledWith(analytics);
+    });
+  });
+
+  // ── LOB dock apps from the unified storage API ──
+
+  describe('LOB dock apps', () => {
+    const initWithLobApps = async (lobApps: unknown[], reject = false) => {
+      const mockStorage = {
+        getLobDockApps: reject
+          ? jest.fn().mockRejectedValue(new Error('storage down'))
+          : jest.fn().mockResolvedValue(lobApps),
+      };
+      service = new Dock3Service(
+        mockLaunchService as any,
+        mockAppsService as any,
+        mockDockConfigService as any,
+        mockStorage as any,
+      );
+      await service.init(platformSettings);
+      return (Dock.init as jest.Mock).mock.calls[0][0].config;
+    };
+
+    it('renders an icon LOB app as a dock favorite launching its url', async () => {
+      const config = await initWithLobApps([
+        { id: 'lob-rates-monitor', label: 'Rates Monitor', iconUrl: 'http://lob/rates.svg', type: 'icon', url: 'http://lob/rates-app', lob: 'Rates' },
+      ]);
+
+      expect(config.favorites).toContainEqual({
+        type: 'item',
+        id: 'lob:lob-rates-monitor',
+        label: 'Rates Monitor',
+        icon: 'http://lob/rates.svg',
+        itemData: { url: 'http://lob/rates-app' },
+      });
+      // ...and it is cataloged under the LOB Apps content folder, grouped by lob.
+      const lobFolder = config.contentMenu.find((e: any) => e.id === 'lob-apps');
+      expect(lobFolder.children).toContainEqual({
+        type: 'folder',
+        id: 'lob:group:rates',
+        label: 'Rates',
+        children: [
+          {
+            type: 'item',
+            id: 'lob:catalog:lob-rates-monitor',
+            label: 'Rates Monitor',
+            icon: 'http://lob/rates.svg',
+            itemData: { url: 'http://lob/rates-app' },
+          },
+        ],
+      });
+    });
+
+    it('renders a dropdown LOB app as a dock folder + same-id content-menu folder', async () => {
+      const config = await initWithLobApps([
+        {
+          id: 'lob-credit-tools',
+          label: 'Credit Tools',
+          iconUrl: 'http://lob/credit.svg',
+          type: 'dropdown',
+          children: [
+            { id: 'credit-curves', label: 'Curves', url: 'http://lob/curves' },
+            { id: 'credit-runs', label: 'Runs', url: 'http://lob/runs', iconUrl: 'http://lob/runs.svg' },
+          ],
+        },
+      ]);
+
+      // LOB-derived ids are namespaced with `lob:` so publishers can never collide
+      // with the platform's config-driven ids (showcase/prism/lob-apps/cm-*).
+      expect(config.favorites).toContainEqual({
+        type: 'folder',
+        id: 'lob:lob-credit-tools',
+        label: 'Credit Tools',
+        icon: 'http://lob/credit.svg',
+      });
+      const folder = config.contentMenu.find((e: any) => e.id === 'lob:lob-credit-tools');
+      expect(folder.children).toEqual([
+        { type: 'item', id: 'lob:lob-credit-tools:credit-curves', label: 'Curves', icon: 'http://lob/credit.svg', itemData: { url: 'http://lob/curves' } },
+        { type: 'item', id: 'lob:lob-credit-tools:credit-runs', label: 'Runs', icon: 'http://lob/runs.svg', itemData: { url: 'http://lob/runs' } },
+      ]);
+    });
+
+    it('orders LOB entries by sortOrder ascending with undefined last', async () => {
+      const config = await initWithLobApps([
+        { id: 'no-order', label: 'Z', iconUrl: 'http://x/z.svg', type: 'icon', url: 'http://x/z' },
+        { id: 'second', label: 'B', iconUrl: 'http://x/b.svg', type: 'icon', url: 'http://x/b', sortOrder: 2 },
+        { id: 'first', label: 'A', iconUrl: 'http://x/a.svg', type: 'icon', url: 'http://x/a', sortOrder: 1 },
+      ]);
+
+      const lobIds = config.favorites.filter((f: any) => f.type === 'item').map((f: any) => f.id);
+      expect(lobIds).toEqual(['lob:first', 'lob:second', 'lob:no-order']);
+    });
+
+    it('skips malformed entries (icon without url, dropdown without children)', async () => {
+      const config = await initWithLobApps([
+        { id: 'bad-icon', label: 'X', iconUrl: 'http://x/x.svg', type: 'icon' },
+        { id: 'bad-dropdown', label: 'Y', iconUrl: 'http://x/y.svg', type: 'dropdown', children: [] },
+        { id: 'good', label: 'G', iconUrl: 'http://x/g.svg', type: 'icon', url: 'http://x/g' },
+      ]);
+
+      const ids = config.favorites.map((f: any) => f.id);
+      expect(ids).toContain('lob:good');
+      expect(ids).not.toContain('lob:bad-icon');
+      expect(ids).not.toContain('lob:bad-dropdown');
+    });
+
+    it('never lets a poisoned LOB record break the dock (non-string lob, bad children)', async () => {
+      const config = await initWithLobApps([
+        { id: 'poison', label: 'P', iconUrl: 'http://x/p.svg', type: 'icon', url: 'http://x/p', lob: 42 },
+        { id: 'bad-kids', label: 'K', iconUrl: 'http://x/k.svg', type: 'dropdown', children: 'nope' },
+        { id: 'ok', label: 'OK', iconUrl: 'http://x/ok.svg', type: 'icon', url: 'http://x/ok', lob: 'Rates' },
+      ]);
+
+      // Dock still built; poisoned lob groups as ungrouped instead of crashing.
+      const ids = config.favorites.map((f: any) => f.id);
+      expect(ids).toContain('lob:poison');
+      expect(ids).toContain('lob:ok');
+      expect(ids).not.toContain('lob:bad-kids');
+      const lobFolder = config.contentMenu.find((e: any) => e.id === 'lob-apps');
+      const topLevelIds = lobFolder.children.map((c: any) => c.id);
+      expect(topLevelIds).toContain('lob:catalog:poison'); // ungrouped, not under a folder
+    });
+
+    it('skips duplicate LOB ids (first one wins)', async () => {
+      const config = await initWithLobApps([
+        { id: 'dup', label: 'First', iconUrl: 'http://x/1.svg', type: 'icon', url: 'http://x/1' },
+        { id: 'dup', label: 'Second', iconUrl: 'http://x/2.svg', type: 'icon', url: 'http://x/2' },
+      ]);
+      const dups = config.favorites.filter((f: any) => f.id === 'lob:dup');
+      expect(dups).toHaveLength(1);
+      expect(dups[0].label).toBe('First');
+    });
+
+    it('renders the dock without LOB entries when storage fails (fail-soft)', async () => {
+      const config = await initWithLobApps([], true);
+      expect(config.favorites).toEqual([]);
+      expect(config.contentMenu.find((e: any) => e.id === 'lob-apps')).toBeUndefined();
+    });
+
+    it('loads no LOB apps when constructed without a storage service (back-compat)', async () => {
+      await service.init(platformSettings);
+      const config = (Dock.init as jest.Mock).mock.calls[0][0].config;
+      expect(config.favorites).toEqual([]);
+    });
+  });
 });

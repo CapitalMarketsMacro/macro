@@ -97,6 +97,27 @@ describe('LocalStorageWorkspaceStorageClient', () => {
     });
   });
 
+  describe('LOB dock apps', () => {
+    it('reads the shared workspace-lob-dock-apps key (empty when unset)', async () => {
+      await expect(client.getLobDockApps()).resolves.toEqual([]);
+      localStorage.setItem(
+        'workspace-lob-dock-apps',
+        JSON.stringify([
+          {
+            id: 'lob-a',
+            label: 'A',
+            iconUrl: 'http://x/a.svg',
+            type: 'icon',
+            url: 'http://x/a',
+          },
+        ]),
+      );
+      const apps = await client.getLobDockApps();
+      expect(apps).toHaveLength(1);
+      expect(apps[0].id).toBe('lob-a');
+    });
+  });
+
   describe('dock config', () => {
     it('stores one entry per dock provider id', async () => {
       await client.saveDockConfig({ id: 'dock-a', buttons: [] } as never);

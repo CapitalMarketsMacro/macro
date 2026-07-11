@@ -3,6 +3,7 @@ import type { DockProviderConfigWithIdentity } from '@openfin/workspace';
 import { Logger } from '@macro/logger';
 import {
   WELL_KNOWN_PREFERENCES,
+  type LobDockApp,
   type WorkspaceStorageClient,
 } from './storage-types';
 
@@ -10,6 +11,7 @@ const logger = Logger.getLogger('LocalStorageWorkspaceStorageClient');
 
 const WORKSPACES_KEY = 'workspace-platform-workspaces';
 const PAGES_KEY = 'workspace-platform-pages';
+const LOB_DOCK_APPS_KEY = 'workspace-lob-dock-apps';
 const DOCK_KEY_PREFIX = 'workspace-platform-dock';
 const FAVORITES_KEY_PREFIX = 'workspace-store-favorites';
 const PREFERENCE_KEY_PREFIX = 'macro:pref';
@@ -126,6 +128,12 @@ export class LocalStorageWorkspaceStorageClient
 
   async saveFavorites(appIds: string[]): Promise<void> {
     this.writeJson(await this.favoritesKey(), appIds);
+  }
+
+  // ── LOB dock apps (machine-shared in local mode; seed via localStorage or the REST API in dev) ──
+
+  async getLobDockApps(): Promise<LobDockApp[]> {
+    return this.readArray<LobDockApp>(LOB_DOCK_APPS_KEY);
   }
 
   // ── preferences ──

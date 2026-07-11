@@ -1,13 +1,28 @@
 import type { App } from '@openfin/workspace';
 import type { StorageSettings } from './storage/storage-types';
 
-export interface Dock3FavoriteEntry {
-  type: 'item';
-  id: string;
-  icon: string;
-  label: string;
-  appId?: string;
-}
+/** Dock icons support theme variants (Dock 3.0): a single URL or per-theme URLs. */
+export type Dock3Icon = string | { light: string; dark: string };
+
+/**
+ * One favorites-bar entry. `item` is a launch button; `folder` renders as a DROPDOWN
+ * in the dock whose children come from the content-menu folder with the SAME id
+ * (Dock 3.0 folder merging) — define both when adding a dock dropdown.
+ */
+export type Dock3FavoriteEntry =
+  | {
+      type: 'item';
+      id: string;
+      icon: Dock3Icon;
+      label: string;
+      appId?: string;
+    }
+  | {
+      type: 'folder';
+      id: string;
+      label: string;
+      icon?: Dock3Icon;
+    };
 
 export interface Dock3ContentFolder {
   type: 'folder';
@@ -19,7 +34,7 @@ export interface Dock3ContentFolder {
 export interface Dock3ContentItem {
   type: 'item';
   id: string;
-  icon: string;
+  icon: Dock3Icon;
   label: string;
   appId?: string;
 }

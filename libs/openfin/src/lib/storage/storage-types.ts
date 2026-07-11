@@ -50,6 +50,52 @@ export interface WorkspaceStorageClient {
   getPreference<T>(key: string): Promise<T | undefined>;
   setPreference<T>(key: string, value: T): Promise<void>;
   deletePreference(key: string): Promise<void>;
+
+  // ── LOB dock apps (SHARED across users — read-only from the workspace side) ──
+  /**
+   * Custom dock apps published by lines of business through the storage API
+   * (`PUT /dock-apps/{id}` — Postman/curl/LOB tooling; the platform only reads).
+   * Rendered into the dock at init: `icon` → a dock button, `dropdown` → a dock
+   * folder whose children come from the entry itself.
+   */
+  getLobDockApps(): Promise<LobDockApp[]>;
+}
+
+/** One child launcher inside a `dropdown` LOB dock app. */
+export interface LobDockAppChild {
+  id: string;
+  label: string;
+  /** URL opened as a platform view when clicked. */
+  url: string;
+  /** Optional icon (falls back to the parent's `iconUrl`). */
+  iconUrl?: string;
+}
+
+/**
+ * A custom dock app published by a line of business via the Workspace Storage API.
+ * Minimum config: an icon URL and a URL to launch the view. `icon` renders as a
+ * single dock button; `dropdown` renders as a dock folder of child launchers.
+ */
+export interface LobDockApp {
+  id: string;
+  label: string;
+  /** Dock button icon (required by contract). */
+  iconUrl: string;
+  type: 'icon' | 'dropdown';
+  /** View URL — required when `type` is `icon`. */
+  url?: string;
+  /** Child launchers — required (non-empty) when `type` is `dropdown`. */
+  children?: LobDockAppChild[];
+  /**
+   * RESERVED — accepted and stored, but not currently rendered: Dock 3.0 entries
+   * have no hover-text field, so the dock shows the label. Kept in the contract so
+   * publishers don't have to migrate when the SDK grows tooltip support.
+   */
+  tooltip?: string;
+  /** Owning line of business, e.g. "Rates" — used for grouping in the content menu. */
+  lob?: string;
+  /** Ordering among LOB entries appended to the dock (ascending; stable for ties). */
+  sortOrder?: number;
 }
 
 /**
