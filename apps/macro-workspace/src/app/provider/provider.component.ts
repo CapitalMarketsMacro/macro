@@ -1,10 +1,21 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 
 import { Subject, takeUntil } from 'rxjs';
 
-import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService, SettingsService } from '@macro/openfin';
+import {
+  WorkspaceService,
+  ThemeService,
+  ThemePresetService,
+  NotificationsService,
+  SettingsService,
+  getActiveStorageEnvironment,
+  listStorageEnvironments,
+  saveStorageEnvironmentChoice,
+  LOCAL_STORAGE_ENVIRONMENT,
+  STORAGE_ENV_QUERY_PARAM,
+} from '@macro/openfin';
 
-import type { NotificationToastMode, ThemePresetInfo } from '@macro/openfin';
+import type { NotificationToastMode, ResolvedStorageEnvironment, ThemePresetInfo } from '@macro/openfin';
 
 import { Logger } from '@macro/logger';
 
@@ -66,7 +77,26 @@ export class ProviderComponent implements OnInit, OnDestroy {
 
   readonly presets: ThemePresetInfo[] = this.themePresetService.getAvailablePresets();
 
-  activePresetId = this.themePresetService.getActivePresetId();
+  // Signal (not a plain field): in REST storage mode the persisted preset arrives via
+  // async hydration during platform init, after this component is constructed.
+  readonly activePresetId = signal(this.themePresetService.getActivePresetId());
+
+  // Storage environment picker (unified Workspace Storage API: local / DEV / UAT / PROD)
+  readonly storageEnvironments = signal<ResolvedStorageEnvironment[]>([LOCAL_STORAGE_ENVIRONMENT]);
+  readonly activeStorageEnv = signal<ResolvedStorageEnvironment>(getActiveStorageEnvironment());
+
+  private readonly storageEnvQueryValue = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get(STORAGE_ENV_QUERY_PARAM)
+    : null;
+
+  /**
+   * True when `?storageEnv=` pins the environment — the picker can't override it.
+   * Only counts as pinned when the query value actually WON resolution: an unknown or
+   * invalid value is skipped with a fallback, and the picker must stay usable then.
+   */
+  readonly storageEnvPinned = computed(
+    () => this.storageEnvQueryValue !== null && this.activeStorageEnv().name === this.storageEnvQueryValue,
+  );
 
 
 
@@ -87,6 +117,22 @@ export class ProviderComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.unsubscribe$))
 
       .subscribe();
+
+    // The storage environment + theme preset resolve asynchronously during init —
+    // refresh the panel state on every status transition so the UI tracks them.
+    this.workspaceService
+      .getStatus$()
+      .pipe(takeUntil(this.unsubscribe$))
+      .subscribe(() => {
+        this.activeStorageEnv.set(getActiveStorageEnvironment());
+        this.activePresetId.set(this.themePresetService.getActivePresetId());
+      });
+
+    // Populate the environment picker from settings.json's storage block.
+    this.settingsService
+      .getManifestSettings()
+      .then((settings) => this.storageEnvironments.set(listStorageEnvironments(settings.storage)))
+      .catch((err) => logger.warn('Could not load storage environments from settings', err));
 
 
 
@@ -326,11 +372,20 @@ export class ProviderComponent implements OnInit, OnDestroy {
 
   async applyPreset(preset: ThemePresetInfo): Promise<void> {
 
-    if (preset.id === this.activePresetId) return;
+    if (preset.id === this.activePresetId()) return;
 
-    this.themePresetService.setActivePresetId(preset.id);
+    // Await the write — in REST storage mode a fire-and-forget save could be
+    // killed by the restart below before it reaches the storage service. When the
+    // write fails, do NOT restart: the platform would come back on the old preset.
+    try {
+      await this.themePresetService.setActivePresetId(preset.id);
+    } catch (err) {
+      logger.error('Theme preset was not persisted — skipping restart', err);
+      this.notificationsService.error('Theme', 'Could not save the theme preset (storage unavailable). Try again.');
+      return;
+    }
 
-    this.activePresetId = preset.id;
+    this.activePresetId.set(preset.id);
 
     if (typeof fin !== 'undefined') {
 
@@ -338,6 +393,32 @@ export class ProviderComponent implements OnInit, OnDestroy {
 
     }
 
+  }
+
+  /**
+   * Switch the storage environment (local localStorage vs DEV/UAT/PROD storage
+   * service). The choice persists on this machine and takes effect on restart —
+   * the whole platform (workspaces, pages, dock, favorites, preferences, config)
+   * re-reads from the new backend.
+   */
+  async applyStorageEnvironment(env: ResolvedStorageEnvironment): Promise<void> {
+    if (this.storageEnvPinned() || env.name === this.activeStorageEnv().name) return;
+    const isDefault = env.name === (await this.defaultStorageEnvironmentName());
+    // Clear the override when picking the settings default, so settings.json stays in charge.
+    saveStorageEnvironmentChoice(isDefault ? undefined : env.name);
+    if (typeof fin !== 'undefined') {
+      await fin.Application.getCurrentSync().restart();
+    } else if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  }
+
+  private async defaultStorageEnvironmentName(): Promise<string | undefined> {
+    try {
+      return (await this.settingsService.getManifestSettings()).storage?.defaultEnvironment;
+    } catch {
+      return undefined;
+    }
   }
 
 

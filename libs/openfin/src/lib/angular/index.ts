@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DOCUMENT } from '@angular/common';
 import { signal } from '@angular/core';
+import { Logger } from '@macro/logger';
 import { SettingsService as BaseSettingsService } from '../settings.service';
 import { ContextService as BaseContextService } from '../context.service';
 import { ChannelService as BaseChannelService } from '../channel.service';
@@ -26,8 +27,8 @@ import { StorefrontConfigService as BaseStorefrontConfigService } from '../store
 import { AppsService as BaseAppsService } from '../apps.service';
 import { DockConfigService as BaseDockConfigService } from '../dock-config.service';
 import { SnapConfigService as BaseSnapConfigService } from '../snap-config.service';
-import { LocalStorageFavoritesStore } from '../favorites.service';
 import { resolveEnvConfigPath } from '../config-path';
+import { ClientFavoritesStore, onWorkspaceStorageInitialized, resolveConfigUrl } from '../storage/storage-context';
 
 /**
  * Angular wrapper services for @macro/openfin
@@ -62,47 +63,55 @@ export class EntitlementsService extends BaseEntitlementsService {
   }
 }
 
+// Content config (storefront/apps/dock/snap) resolves through the unified storage
+// context: static per-env JSON in "local" storage mode, the storage service's
+// /config/* endpoints in REST mode. The lambdas are evaluated lazily at load() time —
+// after the storage environment has been initialized during platform boot.
+// When the storage service is unreachable, the adapter falls back to the static file
+// (always deployed with the app) so a storage outage degrades to baseline config
+// instead of an empty store/dock — and because the config services memoize failures,
+// an un-fallen-back error would otherwise stick for the whole session.
+const configLogger = Logger.getLogger('ConfigHttp');
+function configHttpWithStaticFallback(http: HttpClient, fileName: string): { get: <T>(url: string) => Promise<T> } {
+  return {
+    get: async <T>(url: string): Promise<T> => {
+      try {
+        return (await http.get<T>(url).toPromise()) as T;
+      } catch (error) {
+        const staticUrl = resolveEnvConfigPath(fileName);
+        if (url === staticUrl) throw error;
+        configLogger.warn(`Config fetch failed from ${url} — falling back to static ${staticUrl}`, error);
+        return (await http.get<T>(staticUrl).toPromise()) as T;
+      }
+    },
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class StorefrontConfigService extends BaseStorefrontConfigService {
   constructor() {
-    const http = inject(HttpClient);
-    super(
-      { get: <T>(url: string) => http.get<T>(url).toPromise() as Promise<T> },
-      () => resolveEnvConfigPath('storefront-config.json'),
-    );
+    super(configHttpWithStaticFallback(inject(HttpClient), 'storefront-config.json'), () => resolveConfigUrl('storefront-config.json'));
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class AppsService extends BaseAppsService {
   constructor() {
-    const http = inject(HttpClient);
-    super(
-      { get: <T>(url: string) => http.get<T>(url).toPromise() as Promise<T> },
-      () => resolveEnvConfigPath('apps.json'),
-    );
+    super(configHttpWithStaticFallback(inject(HttpClient), 'apps.json'), () => resolveConfigUrl('apps.json'));
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class DockConfigService extends BaseDockConfigService {
   constructor() {
-    const http = inject(HttpClient);
-    super(
-      { get: <T>(url: string) => http.get<T>(url).toPromise() as Promise<T> },
-      () => resolveEnvConfigPath('dock-config.json'),
-    );
+    super(configHttpWithStaticFallback(inject(HttpClient), 'dock-config.json'), () => resolveConfigUrl('dock-config.json'));
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class SnapConfigService extends BaseSnapConfigService {
   constructor() {
-    const http = inject(HttpClient);
-    super(
-      { get: <T>(url: string) => http.get<T>(url).toPromise() as Promise<T> },
-      () => resolveEnvConfigPath('snap-config.json'),
-    );
+    super(configHttpWithStaticFallback(inject(HttpClient), 'snap-config.json'), () => resolveConfigUrl('snap-config.json'));
   }
 }
 
@@ -123,9 +132,15 @@ export class ChannelService extends BaseChannelService {
 @Injectable({ providedIn: 'root' })
 export class FavoritesService extends BaseFavoritesService {
   constructor() {
-    super(new LocalStorageFavoritesStore(), inject(AuthService));
-    // Load the current user's persisted favorites at startup.
+    // ClientFavoritesStore rides the unified storage backend (localStorage or the
+    // per-environment REST service) and waits for environment selection during boot.
+    super(new ClientFavoritesStore(), inject(AuthService));
+    // Load the current user's persisted favorites at startup, and re-load whenever the
+    // storage context (re)initializes — the DI-time hydrate can race environment
+    // selection during a slow boot, and only a load against the real backend unlocks
+    // write-through in ClientFavoritesStore.
     void this.hydrate();
+    onWorkspaceStorageInitialized(() => void this.hydrate());
   }
 }
 
@@ -216,7 +231,8 @@ export class WorkspaceService extends BaseWorkspaceService {
     const themePresetService = inject(ThemePresetService);
     const notificationsService = inject(NotificationsService);
     const snapService = inject(SnapService);
-    super(platformService, dockService, dock3Service, homeService, storeService, settingsService, storageService, themePresetService, notificationsService, snapService);
+    const authService = inject(AuthService);
+    super(platformService, dockService, dock3Service, homeService, storeService, settingsService, storageService, themePresetService, notificationsService, snapService, authService);
   }
 }
 

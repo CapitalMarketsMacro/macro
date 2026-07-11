@@ -1,0 +1,1998 @@
+openapi: 3.1.0
+
+info:
+  title: Macro Workspace Storage API
+  version: 1.0.0
+  contact:
+    name: Macro Platform Team
+    email: support@macro.example.com
+  description: |
+    Multi-user, multi-environment persistence service for the OpenFin **macro-workspace**
+    platform. It stores everything the desktop platform persists on behalf of a user:
+
+    - **Saved workspaces** — the "List of Workspaces" plus each workspace's full
+      golden-layout snapshot (`Workspace` from `@openfin/workspace-platform`).
+    - **Saved pages** — the browser "Save Page" documents (`Page` from
+      `@openfin/workspace-platform`).
+    - **Dock customization** — the user-rearranged dock layout, keyed by dock provider id
+      (`DockProviderConfigWithIdentity` from `@openfin/workspace`).
+    - **Store favorites** — the ordered list of favorited `appId`s.
+    - **Named preferences** — small JSON values under free-form keys (theme preset,
+      custom view titles, last-saved-workspace pointer, …).
+    - **Platform config** (read-only to the platform) — the per-environment configuration
+      documents (`settings`, `apps`, `dock-config`, `storefront-config`, `snap-config`,
+      `entitlements`) that today ship as static files under
+      `apps/macro-workspace/public/{local,openshift}/`.
+
+    The canonical TypeScript client is `RestWorkspaceStorageClient` in
+    `libs/openfin/src/lib/storage/rest-storage-client.ts`; the client-side contract is
+    `WorkspaceStorageClient` in `libs/openfin/src/lib/storage/storage-types.ts`. Servers
+    implementing this spec MUST treat `snapshot` (workspaces) and `layout` (pages) as
+    **opaque JSON** — the OpenFin client is the schema owner of those documents and their
+    shape changes with the Workspace SDK version.
+
+    ## Environment model
+
+    One service deployment exists **per environment** (DEV / UAT / PROD, plus the local
+    reference implementation). The environment is selected purely by **base URL** — never
+    by a path segment, header, or query parameter. The platform's `settings.json`
+    `storage.environments` block maps environment names to base URLs; the active
+    environment is resolved at boot (`?storageEnv=` query param → user's saved choice →
+    `defaultEnvironment` → `local`).
+
+    ## Authentication and user scoping (interim)
+
+    Every route except `GET /health` and `GET /config/{configName}` is **user-scoped**:
+    resources belong to exactly one user and requests must carry the caller's identity in
+    the `X-User-Id` request header (security scheme `userId`). The reference
+    implementation defaults to `anonymous` when the header is absent.
+
+    > **Phase 2:** the plain-header scheme is interim and carries no proof of identity.
+    > Phase 2 replaces it with a real identity token — OAuth 2.0 / OIDC bearer JWT
+    > (`Authorization: Bearer <jwt>`), with the user id taken from the token's `sub`
+    > claim and `X-User-Id` ignored (or validated against the token, then removed). The
+    > wire contract of every route is otherwise unchanged, so clients only swap the
+    > header they attach.
+
+    `GET /config/{configName}` is **not** user-scoped: platform config is
+    per-environment, identical for every user of that deployment.
+    `PUT /config/{configName}` is a phase-2 admin operation (the reference
+    implementation returns `501 Not Implemented`).
+
+    ## Concurrency (ETag / If-Match)
+
+    Single-resource `GET`s return an **`ETag`** response header identifying the stored
+    revision. `PUT` and `DELETE` accept an **optional** `If-Match` request header; when
+    present and stale the server MUST respond `412 Precondition Failed`
+    (`application/problem+json`). The phase-1 client never sends `If-Match`
+    (last-writer-wins); the phase-2 Java service SHOULD fully support it so future
+    clients can opt in to optimistic concurrency.
+
+    ## Error model
+
+    All error responses use **RFC 9457 Problem Details**
+    (`application/problem+json`): `{ type, title, status, detail, instance? }`.
+
+    Client behavior that servers can rely on (already fixed in
+    `RestWorkspaceStorageClient`):
+
+    - `GET` of a single resource treats `404` as "not found" (resolves `undefined`).
+    - `DELETE` treats `404` as success (idempotent delete).
+    - Every other non-2xx response throws on the client.
+    - Any non-`204` success response **must carry a JSON body** — the client
+      unconditionally parses `response.json()` on 2xx responses other than 204.
+
+    ## Phase 2 implementation notes (Spring Boot + MongoDB)
+
+    Guidance for the planned Java service (non-normative):
+
+    - **`workspaces` collection** — one document per saved workspace:
+      `{ userId, workspaceId, title, snapshot, metadata, version, updatedAt }` with a
+      **compound unique index `{ userId: 1, workspaceId: 1 }`**. Store `snapshot` as an
+      opaque subdocument (`org.bson.Document` / `Map<String,Object>`) — never bind it to
+      typed POJOs. Typical snapshot sizes run **100 KB–2 MB**; that is comfortably under
+      MongoDB's **16 MB document cap**, but enforce a request-size limit (e.g. 8 MB) and
+      alert on outliers rather than letting documents creep toward the cap.
+    - **`pages` collection** — `{ userId, pageId, title, layout, version, updatedAt }`,
+      compound unique index `{ userId: 1, pageId: 1 }`; `layout` opaque, same size
+      considerations as snapshots.
+    - **`dockConfigs` collection** — `{ userId, dockProviderId, config, version,
+      updatedAt }`, unique `{ userId: 1, dockProviderId: 1 }`.
+    - **`favorites` collection** — one document per user:
+      `{ userId, appIds: [string], version, updatedAt }`, unique `{ userId: 1 }`.
+      `GET /favorites` returns `{ "appIds": [] }` when the document does not exist —
+      never a 404.
+    - **`preferences` collection** — `{ userId, key, value, version, updatedAt }`,
+      compound unique index `{ userId: 1, key: 1 }`; `value` is any BSON-representable
+      JSON value.
+    - **`config` collection** — one document per `configName`
+      (`{ name, document, version, updatedAt }`, unique `{ name: 1 }`), seeded per
+      environment at deploy time; `PUT /config/{configName}` becomes the admin write
+      path guarded by a role check.
+    - **Optimistic concurrency** — a monotonically increasing `version` field
+      (`@Version` with Spring Data works) surfaced to HTTP as the `ETag` value
+      (e.g. `ETag: "7"`); compare on `If-Match`, respond 412 on mismatch. Upserts bump
+      `version` atomically (`findAndModify` / `ReplaceOptions.upsert(true)`).
+    - **List endpoints** filter by `userId` only; the workspace `query` filter is a
+      case-insensitive substring match on `title` or `workspaceId` (anchor-free regex
+      with escaped input, or `$text` if you prefer an index-backed search).
+    - Return the stored representation from `PUT` (200/201) — the TypeScript client
+      requires a JSON body on non-204 successes.
+
+externalDocs:
+  description: Client contract and reference implementation notes (repo sources)
+  url: https://github.com/CapitalMarketsMacro/macro/tree/master/libs/openfin/src/lib/storage
+
+servers:
+  - url: 'http://localhost:3000/workspace/v1'
+    description: >-
+      Local reference implementation — mounted at path prefix /workspace/v1 on the
+      market-data-server (apps/market-data-server, port 3000). In-memory, defaults the
+      user to 'anonymous' when X-User-Id is absent, returns 501 for PUT /config.
+  - url: 'https://workspace-storage-{env}.example.com/workspace/v1'
+    description: >-
+      Environment-scoped deployments (phase 2, Spring Boot + MongoDB). One deployment
+      per environment; the environment is selected by base URL only, never by path.
+    variables:
+      env:
+        description: Deployment environment.
+        enum:
+          - dev
+          - uat
+          - prod
+        default: dev
+
+security:
+  - userId: []
+
+tags:
+  - name: Health
+    x-displayName: Health
+    description: Service liveness. Unauthenticated, not user-scoped.
+  - name: Workspaces
+    x-displayName: Workspaces
+    description: >-
+      Saved workspaces — the "List of Workspaces" plus full golden-layout snapshots.
+      User-scoped; upsert by workspaceId.
+  - name: Pages
+    x-displayName: Pages
+    description: >-
+      Saved pages (browser "Save Page"). User-scoped; upsert by pageId.
+  - name: Dock
+    x-displayName: Dock
+    description: >-
+      User dock customization, keyed by dock provider id
+      (DockProviderConfigWithIdentity). User-scoped.
+  - name: Favorites
+    x-displayName: Favorites
+    description: >-
+      Store favorites — the ordered list of favorited appIds. A per-user singleton
+      resource; reading it never 404s.
+  - name: Preferences
+    x-displayName: Preferences
+    description: >-
+      Small named JSON preferences (theme preset, view titles, last-saved-workspace
+      pointer, …). User-scoped; any JSON value under any key.
+  - name: Config
+    x-displayName: Config
+    description: >-
+      Platform configuration documents, per environment (NOT user-scoped). Reads are
+      open to all platform clients; writes are a phase-2 admin operation.
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      operationId: getHealth
+      summary: Service health
+      description: >-
+        Liveness probe. Not user-scoped and requires no authentication. Returns at
+        minimum `{ "status": "ok" }`; implementations may add fields (service name,
+        uptime, timestamp, backing-store status, …).
+      security: []
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /workspaces:
+    get:
+      tags:
+        - Workspaces
+      operationId: listWorkspaces
+      summary: List saved workspaces
+      description: >-
+        Returns every saved workspace for the calling user, **including full
+        snapshots**. Returns `[]` (never 404) when the user has no saved workspaces.
+        The optional `query` parameter applies a case-insensitive substring filter on
+        `title` or `workspaceId`.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceQuery'
+      responses:
+        '200':
+          description: The user's saved workspaces (possibly empty).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workspace'
+
+  /workspaces/{workspaceId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags:
+        - Workspaces
+      operationId: getWorkspace
+      summary: Get one saved workspace
+      description: >-
+        Returns the workspace with the given id, including its full snapshot. The
+        client resolves `undefined` on 404 (missing workspace is not an error).
+      responses:
+        '200':
+          description: The saved workspace.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Workspaces
+      operationId: putWorkspace
+      summary: Create or replace a saved workspace
+      description: >-
+        Full-document upsert keyed by the path id. The request body MUST satisfy
+        `body.workspaceId === {workspaceId}` — otherwise the server responds
+        `400 Bad Request`. `snapshot` is opaque JSON owned by the OpenFin client; the
+        server MUST store and return it byte-faithfully (no key reordering that changes
+        semantics, no field stripping). Responds `201` when the workspace did not exist,
+        `200` when it was replaced; both carry the stored representation as the body.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Workspace'
+      responses:
+        '200':
+          description: Existing workspace replaced. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '201':
+          description: Workspace created. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+    delete:
+      tags:
+        - Workspaces
+      operationId: deleteWorkspace
+      summary: Delete a saved workspace
+      description: >-
+        Deletes the workspace. Responds `204` on success and `404` when the id does not
+        exist — the client treats 404 as success, making deletes idempotent end-to-end.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204':
+          description: Workspace deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+  /pages:
+    get:
+      tags:
+        - Pages
+      operationId: listPages
+      summary: List saved pages
+      description: >-
+        Returns every saved page for the calling user, including full layouts. Returns
+        `[]` (never 404) when the user has no saved pages.
+      responses:
+        '200':
+          description: The user's saved pages (possibly empty).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Page'
+
+  /pages/{pageId}:
+    parameters:
+      - $ref: '#/components/parameters/PageId'
+    get:
+      tags:
+        - Pages
+      operationId: getPage
+      summary: Get one saved page
+      description: >-
+        Returns the page with the given id. The client resolves `undefined` on 404.
+      responses:
+        '200':
+          description: The saved page.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Pages
+      operationId: putPage
+      summary: Create or replace a saved page
+      description: >-
+        Full-document upsert keyed by the path id. The request body MUST satisfy
+        `body.pageId === {pageId}` — otherwise `400 Bad Request`. `layout` is opaque
+        JSON owned by the OpenFin client. Responds `201` on create, `200` on replace;
+        both carry the stored representation.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Page'
+      responses:
+        '200':
+          description: Existing page replaced. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+        '201':
+          description: Page created. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+    delete:
+      tags:
+        - Pages
+      operationId: deletePage
+      summary: Delete a saved page
+      description: >-
+        Deletes the page. `204` on success, `404` when absent (client treats 404 as
+        success).
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204':
+          description: Page deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+  /dock/{dockProviderId}:
+    parameters:
+      - $ref: '#/components/parameters/DockProviderId'
+    get:
+      tags:
+        - Dock
+      operationId: getDockConfig
+      summary: Get the user's dock customization
+      description: >-
+        Returns the saved dock customization (`DockProviderConfigWithIdentity`) for the
+        given dock provider id. `404` when the user has never customized this dock —
+        the client resolves `undefined` and the platform falls back to the environment's
+        default dock config.
+      responses:
+        '200':
+          description: The saved dock customization.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockConfig'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Dock
+      operationId: putDockConfig
+      summary: Create or replace the user's dock customization
+      description: >-
+        Full-document upsert keyed by the path id. The request body MUST satisfy
+        `body.id === {dockProviderId}` — otherwise `400 Bad Request`. Everything beyond
+        `id` is OpenFin-SDK-owned and MUST be stored opaquely. `201` on create, `200`
+        on replace; both carry the stored representation.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DockConfig'
+      responses:
+        '200':
+          description: Existing dock customization replaced. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockConfig'
+        '201':
+          description: Dock customization created. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+    delete:
+      tags:
+        - Dock
+      operationId: deleteDockConfig
+      summary: Delete the user's dock customization
+      description: >-
+        Removes the customization so the platform reverts to the environment default.
+        `204` on success, `404` when absent (client treats 404 as success).
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204':
+          description: Dock customization deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+  /favorites:
+    get:
+      tags:
+        - Favorites
+      operationId: getFavorites
+      summary: Get the user's store favorites
+      description: >-
+        Returns the ordered list of favorited appIds. This endpoint **never returns
+        404** — when the user has never saved favorites it returns
+        `{ "appIds": [] }`.
+      responses:
+        '200':
+          description: The user's favorites (possibly empty).
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Favorites'
+    put:
+      tags:
+        - Favorites
+      operationId: putFavorites
+      summary: Replace the user's store favorites
+      description: >-
+        Replaces the full ordered list of favorited appIds (the client always writes
+        the whole list). Responds `200` with the stored representation. Order is
+        significant and MUST be preserved.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Favorites'
+      responses:
+        '200':
+          description: Favorites replaced. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Favorites'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+  /preferences:
+    get:
+      tags:
+        - Preferences
+      operationId: listPreferences
+      summary: List all preferences
+      description: >-
+        Returns every stored preference for the calling user as `{ key, value }`
+        entries. Returns `[]` (never 404) when none exist. Well-known keys the platform
+        itself uses: `last-saved-workspace` (string), `theme-preset` (string),
+        `view-titles` (object mapping view name → custom title) — but any key is legal.
+      responses:
+        '200':
+          description: The user's preferences (possibly empty).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Preference'
+
+  /preferences/{key}:
+    parameters:
+      - $ref: '#/components/parameters/PreferenceKey'
+    get:
+      tags:
+        - Preferences
+      operationId: getPreference
+      summary: Get one preference
+      description: >-
+        Returns the `{ key, value }` pair for the given key. `404` when the key has
+        never been set — the client resolves `undefined`.
+      responses:
+        '200':
+          description: The stored preference.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preference'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Preferences
+      operationId: putPreference
+      summary: Create or replace one preference
+      description: >-
+        Upserts the value under the path key. The request body is a wrapper object
+        `{ "value": <any JSON value> }` — the wrapper allows `null` and scalar values
+        to round-trip unambiguously. `201` on create, `200` on replace; both carry the
+        stored `{ key, value }` representation.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferenceValueWrapper'
+      responses:
+        '200':
+          description: Existing preference replaced. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preference'
+        '201':
+          description: Preference created. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preference'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+    delete:
+      tags:
+        - Preferences
+      operationId: deletePreference
+      summary: Delete one preference
+      description: >-
+        Deletes the preference. `204` on success, `404` when the key was never set
+        (client treats 404 as success).
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204':
+          description: Preference deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+  /config/{configName}:
+    parameters:
+      - $ref: '#/components/parameters/ConfigName'
+    get:
+      tags:
+        - Config
+      operationId: getConfig
+      summary: Get a platform configuration document
+      description: >-
+        Returns one of the six platform configuration documents for **this
+        environment**. NOT user-scoped — platform config is per-deployment and
+        identical for every user, so this route requires no authentication. The
+        response shape depends on `configName`; see the per-name examples. `404` when
+        the deployment has no document under that name.
+      security: []
+      responses:
+        '200':
+          description: The configuration document for this environment.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigDocument'
+              examples:
+                settings:
+                  summary: configName=settings
+                  value:
+                    platformSettings:
+                      id: macro-workspace-platform
+                      title: Macro Workspace Starter
+                      icon: http://localhost:4202/MacroThemeCondensed/assets/favicon.svg
+                    browserSettings:
+                      allowDuplicatePageTitles: true
+                      indicators:
+                        suppressWorkspaceSwitched: false
+                        suppressWorkspaceSaved: false
+                      tabSearchButton:
+                        pageTabs:
+                          enabled: true
+                        viewTabs:
+                          enabled: true
+                    storage:
+                      defaultEnvironment: local
+                      environments:
+                        local:
+                          mode: localStorage
+                          label: Local (this machine)
+                        dev:
+                          mode: rest
+                          baseUrl: http://localhost:3000/workspace/v1
+                          label: DEV
+                apps:
+                  summary: configName=apps
+                  value:
+                    apps:
+                      - appId: macro-angular-fx-market-data
+                        name: macro-angular-fx-market-data
+                        title: FX Market Data
+                        description: Live G10 FX rates grid
+                        manifest: http://localhost:4202/local/fx-market-data.fin.json
+                        manifestType: view
+                        icons:
+                          - src: http://localhost:4202/icons/fx-market-data.svg
+                        publisher: OpenFin
+                        tags:
+                          - view
+                          - fx
+                        category: FX
+                dock-config:
+                  summary: configName=dock-config
+                  value:
+                    favorites:
+                      - type: item
+                        id: fav-macro-angular
+                        label: Macro Angular
+                        icon: http://localhost:4202/icons/angular-app.svg
+                        appId: macro-angular-view
+                    contentMenu:
+                      - type: folder
+                        id: markets
+                        label: Markets
+                        children:
+                          - type: item
+                            id: fx-market-data
+                            label: FX Market Data
+                            icon: http://localhost:4202/icons/fx-market-data.svg
+                            appId: macro-angular-fx-market-data
+                storefront-config:
+                  summary: configName=storefront-config
+                  value:
+                    navigation:
+                      favoritesTitle: Favorites
+                      sections:
+                        - id: markets
+                          title: Markets
+                          items:
+                            - id: fx
+                              title: FX
+                              category: FX
+                    landingPage:
+                      topRow:
+                        title: Featured
+                        category: FX
+                      middleRow:
+                        title: Markets
+                        category: '*'
+                      bottomRow:
+                        title: ''
+                        appIds: []
+                    footer:
+                      text: Macro Workspace — Capital Markets
+                      links:
+                        - title: Support
+                          url: mailto:support@macro.example.com
+                    cardClickBehavior: perform-primary-button-action
+                snap-config:
+                  summary: configName=snap-config
+                  value:
+                    enabled: true
+                    serverOptions:
+                      showDebug: false
+                      disableUserUnstick: false
+                      keyToStick: false
+                      disableGPUAcceleratedDragging: false
+                      disableBlurDropPreview: false
+                      autoHideClientTaskbarIcons: true
+                entitlements:
+                  summary: configName=entitlements
+                  value:
+                    currentUser:
+                      id: u-001
+                      name: Macro Trader
+                      groups:
+                        - fx-desk
+                        - rates-desk
+                      entitlements:
+                        - fx-trader
+                        - rates-trader
+                        - general-user
+                    apps:
+                      macro-angular-fx-market-data:
+                        - fx-trader
+                      macro-react-treasury-market-data:
+                        - rates-trader
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Config
+      operationId: putConfig
+      summary: Replace a platform configuration document (admin, phase 2)
+      description: >-
+        Replaces the environment's configuration document under `configName`. This is
+        a **phase-2 admin operation**: the reference implementation responds
+        `501 Not Implemented`. Phase 2 guards it with an admin role on the caller's
+        identity token and returns `200` with the stored document. User scoping does
+        not apply to the stored data (config is per-environment), but the caller must
+        still be authenticated for auditing.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigDocument'
+      responses:
+        '200':
+          description: Configuration document replaced. Body is the stored representation.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigDocument'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '501':
+          description: >-
+            Not implemented — returned by the phase-1 reference implementation, which
+            serves config read-only from the deployed static files.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: about:blank
+                title: Not Implemented
+                status: 501
+                detail: PUT /config is a phase-2 admin operation; the reference implementation serves config read-only.
+
+components:
+  securitySchemes:
+    userId:
+      type: apiKey
+      in: header
+      name: X-User-Id
+      description: >-
+        Interim user-scoping scheme: the caller's user id as an opaque string. The
+        reference implementation defaults to `anonymous` when the header is absent.
+        This carries no proof of identity — phase 2 replaces it with OAuth 2.0 / OIDC
+        bearer JWTs (`Authorization: Bearer <jwt>`, user id from the `sub` claim), at
+        which point this header is ignored or validated against the token. Applied
+        globally except `GET /health` and `GET /config/{configName}`.
+
+  parameters:
+    WorkspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      description: Workspace id (the `workspaceId` field of the stored document).
+      schema:
+        type: string
+        minLength: 1
+      example: b1f6f9a0-3c1d-4e0e-9d2a-7f8c8d1e2f3a
+    PageId:
+      name: pageId
+      in: path
+      required: true
+      description: Page id (the `pageId` field of the stored document).
+      schema:
+        type: string
+        minLength: 1
+      example: page-6a7b8c9d
+    DockProviderId:
+      name: dockProviderId
+      in: path
+      required: true
+      description: Dock provider id (the `id` field of the stored dock config).
+      schema:
+        type: string
+        minLength: 1
+      example: macro-workspace-platform-dock
+    PreferenceKey:
+      name: key
+      in: path
+      required: true
+      description: >-
+        Preference key. Any non-empty string; well-known platform keys are
+        `last-saved-workspace`, `theme-preset` and `view-titles`.
+      schema:
+        type: string
+        minLength: 1
+      example: theme-preset
+    ConfigName:
+      name: configName
+      in: path
+      required: true
+      description: Which platform configuration document to address.
+      schema:
+        type: string
+        enum:
+          - settings
+          - apps
+          - dock-config
+          - storefront-config
+          - snap-config
+          - entitlements
+      example: settings
+    WorkspaceQuery:
+      name: query
+      in: query
+      required: false
+      description: >-
+        Optional case-insensitive substring filter applied to each workspace's
+        `title` or `workspaceId`. Absent or empty returns all workspaces.
+      schema:
+        type: string
+      example: fx desk
+    IfMatch:
+      name: If-Match
+      in: header
+      required: false
+      description: >-
+        Optional optimistic-concurrency precondition: the ETag previously returned for
+        this resource. When present and it does not match the stored revision, the
+        server responds `412 Precondition Failed`. The phase-1 client never sends this
+        header (last-writer-wins); phase-2 servers SHOULD support it.
+      schema:
+        type: string
+      example: '"7"'
+
+  headers:
+    ETag:
+      description: >-
+        Opaque entity tag identifying the stored revision of this resource (e.g. a
+        stringified version counter). Echo it back in `If-Match` to make a subsequent
+        PUT/DELETE conditional.
+      schema:
+        type: string
+      example: '"7"'
+
+  responses:
+    NotFound:
+      description: >-
+        Resource not found. For single-resource GETs the client resolves `undefined`;
+        for DELETEs the client treats this as success.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+          example:
+            type: about:blank
+            title: Not Found
+            status: 404
+            detail: No workspace 'b1f6f9a0-3c1d-4e0e-9d2a-7f8c8d1e2f3a' for user 'mrudang'.
+    BadRequest:
+      description: >-
+        Malformed request — most commonly the body's identifier does not match the
+        path (e.g. `body.workspaceId !== {workspaceId}`, `body.pageId !== {pageId}`,
+        `body.id !== {dockProviderId}`), or the body is not valid JSON.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+          example:
+            type: about:blank
+            title: Bad Request
+            status: 400
+            detail: body.workspaceId 'ws-2' does not match path workspaceId 'ws-1'.
+    PreconditionFailed:
+      description: >-
+        The `If-Match` header was supplied and does not match the stored revision —
+        the resource changed since the caller last read it.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+          example:
+            type: about:blank
+            title: Precondition Failed
+            status: 412
+            detail: If-Match '"6"' does not match current revision '"7"'.
+
+  schemas:
+    ProblemDetail:
+      type: object
+      description: RFC 9457 Problem Details — the shape of every error response body.
+      required:
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI identifying the problem type. Defaults to `about:blank`.
+          default: about:blank
+        title:
+          type: string
+          description: Short human-readable summary of the problem type.
+        status:
+          type: integer
+          description: The HTTP status code, repeated in the body.
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          description: Human-readable explanation specific to this occurrence.
+        instance:
+          type: string
+          format: uri
+          description: Optional URI identifying this specific occurrence.
+      examples:
+        - type: about:blank
+          title: Not Found
+          status: 404
+          detail: No page 'page-6a7b8c9d' for user 'mrudang'.
+
+    HealthStatus:
+      type: object
+      description: >-
+        Health-probe response. Only `status` is guaranteed; implementations may add
+        arbitrary diagnostic fields.
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          const: ok
+          description: Always `ok` on a 200 response.
+      additionalProperties: true
+      examples:
+        - status: ok
+          service: workspace-storage
+          uptimeSec: 86123
+          time: '2026-07-10T14:03:22.114Z'
+
+    Workspace:
+      type: object
+      description: >-
+        A saved workspace — `Workspace` from `@openfin/workspace-platform`. Beyond the
+        two required identity fields, the document (notably `snapshot`) is **opaque
+        JSON owned by the OpenFin client**; its shape tracks the Workspace SDK version
+        and servers MUST persist and return it verbatim. Typical serialized sizes run
+        100 KB–2 MB.
+      required:
+        - workspaceId
+        - title
+      properties:
+        workspaceId:
+          type: string
+          minLength: 1
+          description: Unique id of the workspace within the user's scope. Must equal the path id on PUT.
+        title:
+          type: string
+          description: Display title shown in the "List of Workspaces".
+        snapshot:
+          type: object
+          description: >-
+            Opaque golden-layout snapshot of every window/page/view in the workspace,
+            produced by `getCurrentSync().getSnapshot()`. Free-form; do not validate,
+            transform, or bind to typed models server-side.
+          additionalProperties: true
+        metadata:
+          description: Optional free-form client metadata attached at save time.
+      additionalProperties: true
+      examples:
+        - workspaceId: b1f6f9a0-3c1d-4e0e-9d2a-7f8c8d1e2f3a
+          title: FX Desk Morning
+          snapshot:
+            windows:
+              - defaultWidth: 1280
+                defaultHeight: 720
+                layout:
+                  content:
+                    - type: stack
+                      content:
+                        - type: component
+                          componentName: view
+                          componentState:
+                            url: http://localhost:4200/fx-market-data
+
+    WorkspaceSummary:
+      type: object
+      description: >-
+        Lightweight projection of a Workspace **without** its snapshot (identity +
+        metadata only). Not returned by any phase-1 endpoint — `GET /workspaces`
+        returns full `Workspace` documents per the client contract — but reserved for
+        a future `fields=summary` list projection so phase-2 servers can avoid
+        shipping multi-megabyte snapshots when only the picker list is needed.
+      required:
+        - workspaceId
+        - title
+      properties:
+        workspaceId:
+          type: string
+          minLength: 1
+        title:
+          type: string
+        metadata:
+          description: Optional free-form client metadata attached at save time.
+      additionalProperties: true
+      examples:
+        - workspaceId: b1f6f9a0-3c1d-4e0e-9d2a-7f8c8d1e2f3a
+          title: FX Desk Morning
+
+    Page:
+      type: object
+      description: >-
+        A saved page — `Page` from `@openfin/workspace-platform`. Beyond the two
+        required identity fields, the document (notably `layout`) is **opaque JSON
+        owned by the OpenFin client** and MUST be persisted verbatim.
+      required:
+        - pageId
+        - title
+      properties:
+        pageId:
+          type: string
+          minLength: 1
+          description: Unique id of the page within the user's scope. Must equal the path id on PUT.
+        title:
+          type: string
+          description: Display title of the page tab.
+        layout:
+          type: object
+          description: >-
+            Opaque golden-layout document for the page's views. Free-form; do not
+            validate or transform server-side.
+          additionalProperties: true
+        isReadOnly:
+          type: boolean
+          description: Whether the page is locked against edits (SDK-owned flag).
+      additionalProperties: true
+      examples:
+        - pageId: page-6a7b8c9d
+          title: Treasury Watch
+          isReadOnly: false
+          layout:
+            content:
+              - type: row
+                content:
+                  - type: component
+                    componentName: view
+                    componentState:
+                      url: http://localhost:4201/treasury-market-data
+
+    DockConfig:
+      type: object
+      description: >-
+        A user's saved dock customization — `DockProviderConfigWithIdentity` from
+        `@openfin/workspace`. Only `id` is contractual (it keys the resource and must
+        equal the path id on PUT); every other field is OpenFin-SDK-owned and MUST be
+        stored opaquely (buttons, dropdowns, ordering, workspace/home/store/notification
+        toggles, …).
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          minLength: 1
+          description: Dock provider id. Must equal the path id on PUT.
+      additionalProperties: true
+      examples:
+        - id: macro-workspace-platform-dock
+          buttons:
+            - tooltip: FX Market Data
+              iconUrl: http://localhost:4202/icons/fx-market-data.svg
+              appId: macro-angular-fx-market-data
+          workspaceComponents:
+            - switchWorkspace
+
+    Favorites:
+      type: object
+      description: >-
+        The user's store favorites as an ordered list of appIds (order is significant
+        and preserved). A per-user singleton: GET never 404s and returns
+        `{ "appIds": [] }` when nothing was ever saved.
+      required:
+        - appIds
+      properties:
+        appIds:
+          type: array
+          description: Ordered appIds, matching `appId` values in the apps config.
+          items:
+            type: string
+            minLength: 1
+      additionalProperties: false
+      examples:
+        - appIds:
+            - macro-angular-fx-market-data
+            - macro-react-treasury-market-data
+
+    Preference:
+      type: object
+      description: One stored preference — a key plus any JSON value.
+      required:
+        - key
+        - value
+      properties:
+        key:
+          type: string
+          minLength: 1
+          description: >-
+            Preference key. Well-known platform keys: `last-saved-workspace` (string
+            workspace id restored at startup), `theme-preset` (string preset id),
+            `view-titles` (object of view name → custom tab title).
+        value:
+          description: >-
+            Any JSON value — string, number, boolean, null, array or object. Stored
+            and returned verbatim.
+      additionalProperties: false
+      examples:
+        - key: theme-preset
+          value: macro-dark
+        - key: view-titles
+          value:
+            fx-blotter: FX Blotter (EMEA)
+
+    PreferenceValueWrapper:
+      type: object
+      description: >-
+        Request body of `PUT /preferences/{key}` — the value wrapped in an object so
+        `null` and scalar values round-trip unambiguously.
+      required:
+        - value
+      properties:
+        value:
+          description: Any JSON value to store under the path key.
+      additionalProperties: false
+      examples:
+        - value: macro-dark
+        - value:
+            fx-blotter: FX Blotter (EMEA)
+
+    ConfigDocument:
+      description: >-
+        A platform configuration document. The concrete shape is selected by the
+        `configName` path parameter — `settings` → SettingsConfig, `apps` →
+        AppsConfig, `dock-config` → DockSurfaceConfig, `storefront-config` →
+        StorefrontConfig, `snap-config` → SnapConfig, `entitlements` →
+        EntitlementsConfig.
+      oneOf:
+        - $ref: '#/components/schemas/SettingsConfig'
+        - $ref: '#/components/schemas/AppsConfig'
+        - $ref: '#/components/schemas/DockSurfaceConfig'
+        - $ref: '#/components/schemas/StorefrontConfig'
+        - $ref: '#/components/schemas/SnapConfig'
+        - $ref: '#/components/schemas/EntitlementsConfig'
+
+    SettingsConfig:
+      type: object
+      description: >-
+        `configName=settings` — platform identity, optional Workspace v24 browser
+        options, and the storage-environment declarations (mirrors
+        `apps/macro-workspace/public/{env}/settings.json` / `SettingsResponse` in
+        `libs/openfin/src/lib/types.ts`).
+      required:
+        - platformSettings
+      properties:
+        platformSettings:
+          $ref: '#/components/schemas/PlatformSettings'
+        browserSettings:
+          $ref: '#/components/schemas/BrowserSettings'
+        storage:
+          $ref: '#/components/schemas/StorageSettings'
+      additionalProperties: true
+      examples:
+        - platformSettings:
+            id: macro-workspace-platform
+            title: Macro Workspace Starter
+            icon: http://localhost:4202/MacroThemeCondensed/assets/favicon.svg
+          browserSettings:
+            allowDuplicatePageTitles: true
+            indicators:
+              suppressWorkspaceSwitched: false
+              suppressWorkspaceSaved: false
+            tabSearchButton:
+              pageTabs:
+                enabled: true
+              viewTabs:
+                enabled: true
+          storage:
+            defaultEnvironment: local
+            environments:
+              local:
+                mode: localStorage
+              uat:
+                mode: rest
+                baseUrl: https://workspace-storage-uat.example.com/workspace/v1
+                label: UAT
+
+    PlatformSettings:
+      type: object
+      description: OpenFin platform identity (settings.json → `platformSettings`).
+      required:
+        - id
+        - title
+        - icon
+      properties:
+        id:
+          type: string
+          description: Platform UUID/id used by the OpenFin runtime.
+        title:
+          type: string
+          description: Platform display title.
+        icon:
+          type: string
+          format: uri
+          description: Platform icon URL.
+      additionalProperties: false
+      examples:
+        - id: macro-workspace-platform
+          title: Macro Workspace Starter
+          icon: http://localhost:4202/MacroThemeCondensed/assets/favicon.svg
+
+    BrowserSettings:
+      type: object
+      description: >-
+        Optional Workspace v24 browser options (settings.json → `browserSettings`).
+        Field names mirror the SDK's `BrowserInitConfig`; absent fields fall back to
+        code defaults.
+      properties:
+        allowDuplicatePageTitles:
+          type: boolean
+          description: Allow multiple pages to share a title (no forced numeric suffixes).
+        indicators:
+          type: object
+          description: Suppress the green success indicators.
+          properties:
+            suppressWorkspaceSwitched:
+              type: boolean
+            suppressWorkspaceSaved:
+              type: boolean
+          additionalProperties: false
+        tabSearchButton:
+          type: object
+          description: Searchable tab dropdown (chevron) per tab strip.
+          properties:
+            pageTabs:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+              required:
+                - enabled
+              additionalProperties: false
+            viewTabs:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+              required:
+                - enabled
+              additionalProperties: false
+          additionalProperties: false
+      additionalProperties: true
+      examples:
+        - allowDuplicatePageTitles: true
+          tabSearchButton:
+            pageTabs:
+              enabled: true
+            viewTabs:
+              enabled: true
+
+    StorageSettings:
+      type: object
+      description: >-
+        The `storage` block of settings.json — declares the selectable storage
+        environments and which one the platform boots with. Runtime precedence for
+        the active environment: `?storageEnv=` query param → user's saved choice →
+        `defaultEnvironment` → `local`.
+      properties:
+        defaultEnvironment:
+          type: string
+          description: Name of the environment the platform boots with.
+        environments:
+          type: object
+          description: Environment name → environment config.
+          additionalProperties:
+            $ref: '#/components/schemas/StorageEnvironment'
+      additionalProperties: false
+      examples:
+        - defaultEnvironment: local
+          environments:
+            local:
+              mode: localStorage
+            prod:
+              mode: rest
+              baseUrl: https://workspace-storage-prod.example.com/workspace/v1
+              label: Production
+
+    StorageEnvironment:
+      type: object
+      description: One selectable storage environment.
+      required:
+        - mode
+      properties:
+        mode:
+          type: string
+          enum:
+            - localStorage
+            - rest
+          description: How this environment persists data.
+        baseUrl:
+          type: string
+          format: uri
+          description: Service base URL. Required when `mode` is `rest`.
+        label:
+          type: string
+          description: Display label for pickers (defaults to the environment name).
+      additionalProperties: false
+      examples:
+        - mode: rest
+          baseUrl: https://workspace-storage-uat.example.com/workspace/v1
+          label: UAT
+
+    AppsConfig:
+      type: object
+      description: >-
+        `configName=apps` — the app registry (mirrors
+        `apps/macro-workspace/public/{env}/apps.json`), the source of truth for
+        store, dock and home.
+      required:
+        - apps
+      properties:
+        apps:
+          type: array
+          items:
+            $ref: '#/components/schemas/App'
+      additionalProperties: false
+      examples:
+        - apps:
+            - appId: macro-workspace-view1
+              name: macro-workspace-view1
+              title: Macro Workspace View 1
+              description: Broadcast contexts and notifications from View 1
+              manifest: http://localhost:4202/local/view1.fin.json
+              manifestType: view
+              icons:
+                - src: http://localhost:4202/icons/view-broadcaster.svg
+              publisher: OpenFin
+              tags:
+                - view
+                - openfin
+              category: Workspace
+
+    App:
+      type: object
+      description: >-
+        One registry entry — an OpenFin `App` plus the enterprise `category` field
+        that drives storefront navigation (`MacroApp` in
+        `libs/openfin/src/lib/types.ts`).
+      required:
+        - appId
+        - name
+        - title
+        - manifest
+        - manifestType
+      properties:
+        appId:
+          type: string
+          description: Unique app id — the value referenced by favorites, dock and entitlements.
+        name:
+          type: string
+        title:
+          type: string
+          description: Display title in store, home and dock.
+        description:
+          type: string
+        manifest:
+          type: string
+          format: uri
+          description: URL of the app's (view) manifest.
+        manifestType:
+          type: string
+          description: Manifest type; this platform registers `view` manifests.
+        icons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppIcon'
+        contactEmail:
+          type: string
+        supportEmail:
+          type: string
+        publisher:
+          type: string
+        intents:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        images:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        tags:
+          type: array
+          items:
+            type: string
+        category:
+          type: string
+          description: Business-area key (FX, Rates, Risk, …) matched by storefront navigation.
+      additionalProperties: true
+      examples:
+        - appId: macro-angular-fx-market-data
+          name: macro-angular-fx-market-data
+          title: FX Market Data
+          description: Live G10 FX rates grid
+          manifest: http://localhost:4202/local/fx-market-data.fin.json
+          manifestType: view
+          icons:
+            - src: http://localhost:4202/icons/fx-market-data.svg
+          publisher: OpenFin
+          tags:
+            - view
+            - fx
+          category: FX
+
+    AppIcon:
+      type: object
+      description: One app icon reference.
+      required:
+        - src
+      properties:
+        src:
+          type: string
+          format: uri
+      additionalProperties: false
+      examples:
+        - src: http://localhost:4202/icons/fx-market-data.svg
+
+    DockSurfaceConfig:
+      type: object
+      description: >-
+        `configName=dock-config` — the environment's **default** dock surface
+        (mirrors `apps/macro-workspace/public/{env}/dock-config.json` /
+        `Dock3Settings`): pinned favorites plus the content-menu folder tree. Distinct
+        from the user-scoped `/dock/{dockProviderId}` resource, which stores a user's
+        personal customization on top of this default.
+      properties:
+        favorites:
+          type: array
+          items:
+            $ref: '#/components/schemas/DockFavoriteEntry'
+        contentMenu:
+          type: array
+          items:
+            $ref: '#/components/schemas/DockContentEntry'
+      additionalProperties: false
+      examples:
+        - favorites:
+            - type: item
+              id: fav-macro-angular
+              label: Macro Angular
+              icon: http://localhost:4202/icons/angular-app.svg
+              appId: macro-angular-view
+          contentMenu:
+            - type: folder
+              id: markets
+              label: Markets
+              children:
+                - type: item
+                  id: fx-market-data
+                  label: FX Market Data
+                  icon: http://localhost:4202/icons/fx-market-data.svg
+                  appId: macro-angular-fx-market-data
+
+    DockFavoriteEntry:
+      type: object
+      description: One pinned dock favorite.
+      required:
+        - type
+        - id
+        - icon
+        - label
+      properties:
+        type:
+          type: string
+          const: item
+        id:
+          type: string
+        icon:
+          type: string
+          format: uri
+        label:
+          type: string
+        appId:
+          type: string
+          description: The registry app launched on click.
+      additionalProperties: false
+      examples:
+        - type: item
+          id: fav-fx-market-data
+          label: FX Market Data
+          icon: http://localhost:4202/icons/fx-market-data.svg
+          appId: macro-angular-fx-market-data
+
+    DockContentEntry:
+      description: A content-menu node — either a launchable item or a folder of nested entries.
+      oneOf:
+        - $ref: '#/components/schemas/DockContentItem'
+        - $ref: '#/components/schemas/DockContentFolder'
+      discriminator:
+        propertyName: type
+        mapping:
+          item: '#/components/schemas/DockContentItem'
+          folder: '#/components/schemas/DockContentFolder'
+
+    DockContentItem:
+      type: object
+      description: A launchable content-menu leaf.
+      required:
+        - type
+        - id
+        - icon
+        - label
+      properties:
+        type:
+          type: string
+          const: item
+        id:
+          type: string
+        icon:
+          type: string
+          format: uri
+        label:
+          type: string
+        appId:
+          type: string
+      additionalProperties: false
+      examples:
+        - type: item
+          id: treasury-market-data
+          label: Treasury Market Data
+          icon: http://localhost:4202/icons/treasury-market-data.svg
+          appId: macro-react-treasury-market-data
+
+    DockContentFolder:
+      type: object
+      description: A content-menu folder containing nested entries.
+      required:
+        - type
+        - id
+        - label
+        - children
+      properties:
+        type:
+          type: string
+          const: folder
+        id:
+          type: string
+        label:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/DockContentEntry'
+      additionalProperties: false
+      examples:
+        - type: folder
+          id: markets
+          label: Markets
+          children:
+            - type: item
+              id: fx-market-data
+              label: FX Market Data
+              icon: http://localhost:4202/icons/fx-market-data.svg
+              appId: macro-angular-fx-market-data
+
+    StorefrontConfig:
+      type: object
+      description: >-
+        `configName=storefront-config` — storefront navigation sections, landing page
+        rows and footer (mirrors
+        `apps/macro-workspace/public/{env}/storefront-config.json` /
+        `StorefrontConfig` in `libs/openfin/src/lib/types.ts`). OpenFin caps
+        navigation at 3 sections × 5 items, and the dynamic Favorites section
+        occupies one section slot.
+      required:
+        - navigation
+      properties:
+        navigation:
+          type: object
+          required:
+            - sections
+          properties:
+            favoritesTitle:
+              type: string
+              description: Title for the auto-managed dynamic Favorites section.
+            sections:
+              type: array
+              items:
+                $ref: '#/components/schemas/StorefrontNavSection'
+          additionalProperties: false
+        landingPage:
+          type: object
+          properties:
+            hero:
+              type: object
+              required:
+                - title
+                - description
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                image:
+                  type: object
+                  required:
+                    - src
+                  properties:
+                    src:
+                      type: string
+                      format: uri
+                    size:
+                      type: string
+                  additionalProperties: false
+              additionalProperties: false
+            topRow:
+              $ref: '#/components/schemas/StorefrontRow'
+            middleRow:
+              $ref: '#/components/schemas/StorefrontRow'
+            bottomRow:
+              $ref: '#/components/schemas/StorefrontRow'
+          additionalProperties: false
+        footer:
+          type: object
+          properties:
+            logo:
+              type: object
+              required:
+                - src
+              properties:
+                src:
+                  type: string
+                  format: uri
+                size:
+                  type: string
+              additionalProperties: false
+            text:
+              type: string
+            links:
+              type: array
+              items:
+                $ref: '#/components/schemas/StorefrontLink'
+          additionalProperties: false
+        cardClickBehavior:
+          type: string
+          enum:
+            - show-app-details
+            - perform-primary-button-action
+      additionalProperties: false
+      examples:
+        - navigation:
+            favoritesTitle: Favorites
+            sections:
+              - id: markets
+                title: Markets
+                items:
+                  - id: fx
+                    title: FX
+                    category: FX
+                  - id: rates
+                    title: Rates
+                    category: Rates
+              - id: library
+                title: All Apps
+                items:
+                  - id: all-apps
+                    title: All Apps
+                    category: '*'
+          landingPage:
+            topRow:
+              title: Featured
+              category: FX
+            middleRow:
+              title: Markets
+              category: '*'
+            bottomRow:
+              title: ''
+              appIds: []
+          footer:
+            text: Macro Workspace — Capital Markets
+            links:
+              - title: Support
+                url: mailto:support@macro.example.com
+              - title: Documentation
+                url: https://macro.example.com/docs
+          cardClickBehavior: perform-primary-button-action
+
+    StorefrontNavSection:
+      type: object
+      description: One storefront navigation section (max 5 items).
+      required:
+        - id
+        - title
+        - items
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        items:
+          type: array
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/StorefrontNavItem'
+      additionalProperties: false
+      examples:
+        - id: markets
+          title: Markets
+          items:
+            - id: fx
+              title: FX
+              category: FX
+
+    StorefrontNavItem:
+      type: object
+      description: >-
+        One navigation item — a business area rendered as an app grid (apps filtered
+        by `category`; `'*'` = all apps).
+      required:
+        - id
+        - title
+        - category
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+          description: Business-area key matched against each app's `category`; `'*'` matches all.
+      additionalProperties: false
+      examples:
+        - id: risk
+          title: Risk
+          category: Risk
+
+    StorefrontRow:
+      type: object
+      description: >-
+        A landing-page row sourced either by explicit `appIds` or by `category`
+        (`'*'` = all apps).
+      required:
+        - title
+      properties:
+        title:
+          type: string
+        appIds:
+          type: array
+          items:
+            type: string
+        category:
+          type: string
+      additionalProperties: false
+      examples:
+        - title: Featured
+          category: FX
+
+    StorefrontLink:
+      type: object
+      description: One footer link.
+      required:
+        - title
+        - url
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+          format: uri
+      additionalProperties: false
+      examples:
+        - title: Support
+          url: mailto:support@macro.example.com
+
+    SnapConfig:
+      type: object
+      description: >-
+        `configName=snap-config` — OpenFin Snap server options (mirrors
+        `apps/macro-workspace/public/{env}/snap-config.json` /
+        `SnapProviderSettings`).
+      properties:
+        enabled:
+          type: boolean
+        serverOptions:
+          type: object
+          properties:
+            showDebug:
+              type: boolean
+            disableUserUnstick:
+              type: boolean
+            keyToStick:
+              description: '`false` to disable, or the modifier key required to stick.'
+              oneOf:
+                - type: boolean
+                - type: string
+                  enum:
+                    - ctrl
+                    - shift
+            disableGPUAcceleratedDragging:
+              type: boolean
+            disableBlurDropPreview:
+              type: boolean
+            autoHideClientTaskbarIcons:
+              type: boolean
+            theme:
+              type: string
+              enum:
+                - snap-original
+                - snap-light1
+                - snap-dark1
+          additionalProperties: false
+      additionalProperties: false
+      examples:
+        - enabled: true
+          serverOptions:
+            showDebug: false
+            disableUserUnstick: false
+            keyToStick: false
+            disableGPUAcceleratedDragging: false
+            disableBlurDropPreview: false
+            autoHideClientTaskbarIcons: true
+
+    EntitlementsConfig:
+      type: object
+      description: >-
+        `configName=entitlements` — the mock/config-driven user identity plus the
+        appId → required-entitlements map (mirrors
+        `apps/macro-workspace/public/{env}/entitlements.json` /
+        `EntitlementsConfig`). A missing/empty entry means the app is launchable by
+        everyone; entitlement matching is any-of.
+      required:
+        - currentUser
+        - apps
+      properties:
+        currentUser:
+          $ref: '#/components/schemas/EntitledUser'
+        apps:
+          type: object
+          description: appId → required entitlement keys (any-of).
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      additionalProperties: false
+      examples:
+        - currentUser:
+            id: u-001
+            name: Macro Trader
+            groups:
+              - fx-desk
+              - rates-desk
+            entitlements:
+              - fx-trader
+              - rates-trader
+              - general-user
+          apps:
+            macro-angular-fx-market-data:
+              - fx-trader
+            macro-react-treasury-market-data:
+              - rates-trader
+
+    EntitledUser:
+      type: object
+      description: Authenticated user identity (mock/config-driven; swapped for a real IdP in phase 2).
+      required:
+        - id
+        - name
+        - entitlements
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        groups:
+          type: array
+          items:
+            type: string
+        entitlements:
+          type: array
+          description: Entitlement keys the user holds; matched against each app's requirements.
+          items:
+            type: string
+      additionalProperties: false
+      examples:
+        - id: u-001
+          name: Macro Trader
+          groups:
+            - fx-desk
+          entitlements:
+            - fx-trader
+            - general-user

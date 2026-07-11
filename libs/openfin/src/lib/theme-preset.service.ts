@@ -1,5 +1,7 @@
 import { Logger } from '@macro/logger';
 import { themeConfig } from '@macro/macro-design';
+import { getWorkspaceStorage } from './storage/storage-context';
+import { WELL_KNOWN_PREFERENCES } from './storage/storage-types';
 
 const logger = Logger.getLogger('ThemePresetService');
 
@@ -29,16 +31,35 @@ const PRESETS: ThemePresetInfo[] = [
  * Manages workspace theme presets (color palettes for the OpenFin workspace chrome).
  *
  * Theme presets are loaded from JSON files in the app's public directory.
- * The active preset is stored in localStorage and applied at platform init.
- * Changing the preset requires a platform restart since OpenFin workspace
- * palettes are set once during init().
+ * The active preset id is a `theme-preset` preference on the unified storage backend
+ * (localStorage in "local" mode — the same key as before — or the per-environment
+ * storage service), read synchronously through a boot-time-hydrated cache because the
+ * id is needed at platform init. Changing the preset requires a platform restart since
+ * OpenFin workspace palettes are set once during init().
  */
 export class ThemePresetService {
+  private cachedPresetId: string | null = null;
+
   getAvailablePresets(): ThemePresetInfo[] {
     return PRESETS;
   }
 
+  /**
+   * Load the active preset id from the storage backend into the sync cache.
+   * Called during platform boot after `initWorkspaceStorage()`; without it,
+   * reads fall back to the legacy localStorage key (pre-API behavior).
+   */
+  async hydrate(): Promise<void> {
+    try {
+      const id = await getWorkspaceStorage().getPreference<string>(WELL_KNOWN_PREFERENCES.themePreset);
+      if (id) this.cachedPresetId = id;
+    } catch (error) {
+      logger.warn('Failed to hydrate theme preset from storage — using local fallback', error);
+    }
+  }
+
   getActivePresetId(): string {
+    if (this.cachedPresetId) return this.cachedPresetId;
     if (typeof localStorage === 'undefined') return 'macro-etrading'; // graceful no-op outside the browser
     try {
       return localStorage.getItem(STORAGE_KEY) ?? 'macro-etrading';
@@ -47,12 +68,20 @@ export class ThemePresetService {
     }
   }
 
-  setActivePresetId(id: string): void {
-    if (typeof localStorage === 'undefined') return;
+  /**
+   * Persist the preset choice; await before restarting the platform. Rethrows when the
+   * write fails (writes-throw posture) — restarting on an unpersisted choice would
+   * silently revert the theme, so callers must surface the failure instead.
+   */
+  async setActivePresetId(id: string): Promise<void> {
+    const previous = this.cachedPresetId;
+    this.cachedPresetId = id;
     try {
-      localStorage.setItem(STORAGE_KEY, id);
+      await getWorkspaceStorage().setPreference(WELL_KNOWN_PREFERENCES.themePreset, id);
     } catch (error) {
+      this.cachedPresetId = previous;
       logger.error('Failed to save theme preset preference', error);
+      throw error;
     }
   }
 

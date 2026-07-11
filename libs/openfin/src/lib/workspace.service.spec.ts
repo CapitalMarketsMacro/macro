@@ -91,7 +91,9 @@ describe('WorkspaceService', () => {
 
     mockStorageService = {
       getWorkspaces: jest.fn().mockResolvedValue([]),
-      saveWorkspaces: jest.fn().mockResolvedValue(undefined),
+      getWorkspace: jest.fn().mockResolvedValue(undefined),
+      saveWorkspace: jest.fn().mockResolvedValue(undefined),
+      deleteWorkspace: jest.fn().mockResolvedValue(undefined),
       getLastSavedWorkspaceId: jest.fn().mockResolvedValue(null),
       setLastSavedWorkspaceId: jest.fn().mockResolvedValue(undefined),
       removeLastSavedWorkspaceId: jest.fn().mockResolvedValue(undefined),
@@ -258,7 +260,7 @@ describe('WorkspaceService', () => {
     it('should apply the tracked last saved workspace, closing existing windows', async () => {
       const workspace = { workspaceId: 'ws-1', title: 'My Workspace', snapshot: { windows: [] } } as any;
       mockStorageService.getLastSavedWorkspaceId.mockResolvedValue('ws-1');
-      mockStorageService.getWorkspaces.mockResolvedValue([workspace]);
+      mockStorageService.getWorkspace.mockResolvedValue(workspace);
 
       const statuses: string[] = [];
       service.getStatus$().subscribe((s) => statuses.push(s));
@@ -274,7 +276,7 @@ describe('WorkspaceService', () => {
 
     it('should clear a dangling last saved id when the workspace is missing from storage', async () => {
       mockStorageService.getLastSavedWorkspaceId.mockResolvedValue('ws-missing');
-      mockStorageService.getWorkspaces.mockResolvedValue([]);
+      mockStorageService.getWorkspace.mockResolvedValue(undefined);
 
       await restore();
 
@@ -284,9 +286,9 @@ describe('WorkspaceService', () => {
 
     it('should not throw if applyWorkspace rejects', async () => {
       mockStorageService.getLastSavedWorkspaceId.mockResolvedValue('ws-1');
-      mockStorageService.getWorkspaces.mockResolvedValue([
+      mockStorageService.getWorkspace.mockResolvedValue(
         { workspaceId: 'ws-1', title: 'My Workspace', snapshot: {} } as any,
-      ]);
+      );
       mockApplyWorkspace.mockRejectedValue(new Error('apply failed'));
 
       const statuses: string[] = [];

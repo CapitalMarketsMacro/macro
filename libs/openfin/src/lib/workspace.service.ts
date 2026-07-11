@@ -13,6 +13,9 @@ import { SnapService } from './snap.service';
 import { getCurrentSync } from '@openfin/workspace-platform';
 import { Logger } from '@macro/logger';
 import { getAnalyticsNats } from './analytics-nats.service';
+import type { AuthService } from './auth.service';
+import { initWorkspaceStorage } from './storage/storage-context';
+import { hydrateViewTitles } from './workspace-override.service';
 
 const logger = Logger.getLogger('WorkspaceService');
 
@@ -31,6 +34,7 @@ export class WorkspaceService {
   private readonly themePresetService: ThemePresetService;
   private readonly notificationsService: NotificationsService;
   private readonly snapService: SnapService;
+  private readonly authService?: AuthService;
 
   private readonly status$ = new BehaviorSubject<string>('');
 
@@ -45,6 +49,7 @@ export class WorkspaceService {
     themePresetService: ThemePresetService,
     notificationsService: NotificationsService,
     snapService: SnapService,
+    authService?: AuthService,
   ) {
     this.platformService = platformService;
     this.dockService = dockService;
@@ -56,11 +61,19 @@ export class WorkspaceService {
     this.themePresetService = themePresetService;
     this.notificationsService = notificationsService;
     this.snapService = snapService;
+    this.authService = authService;
   }
 
   init() {
     if (!this.isOpenFin()) {
       this.status$.next('Not running inside OpenFin');
+      // Still resolve the storage environment so storage-backed features (favorites,
+      // preferences) behave consistently when the provider page runs in a plain browser.
+      // Re-emit the status afterwards: it is the only transition in this path, and the
+      // provider UI refreshes its storage-environment display on status emissions.
+      void this.initStorageContext()
+        .catch(() => initWorkspaceStorage(undefined, { getUserId: this.userIdSupplier() }))
+        .then(() => this.status$.next('Not running inside OpenFin'));
       return of(false);
     }
 
@@ -68,10 +81,15 @@ export class WorkspaceService {
     const nats = getAnalyticsNats();
     nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'Starting' }).catch(() => {});
 
-    return forkJoin([
-      from(this.settingsService.getManifestSettings()),
-      from(this.themePresetService.loadActivePreset()),
-    ]).pipe(
+    // Settings first (they define the storage environments), then the storage context,
+    // then the storage-backed hydrations (theme preset, view titles), then platform init.
+    return from(this.initStorageContext()).pipe(
+      concatMap((settings) =>
+        from(Promise.all([this.themePresetService.hydrate(), hydrateViewTitles()])).pipe(map(() => settings)),
+      ),
+      concatMap((settings) =>
+        from(this.themePresetService.loadActivePreset()).pipe(map((themePalettes) => [settings, themePalettes] as const)),
+      ),
       tap(() => nats.publish({ source: 'Platform', type: 'Lifecycle', action: 'SettingsLoaded' }).catch(() => {})),
       concatMap(([settings, themePalettes]) =>
         this.platformService.initializeWorkspacePlatform(
@@ -112,6 +130,31 @@ export class WorkspaceService {
   }
 
   /**
+   * Load settings.json and initialize the unified storage context from its `storage`
+   * block (environment precedence: `?storageEnv=` → saved choice → settings default →
+   * local). Everything that persists — workspaces, pages, dock, favorites,
+   * preferences — routes through the resulting client.
+   */
+  private async initStorageContext() {
+    const settings = await this.settingsService.getManifestSettings();
+    initWorkspaceStorage(settings.storage, { getUserId: this.userIdSupplier() });
+    return settings;
+  }
+
+  /** Current-user supplier for user-scoped storage; anonymous when identity fails. */
+  private userIdSupplier(): () => Promise<string> {
+    const authService = this.authService;
+    return async () => {
+      if (!authService) return 'anonymous';
+      try {
+        return (await authService.getUser()).id;
+      } catch {
+        return 'anonymous';
+      }
+    };
+  }
+
+  /**
    * Restore last saved workspace using the built-in API.
    * Returns 'success', 'not-saved-workspace', or 'user-declined'.
    */
@@ -149,8 +192,7 @@ export class WorkspaceService {
         return;
       }
 
-      const workspaces = await this.storageService.getWorkspaces();
-      const workspace = workspaces.find((w) => w.workspaceId === lastSavedId);
+      const workspace = await this.storageService.getWorkspace(lastSavedId);
       if (!workspace) {
         logger.warn('Last saved workspace id not found in storage; clearing reference', { lastSavedId });
         await this.storageService.removeLastSavedWorkspaceId();

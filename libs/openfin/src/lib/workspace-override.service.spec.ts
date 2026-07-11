@@ -34,7 +34,17 @@ describe('WorkspaceOverrideService', () => {
   beforeEach(() => {
     storageService = {
       getWorkspaces: jest.fn().mockResolvedValue([]),
-      saveWorkspaces: jest.fn().mockResolvedValue(undefined),
+      getWorkspace: jest.fn().mockResolvedValue(undefined),
+      saveWorkspace: jest.fn().mockResolvedValue(undefined),
+      deleteWorkspace: jest.fn().mockResolvedValue(undefined),
+      getPages: jest.fn().mockResolvedValue([]),
+      getPage: jest.fn().mockResolvedValue(undefined),
+      savePage: jest.fn().mockResolvedValue(undefined),
+      deletePage: jest.fn().mockResolvedValue(undefined),
+      getDockConfig: jest.fn().mockResolvedValue(undefined),
+      saveDockConfig: jest.fn().mockResolvedValue(undefined),
+      getPreference: jest.fn().mockResolvedValue(undefined),
+      setPreference: jest.fn().mockResolvedValue(undefined),
       getLastSavedWorkspaceId: jest.fn().mockResolvedValue(null),
       setLastSavedWorkspaceId: jest.fn().mockResolvedValue(undefined),
       removeLastSavedWorkspaceId: jest.fn().mockResolvedValue(undefined),
@@ -227,18 +237,16 @@ describe('WorkspaceOverrideService', () => {
 
     describe('getSavedWorkspace', () => {
       it('should return workspace by id', async () => {
-        const workspaces = [
-          makeWorkspace('ws-1', 'WS1'),
-          makeWorkspace('ws-2', 'WS2'),
-        ];
-        storageService.getWorkspaces.mockResolvedValue(workspaces);
+        const ws = makeWorkspace('ws-2', 'WS2');
+        storageService.getWorkspace.mockResolvedValue(ws);
 
         const result = await provider.getSavedWorkspace('ws-2');
-        expect(result).toEqual(workspaces[1]);
+        expect(result).toEqual(ws);
+        expect(storageService.getWorkspace).toHaveBeenCalledWith('ws-2');
       });
 
       it('should return undefined when workspace not found', async () => {
-        storageService.getWorkspaces.mockResolvedValue([]);
+        storageService.getWorkspace.mockResolvedValue(undefined);
 
         const result = await provider.getSavedWorkspace('nonexistent');
         expect(result).toBeUndefined();
@@ -248,31 +256,17 @@ describe('WorkspaceOverrideService', () => {
     // ── createSavedWorkspace ────────────────────────────────
 
     describe('createSavedWorkspace', () => {
-      it('should add new workspace to storage', async () => {
-        storageService.getWorkspaces.mockResolvedValue([]);
-
+      it('should upsert the workspace into storage', async () => {
         const ws = makeWorkspace('ws-1', 'New WS');
         await provider.createSavedWorkspace({ workspace: ws });
 
-        expect(storageService.saveWorkspaces).toHaveBeenCalledWith([ws]);
+        expect(storageService.saveWorkspace).toHaveBeenCalledWith(ws);
         expect(storageService.setLastSavedWorkspaceId).toHaveBeenCalledWith(
           'ws-1',
         );
       });
 
-      it('should update existing workspace if id matches', async () => {
-        const existing = makeWorkspace('ws-1', 'Old Title');
-        storageService.getWorkspaces.mockResolvedValue([existing]);
-
-        const updated = makeWorkspace('ws-1', 'New Title');
-        await provider.createSavedWorkspace({ workspace: updated });
-
-        expect(storageService.saveWorkspaces).toHaveBeenCalledWith([updated]);
-      });
-
       it('should set last saved workspace id', async () => {
-        storageService.getWorkspaces.mockResolvedValue([]);
-
         await provider.createSavedWorkspace({
           workspace: makeWorkspace('ws-99', 'WS'),
         });
@@ -282,8 +276,16 @@ describe('WorkspaceOverrideService', () => {
         );
       });
 
+      it('should propagate storage failures (a failed save must not report success)', async () => {
+        storageService.saveWorkspace.mockRejectedValue(new Error('storage down'));
+
+        await expect(
+          provider.createSavedWorkspace({ workspace: makeWorkspace('ws-1', 'WS') }),
+        ).rejects.toThrow('storage down');
+        expect(storageService.setLastSavedWorkspaceId).not.toHaveBeenCalled();
+      });
+
       it('should broadcast flush event and re-capture snapshot before saving', async () => {
-        storageService.getWorkspaces.mockResolvedValue([]);
         const freshSnapshot = { windows: [{ name: 'fresh' }] };
         mockGetSnapshot.mockResolvedValue(freshSnapshot);
 
@@ -304,37 +306,30 @@ describe('WorkspaceOverrideService', () => {
     // ── updateSavedWorkspace ────────────────────────────────
 
     describe('updateSavedWorkspace', () => {
-      it('should update existing workspace in storage', async () => {
-        const existing = makeWorkspace('ws-1', 'Old Title');
-        storageService.getWorkspaces.mockResolvedValue([existing]);
-
+      it('should upsert the workspace in storage', async () => {
         const updated = makeWorkspace('ws-1', 'Updated');
         await provider.updateSavedWorkspace({
           workspaceId: 'ws-1',
           workspace: updated,
         });
 
-        expect(storageService.saveWorkspaces).toHaveBeenCalledWith([updated]);
+        expect(storageService.saveWorkspace).toHaveBeenCalledWith(updated);
         expect(storageService.setLastSavedWorkspaceId).toHaveBeenCalledWith(
           'ws-1',
         );
       });
 
-      it('should create workspace if not found during update', async () => {
-        storageService.getWorkspaces.mockResolvedValue([]);
-
+      it('should create workspace if not found during update (upsert)', async () => {
         const ws = makeWorkspace('ws-new', 'New');
         await provider.updateSavedWorkspace({
           workspaceId: 'ws-new',
           workspace: ws,
         });
 
-        expect(storageService.saveWorkspaces).toHaveBeenCalledWith([ws]);
+        expect(storageService.saveWorkspace).toHaveBeenCalledWith(ws);
       });
 
       it('should broadcast flush event and re-capture snapshot before saving', async () => {
-        const existing = makeWorkspace('ws-1', 'WS');
-        storageService.getWorkspaces.mockResolvedValue([existing]);
         const freshSnapshot = { windows: [{ name: 'fresh' }] };
         mockGetSnapshot.mockResolvedValue(freshSnapshot);
 
@@ -358,22 +353,12 @@ describe('WorkspaceOverrideService', () => {
 
     describe('deleteSavedWorkspace', () => {
       it('should remove workspace from storage', async () => {
-        const workspaces = [
-          makeWorkspace('ws-1', 'WS1'),
-          makeWorkspace('ws-2', 'WS2'),
-        ];
-        storageService.getWorkspaces.mockResolvedValue(workspaces);
-
         await provider.deleteSavedWorkspace('ws-1');
 
-        expect(storageService.saveWorkspaces).toHaveBeenCalledWith([
-          workspaces[1],
-        ]);
+        expect(storageService.deleteWorkspace).toHaveBeenCalledWith('ws-1');
       });
 
       it('should remove last saved id if deleted workspace was last saved', async () => {
-        const workspaces = [makeWorkspace('ws-1', 'WS1')];
-        storageService.getWorkspaces.mockResolvedValue(workspaces);
         storageService.getLastSavedWorkspaceId.mockResolvedValue('ws-1');
 
         await provider.deleteSavedWorkspace('ws-1');
@@ -382,8 +367,6 @@ describe('WorkspaceOverrideService', () => {
       });
 
       it('should not remove last saved id if deleted workspace was not last saved', async () => {
-        const workspaces = [makeWorkspace('ws-1', 'WS1')];
-        storageService.getWorkspaces.mockResolvedValue(workspaces);
         storageService.getLastSavedWorkspaceId.mockResolvedValue('ws-other');
 
         await provider.deleteSavedWorkspace('ws-1');
@@ -392,13 +375,120 @@ describe('WorkspaceOverrideService', () => {
           storageService.removeLastSavedWorkspaceId,
         ).not.toHaveBeenCalled();
       });
+    });
 
-      it('should be a no-op (no save) when workspace not found', async () => {
-        storageService.getWorkspaces.mockResolvedValue([]);
+    // ── page storage (new: unified backend + one-time migration) ──
 
-        await provider.deleteSavedWorkspace('nonexistent');
+    describe('page storage', () => {
+      // The migration flag is read via the RAW storage client (uninitialized context →
+      // localStorage), so simulate its state through a mocked localStorage.
+      let lsStore: Record<string, string>;
+      beforeEach(() => {
+        lsStore = {};
+        (globalThis as any).localStorage = {
+          getItem: (key: string) => lsStore[key] ?? null,
+          setItem: (key: string, value: string) => {
+            lsStore[key] = value;
+          },
+          removeItem: (key: string) => {
+            delete lsStore[key];
+          },
+        };
+      });
+      afterEach(() => {
+        delete (globalThis as any).localStorage;
+      });
 
-        expect(storageService.saveWorkspaces).not.toHaveBeenCalled();
+      it('should return pages from unified storage once migration is marked done', async () => {
+        const pages = [{ pageId: 'p1', title: 'Page 1' }];
+        storageService.getPages.mockResolvedValue(pages as any);
+
+        expect(await provider.getSavedPages()).toEqual(pages);
+      });
+
+      it('should filter pages by query on title or pageId (case-insensitive)', async () => {
+        storageService.getPages.mockResolvedValue([
+          { pageId: 'p1', title: 'Trading Grid' },
+          { pageId: 'research-p2', title: 'Other' },
+          { pageId: 'p3', title: 'News' },
+        ] as any);
+        lsStore['macro:pref:pages-migrated'] = 'true';
+
+        expect(await provider.getSavedPages('TRADING')).toEqual([{ pageId: 'p1', title: 'Trading Grid' }]);
+        expect(await provider.getSavedPages('research')).toEqual([{ pageId: 'research-p2', title: 'Other' }]);
+      });
+
+      it('should migrate legacy pages from the platform default storage exactly once', async () => {
+        const legacy = [{ pageId: 'legacy-1', title: 'Legacy' }];
+        (MockBase.prototype as any).getSavedPages = jest.fn().mockResolvedValue(legacy);
+        storageService.getPages.mockResolvedValue([]);
+
+        const result = await provider.getSavedPages();
+
+        expect(result).toEqual(legacy);
+        expect(storageService.savePage).toHaveBeenCalledWith(legacy[0]);
+        expect(storageService.setPreference).toHaveBeenCalledWith('pages-migrated', true);
+
+        // Second call with a still-empty backend must NOT re-import (per-boot guard).
+        (storageService.savePage as jest.Mock).mockClear();
+        await provider.getSavedPages();
+        expect(storageService.savePage).not.toHaveBeenCalled();
+
+        delete (MockBase.prototype as any).getSavedPages;
+      });
+
+      it('should not migrate when the backend already marked pages-migrated', async () => {
+        (MockBase.prototype as any).getSavedPages = jest.fn();
+        storageService.getPages.mockResolvedValue([]);
+        lsStore['macro:pref:pages-migrated'] = 'true';
+
+        expect(await provider.getSavedPages()).toEqual([]);
+        expect((MockBase.prototype as any).getSavedPages).not.toHaveBeenCalled();
+        expect(storageService.savePage).not.toHaveBeenCalled();
+
+        delete (MockBase.prototype as any).getSavedPages;
+      });
+
+      it('should route page CRUD through unified storage and mark migration done on writes', async () => {
+        const page = { pageId: 'p1', title: 'P' };
+        await provider.createSavedPage({ page });
+        expect(storageService.savePage).toHaveBeenCalledWith(page);
+        // An explicit save marks the backend as past migration, so a later empty page
+        // list (delete-all) can never resurrect stale legacy pages.
+        expect(storageService.setPreference).toHaveBeenCalledWith('pages-migrated', true);
+
+        await provider.updateSavedPage({ pageId: 'p1', page });
+        expect(storageService.savePage).toHaveBeenCalledTimes(2);
+
+        await provider.deleteSavedPage('p1');
+        expect(storageService.deletePage).toHaveBeenCalledWith('p1');
+      });
+    });
+
+    // ── dock customization storage (new) ──
+
+    describe('dock storage', () => {
+      it('should prefer the unified backend for dock provider config', async () => {
+        const config = { id: 'dock-1', buttons: [] };
+        storageService.getDockConfig.mockResolvedValue(config as any);
+
+        expect(await provider.getDockProviderConfig('dock-1')).toEqual(config);
+      });
+
+      it('should fall back to platform default storage when the backend has none', async () => {
+        const legacyConfig = { id: 'dock-1', buttons: [{ tooltip: 'legacy' }] };
+        (MockBase.prototype as any).getDockProviderConfig = jest.fn().mockResolvedValue(legacyConfig);
+        storageService.getDockConfig.mockResolvedValue(undefined);
+
+        expect(await provider.getDockProviderConfig('dock-1')).toEqual(legacyConfig);
+
+        delete (MockBase.prototype as any).getDockProviderConfig;
+      });
+
+      it('should save dock provider config to unified storage', async () => {
+        const config = { id: 'dock-1', buttons: [] };
+        await provider.saveDockProviderConfig(config);
+        expect(storageService.saveDockConfig).toHaveBeenCalledWith(config);
       });
     });
 

@@ -226,6 +226,16 @@ button, a, input, select, textarea {
   padding: 0 2px;
 }
 
+.settings-hint {
+  font-size: 8px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-inactive, #7d808a);
+  padding: 0 2px;
+  word-break: break-all;
+}
+
 .pill-row {
   display: flex;
   flex-wrap: wrap;

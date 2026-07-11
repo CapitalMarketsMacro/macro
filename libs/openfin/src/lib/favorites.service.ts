@@ -91,6 +91,6 @@ export class FavoritesService {
       ids.add(appId);
     }
     this.favoriteIds$.next(ids);
-    void this.store.save(this.storageKey(), [...ids]);
+    this.store.save(this.storageKey(), [...ids]).catch((error) => logger.error('Failed to persist favorites', error));
   }
 }
