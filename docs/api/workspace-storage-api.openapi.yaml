@@ -149,8 +149,9 @@ info:
 
     - **1.2.0** — added the `/store-apps` resource: LOB-published full storefront
       apps (`LobStoreApp`), shared across all users (not user-scoped), merged into
-      the app registry at platform load (registry wins on `appId` collisions; the
-      platform force-adds the `lob` tag for the "LOB Apps" nav item).
+      the app registry at platform load (registry wins on `appId` collisions;
+      navigation routes each app by its `category` or tags into the matching
+      business-area item — FX, Rates, Commodities, Risk, Spread, Middle Office).
     - **1.1.0** — added the `/dock-apps` resource: LOB-published custom dock apps
       (`LobDockApp`), shared across all users (not user-scoped), read by the platform
       at dock init.
@@ -216,8 +217,8 @@ tags:
       contacts). NOT user-scoped — shared across all users of the deployment; no
       X-User-Id is required (ignored when sent). The platform merges them into the
       app registry at load: they surface in the Storefront, Home search and as
-      launch targets; registry apps win on appId collisions, and the platform
-      force-adds the 'lob' tag so the "LOB Apps" storefront nav item finds them.
+      launch targets; registry apps win on appId collisions, and the
+      storefront navigation routes each app into the business-area item matching its `category` OR any tag, case-insensitively (FX, Rates, Commodities, Risk, Spread, Middle Office).
   - name: Favorites
     x-displayName: Favorites
     description: >-
@@ -734,8 +735,8 @@ paths:
         `sortOrder` ascending with entries lacking `sortOrder` last; the sort MUST
         be stable so equal (or absent) `sortOrder` values keep their stored order.
         The platform calls this at load and merges the results into the app
-        registry: registry apps win on `appId` collisions, and the platform
-        force-adds the `lob` tag so the "LOB Apps" storefront nav item finds them.
+        registry: registry apps win on `appId` collisions, and the
+        storefront navigation routes each app into the business-area item matching its `category` OR any tag, case-insensitively (FX, Rates, Commodities, Risk, Spread, Middle Office).
       security: []
       responses:
         '200':
@@ -1763,8 +1764,9 @@ components:
         `description`, `images` and the support fields), Home search, and as launch
         targets — `manifestType: view` launches the manifest as an embedded view,
         `manifestType: manifest` launches it as another OpenFin platform. Registry
-        (apps.json) apps win on `appId` collisions, and the platform force-adds the
-        `lob` tag so the "LOB Apps" storefront nav item finds them. See the two
+        (apps.json) apps win on `appId` collisions, and the
+        storefront navigation routes each app into the business-area item matching its `category` OR any tag, case-insensitively (FX, Rates, Commodities, Risk, Spread, Middle Office).
+        The platform also force-adds a `lob` tag as metadata. See the two
         examples — a `view` app with screenshots and a `manifest` platform app.
       required:
         - appId
@@ -1830,8 +1832,9 @@ components:
         tags:
           type: array
           description: >-
-            Extra tags (each a non-empty string); the platform always adds `lob`
-            so the "LOB Apps" nav item finds them.
+            Extra tags (each a non-empty string). Tags route the app into matching
+            business-area nav items case-insensitively (e.g. `rates` → the Rates
+            item); the platform additionally force-adds a `lob` tag as metadata.
           items:
             type: string
             minLength: 1
@@ -1839,8 +1842,10 @@ components:
           type: string
           minLength: 1
           description: >-
-            Storefront nav category (optional — LOB apps surface via the `lob`
-            tag regardless).
+            Storefront business-area category — routes the app into the matching
+            nav item (FX, Rates, Commodities, Risk, Spread, Middle Office).
+            Optional: a matching tag works too, and apps with neither still
+            appear under All Apps and in Home search.
         lob:
           type: string
           minLength: 1

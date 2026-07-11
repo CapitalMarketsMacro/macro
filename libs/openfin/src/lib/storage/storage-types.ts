@@ -93,9 +93,17 @@ export interface LobStoreApp {
   publisher?: string;
   contactEmail?: string;
   supportEmail?: string;
-  /** Extra tags; the platform always adds `lob` so the "LOB Apps" nav item finds them. */
+  /**
+   * Extra tags — route the app into matching business-area nav items
+   * case-insensitively (e.g. `rates` → the Rates item); the platform additionally
+   * force-adds a `lob` tag as metadata.
+   */
   tags?: string[];
-  /** Storefront nav category (optional — LOB apps surface via the `lob` tag regardless). */
+  /**
+   * Storefront business-area category (FX / Rates / Commodities / Risk / Spread /
+   * Middle Office). Optional — a matching tag works too; apps with neither still
+   * appear under All Apps and in Home search.
+   */
   category?: string;
   /** Owning line of business, e.g. "Rates". */
   lob?: string;
