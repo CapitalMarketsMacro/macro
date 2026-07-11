@@ -1,4 +1,4 @@
-import { Client, Command } from 'amps';
+import { Client, Command, type CommandParams } from 'amps';
 import { Observable, Subject, ReplaySubject } from 'rxjs';
 import { Logger } from '@macro/logger';
 import type { TransportClient, TransportMessage, MessageHandler, ErrorHandler } from '../transport';
@@ -15,10 +15,15 @@ export interface AmpsConnectionOptions {
 
 export interface AmpsSowOptions {
   batchSize?: number;
+  /** Client-side safety timeout for one-shot SOW queries; never sent to AMPS. */
   timeout?: number;
+  /** Maximum initial SOW records, encoded as the AMPS `top_n` command option. */
   topN?: number;
+  /** AMPS OrderBy expression, e.g. `/price DESC, /symbol ASC`. */
   orderBy?: string;
   filter?: string;
+  /** Additional comma-delimited AMPS command options. */
+  options?: string;
   [key: string]: unknown;
 }
 
@@ -179,7 +184,7 @@ export class AmpsTransport implements TransportClient {
         },
         topic,
         filter,
-        options,
+        this.toSowCommandParams(options),
       ).catch(reject);
 
       // Safety timeout
@@ -200,7 +205,7 @@ export class AmpsTransport implements TransportClient {
       },
       topic,
       filter,
-      options,
+      this.toSowCommandParams(options),
     );
   }
 
@@ -240,7 +245,7 @@ export class AmpsTransport implements TransportClient {
       },
       topic,
       filter,
-      options,
+      this.toSowCommandParams(options),
     );
 
     this.subscriptionMap.set(subId, rxSubject);
@@ -275,7 +280,7 @@ export class AmpsTransport implements TransportClient {
       },
       topic,
       filter,
-      options,
+      this.toSowCommandParams(options),
     );
 
     this.subscriptionMap.set(subId, rxSubject);
@@ -366,6 +371,46 @@ export class AmpsTransport implements TransportClient {
   }
 
   // ── Internal Helpers ──
+
+  /**
+   * Convert the transport's ergonomic SOW options to AMPS command parameters. Current AMPS
+   * versions expect `top_n` in the comma-delimited `options` field; the client's `topN` command
+   * parameter writes the legacy `top_n` header instead. `timeout` is local to this wrapper.
+   */
+  private toSowCommandParams(
+    options?: AmpsSowOptions,
+  ): CommandParams | undefined {
+    if (!options) return undefined;
+
+    const { topN, options: rawOptions, ...params } = options;
+    delete params.timeout;
+    if (topN != null && (!Number.isInteger(topN) || topN <= 0)) {
+      throw new Error('AMPS topN must be a positive integer.');
+    }
+
+    // The typed value wins over an advanced raw option so the command never contains two top_n values.
+    const preservedRawOptions =
+      topN == null
+        ? rawOptions
+        : rawOptions
+            ?.split(',')
+            .filter((value) => !/^\s*top_n\s*=/i.test(value))
+            .join(',');
+    const commandOptions = [
+      preservedRawOptions,
+      topN != null ? `top_n=${topN}` : undefined,
+    ]
+      .filter(
+        (value): value is string =>
+          typeof value === 'string' && value.length > 0,
+      )
+      .join(',');
+
+    return {
+      ...params,
+      ...(commandOptions ? { options: commandOptions } : {}),
+    } as CommandParams;
+  }
 
   /** Check if this is a data message (not a control message like group_begin/end/oof) */
   private isDataMessage(message: any): boolean {

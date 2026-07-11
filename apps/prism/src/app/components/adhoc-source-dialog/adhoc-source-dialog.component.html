@@ -182,6 +182,24 @@
           <span class="adhoc-form__label">Filter (optional)</span>
           <input pInputText formControlName="filter" placeholder="/status &lt;&gt; 'DONE'" />
         </div>
+        <div class="adhoc-form__row">
+          <span class="adhoc-form__label">Initial SOW Top N (optional)</span>
+          <p-inputnumber
+            formControlName="topN"
+            [min]="1"
+            [step]="1"
+            [useGrouping]="false"
+            [minFractionDigits]="0"
+            [maxFractionDigits]="0"
+            placeholder="e.g. 500"
+          />
+          <span class="adhoc-form__hint">Limits rows returned by the initial SOW query; matching live updates continue.</span>
+        </div>
+        <div class="adhoc-form__row">
+          <span class="adhoc-form__label">Order by (optional)</span>
+          <input pInputText formControlName="orderBy" placeholder="/orderDate DESC, /customerName ASC" />
+          <span class="adhoc-form__hint">Comma-separated: /field [ASC | DESC] [TEXT]</span>
+        </div>
       }
       @if (!isAppend) {
         <div class="adhoc-form__row">

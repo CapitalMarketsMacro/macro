@@ -68,6 +68,24 @@ describe('DataSourceStore', () => {
     expect(store.getAll()).not.toBe(a);
   });
 
+  it('round-trips AMPS SOW limit and ordering through localStorage', () => {
+    const store = new DataSourceStore();
+    const created = store.addAdhoc(
+      seedSource({
+        transport: 'amps',
+        connection: { transport: 'amps', url: 'ws://x/amps/json' },
+        topN: 100,
+        orderBy: '/updatedAt DESC, /orderId TEXT',
+      }),
+    );
+
+    const restored = new DataSourceStore();
+    expect(restored.get(created.id)).toMatchObject({
+      topN: 100,
+      orderBy: '/updatedAt DESC, /orderId TEXT',
+    });
+  });
+
   it('filters by transport / mode and groups by category', () => {
     const store = new DataSourceStore();
     store.addAdhoc(seedSource({ name: 'A', category: 'FX', transport: 'nats', mode: 'streaming', keyField: 's' }));

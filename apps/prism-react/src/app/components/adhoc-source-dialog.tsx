@@ -12,7 +12,7 @@ import {
   type TransportKind,
   type WsTableInfo,
 } from '@macro/prism-core';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +26,8 @@ interface FormState {
   mode: BlotterMode;
   topic: string;
   filter: string;
+  topN: string;
+  orderBy: string;
   keyField: string;
   conflationMs: string;
   maxRows: string;
@@ -54,6 +56,8 @@ const EMPTY: FormState = {
   mode: 'streaming',
   topic: '',
   filter: '',
+  topN: '',
+  orderBy: '',
   keyField: '',
   conflationMs: '',
   maxRows: '',
@@ -85,6 +89,8 @@ function fromSource(s: BlotterSource): FormState {
     mode: s.mode,
     topic: s.topic,
     filter: s.filter ?? '',
+    topN: s.transport === 'amps' ? s.topN?.toString() ?? '' : '',
+    orderBy: s.transport === 'amps' ? s.orderBy ?? '' : '',
     keyField: s.keyField ?? '',
     conflationMs: s.conflationMs?.toString() ?? '',
     maxRows: s.maxRows?.toString() ?? '',
@@ -222,6 +228,10 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
 
   const isAppend = form.mode === 'append';
   const num = (s: string): number | undefined => (s.trim() === '' ? undefined : Number(s));
+  const positiveInt = (s: string): number | undefined => {
+    const value = num(s);
+    return value != null && Number.isInteger(value) && value > 0 ? value : undefined;
+  };
 
   const canSave = (): boolean => {
     if (!form.name) return false;
@@ -230,7 +240,7 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
     if (form.mode !== 'append' && !form.keyField) return false;
     switch (form.transport) {
       case 'amps':
-        return !!form.url;
+        return !!form.url && (form.topN.trim() === '' || positiveInt(form.topN) != null);
       case 'nats':
       case 'nats-js':
         return !!form.servers;
@@ -300,6 +310,8 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
       topic: form.topic,
       columnMode: form.columnMode,
       ...(form.transport === 'amps' && form.filter ? { filter: form.filter } : {}),
+      ...(form.transport === 'amps' && positiveInt(form.topN) != null ? { topN: positiveInt(form.topN) } : {}),
+      ...(form.transport === 'amps' && form.orderBy.trim() ? { orderBy: form.orderBy.trim() } : {}),
       ...(form.keyField ? { keyField: form.keyField } : {}),
       // Snapshot-only REST has no stream to conflate — drop a value left over from another transport.
       ...(num(form.conflationMs) != null && form.transport !== 'rest' ? { conflationMs: num(form.conflationMs) } : {}),
@@ -323,6 +335,9 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Ad-hoc data source</DialogTitle>
+          <DialogDescription className="sr-only">
+            Configure a broker or table connection and how its rows should appear in the blotter.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3 max-h-[60vh] overflow-auto pr-1">
@@ -553,6 +568,38 @@ export function AdHocSourceDialog({ open, source, onOpenChange, onSaved }: AdHoc
               </Field>
             )}
           </div>
+
+          {form.transport === 'amps' && (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Initial SOW Top N (optional)">
+                <Input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={form.topN}
+                  onChange={(e) => set('topN', e.target.value)}
+                  placeholder="e.g. 500"
+                />
+                {form.topN.trim() && positiveInt(form.topN) == null ? (
+                  <span className="text-xs text-destructive">Enter a whole number greater than zero.</span>
+                ) : (
+                  <span className="text-xs opacity-60">
+                    Limits rows returned by the initial SOW query; matching live updates continue.
+                  </span>
+                )}
+              </Field>
+              <Field label="Order by (optional)">
+                <Input
+                  value={form.orderBy}
+                  onChange={(e) => set('orderBy', e.target.value)}
+                  placeholder="/updatedAt DESC, /symbol ASC"
+                />
+                <span className="text-xs opacity-60">
+                  Comma-separated AMPS fields with optional ASC, DESC, or TEXT directives.
+                </span>
+              </Field>
+            </div>
+          )}
 
           <Field label="Roll-up — group by (optional)">
             <Input
