@@ -245,6 +245,32 @@ describe('BlotterFeed', () => {
     expect(updates).toEqual([{ symbol: 'EUR', px: 9 }]);
   });
 
+  it('AMPS: forwards the initial SOW row limit and ordering', async () => {
+    const { grid } = makeGrid();
+    const source: BlotterSource = {
+      ...base,
+      transport: 'amps',
+      mode: 'snapshot-update',
+      keyField: 'symbol',
+      filter: "/status = 'OPEN'",
+      topN: 25,
+      orderBy: '/price DESC, /symbol ASC',
+      connection: { transport: 'amps', url: 'ws://x/amps/json' },
+    };
+    const feed = new BlotterFeed(source, grid, jest.fn());
+    const starting = feed.start();
+    await macro();
+    const t = lastTransport();
+
+    expect(t.sowAndSubscribe).toHaveBeenCalledWith('t', "/status = 'OPEN'", {
+      topN: 25,
+      orderBy: '/price DESC, /symbol ASC',
+    });
+
+    t.__resolveSow();
+    await starting;
+  });
+
   it('snapshot inference merges the batch so sparse fields survive a null-first record', async () => {
     const { grid } = makeGrid();
     const onColumns = jest.fn();

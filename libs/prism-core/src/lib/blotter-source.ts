@@ -68,6 +68,10 @@ export interface BlotterSource {
   topic: string;
   /** AMPS SOW/subscribe filter (AMPS only). */
   filter?: string;
+  /** Maximum number of records in the initial AMPS SOW result (AMPS only). */
+  topN?: number;
+  /** AMPS SOW result ordering, e.g. `/price DESC, /symbol ASC` (AMPS only). */
+  orderBy?: string;
   /** Natural key → `getRowId`; required for `snapshot-update` / `streaming`. */
   keyField?: string;
   /** When set (or mode === 'streaming'), updates are conflated to this interval (ms). */

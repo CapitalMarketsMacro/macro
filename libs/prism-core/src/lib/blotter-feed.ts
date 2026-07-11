@@ -4,6 +4,7 @@ import {
   NatsJetStreamTransport,
   NatsTransport,
   SolaceTransport,
+  type AmpsSowOptions,
   type TransportClient,
   type TransportMessage,
 } from '@macro/transports';
@@ -187,7 +188,19 @@ export class BlotterFeed {
   private async wireAmps(): Promise<void> {
     const amps = this.transport as AmpsTransport;
     this.patch({ status: 'snapshot-loading' });
-    const { observable, subscriptionId, sowComplete } = await amps.sowAndSubscribe(this.source.topic, this.source.filter);
+    const orderBy = this.source.orderBy?.trim();
+    const options: AmpsSowOptions = {
+      ...(this.source.topN != null ? { topN: this.source.topN } : {}),
+      ...(orderBy ? { orderBy } : {}),
+    };
+    const result = Object.keys(options).length
+      ? await amps.sowAndSubscribe(
+          this.source.topic,
+          this.source.filter,
+          options,
+        )
+      : await amps.sowAndSubscribe(this.source.topic, this.source.filter);
+    const { observable, subscriptionId, sowComplete } = result;
     this.subId = subscriptionId;
     await this.consumeSnapshotThenLive(observable, sowComplete);
   }

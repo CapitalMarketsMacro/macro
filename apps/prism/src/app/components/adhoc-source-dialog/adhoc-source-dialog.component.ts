@@ -115,6 +115,8 @@ export class AdHocSourceDialogComponent {
     mode: ['streaming' as BlotterMode, Validators.required],
     topic: ['', Validators.required],
     filter: [''],
+    topN: [null as number | null, Validators.min(1)],
+    orderBy: [''],
     keyField: [''],
     conflationMs: [null as number | null],
     maxRows: [null as number | null],
@@ -274,6 +276,7 @@ export class AdHocSourceDialogComponent {
     // REST may leave the table blank — the URL itself can be the rows endpoint.
     if (!v.topic && v.transport !== 'rest') return false;
     if (v.mode !== 'append' && !v.keyField) return false;
+    if (v.transport === 'amps' && v.topN != null && (!Number.isInteger(v.topN) || v.topN < 1)) return false;
     switch (v.transport) {
       case 'amps':
         return !!v.url;
@@ -303,6 +306,8 @@ export class AdHocSourceDialogComponent {
       topic: v.topic,
       columnMode: v.columnMode,
       ...(v.transport === 'amps' && v.filter ? { filter: v.filter } : {}),
+      ...(v.transport === 'amps' && v.topN != null ? { topN: v.topN } : {}),
+      ...(v.transport === 'amps' && v.orderBy.trim() ? { orderBy: v.orderBy.trim() } : {}),
       ...(v.keyField ? { keyField: v.keyField } : {}),
       // Snapshot-only REST has no stream to conflate — drop a value left over from another transport.
       ...(v.conflationMs != null && v.transport !== 'rest' ? { conflationMs: v.conflationMs } : {}),
@@ -385,6 +390,8 @@ export class AdHocSourceDialogComponent {
       mode: source.mode,
       topic: source.topic,
       filter: source.filter ?? '',
+      topN: source.topN ?? null,
+      orderBy: source.orderBy ?? '',
       keyField: source.keyField ?? '',
       conflationMs: source.conflationMs ?? null,
       maxRows: source.maxRows ?? null,
