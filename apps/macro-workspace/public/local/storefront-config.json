@@ -9,47 +9,69 @@
           {
             "id": "fx",
             "title": "FX",
-            "category": "FX"
+            "category": "FX",
+            "tags": [
+              "fx"
+            ]
           },
           {
             "id": "rates",
             "title": "Rates",
-            "category": "Rates"
+            "category": "Rates",
+            "tags": [
+              "rates"
+            ]
           },
           {
             "id": "commodities",
             "title": "Commodities",
-            "category": "Commodities"
+            "category": "Commodities",
+            "tags": [
+              "commodities"
+            ]
           },
           {
             "id": "risk",
             "title": "Risk",
-            "category": "Risk"
+            "category": "Risk",
+            "tags": [
+              "risk"
+            ]
           },
           {
-            "id": "blotters",
-            "title": "Blotters",
-            "category": "Blotters"
+            "id": "spread",
+            "title": "Spread",
+            "category": "Spread",
+            "tags": [
+              "spread"
+            ]
           }
         ]
       },
       {
-        "id": "library",
-        "title": "Library",
+        "id": "desk-library",
+        "title": "Desk & Library",
         "items": [
           {
-            "id": "showcase",
-            "title": "Showcase",
+            "id": "middle-office",
+            "title": "Middle Office",
+            "category": "Middle Office",
             "tags": [
-              "showcase"
+              "middle-office"
             ]
           },
           {
-            "id": "lob-apps",
-            "title": "LOB Apps",
+            "id": "blotters",
+            "title": "Blotters",
+            "category": "Blotters",
             "tags": [
-              "lob"
+              "blotters"
             ]
+          },
+          {
+            "id": "showcase",
+            "title": "Showcase",
+            "category": "Showcase"
           },
           {
             "id": "all-apps",
@@ -63,7 +85,7 @@
   "landingPage": {
     "topRow": {
       "title": "Featured",
-      "category": "FX"
+      "category": "Showcase"
     },
     "middleRow": {
       "title": "Markets",

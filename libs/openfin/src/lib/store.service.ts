@@ -269,17 +269,27 @@ export class StoreService {
       : apps.filter((a) => a.category === category);
   }
 
-  /** Nav-item filter: `tags` (any-tag match) wins over `category`. */
+  /**
+   * Nav-item filter: an app matches on `category` OR any of the item's `tags`
+   * (case-insensitive) — LOB apps published via /store-apps can use either, so a
+   * business-area item like FX shows category "FX" apps plus apps tagged "fx".
+   */
   private filterForItem(
     apps: MacroApp[],
     item: StorefrontNavItemConfig,
   ): MacroApp[] {
-    if (item.tags?.length) {
-      return apps.filter((a) =>
-        (a.tags ?? []).some((t) => item.tags!.includes(t)),
-      );
-    }
-    return item.category ? this.filterByCategory(apps, item.category) : [];
+    const byCategory = item.category
+      ? this.filterByCategory(apps, item.category)
+      : [];
+    if (!item.tags?.length) return byCategory;
+    const wanted = new Set(item.tags.map((t) => t.toLowerCase()));
+    const matched = new Set(byCategory.map((a) => a.appId));
+    const byTag = apps.filter(
+      (a) =>
+        !matched.has(a.appId) &&
+        (a.tags ?? []).some((t) => wanted.has(String(t).toLowerCase())),
+    );
+    return [...byCategory, ...byTag];
   }
 
   private async buildNavigation(): Promise<

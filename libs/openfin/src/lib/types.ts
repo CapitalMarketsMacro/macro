@@ -109,16 +109,17 @@ export interface AppsConfig {
 export type MacroApp = App & { category?: string };
 
 /**
- * One navigation item rendered as an AppGrid. Apps are matched by `tags` when present
- * (any-tag match — lets one app appear under both its business-area category AND a
- * cross-cutting item like Showcase or LOB Apps), else by `category`.
+ * One navigation item rendered as an AppGrid. Apps match on `category` OR any of the
+ * item's `tags` (case-insensitive) — LOB apps published via /store-apps can carry
+ * either, so a business-area item like FX shows category "FX" apps plus apps tagged
+ * "fx".
  */
 export interface StorefrontNavItemConfig {
   id: string;
   title: string;
   /** Business-area key matched against each app's `category`; `'*'` = all apps. */
   category?: string;
-  /** Tag filter — the item shows apps carrying ANY of these tags. Wins over `category`. */
+  /** Tag filter — ALSO shows apps carrying ANY of these tags (case-insensitive). */
   tags?: string[];
 }
 
@@ -193,4 +194,3 @@ export interface EntitlementsConfig {
   /** appId -> required entitlements (any-of). Missing/empty entry = launchable by everyone. */
   apps: Record<string, string[]>;
 }
-

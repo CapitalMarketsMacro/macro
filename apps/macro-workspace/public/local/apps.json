@@ -22,7 +22,7 @@
         "openfin",
         "showcase"
       ],
-      "category": "Workspace"
+      "category": "Showcase"
     },
     {
       "appId": "macro-workspace-view2",
@@ -46,7 +46,7 @@
         "openfin",
         "showcase"
       ],
-      "category": "Workspace"
+      "category": "Showcase"
     },
     {
       "appId": "macro-angular-view",
@@ -71,7 +71,7 @@
         "market-data",
         "showcase"
       ],
-      "category": "Markets"
+      "category": "Showcase"
     },
     {
       "appId": "macro-angular-fx-market-data",
@@ -101,7 +101,7 @@
         "market-data",
         "showcase"
       ],
-      "category": "FX"
+      "category": "Showcase"
     },
     {
       "appId": "macro-angular-treasury-microstructure",
@@ -131,7 +131,7 @@
         "market-data",
         "showcase"
       ],
-      "category": "Rates"
+      "category": "Showcase"
     },
     {
       "appId": "macro-angular-risk-pnl",
@@ -161,7 +161,7 @@
         "pnl",
         "showcase"
       ],
-      "category": "Risk"
+      "category": "Showcase"
     },
     {
       "appId": "macro-react-view",
@@ -186,7 +186,7 @@
         "market-data",
         "showcase"
       ],
-      "category": "Markets"
+      "category": "Showcase"
     },
     {
       "appId": "macro-react-treasury-market-data",
@@ -216,7 +216,7 @@
         "market-data",
         "showcase"
       ],
-      "category": "Rates"
+      "category": "Showcase"
     },
     {
       "appId": "macro-angular-fdc3-instrument-viewer",
@@ -242,7 +242,7 @@
         "instrument",
         "showcase"
       ],
-      "category": "FX"
+      "category": "Showcase"
     },
     {
       "appId": "macro-react-commodities-dashboard",
@@ -272,7 +272,7 @@
         "market-data",
         "showcase"
       ],
-      "category": "Commodities"
+      "category": "Showcase"
     },
     {
       "appId": "macro-analytics-dashboard",
@@ -297,7 +297,7 @@
         "monitoring",
         "showcase"
       ],
-      "category": "Analytics"
+      "category": "Showcase"
     },
     {
       "appId": "rates-desktop",
@@ -322,7 +322,7 @@
         "fixed-income",
         "showcase"
       ],
-      "category": "Rates"
+      "category": "Showcase"
     },
     {
       "appId": "capital-markets-themes",
@@ -351,7 +351,7 @@
         "figma-make",
         "showcase"
       ],
-      "category": "Design"
+      "category": "Showcase"
     },
     {
       "appId": "prism-blotter",
