@@ -4,6 +4,7 @@ import { URL } from 'url';
 import { FxMarketDataService } from './fx-market-data.service';
 import { TsyMarketDataService } from './tsy-market-data.service';
 import { PrismTableHub } from './prism-table-hub';
+import { WorkspaceStorageApi } from './workspace-storage-api.service';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
@@ -26,14 +27,18 @@ const tsyMarketDataService = new TsyMarketDataService();
 // Prism table hub (plain-WebSocket table protocol: discovery + subscribe + snapshot + updates)
 const prismTableHub = new PrismTableHub();
 
-// Plain-HTTP requests: REST mirror of the Prism tables (snapshot-only), 404 for anything else.
+// Workspace Storage API (phase-1 reference implementation, mounted at /workspace/v1)
+const workspaceStorageApi = new WorkspaceStorageApi();
+
+// Plain-HTTP requests: REST mirror of the Prism tables (snapshot-only) + the Workspace
+// Storage API (disjoint path prefixes), 404 for anything else.
 // A single bad request must never take the whole server down.
 server.on('request', (req, res) => {
   try {
-    if (!prismTableHub.handleRest(req, res)) {
+    if (!prismTableHub.handleRest(req, res) && !workspaceStorageApi.handleRest(req, res)) {
       // CORS on errors too — the browser blotters can't read the message otherwise.
       res.writeHead(404, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-      res.end(JSON.stringify({ error: 'Not found. REST endpoints: /prism/tables, /prism/tables/<name>' }));
+      res.end(JSON.stringify({ error: 'Not found. REST endpoints: /prism/tables, /prism/tables/<name>, /workspace/v1/*' }));
     }
   } catch (error) {
     console.error('HTTP request error:', error);
@@ -209,6 +214,7 @@ server.listen(PORT, () => {
   console.log(`  - Treasury Market Data: ws://localhost:${PORT}/marketData/tsy`);
   console.log(`  - Prism Tables (table protocol): ws://localhost:${PORT}/prism`);
   console.log(`  - Prism Tables (REST snapshots): http://localhost:${PORT}/prism/tables`);
+  console.log(`  - Workspace Storage API (REST): http://localhost:${PORT}/workspace/v1`);
   console.log(`Publishing FX market data for G10 currencies: ${G10_CURRENCIES.join(', ')}`);
   console.log(`Publishing US Treasury market data for various maturities`);
 });

@@ -1,48 +1,128 @@
-import type { Workspace } from '@openfin/workspace-platform';
+import type { Page, Workspace } from '@openfin/workspace-platform';
+import type { DockProviderConfigWithIdentity } from '@openfin/workspace';
 import { Logger } from '@macro/logger';
+import { getWorkspaceStorage } from './storage/storage-context';
+import { WELL_KNOWN_PREFERENCES } from './storage/storage-types';
 
 /**
- * Service that abstracts workspace persistence storage.
- * Default implementation uses localStorage. Can be replaced with a REST API
- * implementation without changing callers.
+ * Facade over the active {@link WorkspaceStorageClient} — the single seam every
+ * platform service persists through. The backend (this machine's localStorage, or the
+ * per-environment Workspace Storage REST service) is selected at boot by
+ * `initWorkspaceStorage()` from the settings.json `storage` block; callers never know
+ * which one is active.
+ *
+ * Error posture: reads degrade (log + empty result) so a storage outage can never
+ * brick platform boot; writes THROW so a failed save is never silently reported as
+ * success — the platform surfaces the failure to the user.
  */
 export class WorkspaceStorageService {
   private readonly logger = Logger.getLogger('WorkspaceStorageService');
-  private readonly STORAGE_KEY = 'workspace-platform-workspaces';
-  private readonly LAST_SAVED_KEY = 'workspace-platform-last-saved';
+
+  // ── workspaces ──
 
   async getWorkspaces(): Promise<Workspace[]> {
-    if (typeof localStorage === 'undefined') return []; // graceful no-op outside the browser
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      return await getWorkspaceStorage().getWorkspaces();
     } catch (error) {
       this.logger.error('Failed to get workspaces from storage', { error });
       return [];
     }
   }
 
-  async saveWorkspaces(workspaces: Workspace[]): Promise<void> {
-    if (typeof localStorage === 'undefined') return;
+  async getWorkspace(workspaceId: string): Promise<Workspace | undefined> {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(workspaces));
+      return await getWorkspaceStorage().getWorkspace(workspaceId);
     } catch (error) {
-      this.logger.error('Failed to save workspaces to storage', { error });
+      this.logger.error('Failed to get workspace from storage', { workspaceId, error });
+      return undefined;
     }
   }
 
+  async saveWorkspace(workspace: Workspace): Promise<void> {
+    await getWorkspaceStorage().saveWorkspace(workspace);
+  }
+
+  async deleteWorkspace(workspaceId: string): Promise<void> {
+    await getWorkspaceStorage().deleteWorkspace(workspaceId);
+  }
+
+  // ── pages ──
+
+  async getPages(): Promise<Page[]> {
+    try {
+      return await getWorkspaceStorage().getPages();
+    } catch (error) {
+      this.logger.error('Failed to get pages from storage', { error });
+      return [];
+    }
+  }
+
+  async getPage(pageId: string): Promise<Page | undefined> {
+    try {
+      return await getWorkspaceStorage().getPage(pageId);
+    } catch (error) {
+      this.logger.error('Failed to get page from storage', { pageId, error });
+      return undefined;
+    }
+  }
+
+  async savePage(page: Page): Promise<void> {
+    await getWorkspaceStorage().savePage(page);
+  }
+
+  async deletePage(pageId: string): Promise<void> {
+    await getWorkspaceStorage().deletePage(pageId);
+  }
+
+  // ── dock customization ──
+
+  async getDockConfig(dockProviderId: string): Promise<DockProviderConfigWithIdentity | undefined> {
+    try {
+      return await getWorkspaceStorage().getDockConfig(dockProviderId);
+    } catch (error) {
+      this.logger.error('Failed to get dock config from storage', { dockProviderId, error });
+      return undefined;
+    }
+  }
+
+  async saveDockConfig(config: DockProviderConfigWithIdentity): Promise<void> {
+    await getWorkspaceStorage().saveDockConfig(config);
+  }
+
+  // ── preferences ──
+
+  async getPreference<T>(key: string): Promise<T | undefined> {
+    try {
+      return await getWorkspaceStorage().getPreference<T>(key);
+    } catch (error) {
+      this.logger.error('Failed to get preference from storage', { key, error });
+      return undefined;
+    }
+  }
+
+  async setPreference<T>(key: string, value: T): Promise<void> {
+    await getWorkspaceStorage().setPreference(key, value);
+  }
+
+  // ── last-saved workspace pointer (a well-known preference; failures degrade) ──
+
   async getLastSavedWorkspaceId(): Promise<string | null> {
-    if (typeof localStorage === 'undefined') return null;
-    return localStorage.getItem(this.LAST_SAVED_KEY);
+    return (await this.getPreference<string>(WELL_KNOWN_PREFERENCES.lastSavedWorkspace)) ?? null;
   }
 
   async setLastSavedWorkspaceId(id: string): Promise<void> {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(this.LAST_SAVED_KEY, id);
+    try {
+      await getWorkspaceStorage().setPreference(WELL_KNOWN_PREFERENCES.lastSavedWorkspace, id);
+    } catch (error) {
+      this.logger.error('Failed to save last-saved workspace id', { id, error });
+    }
   }
 
   async removeLastSavedWorkspaceId(): Promise<void> {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.removeItem(this.LAST_SAVED_KEY);
+    try {
+      await getWorkspaceStorage().deletePreference(WELL_KNOWN_PREFERENCES.lastSavedWorkspace);
+    } catch (error) {
+      this.logger.error('Failed to clear last-saved workspace id', { error });
+    }
   }
 }

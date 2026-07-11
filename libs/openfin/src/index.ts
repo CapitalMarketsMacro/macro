@@ -39,6 +39,37 @@ export { DockConfigService as BaseDockConfigService } from './lib/dock-config.se
 export { SnapConfigService as BaseSnapConfigService } from './lib/snap-config.service';
 export { LocalStorageFavoritesStore } from './lib/favorites.service';
 export type { FavoritesStore } from './lib/favorites.service';
+export { hydrateViewTitles, setViewTitle, getViewTitles } from './lib/workspace-override.service';
+
+// Unified Workspace Storage API (local localStorage mode + per-environment REST mode)
+export type {
+  WorkspaceStorageClient,
+  StorageMode,
+  StorageEnvironmentConfig,
+  StorageSettings,
+  ResolvedStorageEnvironment,
+} from './lib/storage/storage-types';
+export { WELL_KNOWN_PREFERENCES } from './lib/storage/storage-types';
+export { LocalStorageWorkspaceStorageClient } from './lib/storage/local-storage-client';
+export { RestWorkspaceStorageClient } from './lib/storage/rest-storage-client';
+export type { RestWorkspaceStorageClientOptions } from './lib/storage/rest-storage-client';
+export {
+  resolveStorageEnvironment,
+  listStorageEnvironments,
+  getSavedStorageEnvironmentChoice,
+  saveStorageEnvironmentChoice,
+  STORAGE_ENV_QUERY_PARAM,
+  STORAGE_ENV_CHOICE_KEY,
+  LOCAL_STORAGE_ENVIRONMENT,
+} from './lib/storage/storage-environment';
+export {
+  initWorkspaceStorage,
+  getWorkspaceStorage,
+  getActiveStorageEnvironment,
+  whenWorkspaceStorageReady,
+  resolveConfigUrl,
+  ClientFavoritesStore,
+} from './lib/storage/storage-context';
 
 // Angular wrappers (for Angular applications) - these are the default exports
 export * from './lib/angular';

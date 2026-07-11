@@ -12,15 +12,27 @@ const _getApps = jest.fn().mockReturnValue([]);
 jest.mock('@macro/openfin', () => {
   class MockWorkspaceService { getStatus$ = _getStatus$; init = _init; quit = _quit; }
   class MockThemeService { syncWithOpenFinTheme = _syncWithOpenFinTheme; stopSyncing = _stopSyncing; }
-  class MockThemePresetService { getAvailablePresets = jest.fn().mockReturnValue([]); getActivePresetId = jest.fn().mockReturnValue('default'); setActivePresetId = jest.fn(); }
+  class MockThemePresetService { getAvailablePresets = jest.fn().mockReturnValue([]); getActivePresetId = jest.fn().mockReturnValue('default'); setActivePresetId = jest.fn().mockResolvedValue(undefined); }
   class MockNotificationsService { info = jest.fn(); success = jest.fn(); warning = jest.fn(); error = jest.fn(); critical = jest.fn(); }
-  class MockSettingsService { getApps = _getApps; }
+  class MockSettingsService {
+    getApps = _getApps;
+    getManifestSettings = jest.fn().mockResolvedValue({
+      platformSettings: { id: 'p', title: 't', icon: '' },
+      storage: { defaultEnvironment: 'local' },
+    });
+  }
+  const localEnv = { name: 'local', config: { mode: 'localStorage', label: 'Local (this machine)' } };
   return {
     WorkspaceService: MockWorkspaceService,
     ThemeService: MockThemeService,
     ThemePresetService: MockThemePresetService,
     NotificationsService: MockNotificationsService,
     SettingsService: MockSettingsService,
+    LOCAL_STORAGE_ENVIRONMENT: localEnv,
+    STORAGE_ENV_QUERY_PARAM: 'storageEnv',
+    getActiveStorageEnvironment: jest.fn().mockReturnValue(localEnv),
+    listStorageEnvironments: jest.fn().mockReturnValue([localEnv]),
+    saveStorageEnvironmentChoice: jest.fn(),
   };
 });
 
@@ -29,7 +41,7 @@ jest.mock('@macro/logger', () => ({
 }));
 
 import { ProviderComponent } from './provider.component';
-import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService, SettingsService } from '@macro/openfin';
+import { WorkspaceService, ThemeService, ThemePresetService, NotificationsService, SettingsService, saveStorageEnvironmentChoice } from '@macro/openfin';
 
 describe('ProviderComponent', () => {
   let component: ProviderComponent;
@@ -80,6 +92,55 @@ describe('ProviderComponent', () => {
     it('should stop theme syncing', () => {
       component.ngOnDestroy();
       expect(_stopSyncing).toHaveBeenCalled();
+    });
+  });
+
+  describe('applyStorageEnvironment', () => {
+    const devEnv = { name: 'dev', config: { mode: 'rest', baseUrl: 'http://storage.test/workspace/v1' } } as never;
+    const localEnvPick = { name: 'local', config: { mode: 'localStorage' } } as never;
+
+    it('no-ops when re-picking the active environment', async () => {
+      await component.applyStorageEnvironment(localEnvPick);
+      expect(saveStorageEnvironmentChoice).not.toHaveBeenCalled();
+    });
+
+    it('persists a non-default environment choice', async () => {
+      await component.applyStorageEnvironment(devEnv);
+      expect(saveStorageEnvironmentChoice).toHaveBeenCalledWith('dev');
+    });
+
+    it('clears the override when picking the settings default (settings.json stays in charge)', async () => {
+      const settings = TestBed.inject(SettingsService) as unknown as { getManifestSettings: jest.Mock };
+      settings.getManifestSettings.mockResolvedValue({
+        platformSettings: { id: 'p', title: 't', icon: '' },
+        storage: { defaultEnvironment: 'dev' },
+      });
+      await component.applyStorageEnvironment(devEnv);
+      expect(saveStorageEnvironmentChoice).toHaveBeenCalledWith(undefined);
+    });
+
+    it('no-ops when the environment is pinned by an effective ?storageEnv=', async () => {
+      window.history.pushState({}, '', '/?storageEnv=local');
+      try {
+        const fixture = TestBed.createComponent(ProviderComponent);
+        const pinned = fixture.componentInstance;
+        expect(pinned.storageEnvPinned()).toBe(true);
+        await pinned.applyStorageEnvironment(devEnv);
+        expect(saveStorageEnvironmentChoice).not.toHaveBeenCalled();
+      } finally {
+        window.history.pushState({}, '', '/');
+      }
+    });
+
+    it('does not report pinned when the query value did not win resolution', () => {
+      window.history.pushState({}, '', '/?storageEnv=bogus');
+      try {
+        const fixture = TestBed.createComponent(ProviderComponent);
+        // active env (mock) is 'local' ≠ 'bogus' — the rejected pin must not lock the picker
+        expect(fixture.componentInstance.storageEnvPinned()).toBe(false);
+      } finally {
+        window.history.pushState({}, '', '/');
+      }
     });
   });
 

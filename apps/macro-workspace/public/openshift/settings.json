@@ -14,5 +14,26 @@
       "pageTabs": { "enabled": true },
       "viewTabs": { "enabled": true }
     }
+  },
+  "storage": {
+    "defaultEnvironment": "local",
+    "environments": {
+      "local": { "mode": "localStorage", "label": "Local (this machine)" },
+      "dev": {
+        "mode": "rest",
+        "label": "DEV",
+        "baseUrl": "https://{{OPENSHIFT_STORAGE_DEV_HOST}}/workspace/v1"
+      },
+      "uat": {
+        "mode": "rest",
+        "label": "UAT",
+        "baseUrl": "https://{{OPENSHIFT_STORAGE_UAT_HOST}}/workspace/v1"
+      },
+      "prod": {
+        "mode": "rest",
+        "label": "PROD",
+        "baseUrl": "https://{{OPENSHIFT_STORAGE_PROD_HOST}}/workspace/v1"
+      }
+    }
   }
 }

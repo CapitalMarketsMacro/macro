@@ -1,4 +1,5 @@
 import type { App } from '@openfin/workspace';
+import type { StorageSettings } from './storage/storage-types';
 
 export interface Dock3FavoriteEntry {
   type: 'item';
@@ -75,6 +76,11 @@ export interface SettingsResponse {
   platformSettings: PlatformSettings;
   /** Optional Workspace v24 browser options; omit to keep code defaults. */
   browserSettings?: BrowserSettings;
+  /**
+   * Optional unified-storage config: the selectable storage environments
+   * (local / DEV / UAT / PROD service URLs) and which one the platform boots with.
+   */
+  storage?: StorageSettings;
 }
 
 /** Shape of apps.json — the app registry, loaded by AppsService. */

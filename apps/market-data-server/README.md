@@ -9,6 +9,8 @@ This Node.js application hosts WebSocket servers that stream:
 2. **US Treasury Market Data** for various maturities
 3. **Prism tables** — a JSON *table protocol* endpoint (`/prism`) for the Prism blotters' plain-WebSocket source
 
+It also hosts the **Workspace Storage API (reference)** — a REST service at `/workspace/v1` used to verify the OpenFin workspace storage client before the phase-2 Java service exists.
+
 ### FX Market Data - G10 Currencies:
 - USD (US Dollar)
 - EUR (Euro)
@@ -68,6 +70,46 @@ Treasury futures** (ZT/Z3N/ZF/ZN/TN/TWE/ZB/UB, Sep-26):
 | --- | --- | --- | --- |
 | `ust_market_data` | snapshot-update | `symbol` | Top-of-book: bid/ask/mid/last (decimals + dealer 32nds displays), sizes, yields (cash), open interest (futures) — ticks every 500ms |
 | `ust_trades` | append | `tradeId` | Trade prints: side, price, size ($MM cash / contracts futures), yield, venue (BrokerTec / Dealerweb / Fenics UST / CME Globex), counterparty — a print every 0.6–1.8s, occasional bursts as arrays |
+
+## Workspace Storage API (reference)
+
+Phase-1 **reference implementation** of the Macro Workspace Storage contract
+(spec: `docs/api/workspace-storage-api.openapi.yaml`; client:
+`RestWorkspaceStorageClient` in `@macro/openfin`). Phase 2 replaces it with a Java
+Spring Boot + MongoDB service speaking the same wire contract.
+
+**Base URL**: `http://localhost:3000/workspace/v1`
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /health` | Liveness: `{ status: 'ok', service, uptimeSec, users, persistedTo }` (no user scope) |
+| `GET /workspaces?query=` | List workspaces; optional case-insensitive substring filter on title / workspaceId |
+| `GET /workspaces/{id}` | One workspace (200 + `ETag`) or 404 |
+| `PUT /workspaces/{id}` | Save workspace — 201 created / 200 replaced; 400 when body `workspaceId` ≠ path id |
+| `DELETE /workspaces/{id}` | 204, or 404 when absent |
+| `GET /pages` · `GET/PUT/DELETE /pages/{id}` | Same semantics, keyed by `pageId` |
+| `GET/PUT/DELETE /dock/{dockProviderId}` | Dock provider config, keyed by `id` |
+| `GET /favorites` | `{ appIds: string[] }` — empty list when never saved (never 404) |
+| `PUT /favorites` | Replace the favorites list — 200 |
+| `GET /preferences` | All preferences as `[ { key, value } ]` |
+| `GET/PUT/DELETE /preferences/{key}` | One preference: PUT body `{ value: <any JSON> }` → 201/200 |
+| `GET /config/{name}` | Platform config JSON (not user-scoped): `settings` \| `apps` \| `dock-config` \| `storefront-config` \| `snap-config` \| `entitlements` |
+| `PUT /config/{name}` | 501 — admin operation reserved for phase 2 |
+
+Conventions: errors are `application/problem+json` (RFC 9457); single-resource GETs
+carry an `ETag`, and an optional `If-Match` on PUT/DELETE returns 412 on mismatch;
+CORS is wide open (the OpenFin workspace runs on another localhost port).
+
+**User scoping**: every user-scoped route reads the `X-User-Id` request header
+(default `anonymous`). This is an interim scheme — phase 2 replaces it with a real
+identity token (OAuth2/JWT).
+
+**Environment variables**:
+
+- `WORKSPACE_STORE_FILE` — JSON persistence file for the in-memory store (debounced
+  atomic writes; survives restarts). Default: `<cwd>/.workspace-store.json` (gitignored).
+- `WORKSPACE_CONFIG_DIR` — directory the `/config/{name}` files are served from
+  (read fresh per request). Default: `<cwd>/apps/macro-workspace/public/local`.
 
 ## Usage
 
@@ -292,6 +334,7 @@ The server will respond with:
 - **main.ts**: WebSocket server setup and connection handling for both FX and Treasury endpoints
 - **fx-market-data.service.ts**: Service that generates realistic FX market data with random walk price movements
 - **tsy-market-data.service.ts**: Service that generates realistic US Treasury market data with prices, yields, duration, and convexity
+- **workspace-storage-api.service.ts**: Reference Workspace Storage API (`/workspace/v1`) — per-user in-memory store with debounced JSON-file persistence
 
 ## FX Currency Pairs
 

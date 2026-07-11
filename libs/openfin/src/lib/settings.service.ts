@@ -1,9 +1,13 @@
+import { resolveEnvConfigPath } from './config-path';
 import type { SettingsResponse } from './types';
 
 /**
  * Settings service — loads the platform manifest settings (`settings.json` →
- * `platformSettings`). The app registry, dock, and snap configs now live in their own
- * files/services (AppsService, DockConfigService, SnapConfigService).
+ * `platformSettings` + `browserSettings` + `storage`). The app registry, dock, and
+ * snap configs live in their own files/services (AppsService, DockConfigService,
+ * SnapConfigService). settings.json is bootstrap config: it always loads from the
+ * static per-env folder (`?env=` → /local/ or /openshift/), never from the storage
+ * API — it is the file that DEFINES the storage environments.
  */
 export class SettingsService {
   private settings: SettingsResponse | null = null;
@@ -16,21 +20,9 @@ export class SettingsService {
   }
 
   async getManifestSettings(): Promise<SettingsResponse> {
-    const settingsPath = this.resolveSettingsPath();
-    this.settings = await this.httpClient.get<SettingsResponse>(settingsPath);
-    return this.settings;
-  }
-
-  /**
-   * Resolve the settings.json path based on how the platform was launched
-   * (`?env=openshift` -> /openshift/, else /local/).
-   */
-  private resolveSettingsPath(): string {
-    if (typeof window !== 'undefined') {
-      const env = new URLSearchParams(window.location.search).get('env');
-      if (env === 'openshift') return '/openshift/settings.json';
-      if (env === 'local') return '/local/settings.json';
+    if (!this.settings) {
+      this.settings = await this.httpClient.get<SettingsResponse>(resolveEnvConfigPath('settings.json'));
     }
-    return '/local/settings.json';
+    return this.settings;
   }
 }

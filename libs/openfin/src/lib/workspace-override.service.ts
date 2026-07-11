@@ -2,17 +2,23 @@ import type OpenFin from '@openfin/core';
 import type {
   AnalyticsEvent,
   ApplyWorkspacePayload,
+  CreateSavedPageRequest,
   CreateSavedWorkspaceRequest,
+  Page,
+  UpdateSavedPageRequest,
   UpdateSavedWorkspaceRequest,
   Workspace,
   WorkspacePlatformOverrideCallback,
   WorkspacePlatformProvider,
 } from '@openfin/workspace-platform';
+import type { DockProviderConfigWithIdentity } from '@openfin/workspace';
 import { ColorSchemeOptionType } from '@openfin/workspace-platform';
 import { Logger } from '@macro/logger';
 import { WorkspaceStorageService } from './workspace-storage.service';
 import { SnapService } from './snap.service';
 import { getAnalyticsNats } from './analytics-nats.service';
+import { getWorkspaceStorage } from './storage/storage-context';
+import { WELL_KNOWN_PREFERENCES } from './storage/storage-types';
 
 /**
  * Workspace override service for customizing workspace platform behavior
@@ -25,15 +31,13 @@ import { getAnalyticsNats } from './analytics-nats.service';
  * - handleAnalytics: Analytics event handling
  * - getSavedWorkspaces/getSavedWorkspacesMetadata/getSavedWorkspace: Workspace storage
  * - createSavedWorkspace/updateSavedWorkspace/deleteSavedWorkspace: Workspace CRUD
+ * - getSavedPages/getSavedPage/createSavedPage/updateSavedPage/deleteSavedPage: Page storage
+ *   (unified storage backend, with one-time migration from the platform default storage)
+ * - getDockProviderConfig/saveDockProviderConfig: Dock customization storage
  * - applyWorkspace: Workspace application
  *
  * Additional methods that can be overridden (not yet implemented):
- * - Page Management:
- *   - getSavedPages(query?: string): Promise<Page[]>
- *   - getSavedPage(id: string): Promise<Page | undefined>
- *   - createSavedPage(req: CreateSavedPageRequest): Promise<void>
- *   - updateSavedPage(req: UpdateSavedPageRequest): Promise<void>
- *   - deleteSavedPage(id: string): Promise<void>
+ * - Page Management (beyond storage):
  *   - handlePageChanges(payload: HandlePageChangesPayload): Promise<ModifiedPageState>
  *   - copyPage(payload: CopyPagePayload): Promise<Page>
  *   - setActivePage(payload: SetActivePageForWindowPayload): Promise<void>
@@ -58,10 +62,6 @@ import { getAnalyticsNats } from './analytics-nats.service';
  *   - getUserDecisionForBeforeUnload(payload: ViewsPreventingUnloadPayload): Promise<OpenFin.BeforeUnloadUserDecision>
  *   - handleSaveModalOnPageClose(payload: HandleSaveModalOnPageClosePayload): Promise<SaveModalOnPageCloseResult>
  *
- * - Dock Provider:
- *   - getDockProviderConfig(id: string): Promise<DockProviderConfigWithIdentity | undefined>
- *   - saveDockProviderConfig(config: DockProviderConfigWithIdentity): Promise<void>
- *
  * - Localization:
  *   - getLanguage(): Promise<Locale>
  *   - setLanguage(locale: Locale): Promise<void>
@@ -73,7 +73,19 @@ export const THEME_CHANGED_TOPIC = 'workspace:theme-changed';
 
 const VIEW_TITLES_KEY = 'macro:view-titles';
 
-function loadViewTitles(): Record<string, string> {
+const viewTitlesLogger = Logger.getLogger('ViewTitles');
+
+/**
+ * View titles are read synchronously deep inside snapshot capture/patch paths, so they
+ * live in an in-memory cache backed by the unified storage client: hydrated at boot,
+ * written through (fire-and-forget) on every change. The legacy localStorage key is the
+ * synchronous fallback for hosts that never hydrate (plain browser tabs, tests) — in
+ * "local" storage mode it is also exactly where the client persists the preference.
+ */
+let viewTitlesCache: Record<string, string> | null = null;
+let viewTitlesHydrateFailed = false;
+
+function readLegacyViewTitles(): Record<string, string> {
   try {
     // Gracefully no-op outside the browser (e.g. Node-environment tests) — repo convention.
     if (typeof localStorage === 'undefined') return {};
@@ -81,21 +93,60 @@ function loadViewTitles(): Record<string, string> {
   } catch { return {}; }
 }
 
-function saveViewTitles(titles: Record<string, string>): void {
-  if (typeof localStorage === 'undefined') return;
-  localStorage.setItem(VIEW_TITLES_KEY, JSON.stringify(titles));
+/**
+ * Load custom view titles from the active storage backend into the sync cache.
+ * Called once during platform boot, after `initWorkspaceStorage()`. Titles set before
+ * hydration (unlikely, but possible during a slow boot) win over stored ones.
+ *
+ * On failure the cache is seeded EMPTY (not from the machine-local legacy key): in
+ * REST mode the legacy titles belong to a different backend, and a later persist of a
+ * legacy-seeded map would overwrite the environment's stored titles. The failure is
+ * remembered so the next persist merge-reads the backend first.
+ */
+export async function hydrateViewTitles(): Promise<void> {
+  try {
+    const stored = await getWorkspaceStorage().getPreference<Record<string, string>>(WELL_KNOWN_PREFERENCES.viewTitles);
+    viewTitlesCache = { ...(stored ?? {}), ...(viewTitlesCache ?? {}) };
+    viewTitlesHydrateFailed = false;
+  } catch (error) {
+    viewTitlesLogger.warn('Failed to hydrate view titles from storage — titles unavailable until storage recovers', error);
+    viewTitlesHydrateFailed = true;
+    viewTitlesCache ??= {};
+  }
 }
 
 /** Called by the rename-view action to register a custom title. */
 export function setViewTitle(viewName: string, title: string): void {
-  const titles = loadViewTitles();
-  titles[viewName] = title;
-  saveViewTitles(titles);
+  const titles = { ...(viewTitlesCache ?? readLegacyViewTitles()), [viewName]: title };
+  viewTitlesCache = titles;
+  void persistViewTitles();
+}
+
+async function persistViewTitles(): Promise<void> {
+  try {
+    if (viewTitlesHydrateFailed) {
+      // Boot hydration failed, so the cache may be missing the backend's titles —
+      // merge-read before writing the full map, or a recovered backend gets wiped.
+      const stored = await getWorkspaceStorage().getPreference<Record<string, string>>(WELL_KNOWN_PREFERENCES.viewTitles);
+      viewTitlesCache = { ...(stored ?? {}), ...(viewTitlesCache ?? {}) };
+      viewTitlesHydrateFailed = false;
+    }
+    await getWorkspaceStorage().setPreference(WELL_KNOWN_PREFERENCES.viewTitles, viewTitlesCache ?? {});
+  } catch (error) {
+    viewTitlesLogger.error('Failed to persist view titles', error);
+  }
 }
 
 /** Get all custom view titles. */
 export function getViewTitles(): Record<string, string> {
-  return loadViewTitles();
+  viewTitlesCache ??= readLegacyViewTitles();
+  return viewTitlesCache;
+}
+
+/** Test-only: drop the in-memory view-title cache. */
+export function resetViewTitlesForTests(): void {
+  viewTitlesCache = null;
+  viewTitlesHydrateFailed = false;
 }
 
 export class WorkspaceOverrideService {
@@ -146,6 +197,50 @@ export class WorkspaceOverrideService {
         } catch (err) {
           logger.warn('Failed to flush view states before workspace save', err);
         }
+      }
+
+      /**
+       * One-time import of pages from the platform's DEFAULT storage (per-machine
+       * IndexedDB) into the unified backend, so pages saved before this override
+       * existed keep appearing. Guarded per boot AND by a persisted flag per backend,
+       * so it never re-imports pages the user has since deleted. The flag is read via
+       * the RAW client (which throws) rather than the degrading facade: an unreadable
+       * flag means the migration state is UNKNOWN, and importing then could resurrect
+       * pages the user deleted — so the attempt aborts instead.
+       */
+      const PAGES_MIGRATED_PREF = 'pages-migrated';
+      let pagesMigrationChecked = false;
+      async function migrateLegacyPagesOnce(loadDefaultPages: () => Promise<Page[] | undefined>): Promise<Page[] | null> {
+        if (pagesMigrationChecked) return null;
+        pagesMigrationChecked = true;
+        try {
+          const alreadyMigrated = await getWorkspaceStorage().getPreference<boolean>(PAGES_MIGRATED_PREF);
+          if (alreadyMigrated) return null;
+          const legacyPages = (await loadDefaultPages()) ?? [];
+          for (const page of legacyPages) {
+            await storageService.savePage(page);
+          }
+          await storageService.setPreference(PAGES_MIGRATED_PREF, true);
+          if (legacyPages.length > 0) {
+            logger.info(`Migrated ${legacyPages.length} page(s) from platform default storage`);
+          }
+          return legacyPages;
+        } catch (error) {
+          logger.warn('Page migration from platform default storage failed', error);
+          return null;
+        }
+      }
+
+      /**
+       * Any explicit page save marks the backend as past migration: once the user has
+       * written pages of their own, a later empty page list (e.g. after delete-all)
+       * must never re-import stale legacy pages over their intent.
+       */
+      function markPagesMigrated(): void {
+        pagesMigrationChecked = true;
+        storageService
+          .setPreference(PAGES_MIGRATED_PREF, true)
+          .catch((error) => logger.warn('Failed to persist pages-migrated flag', error));
       }
 
       /**
@@ -280,8 +375,7 @@ export class WorkspaceOverrideService {
          */
         async getSavedWorkspace(id: string): Promise<Workspace | undefined> {
           logger.debug('Getting saved workspace', { workspaceId: id });
-          const workspaces = await storageService.getWorkspaces();
-          const workspace = workspaces.find((w) => w.workspaceId === id);
+          const workspace = await storageService.getWorkspace(id);
           if (workspace) {
             logger.info('Found saved workspace', { workspaceId: id, title: workspace.title });
           } else {
@@ -300,40 +394,22 @@ export class WorkspaceOverrideService {
           logger.info('Creating saved workspace', { workspaceId: req.workspace.workspaceId, title: req.workspace.title });
           analyticsNats.publish({ source: 'Platform', type: 'Workspace', action: 'Save',
             value: req.workspace.title, data: { workspaceId: req.workspace.workspaceId } }).catch(() => {});
-          const workspaces = await storageService.getWorkspaces();
-          const existingIndex = workspaces.findIndex((w) => w.workspaceId === req.workspace.workspaceId);
-          if (existingIndex >= 0) {
-            logger.warn('Workspace already exists, updating instead', { workspaceId: req.workspace.workspaceId });
-            workspaces[existingIndex] = req.workspace;
-          } else {
-            workspaces.push(req.workspace);
-          }
-          await storageService.saveWorkspaces(workspaces);
+          await storageService.saveWorkspace(req.workspace);
           await storageService.setLastSavedWorkspaceId(req.workspace.workspaceId);
           logger.info('Workspace created successfully', { workspaceId: req.workspace.workspaceId });
         }
 
         /**
-         * Update an existing workspace in storage.
+         * Update an existing workspace in storage (upsert — a missing id becomes a create).
          * @param req The update workspace request
          */
         async updateSavedWorkspace(req: UpdateSavedWorkspaceRequest): Promise<void> {
           await flushViewStatesAndRecapture(req.workspace);
           patchWorkspaceWithTitles(req.workspace);
           logger.info('Updating saved workspace', { workspaceId: req.workspaceId, title: req.workspace.title });
-          const workspaces = await storageService.getWorkspaces();
-          const index = workspaces.findIndex((w) => w.workspaceId === req.workspaceId);
-          if (index >= 0) {
-            workspaces[index] = req.workspace;
-            await storageService.saveWorkspaces(workspaces);
-            await storageService.setLastSavedWorkspaceId(req.workspaceId);
-            logger.info('Workspace updated successfully', { workspaceId: req.workspaceId });
-          } else {
-            logger.warn('Workspace not found for update, creating new one', { workspaceId: req.workspaceId });
-            workspaces.push(req.workspace);
-            await storageService.saveWorkspaces(workspaces);
-            await storageService.setLastSavedWorkspaceId(req.workspaceId);
-          }
+          await storageService.saveWorkspace(req.workspace);
+          await storageService.setLastSavedWorkspaceId(req.workspaceId);
+          logger.info('Workspace updated successfully', { workspaceId: req.workspaceId });
         }
 
         /**
@@ -344,19 +420,76 @@ export class WorkspaceOverrideService {
           logger.info('Deleting saved workspace', { workspaceId: id });
           analyticsNats.publish({ source: 'Platform', type: 'Workspace', action: 'Delete',
             data: { workspaceId: id } }).catch(() => {});
-          const workspaces = await storageService.getWorkspaces();
-          const filtered = workspaces.filter((w) => w.workspaceId !== id);
-          if (filtered.length < workspaces.length) {
-            await storageService.saveWorkspaces(filtered);
-            const lastSavedId = await storageService.getLastSavedWorkspaceId();
-            if (lastSavedId === id) {
-              await storageService.removeLastSavedWorkspaceId();
-              logger.info('Removed last saved workspace reference', { workspaceId: id });
-            }
-            logger.info('Workspace deleted successfully', { workspaceId: id });
-          } else {
-            logger.warn('Workspace not found for deletion', { workspaceId: id });
+          await storageService.deleteWorkspace(id);
+          const lastSavedId = await storageService.getLastSavedWorkspaceId();
+          if (lastSavedId === id) {
+            await storageService.removeLastSavedWorkspaceId();
+            logger.info('Removed last saved workspace reference', { workspaceId: id });
           }
+          logger.info('Workspace deleted successfully', { workspaceId: id });
+        }
+
+        /**
+         * Get all saved pages from unified storage (browser "Save Page"). Previously the
+         * platform's DEFAULT storage (per-machine IndexedDB) held these; on first read of
+         * an empty backend, any legacy default-storage pages are migrated in once.
+         */
+        async getSavedPages(query?: string): Promise<Page[]> {
+          try {
+            let pages = await storageService.getPages();
+            if (pages.length === 0) {
+              const migrated = await migrateLegacyPagesOnce(() => super.getSavedPages());
+              if (migrated) pages = migrated;
+            }
+            if (!query) return pages;
+            const lowerQuery = query.toLowerCase();
+            return pages.filter(
+              (page) => page.title.toLowerCase().includes(lowerQuery) || page.pageId.toLowerCase().includes(lowerQuery),
+            );
+          } catch (error) {
+            logger.error('Failed to get saved pages', error);
+            return [];
+          }
+        }
+
+        async getSavedPage(id: string): Promise<Page | undefined> {
+          const page = await storageService.getPage(id);
+          if (page) return page;
+          // Cover the not-yet-migrated case (backend empty, legacy page opened directly).
+          await this.getSavedPages();
+          return storageService.getPage(id);
+        }
+
+        async createSavedPage(req: CreateSavedPageRequest): Promise<void> {
+          logger.info('Creating saved page', { pageId: req.page.pageId, title: req.page.title });
+          await storageService.savePage(req.page);
+          markPagesMigrated();
+        }
+
+        async updateSavedPage(req: UpdateSavedPageRequest): Promise<void> {
+          logger.info('Updating saved page', { pageId: req.pageId, title: req.page.title });
+          await storageService.savePage(req.page);
+          markPagesMigrated();
+        }
+
+        async deleteSavedPage(id: string): Promise<void> {
+          logger.info('Deleting saved page', { pageId: id });
+          await storageService.deletePage(id);
+        }
+
+        /**
+         * Dock customization (user-arranged dock) from unified storage; falls back to the
+         * platform default storage so a pre-migration customization still applies.
+         */
+        async getDockProviderConfig(id: string): Promise<DockProviderConfigWithIdentity | undefined> {
+          const stored = await storageService.getDockConfig(id);
+          if (stored) return stored;
+          return super.getDockProviderConfig(id);
+        }
+
+        async saveDockProviderConfig(config: DockProviderConfigWithIdentity): Promise<void> {
+          logger.info('Saving dock provider config', { dockProviderId: config.id });
+          await storageService.saveDockConfig(config);
         }
 
         /**

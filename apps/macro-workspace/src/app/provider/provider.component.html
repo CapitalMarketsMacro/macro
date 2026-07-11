@@ -71,9 +71,33 @@
         <div class="settings-label">Theme</div>
         <div class="pill-row">
           @for (preset of presets; track preset.id) {
-            <button class="pill" [class.active]="preset.id === activePresetId"
+            <button class="pill" [class.active]="preset.id === activePresetId()"
               (click)="applyPreset(preset)">{{ preset.label }}</button>
           }
+        </div>
+      </div>
+
+      <!-- Storage environment (unified Workspace Storage API) -->
+      <div class="settings-group">
+        <div class="settings-label">
+          Storage
+          @if (storageEnvPinned()) {
+            <span class="settings-hint">(pinned by ?storageEnv=)</span>
+          }
+        </div>
+        <div class="pill-row">
+          @for (env of storageEnvironments(); track env.name) {
+            <button class="pill" [class.active]="env.name === activeStorageEnv().name"
+              [disabled]="storageEnvPinned()"
+              (click)="applyStorageEnvironment(env)"
+              [title]="env.config.mode === 'rest' ? (env.config.baseUrl ?? '') : 'Browser localStorage on this machine'">
+              {{ env.config.label ?? env.name }}</button>
+          }
+        </div>
+        <div class="settings-hint">
+          {{ activeStorageEnv().config.mode === 'rest'
+            ? 'Service: ' + activeStorageEnv().config.baseUrl
+            : 'Workspaces, pages, dock & favorites stay on this machine' }}
         </div>
       </div>
 
