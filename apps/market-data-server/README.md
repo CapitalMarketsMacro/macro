@@ -111,6 +111,13 @@ identity token (OAuth2/JWT).
 - `WORKSPACE_CONFIG_DIR` — directory the `/config/{name}` files are served from
   (read fresh per request). Default: `<cwd>/apps/macro-workspace/public/local`.
 
+**Postman**: import `docs/api/workspace-storage-api.postman_collection.json` —
+covers every endpoint plus scenario flows (ETag/If-Match 412, per-user isolation)
+with assertions on each request. Variables: `baseUrl` (defaults to this server),
+`userId` (the `X-User-Id` value). Run top-to-bottom (Collection Runner or
+`npx newman run docs/api/workspace-storage-api.postman_collection.json`) — later
+requests reuse ETags captured by earlier ones.
+
 ## Usage
 
 ### Start the server
