@@ -31,13 +31,14 @@ The view manifest (\`.fin.json\`) must include:
 ## File: \`${kebab}.component.ts\`
 
 \`\`\`typescript
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import { ContextService, ChannelService } from '@macro/openfin';
 import { Logger } from '@macro/logger';
 
 @Component({
   selector: 'app-${kebab}',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
   template: \\\`<!-- your template -->\\\`,
 })

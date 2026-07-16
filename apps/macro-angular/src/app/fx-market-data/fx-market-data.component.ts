@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Logger } from '@macro/logger';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import type { ColumnFormatMap } from '@macro/macro-grid-format';
@@ -23,6 +23,7 @@ interface CurrencyPair {
   templateUrl: './fx-market-data.component.html',
   styleUrl: './fx-market-data.component.css',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [MacroAngularGrid],
 })
 export class FxMarketDataComponent implements OnInit, AfterViewInit, OnDestroy {

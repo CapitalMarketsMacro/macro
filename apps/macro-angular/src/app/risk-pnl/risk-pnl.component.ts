@@ -1,4 +1,4 @@
-import { Component, ViewChild, AfterViewInit, OnDestroy, inject } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, OnDestroy, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Logger } from '@macro/logger';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import { ViewStateService } from '@macro/openfin';
@@ -47,6 +47,7 @@ const round0 = (n: number) => Math.round(n);
   templateUrl: './risk-pnl.component.html',
   styleUrl: './risk-pnl.component.css',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [MacroAngularGrid],
 })
 export class RiskPnlComponent implements AfterViewInit, OnDestroy {

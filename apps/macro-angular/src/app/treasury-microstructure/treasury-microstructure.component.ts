@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy, inject, signal, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, PLATFORM_ID, ChangeDetectionStrategy, DOCUMENT } from '@angular/core';
 import { Logger } from '@macro/logger';
 import { AgCharts } from 'ag-charts-angular';
 import type { AgCartesianChartOptions } from 'ag-charts-types';
-import { isPlatformBrowser, DOCUMENT } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import clone from "clone";
 
 
@@ -19,6 +19,7 @@ interface MicrostructureDataPoint {
   templateUrl: './treasury-microstructure.component.html',
   styleUrl: './treasury-microstructure.component.css',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [AgCharts],
 })
 export class TreasuryMicrostructureComponent implements OnInit, OnDestroy {

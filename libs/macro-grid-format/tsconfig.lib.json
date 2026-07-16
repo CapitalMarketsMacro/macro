@@ -16,5 +16,8 @@
     "src/lib/angular/**/*.ts",
     "src/lib/react/**/*.ts",
     "src/lib/react/**/*.tsx"
-  ]
+  ],
+  "angularCompilerOptions": {
+    "strictTemplates": false
+  }
 }

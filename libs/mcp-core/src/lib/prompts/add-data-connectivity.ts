@@ -48,7 +48,7 @@ function generateAngularDataConnectivity(
 ## File: \`${kebab}.component.ts\`
 
 \`\`\`typescript
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import { ColDef, GetRowIdParams } from 'ag-grid-community';
 import { ConflationSubject } from '@macro/utils';
@@ -58,6 +58,7 @@ ${transportSetup.imports}
 
 @Component({
   selector: 'app-${kebab}',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
   imports: [MacroAngularGrid],
   template: \\\`

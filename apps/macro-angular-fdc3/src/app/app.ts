@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Logger, LogLevel } from '@macro/logger';
 import { ThemeService } from '@macro/macro-design/angular';
@@ -8,6 +8,7 @@ import { ThemeService } from '@macro/macro-design/angular';
   templateUrl: './app.html',
   styleUrl: './app.css',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterOutlet],
 })
 export class App implements OnInit {

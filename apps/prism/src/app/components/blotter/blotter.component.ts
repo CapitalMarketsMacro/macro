@@ -1,4 +1,4 @@
-import { Component, OnDestroy, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { Component, OnDestroy, computed, effect, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
@@ -41,6 +41,7 @@ type Row = Record<string, unknown>;
   standalone: true,
   imports: [RouterLink, FormsModule, MacroAngularGrid, Button, Tag, SelectButton, Message, Popover, InputText, AdHocSourceDialogComponent],
   templateUrl: './blotter.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './blotter.component.css',
 })
 export class BlotterComponent implements OnDestroy {

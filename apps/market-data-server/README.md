@@ -256,11 +256,14 @@ The server will respond with:
 
 ## Configuration
 
-The server runs on port 3000 by default. You can change this by setting the `PORT` environment variable:
+The server runs on port 3000 by default. You can change this by setting the `MDS_PORT` environment variable:
 
 ```bash
-PORT=8080 nx serve market-data-server
+MDS_PORT=8080 nx serve market-data-server
 ```
+
+> `PORT` is still honored as a fallback, but prefer `MDS_PORT`: Angular CLI 22's dev server
+> also picks up a bare `PORT` variable and would override the fixed app ports (4200–4206).
 
 ### US Treasury Market Data
 

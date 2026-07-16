@@ -53,7 +53,7 @@ const TECH_STACK_DOC = `# Technology Stack
 
 | Layer | Angular Apps | React Apps |
 |-------|-------------|------------|
-| Framework | Angular 21 (standalone) | React 19 + Vite |
+| Framework | Angular 22 (standalone) | React 19 + Vite |
 | UI Components | PrimeNG (Aura theme) | Shadcn UI + PrimeReact |
 | CSS | PrimeNG styles | Tailwind CSS v4 |
 | Grid | AG Grid Enterprise | AG Grid Enterprise |

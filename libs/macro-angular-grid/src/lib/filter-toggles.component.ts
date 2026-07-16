@@ -7,6 +7,7 @@ import {
   afterNextRender,
   inject,
   viewChild,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import type { IStatusPanelAngularComp } from 'ag-grid-angular';
 import type { GridApi, IStatusPanelParams } from 'ag-grid-community';
@@ -68,6 +69,7 @@ const TOGGLE_STYLES = `
       }
     </span>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [
     TOGGLE_STYLES,
     `
@@ -147,6 +149,7 @@ export class MacroQuickFilterToggleComponent implements IStatusPanelAngularComp 
       <span>Adv Filter</span>
     </label>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [TOGGLE_STYLES],
 })
 export class MacroAdvancedFilterToggleComponent implements IStatusPanelAngularComp, OnDestroy {

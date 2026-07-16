@@ -43,4 +43,13 @@ export default [
     // Override or add rules here
     rules: {},
   },
+  {
+    files: ['**/*.ts'],
+    rules: {
+      // angular-eslint 22 added this to tsRecommended as "error" alongside Angular 22's
+      // OnPush-by-default change; components here intentionally declare Eager to keep
+      // pre-22 behavior. Remove this override when adopting OnPush across the workspace.
+      '@angular-eslint/prefer-on-push-component-change-detection': 'off',
+    },
+  },
 ];

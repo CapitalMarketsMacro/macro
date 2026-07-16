@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { Logger, LogLevel } from '@macro/logger';
 import { Menubar } from 'primeng/menubar';
@@ -11,6 +11,7 @@ import { ThemeService } from '@macro/macro-design/angular';
   templateUrl: './app.html',
   styleUrl: './app.css',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterOutlet, Menubar],
 })
 export class App implements OnInit {

@@ -31,4 +31,13 @@ export default [
     // Override or add rules here
     rules: {},
   },
+  {
+    files: ['**/*.ts'],
+    rules: {
+      // This project spreads baseConfig before the angular presets, so the root
+      // override does not win here. angular-eslint 22 newly errors on non-OnPush
+      // components; this workspace intentionally uses Eager change detection.
+      '@angular-eslint/prefer-on-push-component-change-detection': 'off',
+    },
+  },
 ];

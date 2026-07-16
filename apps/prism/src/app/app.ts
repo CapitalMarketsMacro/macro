@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { Menubar } from 'primeng/menubar';
 import { ButtonModule } from 'primeng/button';
@@ -10,6 +10,7 @@ import { ThemeService } from '@macro/macro-design/angular';
   standalone: true,
   imports: [RouterOutlet, RouterLink, Menubar, ButtonModule],
   templateUrl: './app.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css',
 })
 export class App {

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Logger } from '@macro/logger';
 import { ContextService } from '@macro/openfin';
@@ -24,6 +24,7 @@ interface ContextHistoryEntry {
   templateUrl: './instrument-viewer.component.html',
   styleUrl: './instrument-viewer.component.css',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [CommonModule],
 })
 export class InstrumentViewerComponent implements OnInit, OnDestroy {

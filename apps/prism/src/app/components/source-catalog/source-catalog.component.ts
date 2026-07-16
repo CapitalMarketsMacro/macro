@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -23,6 +23,7 @@ type GroupBy = 'category' | 'transport' | 'mode';
   standalone: true,
   imports: [RouterLink, FormsModule, Card, Tag, Button, SelectButton, AdHocSourceDialogComponent],
   templateUrl: './source-catalog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './source-catalog.component.css',
 })
 export class SourceCatalogComponent {
