@@ -1,6 +1,5 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, DOCUMENT } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { DOCUMENT } from '@angular/common';
 import { signal } from '@angular/core';
 import { Logger } from '@macro/logger';
 import { SettingsService as BaseSettingsService } from '../settings.service';

@@ -70,7 +70,7 @@ Inject the shared \`ThemeService\` (\`@macro/macro-design/angular\`) — it star
 controller and exposes \`isDark()\`/\`toggle()\` as signals. Uses an inline \`template\` so
 there is no separate \`app.html\` to keep in sync (split it out if you prefer).
 \`\`\`typescript
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { Logger } from '@macro/logger';
 import { Menubar } from 'primeng/menubar';
@@ -80,6 +80,7 @@ import { ThemeService } from '@macro/macro-design/angular';
 
 @Component({
   selector: 'app-root',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
   imports: [RouterOutlet, Menubar],
   template: \\\`
@@ -176,12 +177,13 @@ body {
 
 ## 7. Example AG Grid Component
 \`\`\`typescript
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import { ColDef, GetRowIdParams } from 'ag-grid-community';
 
 @Component({
   selector: 'app-my-grid',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
   imports: [MacroAngularGrid],
   template: \\\`

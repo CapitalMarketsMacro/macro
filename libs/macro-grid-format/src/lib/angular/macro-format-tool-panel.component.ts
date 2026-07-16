@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, signal, ChangeDetectionStrategy } from '@angular/core';
 import type { IToolPanelAngularComp } from 'ag-grid-angular';
 import type { IToolPanelParams } from 'ag-grid-community';
 import {
@@ -31,6 +31,7 @@ const SAMPLE_ROW = { symbol: 'EURUSD' };
   selector: 'lib-macro-format-tool-panel',
   standalone: true,
   templateUrl: './macro-format-tool-panel.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './macro-format-tool-panel.component.css',
 })
 export class MacroFormatToolPanelComponent implements IToolPanelAngularComp {

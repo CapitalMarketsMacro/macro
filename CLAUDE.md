@@ -2,17 +2,17 @@
 
 ## Project Overview
 
-NX 23 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace 24.0.19 (HERE Core UI, runtime 44.146.101.5) into a unified platform with shared libraries for real-time market data, enterprise messaging, and FDC3 interoperability.
+NX 23 monorepo for **Capital Markets desktop applications**. Combines Angular 22, React 19, and OpenFin Workspace 24.0.19 (HERE Core UI, runtime 44.146.101.5) into a unified platform with shared libraries for real-time market data, enterprise messaging, and FDC3 interoperability.
 
 ## Quick Reference
 
 | App                    | Port | Framework             | Command                                  |
 | ---------------------- | ---- | --------------------- | ---------------------------------------- |
-| macro-angular          | 4200 | Angular 21 (zoneless) | `npm run start:angular`                  |
+| macro-angular          | 4200 | Angular 22 (zoneless) | `npm run start:angular`                  |
 | macro-react            | 4201 | React 19 + Vite 8     | `npm run start:react`                    |
-| macro-workspace        | 4202 | Angular 21 (zoneless) | `npm run start:workspace`                |
-| macro-angular-fdc3     | 4203 | Angular 21 (zoneless) | `npm run start:fdc3`                     |
-| prism                  | 4204 | Angular 21 (zoneless) | `npm run start:prism`                    |
+| macro-workspace        | 4202 | Angular 22 (zoneless) | `npm run start:workspace`                |
+| macro-angular-fdc3     | 4203 | Angular 22 (zoneless) | `npm run start:fdc3`                     |
+| prism                  | 4204 | Angular 22 (zoneless) | `npm run start:prism`                    |
 | prism-react            | 4205 | React 19 + Vite 8     | `npm run start:prism-react`              |
 | capital-markets-themes | 4206 | React 19 + Vite 8     | `npm run start:capital-markets-themes`   |
 | market-data-server     | 3000 | Node.js WebSocket + REST | `npm run start:market-data-server`    |
@@ -251,6 +251,8 @@ An **nx-mcp** server (NX workspace commands) is additionally provided by the NX 
 
 - Do NOT add `:root` or `.dark` CSS variable blocks in individual apps -- use `@macro/macro-design`
 - ALL Angular apps are **zoneless** -- template-bound state updated from WebSocket/interval/FDC3/AG-Grid-event callbacks MUST be a signal (or pushed imperatively through a component API); a plain field mutation will never repaint
+- Angular 22 defaults components to **OnPush**; every existing component carries an explicit `changeDetection: ChangeDetectionStrategy.Eager` stamp (behavior-preserving migration). New components MUST declare a strategy explicitly -- Eager to match the current posture, or OnPush only with fully signal-driven templates. HttpClient is pinned to the XHR backend via `provideHttpClient(withXhr())` (v22 defaults to fetch); `strictTemplates` is pinned `false` in app tsconfigs
+- Never export a bare `PORT` env var: Angular CLI 22's dev server silently overrides the configured ports (4200-4206) with it, breaking the OpenFin manifests' fixed URLs. market-data-server takes `MDS_PORT` (with `PORT` as legacy fallback)
 - AG Grid Enterprise requires the license; both grid wrappers register `AllEnterpriseModule`
 - The React app uses `@/` path alias (mapped to `src/`) for Shadcn component imports
 - OpenFin APIs (`fin.*`) are only available when running inside the OpenFin runtime; services gracefully no-op in browsers

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, inject, ChangeDetectionStrategy } from '@angular/core';
 import type { IStatusPanelAngularComp } from 'ag-grid-angular';
 import type { GridApi, IStatusPanelParams } from 'ag-grid-community';
 
@@ -35,6 +35,7 @@ const TOGGLE_STYLES = `
       <span>Grouping</span>
     </label>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [TOGGLE_STYLES],
 })
 export class MacroGroupingToggleComponent implements IStatusPanelAngularComp {
@@ -68,6 +69,7 @@ export class MacroGroupingToggleComponent implements IStatusPanelAngularComp {
       <span>Pivot</span>
     </label>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [TOGGLE_STYLES],
 })
 export class MacroPivotToggleComponent implements IStatusPanelAngularComp, OnDestroy {

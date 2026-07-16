@@ -18,7 +18,7 @@ export function registerCreateAngularAppPrompt(server: McpServer): void {
       const port = '4204'; // 4200-4203 are taken by existing apps
 
       const text = `You are creating a new Angular LOB application called "${appName}" for ${businessDomain} in the Macro monorepo.
-It mirrors the current \`apps/macro-angular\` app: Angular 21 (zoneless), standalone
+It mirrors the current \`apps/macro-angular\` app: Angular 22 (zoneless), standalone
 components, PrimeNG (Aura), and the \`@macro/macro-design\` theme system via \`ThemeService\`.
 
 Follow these 10 steps exactly:
@@ -90,7 +90,7 @@ ds === 'websocket' ? `- Use the built-in market-data-server: \`ws://localhost:30
 - Parse incoming JSON messages
 - Use \`ConflationSubject\` from \`@macro/utils\` if needed
 - Pipe to \`grid.updateRows$.next([data])\`` :
-`- Create an Angular service with HttpClient
+`- Create an Angular service with HttpClient (register \`provideHttpClient(withXhr())\` in \`app.config.ts\` — the platform pins the XHR backend; Angular 22 defaults to fetch)
 - Fetch data from your REST API
 - Set grid data via \`grid.setInitialRowData(data)\` or \`grid.updateRows$.next([data])\``}
 

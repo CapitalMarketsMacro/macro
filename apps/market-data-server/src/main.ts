@@ -6,7 +6,9 @@ import { TsyMarketDataService } from './tsy-market-data.service';
 import { PrismTableHub } from './prism-table-hub';
 import { WorkspaceStorageApi } from './workspace-storage-api.service';
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+// Prefer MDS_PORT: Angular CLI 22's dev server also honors a bare PORT env var,
+// so a globally exported PORT would hijack every `nx serve` port (4200-4206).
+const PORT = parseInt(process.env.MDS_PORT ?? process.env.PORT ?? '3000', 10);
 
 // Create HTTP server
 const server = createServer();

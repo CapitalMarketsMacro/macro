@@ -73,7 +73,7 @@ function generateAngularFiles(
   const iface = generateInterface(schema);
   const className = appName.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('') + 'Component';
 
-  const componentTs = `import { Component, OnInit, OnDestroy, ViewChild, signal, inject } from '@angular/core';
+  const componentTs = `import { Component, OnInit, OnDestroy, ViewChild, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import { AmpsTransportService } from '@macro/transports/angular';
 import { ConflationSubject } from '@macro/utils';
@@ -90,6 +90,7 @@ ${iface}
 
 @Component({
   selector: 'app-${appName}',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
   imports: [MacroAngularGrid],
   templateUrl: './${appName}.component.html',
@@ -252,12 +253,13 @@ export const routes: Routes = [
 ];
 `;
 
-  const appTs = `import { Component, OnInit } from '@angular/core';
+  const appTs = `import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { applyDarkMode } from '@macro/macro-design';
 
 @Component({
   selector: 'app-root',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
   imports: [RouterOutlet],
   template: '<router-outlet></router-outlet>',

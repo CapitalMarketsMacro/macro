@@ -13,7 +13,7 @@ function generateAngularScaffold(appName: string, description: string, port: num
 
   let output = `# Scaffold Angular App: ${appName}
 
-> Mirrors the current \`apps/macro-angular\` app: Angular 21 (zoneless), standalone
+> Mirrors the current \`apps/macro-angular\` app: Angular 22 (zoneless), standalone
 > components, PrimeNG (Aura), and the \`@macro/macro-design\` theme system via
 > \`ThemeService\` (default theme \`macro\`).
 
@@ -83,7 +83,7 @@ theme controller automatically and exposes state as signals — no \`PLATFORM_ID
 boilerplate, no manual listeners. (Uses an inline \`template\` so there is no separate
 \`app.html\` to keep in sync; split it out if you prefer.)
 \`\`\`typescript
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { Logger } from '@macro/logger';
 import { Menubar } from 'primeng/menubar';
@@ -93,6 +93,7 @@ import { ThemeService } from '@macro/macro-design/angular';
 
 @Component({
   selector: 'app-root',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
   imports: [RouterOutlet, Menubar],
   template: \\\`
@@ -169,12 +170,13 @@ body {
     output += `
 ## AG Grid Component Wiring
 \`\`\`typescript
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import { ColDef, GetRowIdParams } from 'ag-grid-community';
 
 @Component({
   selector: 'app-data-grid',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
   imports: [MacroAngularGrid],
   template: \\\`

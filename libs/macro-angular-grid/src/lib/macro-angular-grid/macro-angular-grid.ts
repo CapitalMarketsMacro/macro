@@ -1,7 +1,7 @@
-import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, PLATFORM_ID, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, PLATFORM_ID, inject, signal, ChangeDetectionStrategy, DOCUMENT } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import { Subject, Subscription } from 'rxjs';
-import { isPlatformBrowser, DOCUMENT } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { Logger } from '@macro/logger';
 import {
   ColDef,
@@ -74,6 +74,7 @@ ModuleRegistry.registerModules([
   selector: 'lib-macro-angular-grid',
   imports: [AgGridAngular],
   templateUrl: './macro-angular-grid.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './macro-angular-grid.css',
 })
 export class MacroAngularGrid implements OnInit, OnChanges, OnDestroy {

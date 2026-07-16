@@ -8,7 +8,7 @@
 
 - **Generated:** 2026-07-11
 - **Repo state:** branch `master`, commit `4881206` (post PR #81 "feat(prism): add AMPS Top N and ordering")
-- **Platform:** NX 23 monorepo — Angular 21 (zoneless) + React 19 + Vite 8 + OpenFin Workspace 24.0.19
+- **Platform:** NX 23 monorepo — Angular 22 (zoneless) + React 19 + Vite 8 + OpenFin Workspace 24.0.19
   (HERE Core UI, runtime 44.146.101.5) Capital Markets desktop platform with shared `@macro/*` libraries
   for real-time market data, enterprise messaging (AMPS / Solace / NATS+JetStream), FDC3 2.0 interop,
   AG Grid 36 Enterprise, and a unified multi-user / multi-environment Workspace Storage API.
@@ -43,7 +43,7 @@
 
 ## Repository Overview & Quick Reference
 
-**macro** (npm package name `@macro/source`, version `0.0.0`, private, `license: MIT`) is an NX 23 monorepo implementing a Capital Markets desktop platform. It combines Angular 21 (all Angular apps zoneless), React 19 + Vite 8, and OpenFin Workspace 24.0.19 (HERE Core UI, runtime 44.146.101.5) into one desktop experience: an OpenFin platform shell (`macro-workspace`) hosts framework-mixed views (FX/Treasury market-data apps, an FDC3 instrument viewer, two "Prism" blotter apps) wired together through FDC3 2.0 context sharing, a Dock 3.0 bar, a Storefront app store, Home search, Snap docking, and a unified Workspace Storage API for all user persistence.
+**macro** (npm package name `@macro/source`, version `0.0.0`, private, `license: MIT`) is an NX 23 monorepo implementing a Capital Markets desktop platform. It combines Angular 22 (all Angular apps zoneless), React 19 + Vite 8, and OpenFin Workspace 24.0.19 (HERE Core UI, runtime 44.146.101.5) into one desktop experience: an OpenFin platform shell (`macro-workspace`) hosts framework-mixed views (FX/Treasury market-data apps, an FDC3 instrument viewer, two "Prism" blotter apps) wired together through FDC3 2.0 context sharing, a Dock 3.0 bar, a Storefront app store, Home search, Snap docking, and a unified Workspace Storage API for all user persistence.
 
 Shared capability lives in `libs/` and is imported via `@macro/*` path aliases from `tsconfig.base.json` (source-level imports — most libs have no build step for app consumption). The libraries cover design tokens/theming (`@macro/macro-design`), structured logging (`@macro/logger`), a unified messaging layer for AMPS / Solace / NATS+JetStream (`@macro/transports` with `/angular` and `/react` adapters), OpenFin platform services + the `WorkspaceStorageClient` (`@macro/openfin`), RxJS conflation (`@macro/utils`), a framework-free blotter core (`@macro/prism-core`), a framework-free column-format engine + AG Grid tool panels (`@macro/macro-grid-format`), AG Grid 36 Enterprise wrappers for both frameworks, and shared MCP server internals (`@macro/mcp-core`).
 
@@ -94,11 +94,11 @@ macro/
 
 | App | Port | Framework | Serve command | Purpose |
 |---|---|---|---|---|
-| `macro-angular` | 4200 | Angular 21 (zoneless), PrimeNG 21, AG Grid/AG Charts | `npm run start:angular` | FX Market Data + Treasury Microstructure views |
+| `macro-angular` | 4200 | Angular 22 (zoneless), PrimeNG 21, AG Grid/AG Charts | `npm run start:angular` | FX Market Data + Treasury Microstructure views |
 | `macro-react` | 4201 | React 19 + Vite 8, Shadcn/Radix, Tailwind 4, Recharts | `npm run start:react` | Treasury Market Data + Commodities Dashboard views |
-| `macro-workspace` | 4202 | Angular 21 (zoneless) | `npm run start:workspace` | OpenFin platform provider: Dock 3.0, Storefront, Home, Snap, Analytics Dashboard, storage-env picker; serves per-env config under `public/{local,openshift}/` |
-| `macro-angular-fdc3` | 4203 | Angular 21 (zoneless) | `npm run start:fdc3` | FDC3 2.0 instrument viewer (green context group) |
-| `prism` | 4204 | Angular 21 (zoneless), PrimeNG | `npm run start:prism` | Prism "Blotter as a Service" — multi-source blotters (WS/REST/AMPS/NATS/Solace) with roll-ups |
+| `macro-workspace` | 4202 | Angular 22 (zoneless) | `npm run start:workspace` | OpenFin platform provider: Dock 3.0, Storefront, Home, Snap, Analytics Dashboard, storage-env picker; serves per-env config under `public/{local,openshift}/` |
+| `macro-angular-fdc3` | 4203 | Angular 22 (zoneless) | `npm run start:fdc3` | FDC3 2.0 instrument viewer (green context group) |
+| `prism` | 4204 | Angular 22 (zoneless), PrimeNG | `npm run start:prism` | Prism "Blotter as a Service" — multi-source blotters (WS/REST/AMPS/NATS/Solace) with roll-ups |
 | `prism-react` | 4205 | React 19 + Vite 8, Shadcn/Radix | `npm run start:prism-react` | React twin of the Prism blotter on shared `@macro/prism-core` |
 | `capital-markets-themes` | 4206 | React 19 + Vite 8 | `npm run start:capital-markets-themes` | Theme / design-system showcase (Figma-derived), served under base `/capital-markets-themes/` |
 | `market-data-server` | 3000 (`PORT` env) | Node.js (`ws` + `express`) | `npm run start:market-data-server` | Simulated FX (`/marketData/fx`) + Treasury (`/marketData/tsy`) ticks, Prism table protocol (`/prism` WS + `/prism/tables` REST), Workspace Storage reference API (`/workspace/v1`) |
@@ -233,7 +233,7 @@ Install note: root `.npmrc` sets `legacy-peer-deps=true` because TypeScript 6 is
 
 ## App: macro-angular (port 4200)
 
-Angular 21 standalone/zoneless demo app showing real-time capital-markets UI patterns: a streaming FX grid, AG Charts market-microstructure dashboards, and a grouped Risk/PnL blotter. Serve: `npm run start:angular` (or `npx nx serve macro-angular`), dev server on port 4200. Registered in the OpenFin workspace as FDC3-enabled views (below). All market data on every page is **simulated in-component with `setInterval`** — this app has no WebSocket connection and no `@macro/transports` usage (the `market-data-server` WS endpoints are consumed by other apps).
+Angular 22 standalone/zoneless demo app showing real-time capital-markets UI patterns: a streaming FX grid, AG Charts market-microstructure dashboards, and a grouped Risk/PnL blotter. Serve: `npm run start:angular` (or `npx nx serve macro-angular`), dev server on port 4200. Registered in the OpenFin workspace as FDC3-enabled views (below). All market data on every page is **simulated in-component with `setInterval`** — this app has no WebSocket connection and no `@macro/transports` usage (the `market-data-server` WS endpoints are consumed by other apps).
 
 ### Bootstrap and configuration
 
@@ -469,7 +469,7 @@ Three per-env view manifests in `apps/macro-workspace/public/{local,openshift}/`
 
 ## App: macro-workspace — OpenFin platform shell (port 4202)
 
-Angular 21 zoneless application that hosts the OpenFin Workspace **platform provider window** plus a few auxiliary views served from the same origin. It is the app that OpenFin boots first: the platform manifest's `providerUrl` (e.g. `http://localhost:4202/provider?env=local` in `apps/macro-workspace/public/local/manifest.fin.json`) loads this app's `/provider` route, and that route drives the entire Workspace platform initialization (Dock, Home, Store, Notifications, Snap) through `@macro/openfin`. All per-environment OpenFin config lives under `apps/macro-workspace/public/{local,openshift}/` (covered in its own section); this section covers `apps/macro-workspace/src`.
+Angular 22 zoneless application that hosts the OpenFin Workspace **platform provider window** plus a few auxiliary views served from the same origin. It is the app that OpenFin boots first: the platform manifest's `providerUrl` (e.g. `http://localhost:4202/provider?env=local` in `apps/macro-workspace/public/local/manifest.fin.json`) loads this app's `/provider` route, and that route drives the entire Workspace platform initialization (Dock, Home, Store, Notifications, Snap) through `@macro/openfin`. All per-environment OpenFin config lives under `apps/macro-workspace/public/{local,openshift}/` (covered in its own section); this section covers `apps/macro-workspace/src`.
 
 - Serve: `npm run start:workspace` → `nx serve macro-workspace` (dev-server port **4202**, `@angular/build:dev-server`).
 - Launch into OpenFin: `npm run launch` → `node apps/macro-workspace/launch.mjs http://localhost:4202/local/manifest.fin.json`.
@@ -478,7 +478,7 @@ Angular 21 zoneless application that hosts the OpenFin Workspace **platform prov
 ### Bootstrap flow
 
 - `apps/macro-workspace/src/main.ts` — `bootstrapApplication(App, appConfig).catch(console.error)`.
-- `apps/macro-workspace/src/app/app.config.ts` — exactly three providers: `provideZonelessChangeDetection()`, `provideRouter(routes)`, `provideHttpClient()`.
+- `apps/macro-workspace/src/app/app.config.ts` — exactly three providers: `provideZonelessChangeDetection()`, `provideRouter(routes)`, `provideHttpClient(withXhr())`.
 - `apps/macro-workspace/src/app/app.ts` — root `App` component (`app-root`), inline template `<router-outlet />`, host style `display: contents`.
 - `apps/macro-workspace/src/app/app.routes.ts` — 6 routes, all `loadComponent` lazy:
 
@@ -580,7 +580,7 @@ Two small showcase apps. `macro-angular-fdc3` demonstrates FDC3 2.0 context link
 
 ### macro-angular-fdc3 — FDC3 Instrument Viewer (port 4203)
 
-Angular 21, zoneless, standalone components. Serve: `npm run start:fdc3` (= `nx serve macro-angular-fdc3`). Built in CI via `build:apps:ci` (`macro-angular-fdc3:build:production`). Displays the most recent `fdc3.instrument` context broadcast on the view's color-linking channel, plus a rolling history.
+Angular 22, zoneless, standalone components. Serve: `npm run start:fdc3` (= `nx serve macro-angular-fdc3`). Built in CI via `build:apps:ci` (`macro-angular-fdc3:build:production`). Displays the most recent `fdc3.instrument` context broadcast on the view's color-linking channel, plus a rolling history.
 
 Key files:
 
@@ -660,7 +660,7 @@ OpenFin registration gotcha: the registry entry (`appId: "capital-markets-themes
 
 ## App: prism — Blotter as a Service, Angular (port 4204)
 
-Config-driven Capital Markets blotter at `apps/prism/` (Angular 21, standalone components, zoneless, PrimeNG 21 Aura). The user picks a data source (AMPS / NATS core / NATS JetStream / Solace / plain WebSocket / REST) from a seeded catalog — or defines an ad-hoc one at runtime — and gets a snapshot + real-time AG Grid 36 blotter. All framework-free logic (source model, feed, column inference, roll-ups, source store, table discovery) lives in `@macro/prism-core`; this app is the Angular/signals adapter over it. `apps/prism-react/` (port 4205) is the React twin over the same core.
+Config-driven Capital Markets blotter at `apps/prism/` (Angular 22, standalone components, zoneless, PrimeNG 21 Aura). The user picks a data source (AMPS / NATS core / NATS JetStream / Solace / plain WebSocket / REST) from a seeded catalog — or defines an ad-hoc one at runtime — and gets a snapshot + real-time AG Grid 36 blotter. All framework-free logic (source model, feed, column inference, roll-ups, source store, table discovery) lives in `@macro/prism-core`; this app is the Angular/signals adapter over it. `apps/prism-react/` (port 4205) is the React twin over the same core.
 
 - Serve: `npm run start:prism` → `nx serve prism` → `http://localhost:4204` (port set in `apps/prism/project.json` `serve.options.port`).
 - Build: `@angular/build:application` → `dist/apps/prism`; `polyfills: []` (no zone.js); assets glob copies `apps/prism/public/` so the seed catalog is served at `/data-sources.json`.
@@ -669,7 +669,7 @@ Config-driven Capital Markets blotter at `apps/prism/` (Angular 21, standalone c
 
 ### App config, routes, shell
 
-`apps/prism/src/app/app.config.ts` providers: `provideBrowserGlobalErrorListeners()`, `provideAnimationsAsync()`, `provideZonelessChangeDetection()`, `provideRouter(appRoutes)`, `provideHttpClient()`, `providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.dark' } } })`, and `provideAppInitializer(() => inject(DataSourceRepository).loadCatalog())` — the catalog is loaded before the first route renders.
+`apps/prism/src/app/app.config.ts` providers: `provideBrowserGlobalErrorListeners()`, `provideAnimationsAsync()`, `provideZonelessChangeDetection()`, `provideRouter(appRoutes)`, `provideHttpClient(withXhr())`, `providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.dark' } } })`, and `provideAppInitializer(() => inject(DataSourceRepository).loadCatalog())` — the catalog is loaded before the first route renders.
 
 `apps/prism/src/app/app.routes.ts`:
 

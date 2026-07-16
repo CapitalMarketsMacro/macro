@@ -2,7 +2,7 @@
 
 
 
-NX 22.5 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace (HERE Core UI 24.0.19) into a unified platform with shared libraries for real-time market data, enterprise messaging, analytics, and FDC3 interoperability.
+NX 23 monorepo for **Capital Markets desktop applications**. Combines Angular 22, React 19, and OpenFin Workspace (HERE Core UI 24.0.19) into a unified platform with shared libraries for real-time market data, enterprise messaging, analytics, and FDC3 interoperability.
 
 
 
@@ -38,13 +38,13 @@ npm run launch               # Launch OpenFin (after workspace is serving)
 
 |-----|------|-----------|-------------|
 
-| **macro-angular** | 4200 | Angular 21, PrimeNG 21 | FX Market Data, Treasury Microstructure charts |
+| **macro-angular** | 4200 | Angular 22, PrimeNG 21 | FX Market Data, Treasury Microstructure charts |
 
 | **macro-react** | 4201 | React 19, Vite 7, Tailwind 4, Shadcn | Treasury Market Data, Commodities Dashboard |
 
-| **macro-workspace** | 4202 | Angular 21 (zoneless) | OpenFin platform shell, Analytics Dashboard, Provider window |
+| **macro-workspace** | 4202 | Angular 22 (zoneless) | OpenFin platform shell, Analytics Dashboard, Provider window |
 
-| **macro-angular-fdc3** | 4203 | Angular 21 | FDC3 Instrument Viewer |
+| **macro-angular-fdc3** | 4203 | Angular 22 | FDC3 Instrument Viewer |
 
 | **market-data-server** | 3000 | Node.js WebSocket | Simulated FX + Treasury tick data |
 

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import type { IStatusPanelAngularComp } from 'ag-grid-angular';
 import type { GridApi, IStatusPanelParams } from 'ag-grid-community';
 
@@ -18,6 +18,7 @@ export const MACRO_PAGINATION_TOGGLE = 'macroPaginationToggle';
       <span>Pagination</span>
     </label>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [
     `
       .macro-pagination-toggle {

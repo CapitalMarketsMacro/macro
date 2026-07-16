@@ -1,4 +1,4 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, inject, output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
@@ -27,6 +27,7 @@ import {
   standalone: true,
   imports: [ReactiveFormsModule, Dialog, Select, InputText, InputNumber, Checkbox, Button],
   templateUrl: './adhoc-source-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [
     `
       .adhoc-form {

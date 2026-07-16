@@ -26,13 +26,14 @@ export function registerAddGridComponentPrompt(server: McpServer): void {
 ## File: \`${toKebabCase(componentName)}.component.ts\`
 
 \`\`\`typescript
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { MacroAngularGrid } from '@macro/macro-angular-grid';
 import { ColDef, GetRowIdParams } from 'ag-grid-community';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-${toKebabCase(componentName)}',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
   imports: [MacroAngularGrid],
   template: \\\`

@@ -60,12 +60,13 @@ theme state as signals and starts the shared \`themeController\` automatically â
 no constructor wiring, no manual listeners.
 
 \`\`\`typescript
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ThemeService } from '@macro/macro-design/angular';
 
 @Component({
   selector: 'app-root',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
   imports: [RouterOutlet],
   template: \\\`
