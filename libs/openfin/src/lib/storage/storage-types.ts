@@ -162,6 +162,8 @@ export const WELL_KNOWN_PREFERENCES = {
   viewTitles: 'view-titles',
   /** string[] — appIds the user pinned to the dock from the Storefront. */
   dockPinnedApps: 'dock-pinned-apps',
+  /** string[] — content-menu entry ids the user bookmarked (starred) onto the dock bar. */
+  dockBookmarks: 'dock-bookmarks',
 } as const;
 
 /** How a storage environment persists data. */

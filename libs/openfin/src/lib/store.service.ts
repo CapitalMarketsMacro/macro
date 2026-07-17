@@ -60,6 +60,14 @@ export class StoreService {
    */
   private pinsHydrated = false;
   private pinQueue: Promise<void> = Promise.resolve();
+  /**
+   * primaryButton per appId, captured from card-button action payloads.
+   * updateAppCardButtons REQUIRES the primaryButton, so a card can only be
+   * proactively resynced (dock-side star/unpin while the store is open) once
+   * the user has clicked ANY of its buttons; unknown cards self-heal on the
+   * next store re-render or via the intent no-op on click.
+   */
+  private readonly cardPrimaryButtons = new Map<string, StoreButtonConfig>();
 
   constructor(
     private readonly appsService: AppsService,
@@ -70,7 +78,42 @@ export class StoreService {
     /** Optional: enable the "Add to Dock" card button (persists via the storage API). */
     private readonly storageService?: WorkspaceStorageService,
     private readonly dock3Service?: Dock3Service,
-  ) {}
+  ) {
+    // Pins are owned HERE; the dock delegates un-starring a pin-backed
+    // content-menu entry back to this service so the cache, storage, and
+    // dock bar stay coherent through one serialized path.
+    this.dock3Service?.setPinRemovalHandler((appId) =>
+      this.unpinFromDock(appId),
+    );
+    // Dock-side changes (star/un-star, right-click removals) resync any open
+    // store cards whose primaryButton we have captured.
+    this.dock3Service?.onDockCompositionChanged(() => {
+      void this.resyncKnownCards();
+    });
+  }
+
+  /** Capture a card's primaryButton so dock-side changes can resync it later. */
+  private rememberPrimaryButton(payload: StoreCustomButtonActionPayload): void {
+    if (payload?.appId && payload.primaryButton) {
+      this.cardPrimaryButtons.set(payload.appId, payload.primaryButton);
+    }
+  }
+
+  /** Push fresh secondary buttons to every card we know the primaryButton for. */
+  private async resyncKnownCards(): Promise<void> {
+    if (!this.storeRegistration) return;
+    for (const [appId, primaryButton] of this.cardPrimaryButtons) {
+      try {
+        await this.storeRegistration.updateAppCardButtons({
+          appId,
+          primaryButton,
+          secondaryButtons: this.secondaryButtonsFor(appId),
+        });
+      } catch (error) {
+        logger.warn('Card resync failed (non-fatal)', { appId, error });
+      }
+    }
+  }
 
   /**
    * Load the user's dock pins into the sync cache. Reads via the RAW storage client
@@ -105,12 +148,14 @@ export class StoreService {
       },
     ];
     if (this.storageService) {
-      buttons.push({
-        title: this.pinnedAppIds.has(appId)
-          ? '📌 Remove from Dock'
-          : '📌 Add to Dock',
-        action: { id: 'toggle-dock-pin' },
-      });
+      // Intent-carrying action ids: a STALE card (e.g. after a dock-side unpin
+      // the open store can't be re-rendered) must no-op instead of inverting.
+      // "On the dock" is the UNIFIED state — pin or content-menu ⭐ bookmark.
+      buttons.push(
+        this.isOnDock(appId)
+          ? { title: '📌 Remove from Dock', action: { id: 'dock-pin-remove' } }
+          : { title: '📌 Add to Dock', action: { id: 'dock-pin-add' } },
+      );
     }
     return buttons;
   }
@@ -119,6 +164,7 @@ export class StoreService {
     return {
       'toggle-store-favorite': async (event) => {
         const payload = event as StoreCustomButtonActionPayload;
+        this.rememberPrimaryButton(payload);
         this.favoritesService.toggleFavorite(payload.appId);
         // Flip the card's own buttons immediately. This is the only STABLE live
         // update OpenFin supports — re-registering the provider to live-refresh the
@@ -128,13 +174,87 @@ export class StoreService {
         // re-calls getNavigation() then). Guarded so a failed update never throws.
         await this.updateCardButtons(payload);
       },
-      'toggle-dock-pin': async (event) => {
+      'dock-pin-add': async (event) => {
         const payload = event as StoreCustomButtonActionPayload;
+        this.rememberPrimaryButton(payload);
         // Serialize: overlapping toggles must compose, not last-write-wins.
-        this.pinQueue = this.pinQueue.then(() => this.toggleDockPin(payload));
+        this.pinQueue = this.pinQueue.then(() =>
+          this.setDockPin(payload, true),
+        );
+        await this.pinQueue;
+      },
+      'dock-pin-remove': async (event) => {
+        const payload = event as StoreCustomButtonActionPayload;
+        this.rememberPrimaryButton(payload);
+        this.pinQueue = this.pinQueue.then(() =>
+          this.setDockPin(payload, false),
+        );
         await this.pinQueue;
       },
     };
+  }
+
+  /**
+   * Remove a dock pin on behalf of the DOCK (un-starring a pin-backed content-menu
+   * entry). Same serialized queue + hydration gate as card toggles. The dock bar
+   * refresh is triggered from here too; an open Storefront card shows the stale
+   * pin state until the store re-renders (next open/navigation) — same limitation
+   * as the favorites nav section.
+   */
+  unpinFromDock(appId: string): Promise<void> {
+    this.pinQueue = this.pinQueue.then(async () => {
+      if (!this.storageService) return;
+      if (!this.pinsHydrated) {
+        await this.hydrateDockPins();
+        if (!this.pinsHydrated) {
+          logger.error(
+            'Dock pins unavailable (storage unreachable) — dock unpin ignored',
+          );
+          return;
+        }
+      }
+      if (!this.pinnedAppIds.has(appId)) return;
+      const pinned = new Set(this.pinnedAppIds);
+      pinned.delete(appId);
+      try {
+        // Persist FIRST (writes throw) — the dock only changes when durable.
+        await this.storageService.setPreference(DOCK_PINNED_APPS_PREF, [
+          ...pinned,
+        ]);
+      } catch (error) {
+        // On the save-config path the dock UI has ALREADY removed the pin
+        // button locally — restore it so the bar matches the (unchanged)
+        // preference instead of silently desyncing until restart.
+        logger.error(
+          'Dock unpin was not persisted — restoring the pin on the bar',
+          error,
+        );
+        try {
+          await this.dock3Service?.refreshPinnedApps([...this.pinnedAppIds]);
+        } catch {
+          /* bar restore is best-effort */
+        }
+        return;
+      }
+      this.pinnedAppIds = pinned;
+      getAnalyticsNats()
+        .publish({
+          source: 'Dock',
+          type: 'DockPin',
+          action: 'Unpin',
+          value: appId,
+        })
+        .catch(() => {});
+      try {
+        await this.dock3Service?.refreshPinnedApps([...pinned]);
+      } catch (error) {
+        logger.warn(
+          'Live dock refresh failed — unpin applies on next platform start',
+          error,
+        );
+      }
+    });
+    return this.pinQueue;
   }
 
   /** Re-render a card's secondary buttons after a toggle (non-fatal on failure). */
@@ -153,14 +273,23 @@ export class StoreService {
     }
   }
 
+  /** The unified "on the dock" state: a Storefront pin OR a content-menu ⭐ bookmark. */
+  private isOnDock(appId: string): boolean {
+    return (
+      this.pinnedAppIds.has(appId) ||
+      !!this.dock3Service?.getBookmarkedAppIds().has(appId)
+    );
+  }
+
   /**
-   * "Add to Dock" from a store card: toggles the per-user `dock-pinned-apps`
-   * preference, refreshes the dock LIVE via Dock3 `updateConfig`, and flips the
-   * card button. Pins persist through the unified storage API, so in REST mode
-   * they follow the user across machines.
+   * 📌 button on a store card: puts the app on the dock / takes it off entirely.
+   * "Remove from Dock" removes BOTH affordances (star bookmark and pin) — the
+   * card, like the star, reflects the unified "on the dock" state. Pins persist
+   * through the unified storage API, so in REST mode they follow the user.
    */
-  private async toggleDockPin(
+  private async setDockPin(
     payload: StoreCustomButtonActionPayload,
+    shouldPin: boolean,
   ): Promise<void> {
     if (!this.storageService) return;
     if (!this.pinsHydrated) {
@@ -175,42 +304,95 @@ export class StoreService {
       }
     }
     const appId = payload.appId;
-    const pinned = new Set(this.pinnedAppIds);
-    if (pinned.has(appId)) {
-      pinned.delete(appId);
-    } else {
+    const bookmarked = !!this.dock3Service?.getBookmarkedAppIds().has(appId);
+    const isPinned = this.pinnedAppIds.has(appId);
+
+    if (shouldPin) {
+      if (isPinned || bookmarked) {
+        // Stale card, or the app is already on the dock via a star bookmark:
+        // the intent is satisfied — just resync the card's buttons.
+        await this.updateCardButtons(payload);
+        return;
+      }
+      const pinned = new Set(this.pinnedAppIds);
       pinned.add(appId);
-    }
-    try {
-      // Persist FIRST (writes throw) — the UI only flips when the pin is durable.
-      await this.storageService.setPreference(DOCK_PINNED_APPS_PREF, [
-        ...pinned,
-      ]);
-    } catch (error) {
-      logger.error(
-        'Dock pin was not persisted — leaving the dock unchanged',
-        error,
-      );
+      try {
+        // Persist FIRST (writes throw) — the UI only flips when the pin is durable.
+        await this.storageService.setPreference(DOCK_PINNED_APPS_PREF, [
+          ...pinned,
+        ]);
+      } catch (error) {
+        logger.error(
+          'Dock pin was not persisted — leaving the dock unchanged',
+          error,
+        );
+        return;
+      }
+      this.pinnedAppIds = pinned;
+      getAnalyticsNats()
+        .publish({
+          source: 'Store',
+          type: 'DockPin',
+          action: 'Pin',
+          value: appId,
+        })
+        .catch(() => {});
+      await this.updateCardButtons(payload);
+      try {
+        await this.dock3Service?.refreshPinnedApps([...pinned]);
+      } catch (error) {
+        logger.warn(
+          'Live dock refresh failed — pin applies on next platform start',
+          error,
+        );
+      }
       return;
     }
-    this.pinnedAppIds = pinned;
-    getAnalyticsNats()
-      .publish({
-        source: 'Store',
-        type: 'DockPin',
-        action: pinned.has(appId) ? 'Pin' : 'Unpin',
-        value: appId,
-      })
-      .catch(() => {});
-    await this.updateCardButtons(payload);
-    try {
-      await this.dock3Service?.refreshPinnedApps([...pinned]);
-    } catch (error) {
-      logger.warn(
-        'Live dock refresh failed — pin applies on next platform start',
-        error,
-      );
+
+    // Remove from Dock — take the app off entirely, whichever affordance(s)
+    // put it there.
+    if (!isPinned && !bookmarked) {
+      await this.updateCardButtons(payload); // stale card — resync only
+      return;
     }
+    if (bookmarked) {
+      // Dock3 removes the bookmark favorite, repaints the bar/star, persists.
+      await this.dock3Service?.removeBookmarksForApp(appId);
+    }
+    if (isPinned) {
+      const pinned = new Set(this.pinnedAppIds);
+      pinned.delete(appId);
+      try {
+        await this.storageService.setPreference(DOCK_PINNED_APPS_PREF, [
+          ...pinned,
+        ]);
+      } catch (error) {
+        logger.error(
+          'Dock unpin was not persisted — pin left in place',
+          error,
+        );
+        await this.updateCardButtons(payload);
+        return;
+      }
+      this.pinnedAppIds = pinned;
+      getAnalyticsNats()
+        .publish({
+          source: 'Store',
+          type: 'DockPin',
+          action: 'Unpin',
+          value: appId,
+        })
+        .catch(() => {});
+      try {
+        await this.dock3Service?.refreshPinnedApps([...pinned]);
+      } catch (error) {
+        logger.warn(
+          'Live dock refresh failed — unpin applies on next platform start',
+          error,
+        );
+      }
+    }
+    await this.updateCardButtons(payload);
   }
 
   /** Build the StorefrontProvider definition. */

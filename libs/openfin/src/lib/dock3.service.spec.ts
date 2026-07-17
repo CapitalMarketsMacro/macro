@@ -724,6 +724,7 @@ describe('Dock3Service', () => {
       const mockStorage = {
         getLobDockApps: jest.fn().mockResolvedValue([]),
         getPreference: jest.fn().mockResolvedValue(pinnedIds),
+        setPreference: jest.fn().mockResolvedValue(undefined),
       };
       return new Dock3Service(
         mockLaunchService as any,
@@ -774,6 +775,36 @@ describe('Dock3Service', () => {
       await expect(pinned.refreshPinnedApps(['x'])).resolves.toBeUndefined();
     });
 
+    it('preserves session bookmarks when refreshing pins (activeConfig sync via saveConfig)', async () => {
+      const apps = [makeApp('prism-blotter', 'Prism', 'p.json', 'prism.png')];
+      const pinned = buildPinnedService([]);
+      const dock3Settings: Dock3Settings = {
+        favorites: [],
+        contentMenu: [
+          { type: 'item', id: 'cm-themes', icon: 'themes.png', label: 'Themes' },
+        ],
+      };
+      await pinned.init(platformSettings, apps, dock3Settings);
+      const initArg = (Dock.init as jest.Mock).mock.calls[0][0];
+      const provider = new (initArg.override(class {}))();
+
+      // The dock UI bookmarks cm-themes and pushes the new config via save-config.
+      const bookmarked = {
+        ...initArg.config,
+        favorites: [
+          ...initArg.config.favorites,
+          { type: 'item', id: 'cm-themes', icon: 'themes.png', label: 'Themes', itemData: {} },
+        ],
+      };
+      await provider.saveConfig({ config: bookmarked });
+
+      await pinned.refreshPinnedApps(['prism-blotter']);
+      const updated = mockUpdateConfig.mock.lastCall[0];
+      const ids = updated.favorites.map((f: any) => f.id);
+      expect(ids).toContain('cm-themes'); // session bookmark survived the pin refresh
+      expect(ids).toContain('pin:prism-blotter');
+    });
+
     it('dock still renders when the pin preference read fails', async () => {
       mockUpdateConfig = jest.fn();
       (Dock.init as jest.Mock).mockResolvedValue({
@@ -794,6 +825,569 @@ describe('Dock3Service', () => {
       );
       await pinned.init(platformSettings);
       expect((Dock.init as jest.Mock).mock.calls[0][0].config.favorites).toEqual([]);
+    });
+  });
+
+  // ── content-menu bookmarks (dock star) persisted via the storage API ──
+
+  describe('dock bookmarks', () => {
+    let mockSetPreference: jest.Mock;
+    let mockGetPreference: jest.Mock;
+    let mockUpdateConfig: jest.Mock;
+
+    const contentMenuSettings: Dock3Settings = {
+      favorites: [
+        { type: 'item', id: 'fav-1', icon: 'f1.png', label: 'Config Fav' },
+      ],
+      contentMenu: [
+        {
+          type: 'folder',
+          id: 'showcase',
+          label: 'Showcase',
+          children: [
+            { type: 'item', id: 'cm-analytics', icon: 'a.png', label: 'Analytics' },
+            { type: 'item', id: 'cm-themes', icon: 't.png', label: 'Themes' },
+          ],
+        },
+      ],
+    };
+
+    /** Storage stub answering pins/bookmarks by preference key. */
+    const buildBookmarkService = (opts: {
+      bookmarks?: unknown;
+      pins?: string[];
+      bookmarksReject?: boolean;
+      setPreferenceReject?: boolean;
+    }) => {
+      mockUpdateConfig = jest.fn().mockResolvedValue(undefined);
+      (Dock.init as jest.Mock).mockResolvedValue({
+        ready: Promise.resolve(),
+        shutdown: mockProviderShutdown,
+        getWindowSync: () => ({ updateOptions: mockUpdateOptions }),
+        updateConfig: mockUpdateConfig,
+      });
+      mockSetPreference = opts.setPreferenceReject
+        ? jest.fn().mockRejectedValue(new Error('write down'))
+        : jest.fn().mockResolvedValue(undefined);
+      mockGetPreference = jest.fn().mockImplementation(async (key: string) => {
+        if (key === 'dock-bookmarks') {
+          if (opts.bookmarksReject) throw new Error('read down');
+          return opts.bookmarks ?? [];
+        }
+        return opts.pins ?? []; // dock-pinned-apps
+      });
+      const mockStorage = {
+        getLobDockApps: jest.fn().mockResolvedValue([]),
+        getPreference: mockGetPreference,
+        setPreference: mockSetPreference,
+      };
+      return new Dock3Service(
+        mockLaunchService as any,
+        mockAppsService as any,
+        mockDockConfigService as any,
+        mockStorage as any,
+      );
+    };
+
+    const getProvider = () => {
+      const initArg = (Dock.init as jest.Mock).mock.calls[0][0];
+      return { initArg, provider: new (initArg.override(class {}))() as any };
+    };
+
+    it('restores persisted bookmarks from the content menu, keeping the entry id', async () => {
+      const svc = buildBookmarkService({ bookmarks: ['cm-themes', 'ghost-id', 'cm-themes'] });
+      await svc.init(platformSettings, [], contentMenuSettings);
+
+      const config = (Dock.init as jest.Mock).mock.calls[0][0].config;
+      // Same id as the content-menu entry — Dock 3.0 keys the filled star by id.
+      expect(config.favorites).toContainEqual({
+        type: 'item',
+        id: 'cm-themes',
+        label: 'Themes',
+        icon: 't.png',
+        itemData: { appId: undefined, url: undefined },
+      });
+      // Unknown ids are skipped, duplicates collapse to one entry.
+      expect(config.favorites.filter((f: any) => f.id === 'cm-themes')).toHaveLength(1);
+      expect(config.favorites.map((f: any) => f.id)).not.toContain('ghost-id');
+    });
+
+    it('persists a new bookmark pushed through saveConfig (dock star click)', async () => {
+      const svc = buildBookmarkService({ bookmarks: [] });
+      await svc.init(platformSettings, [], contentMenuSettings);
+      const { initArg, provider } = getProvider();
+
+      const saved = {
+        ...initArg.config,
+        favorites: [
+          ...initArg.config.favorites,
+          { type: 'item', id: 'cm-analytics', icon: 'a.png', label: 'Analytics', itemData: {} },
+        ],
+      };
+      await provider.saveConfig({ config: saved });
+
+      expect(mockSetPreference).toHaveBeenCalledWith('dock-bookmarks', ['cm-analytics']);
+      // Provider internal state adopted the saved config (protected setter pattern)...
+      expect(provider.config).toBe(saved);
+      // ...and loadConfig now serves it, so a dock-internal reload keeps the bookmark.
+      await expect(provider.loadConfig()).resolves.toBe(saved);
+    });
+
+    it('persists removal when the user un-stars a restored bookmark', async () => {
+      const svc = buildBookmarkService({ bookmarks: ['cm-themes'] });
+      await svc.init(platformSettings, [], contentMenuSettings);
+      const { initArg, provider } = getProvider();
+
+      // Dock UI removed the bookmarked favorite (config favorites minus cm-themes).
+      const saved = {
+        ...initArg.config,
+        favorites: initArg.config.favorites.filter((f: any) => f.id !== 'cm-themes'),
+      };
+      await provider.saveConfig({ config: saved });
+
+      expect(mockSetPreference).toHaveBeenCalledWith('dock-bookmarks', []);
+    });
+
+    it('skips redundant writes when the bookmark set is unchanged (re-order saves)', async () => {
+      const svc = buildBookmarkService({ bookmarks: ['cm-themes'] });
+      await svc.init(platformSettings, [], contentMenuSettings);
+      const { initArg, provider } = getProvider();
+
+      // Same favorites, different order — bookmark set identical.
+      await provider.saveConfig({
+        config: { ...initArg.config, favorites: [...initArg.config.favorites].reverse() },
+      });
+      // Reversal reorders [fav-1, cm-themes] → bookmark list unchanged (['cm-themes']).
+      expect(mockSetPreference).not.toHaveBeenCalled();
+    });
+
+    it('never persists pin: favorites as bookmarks (pins are added live after the snapshot)', async () => {
+      const svc = buildBookmarkService({ bookmarks: [] });
+      await svc.init(platformSettings, [], contentMenuSettings);
+      const { initArg, provider } = getProvider();
+
+      const saved = {
+        ...initArg.config,
+        favorites: [
+          ...initArg.config.favorites,
+          { type: 'item', id: 'pin:some-app', icon: 'p.png', label: 'Pin', itemData: {} },
+          { type: 'item', id: 'cm-themes', icon: 't.png', label: 'Themes', itemData: {} },
+        ],
+      };
+      await provider.saveConfig({ config: saved });
+
+      expect(mockSetPreference).toHaveBeenCalledWith('dock-bookmarks', ['cm-themes']);
+    });
+
+    it('persists bookmarks on LOB content-menu items (lob:catalog ids stay bookmarkable)', async () => {
+      mockSetPreference = jest.fn().mockResolvedValue(undefined);
+      const mockStorage = {
+        getLobDockApps: jest.fn().mockResolvedValue([
+          { id: 'rates-monitor', label: 'Rates Monitor', iconUrl: 'r.png', type: 'icon', url: 'http://lob/rates', lob: 'Rates' },
+        ]),
+        getPreference: jest.fn().mockResolvedValue([]),
+        setPreference: mockSetPreference,
+      };
+      const svc = new Dock3Service(
+        mockLaunchService as any,
+        mockAppsService as any,
+        mockDockConfigService as any,
+        mockStorage as any,
+      );
+      await svc.init(platformSettings);
+      const { initArg, provider } = getProvider();
+
+      // The LOB bar button (lob:rates-monitor) is platform-owned; the CATALOG
+      // entry (lob:catalog:rates-monitor) is a content-menu item the user starred.
+      const saved = {
+        ...initArg.config,
+        favorites: [
+          ...initArg.config.favorites,
+          { type: 'item', id: 'lob:catalog:rates-monitor', icon: 'r.png', label: 'Rates Monitor', itemData: { url: 'http://lob/rates' } },
+        ],
+      };
+      await provider.saveConfig({ config: saved });
+
+      expect(mockSetPreference).toHaveBeenCalledWith('dock-bookmarks', ['lob:catalog:rates-monitor']);
+    });
+
+    it('swallows a failed bookmark write (dock keeps working, loudly logged)', async () => {
+      const svc = buildBookmarkService({ bookmarks: [], setPreferenceReject: true });
+      await svc.init(platformSettings, [], contentMenuSettings);
+      const { initArg, provider } = getProvider();
+
+      const saved = {
+        ...initArg.config,
+        favorites: [
+          ...initArg.config.favorites,
+          { type: 'item', id: 'cm-themes', icon: 't.png', label: 'Themes', itemData: {} },
+        ],
+      };
+      await expect(provider.saveConfig({ config: saved })).resolves.toBeUndefined();
+    });
+
+    it('refuses to write when the boot-time bookmark read failed (anti-clobber guard)', async () => {
+      const svc = buildBookmarkService({ bookmarksReject: true });
+      await svc.init(platformSettings, [], contentMenuSettings);
+      const { initArg, provider } = getProvider();
+
+      // Dock still rendered (fail-soft read)...
+      expect(initArg.config.favorites.map((f: any) => f.id)).toEqual(['fav-1']);
+
+      const saved = {
+        ...initArg.config,
+        favorites: [
+          ...initArg.config.favorites,
+          { type: 'item', id: 'cm-themes', icon: 't.png', label: 'Themes', itemData: {} },
+        ],
+      };
+      await provider.saveConfig({ config: saved });
+      // ...but a partial view must never overwrite the user's stored bookmark set.
+      expect(mockSetPreference).not.toHaveBeenCalled();
+    });
+
+    it('stamps bookmarked:true on restored content-menu entries (the UI fills the star from that flag)', async () => {
+      const svc = buildBookmarkService({ bookmarks: ['cm-themes'] });
+      await svc.init(platformSettings, [], contentMenuSettings);
+
+      const config = (Dock.init as jest.Mock).mock.calls[0][0].config;
+      const showcase = config.contentMenu.find((e: any) => e.id === 'showcase');
+      const themes = showcase.children.find((c: any) => c.id === 'cm-themes');
+      const analytics = showcase.children.find((c: any) => c.id === 'cm-analytics');
+      expect(themes.bookmarked).toBe(true);
+      expect(analytics.bookmarked).toBeUndefined();
+    });
+
+    it('tracks the full star -> unstar -> re-star sequence (lastSaved bookkeeping)', async () => {
+      const svc = buildBookmarkService({ bookmarks: [] });
+      await svc.init(platformSettings, [], contentMenuSettings);
+      const { initArg, provider } = getProvider();
+
+      const withBookmark = {
+        ...initArg.config,
+        favorites: [
+          ...initArg.config.favorites,
+          { type: 'item', id: 'cm-themes', icon: 't.png', label: 'Themes', itemData: {} },
+        ],
+      };
+      await provider.saveConfig({ config: withBookmark });
+      await provider.saveConfig({ config: initArg.config }); // unstar
+      await provider.saveConfig({ config: withBookmark }); // star again
+
+      expect(mockSetPreference.mock.calls.map((c: any[]) => c[1])).toEqual([
+        ['cm-themes'],
+        [],
+        ['cm-themes'],
+      ]);
+    });
+
+    it('unions boot-unresolved ids into every write instead of erasing them', async () => {
+      // 'ghost-id' was persisted but its content-menu entry is gone this session
+      // (e.g. the LOB feed failed soft at boot). Starring something else must
+      // NOT prune it from storage.
+      const svc = buildBookmarkService({ bookmarks: ['cm-themes', 'ghost-id'] });
+      await svc.init(platformSettings, [], contentMenuSettings);
+      const { initArg, provider } = getProvider();
+
+      const saved = {
+        ...initArg.config,
+        favorites: [
+          ...initArg.config.favorites,
+          { type: 'item', id: 'cm-analytics', icon: 'a.png', label: 'Analytics', itemData: {} },
+        ],
+      };
+      await provider.saveConfig({ config: saved });
+
+      const written = mockSetPreference.mock.calls[0][1];
+      expect(written).toContain('ghost-id'); // preserved for a later boot
+      expect(written).toContain('cm-analytics');
+      expect(written).toContain('cm-themes');
+    });
+
+    it('re-hydrates on the next gesture after a failed boot read (transient outage self-heals)', async () => {
+      let failuresLeft = 1;
+      mockSetPreference = jest.fn().mockResolvedValue(undefined);
+      const mockStorage = {
+        getLobDockApps: jest.fn().mockResolvedValue([]),
+        getPreference: jest.fn().mockImplementation(async (key: string) => {
+          if (key !== 'dock-bookmarks') return [];
+          if (failuresLeft > 0) {
+            failuresLeft--;
+            throw new Error('transient outage');
+          }
+          return ['cm-themes']; // the user's stored set, unreadable at boot
+        }),
+        setPreference: mockSetPreference,
+      };
+      const svc = new Dock3Service(
+        mockLaunchService as any,
+        mockAppsService as any,
+        mockDockConfigService as any,
+        mockStorage as any,
+      );
+      await svc.init(platformSettings, [], contentMenuSettings);
+      const { initArg, provider } = getProvider();
+
+      const saved = {
+        ...initArg.config,
+        favorites: [
+          ...initArg.config.favorites,
+          { type: 'item', id: 'cm-analytics', icon: 'a.png', label: 'Analytics', itemData: {} },
+        ],
+      };
+      await provider.saveConfig({ config: saved });
+
+      // The stored set recovered on retry is unioned with the new star — the
+      // user cannot have un-starred entries that were never shown this session.
+      const written = mockSetPreference.mock.calls[0][1];
+      expect(written).toContain('cm-analytics');
+      expect(written).toContain('cm-themes');
+    });
+
+    it('sanitizes a corrupted stored preference (non-array / mixed types)', async () => {
+      const svc = buildBookmarkService({ bookmarks: [42, 'cm-themes', null, ''] });
+      await svc.init(platformSettings, [], contentMenuSettings);
+
+      const config = (Dock.init as jest.Mock).mock.calls[0][0].config;
+      // Only the valid string id restores; garbage members are dropped.
+      expect(config.favorites.map((f: any) => f.id)).toEqual(['fav-1', 'cm-themes']);
+
+      // A non-array value hydrates as empty (writes may proceed and GC the corruption).
+      (Dock.init as jest.Mock).mockClear();
+      const svc2 = buildBookmarkService({ bookmarks: { weird: true } });
+      await svc2.init(platformSettings, [], contentMenuSettings);
+      const { initArg, provider } = getProvider();
+      const saved = {
+        ...initArg.config,
+        favorites: [
+          ...initArg.config.favorites,
+          { type: 'item', id: 'cm-analytics', icon: 'a.png', label: 'Analytics', itemData: {} },
+        ],
+      };
+      await provider.saveConfig({ config: saved });
+      expect(mockSetPreference).toHaveBeenCalledWith('dock-bookmarks', ['cm-analytics']);
+    });
+
+    it('publishes a Dock/Bookmark analytics event on star clicks without throwing', async () => {
+      const svc = buildBookmarkService({ bookmarks: [] });
+      await svc.init(platformSettings, [], contentMenuSettings);
+      const { provider } = getProvider();
+
+      await expect(
+        provider.bookmarkContentMenuEntry({ entry: { id: 'cm-themes', label: 'Themes' } }),
+      ).resolves.toBeUndefined();
+      await expect(provider.bookmarkContentMenuEntry({})).resolves.toBeUndefined();
+    });
+  });
+
+  // ── star clicks (bookmark-content-menu-entry — the provider owns the whole toggle) ──
+
+  describe('star toggle', () => {
+    const menuItem = (cfg: any, id: string) =>
+      cfg.contentMenu
+        .flatMap((e: any) => (e.type === 'folder' ? e.children : [e]))
+        .find((c: any) => c.id === id);
+
+    let mockSetPreference: jest.Mock;
+    let mockUpdateConfig: jest.Mock;
+
+    const getProvider = () => {
+      const initArg = (Dock.init as jest.Mock).mock.calls[0][0];
+      return { initArg, provider: new (initArg.override(class {}))() as any };
+    };
+
+    const buildStarService = (opts: { bookmarks?: string[]; pins?: string[] }) => {
+      mockUpdateConfig = jest.fn().mockResolvedValue(undefined);
+      (Dock.init as jest.Mock).mockResolvedValue({
+        ready: Promise.resolve(),
+        shutdown: mockProviderShutdown,
+        getWindowSync: () => ({ updateOptions: mockUpdateOptions }),
+        updateConfig: mockUpdateConfig,
+      });
+      mockSetPreference = jest.fn().mockResolvedValue(undefined);
+      const mockStorage = {
+        getLobDockApps: jest.fn().mockResolvedValue([]),
+        getPreference: jest
+          .fn()
+          .mockImplementation(async (key: string) =>
+            key === 'dock-bookmarks' ? (opts.bookmarks ?? []) : (opts.pins ?? []),
+          ),
+        setPreference: mockSetPreference,
+      };
+      return new Dock3Service(
+        mockLaunchService as any,
+        mockAppsService as any,
+        mockDockConfigService as any,
+        mockStorage as any,
+      );
+    };
+
+    const starSettings: Dock3Settings = {
+      favorites: [],
+      contentMenu: [
+        {
+          type: 'folder',
+          id: 'showcase',
+          label: 'Showcase',
+          children: [
+            { type: 'item', id: 'cm-themes', icon: 't.png', label: 'Themes' },
+            { type: 'item', id: 'cm-app', icon: 'a.png', label: 'App One', appId: 'app-1' },
+          ],
+        },
+      ],
+    };
+
+    it('star click promotes the entry onto the bar, fills the star, repaints, persists', async () => {
+      const svc = buildStarService({});
+      await svc.init(platformSettings, [], starSettings);
+      const { initArg, provider } = getProvider();
+
+      await provider.bookmarkContentMenuEntry({ entry: { id: 'cm-themes', label: 'Themes' } });
+
+      const cfg = initArg.config;
+      expect(cfg.favorites.map((f: any) => f.id)).toContain('cm-themes');
+      expect(menuItem(cfg, 'cm-themes').bookmarked).toBe(true);
+      expect(mockUpdateConfig).toHaveBeenCalledWith(cfg); // live repaint — no restart needed
+      expect(mockSetPreference).toHaveBeenCalledWith('dock-bookmarks', ['cm-themes']);
+    });
+
+    it('second star click un-stars: favorite removed, star hollow, empty set persisted', async () => {
+      const svc = buildStarService({});
+      await svc.init(platformSettings, [], starSettings);
+      const { initArg, provider } = getProvider();
+
+      await provider.bookmarkContentMenuEntry({ entry: { id: 'cm-themes', label: 'Themes' } });
+      await provider.bookmarkContentMenuEntry({ entry: { id: 'cm-themes', label: 'Themes' } });
+
+      const cfg = initArg.config;
+      expect(cfg.favorites.map((f: any) => f.id)).not.toContain('cm-themes');
+      expect(menuItem(cfg, 'cm-themes').bookmarked).toBeUndefined();
+      expect(mockSetPreference.mock.lastCall).toEqual(['dock-bookmarks', []]);
+    });
+
+    it('boot: a Storefront-pinned app renders its content-menu star filled', async () => {
+      const apps = [makeApp('app-1', 'App One', 'm.json', 'a.png')];
+      const svc = buildStarService({ pins: ['app-1'] });
+      await svc.init(platformSettings, apps, starSettings);
+
+      const cfg = (Dock.init as jest.Mock).mock.calls[0][0].config;
+      expect(cfg.favorites.map((f: any) => f.id)).toContain('pin:app-1');
+      expect(menuItem(cfg, 'cm-app').bookmarked).toBe(true);
+      expect(menuItem(cfg, 'cm-themes').bookmarked).toBeUndefined();
+    });
+
+    it('un-starring a pin-backed entry delegates the unpin to the registered handler', async () => {
+      const apps = [makeApp('app-1', 'App One', 'm.json', 'a.png')];
+      const svc = buildStarService({ pins: ['app-1'] });
+      const unpin = jest.fn().mockResolvedValue(undefined);
+      svc.setPinRemovalHandler(unpin);
+      await svc.init(platformSettings, apps, starSettings);
+      const { initArg, provider } = getProvider();
+
+      await provider.bookmarkContentMenuEntry({
+        entry: { id: 'cm-app', label: 'App One', itemData: { appId: 'app-1' } },
+      });
+
+      expect(unpin).toHaveBeenCalledWith('app-1');
+      // The pin favorite itself is untouched here — the handler owns its removal.
+      expect(initArg.config.favorites.map((f: any) => f.id)).toContain('pin:app-1');
+      expect(mockSetPreference).not.toHaveBeenCalled(); // bookmark set unchanged
+    });
+
+    it('starring then pinning the same app never shows two dock buttons (pin button suppressed)', async () => {
+      const apps = [makeApp('app-1', 'App One', 'm.json', 'a.png')];
+      const svc = buildStarService({});
+      await svc.init(platformSettings, apps, starSettings);
+      const { initArg, provider } = getProvider();
+
+      // Star the app first (bookmark favorite id 'cm-app')...
+      await provider.bookmarkContentMenuEntry({
+        entry: { id: 'cm-app', label: 'App One', itemData: { appId: 'app-1' } },
+      });
+      // ...then "Add to Dock" from the Storefront (pin refresh).
+      await svc.refreshPinnedApps(['app-1']);
+
+      const ids = initArg.config.favorites.map((f: any) => f.id);
+      expect(ids).toContain('cm-app');
+      expect(ids).not.toContain('pin:app-1'); // suppressed — one app, one button
+      expect(menuItem(initArg.config, 'cm-app').bookmarked).toBe(true);
+    });
+
+    it('one un-star click removes BOTH the bookmark and the pin for the same app', async () => {
+      const apps = [makeApp('app-1', 'App One', 'm.json', 'a.png')];
+      const svc = buildStarService({ bookmarks: ['cm-app'], pins: ['app-1'] });
+      const unpin = jest.fn().mockResolvedValue(undefined);
+      svc.setPinRemovalHandler(unpin);
+      await svc.init(platformSettings, apps, starSettings);
+      const { initArg, provider } = getProvider();
+      // Boot state: bookmark on the bar, pin button suppressed, star filled.
+      expect(initArg.config.favorites.map((f: any) => f.id)).not.toContain('pin:app-1');
+      expect(menuItem(initArg.config, 'cm-app').bookmarked).toBe(true);
+
+      await provider.bookmarkContentMenuEntry({
+        entry: { id: 'cm-app', label: 'App One', itemData: { appId: 'app-1' } },
+      });
+
+      expect(initArg.config.favorites.map((f: any) => f.id)).not.toContain('cm-app');
+      expect(unpin).toHaveBeenCalledWith('app-1'); // the suppressed pin is removed too
+      expect(mockSetPreference).toHaveBeenCalledWith('dock-bookmarks', []);
+    });
+
+    it('right-click removal of a pin favorite (save-config) delegates the unpin', async () => {
+      const apps = [makeApp('app-1', 'App One', 'm.json', 'a.png')];
+      const svc = buildStarService({ pins: ['app-1'] });
+      const unpin = jest.fn().mockResolvedValue(undefined);
+      svc.setPinRemovalHandler(unpin);
+      await svc.init(platformSettings, apps, starSettings);
+      const { initArg, provider } = getProvider();
+
+      const saved = {
+        ...initArg.config,
+        favorites: initArg.config.favorites.filter((f: any) => f.id !== 'pin:app-1'),
+      };
+      await provider.saveConfig({ config: saved });
+
+      expect(unpin).toHaveBeenCalledWith('app-1');
+    });
+
+    it('getBookmarkedAppIds exposes appIds bookmarked onto the bar (pins excluded)', async () => {
+      const apps = [makeApp('app-1', 'App One', 'm.json', 'a.png')];
+      const svc = buildStarService({ bookmarks: ['cm-app'], pins: [] });
+      await svc.init(platformSettings, apps, starSettings);
+
+      expect([...svc.getBookmarkedAppIds()]).toEqual(['app-1']);
+    });
+
+    it('removeBookmarksForApp drops the bookmark by appId, hollows the star, persists', async () => {
+      const apps = [makeApp('app-1', 'App One', 'm.json', 'a.png')];
+      const svc = buildStarService({ bookmarks: ['cm-app'] });
+      await svc.init(platformSettings, apps, starSettings);
+      const { initArg } = getProvider();
+      expect(menuItem(initArg.config, 'cm-app').bookmarked).toBe(true);
+
+      await svc.removeBookmarksForApp('app-1');
+
+      expect(initArg.config.favorites.map((f: any) => f.id)).not.toContain('cm-app');
+      expect(menuItem(initArg.config, 'cm-app').bookmarked).toBeUndefined();
+      expect(mockUpdateConfig).toHaveBeenCalled(); // live bar/star repaint
+      expect(mockSetPreference).toHaveBeenCalledWith('dock-bookmarks', []);
+    });
+
+    it('right-click removal of a bookmark favorite clears its star and repaints (UI never clears the flag)', async () => {
+      const svc = buildStarService({ bookmarks: ['cm-themes'] });
+      await svc.init(platformSettings, [], starSettings);
+      const { initArg, provider } = getProvider();
+      expect(menuItem(initArg.config, 'cm-themes').bookmarked).toBe(true);
+
+      const saved = {
+        ...initArg.config,
+        favorites: initArg.config.favorites.filter((f: any) => f.id !== 'cm-themes'),
+      };
+      await provider.saveConfig({ config: saved });
+
+      expect(menuItem(saved, 'cm-themes').bookmarked).toBeUndefined();
+      expect(mockUpdateConfig).toHaveBeenCalledWith(saved); // menu star repaint
+      expect(mockSetPreference).toHaveBeenCalledWith('dock-bookmarks', []);
     });
   });
 });

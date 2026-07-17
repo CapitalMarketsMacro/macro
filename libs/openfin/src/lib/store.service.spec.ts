@@ -420,7 +420,7 @@ describe('StoreService', () => {
 
   describe('dock pin (Add to Dock)', () => {
     let mockStorage: { getPreference: jest.Mock; setPreference: jest.Mock };
-    let mockDock3: { refreshPinnedApps: jest.Mock };
+    let mockDock3: { refreshPinnedApps: jest.Mock; setPinRemovalHandler: jest.Mock; onDockCompositionChanged: jest.Mock; getBookmarkedAppIds: jest.Mock; removeBookmarksForApp: jest.Mock };
     let lsStore: Record<string, string>;
 
     beforeEach(() => {
@@ -448,7 +448,7 @@ describe('StoreService', () => {
         getPreference: jest.fn().mockResolvedValue(['app-2']),
         setPreference: jest.fn().mockResolvedValue(undefined),
       };
-      mockDock3 = { refreshPinnedApps: jest.fn().mockResolvedValue(undefined) };
+      mockDock3 = { refreshPinnedApps: jest.fn().mockResolvedValue(undefined), setPinRemovalHandler: jest.fn(), onDockCompositionChanged: jest.fn(), getBookmarkedAppIds: jest.fn().mockReturnValue(new Set()), removeBookmarksForApp: jest.fn().mockResolvedValue(undefined) };
       return new StoreService(
         mockAppsService,
         mockFavoritesService,
@@ -468,19 +468,19 @@ describe('StoreService', () => {
 
       expect(apps[0].secondaryButtons).toEqual([
         { title: '☆ Favorite', action: { id: 'toggle-store-favorite' } },
-        { title: '📌 Add to Dock', action: { id: 'toggle-dock-pin' } },
+        { title: '📌 Add to Dock', action: { id: 'dock-pin-add' } },
       ]);
       expect(apps[1].secondaryButtons[1]).toEqual({
         title: '📌 Remove from Dock',
-        action: { id: 'toggle-dock-pin' },
+        action: { id: 'dock-pin-remove' },
       });
     });
 
-    it('toggle-dock-pin persists first, then refreshes the dock live and flips the button', async () => {
+    it('dock-pin-add persists first, then refreshes the dock live and flips the button', async () => {
       const pinned = buildPinnedService();
       await firstValueFrom(pinned.register(platformSettings));
 
-      await pinned.getStoreCustomActions()['toggle-dock-pin']({
+      await pinned.getStoreCustomActions()['dock-pin-add']({
         appId: 'app-1',
         primaryButton: { title: 'Launch', action: { id: 'launch-app' } },
       });
@@ -498,7 +498,7 @@ describe('StoreService', () => {
           appId: 'app-1',
           secondaryButtons: [
             { title: '☆ Favorite', action: { id: 'toggle-store-favorite' } },
-            { title: '📌 Remove from Dock', action: { id: 'toggle-dock-pin' } },
+            { title: '📌 Remove from Dock', action: { id: 'dock-pin-remove' } },
           ],
         }),
       );
@@ -511,19 +511,19 @@ describe('StoreService', () => {
 
       await pinned
         .getStoreCustomActions()
-        ['toggle-dock-pin']({ appId: 'app-1' });
+        ['dock-pin-add']({ appId: 'app-1' });
 
       expect(mockDock3.refreshPinnedApps).not.toHaveBeenCalled();
       expect(mockStoreRegistration.updateAppCardButtons).not.toHaveBeenCalled();
     });
 
-    it('unpins on second toggle', async () => {
+    it('dock-pin-remove unpins', async () => {
       const pinned = buildPinnedService();
       await firstValueFrom(pinned.register(platformSettings));
 
       await pinned
         .getStoreCustomActions()
-        ['toggle-dock-pin']({ appId: 'app-2' });
+        ['dock-pin-remove']({ appId: 'app-2' });
       expect(mockStorage.setPreference).toHaveBeenCalledWith(
         'dock-pinned-apps',
         [],
@@ -544,8 +544,8 @@ describe('StoreService', () => {
         .mockResolvedValue(undefined);
 
       const actions = pinned.getStoreCustomActions();
-      const first = actions['toggle-dock-pin']({ appId: 'app-1' });
-      const second = actions['toggle-dock-pin']({ appId: 'app-3' });
+      const first = actions['dock-pin-add']({ appId: 'app-1' });
+      const second = actions['dock-pin-add']({ appId: 'app-3' });
       // Let toggle 1 reach its pending persist (the queue runs on microtasks)
       // before releasing it — a sync release would hit the no-op placeholder.
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -561,6 +561,143 @@ describe('StoreService', () => {
         2,
         'dock-pinned-apps',
         ['app-2', 'app-1', 'app-3'],
+      );
+    });
+
+    it('registers unpinFromDock with Dock3 and removes the pin when invoked', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+
+      // The constructor handed Dock3 the removal path; drive it like the dock would.
+      const handler = mockDock3.setPinRemovalHandler.mock.calls[0][0];
+      await handler('app-2');
+
+      expect(mockStorage.setPreference).toHaveBeenCalledWith(
+        'dock-pinned-apps',
+        [],
+      );
+      expect(mockDock3.refreshPinnedApps).toHaveBeenCalledWith([]);
+    });
+
+    it('unpinFromDock is a no-op for an app that is not pinned', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+
+      await pinned.unpinFromDock('never-pinned');
+
+      expect(mockStorage.setPreference).not.toHaveBeenCalled();
+      expect(mockDock3.refreshPinnedApps).not.toHaveBeenCalled();
+    });
+
+    it('restores the pin on the bar when the unpin write fails (bar must match the preference)', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+      mockStorage.setPreference.mockRejectedValue(new Error('storage down'));
+
+      await pinned.unpinFromDock('app-2');
+
+      // Preference unchanged -> the bar is refreshed BACK to the pinned state.
+      expect(mockDock3.refreshPinnedApps).toHaveBeenCalledWith(['app-2']);
+    });
+
+    it('a stale card click no-ops and resyncs the buttons instead of inverting', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+      // Dock-side unpin happened; the open card still shows "Remove from Dock".
+      await pinned.unpinFromDock('app-2');
+      mockStorage.setPreference.mockClear();
+      mockDock3.refreshPinnedApps.mockClear();
+
+      await pinned
+        .getStoreCustomActions()
+        ['dock-pin-remove']({ appId: 'app-2' });
+
+      // Intent already satisfied: nothing written, nothing re-pinned — only a card resync.
+      expect(mockStorage.setPreference).not.toHaveBeenCalled();
+      expect(mockDock3.refreshPinnedApps).not.toHaveBeenCalled();
+      expect(mockStoreRegistration.updateAppCardButtons).toHaveBeenCalledWith(
+        expect.objectContaining({ appId: 'app-2' }),
+      );
+    });
+
+    it('shows "Remove from Dock" for an app on the dock via a star bookmark (no pin)', async () => {
+      const pinned = buildPinnedService();
+      mockDock3.getBookmarkedAppIds.mockReturnValue(new Set(['app-1']));
+      await firstValueFrom(pinned.register(platformSettings));
+      const provider = (Storefront.register as jest.Mock).mock.calls[0][0];
+      const apps = await provider.getApps();
+
+      // app-1 is bookmark-covered -> card reflects the unified on-dock state.
+      expect(apps[0].secondaryButtons[1]).toEqual({
+        title: '📌 Remove from Dock',
+        action: { id: 'dock-pin-remove' },
+      });
+    });
+
+    it('"Remove from Dock" on a bookmark-only app removes the bookmark, not a pin', async () => {
+      const pinned = buildPinnedService();
+      mockDock3.getBookmarkedAppIds.mockReturnValue(new Set(['app-1']));
+      await firstValueFrom(pinned.register(platformSettings));
+
+      await pinned
+        .getStoreCustomActions()
+        ['dock-pin-remove']({ appId: 'app-1' });
+
+      expect(mockDock3.removeBookmarksForApp).toHaveBeenCalledWith('app-1');
+      expect(mockStorage.setPreference).not.toHaveBeenCalled(); // no pin existed
+      expect(mockStoreRegistration.updateAppCardButtons).toHaveBeenCalled();
+    });
+
+    it('"Add to Dock" on a bookmark-covered app no-ops (already on the dock) and resyncs the card', async () => {
+      const pinned = buildPinnedService();
+      mockDock3.getBookmarkedAppIds.mockReturnValue(new Set(['app-1']));
+      await firstValueFrom(pinned.register(platformSettings));
+
+      await pinned.getStoreCustomActions()['dock-pin-add']({ appId: 'app-1' });
+
+      expect(mockStorage.setPreference).not.toHaveBeenCalled();
+      expect(mockDock3.refreshPinnedApps).not.toHaveBeenCalled();
+      expect(mockStoreRegistration.updateAppCardButtons).toHaveBeenCalledWith(
+        expect.objectContaining({ appId: 'app-1' }),
+      );
+    });
+
+    it('"Remove from Dock" removes BOTH when the app is bookmarked AND pinned', async () => {
+      const pinned = buildPinnedService();
+      mockDock3.getBookmarkedAppIds.mockReturnValue(new Set(['app-2']));
+      await firstValueFrom(pinned.register(platformSettings));
+
+      await pinned
+        .getStoreCustomActions()
+        ['dock-pin-remove']({ appId: 'app-2' });
+
+      expect(mockDock3.removeBookmarksForApp).toHaveBeenCalledWith('app-2');
+      expect(mockStorage.setPreference).toHaveBeenCalledWith(
+        'dock-pinned-apps',
+        [],
+      );
+      expect(mockDock3.refreshPinnedApps).toHaveBeenCalledWith([]);
+    });
+
+    it('dock-side changes live-resync cards whose primaryButton was captured from a click', async () => {
+      const pinned = buildPinnedService();
+      await firstValueFrom(pinned.register(platformSettings));
+      const primaryButton = { title: 'Launch', action: { id: 'launch-app' } };
+
+      // The user clicked this card once — its primaryButton is now known.
+      await pinned
+        .getStoreCustomActions()
+        ['dock-pin-add']({ appId: 'app-1', primaryButton });
+      mockStoreRegistration.updateAppCardButtons.mockClear();
+
+      // Dock-side change (e.g. un-star): Dock3 fires the composition listener.
+      (mockStorage.setPreference as jest.Mock).mockClear();
+      const listener = mockDock3.onDockCompositionChanged.mock.calls[0][0];
+      listener();
+      await new Promise((r) => setTimeout(r, 0)); // resync is fire-and-forget
+
+      expect(mockStoreRegistration.updateAppCardButtons).toHaveBeenCalledWith(
+        expect.objectContaining({ appId: 'app-1', primaryButton }),
       );
     });
 
@@ -585,7 +722,7 @@ describe('StoreService', () => {
 
         await pinned
           .getStoreCustomActions()
-          ['toggle-dock-pin']({ appId: 'app-1' });
+          ['dock-pin-add']({ appId: 'app-1' });
 
         expect(mockStorage.setPreference).not.toHaveBeenCalled();
         expect(mockDock3.refreshPinnedApps).not.toHaveBeenCalled();
