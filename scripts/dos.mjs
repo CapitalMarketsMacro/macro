@@ -1,8 +1,9 @@
 /**
  * Set or remove the OpenFin Desktop Owner Settings pin (HKCU) that selects the
- * HERE Core UI (workspace) system-app version. Needed while Workspace 24.0.19 is
- * on the Beta channel — without it the RVM launches the Stable (23.2.x) browser
- * UI and the v24 features (tab search, page pinning) never appear.
+ * HERE Core UI (workspace) system-app version. Introduced while Workspace 24.x
+ * was on the Beta channel (unpinned RVMs then launched the Stable 23.2.x browser
+ * UI, hiding the v24 features); retained now that 24.x is Stable to guarantee
+ * the exact UI version the platform was tested against.
  *
  *   npm run dos          -> point DesktopOwnerSettings at http://localhost:4202/local/dos.json
  *   npm run dos:restore  -> restore the previous value (or remove it if none existed)

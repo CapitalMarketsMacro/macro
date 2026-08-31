@@ -4,7 +4,7 @@
 
 ## Project Overview
 
-NX 23 monorepo for **Capital Markets desktop applications**. Combines Angular 21, React 19, and OpenFin Workspace 24.0.19 (HERE Core UI, runtime 44.146.101.5) into a unified platform with shared libraries for real-time market data, enterprise messaging, and FDC3 interoperability.
+NX 23 monorepo for **Capital Markets desktop applications**. Combines Angular 22, React 19, and OpenFin Workspace 24.0.24 (HERE Core UI, runtime 44.146.101.7) into a unified platform with shared libraries for real-time market data, enterprise messaging, and FDC3 interoperability.
 
 ## Quick Reference
 
@@ -117,8 +117,8 @@ Apps import shared CSS in their global `styles.css` BEFORE any framework CSS:
 
 **OpenFin (macro-workspace):**
 
-- Versions: `@openfin/workspace` + `@openfin/workspace-platform` **24.0.19** (HERE Core UI, currently Beta channel), `@openfin/core` + `@openfin/node-adapter` **44.101.5** (exact peer pair), manifest runtime **44.146.101.5**, bundled Notification Center **2.15.0**. Bump all of these in lockstep.
-- While 24.x is on the Beta channel, the browser/home UI must be pinned via Desktop Owner Settings: `dos.json` (per-env) pins the `workspace` and `notification-center` system apps; `npm run dos` sets the HKCU pointer (backs up any prior value), `npm run dos:restore` undoes it. Without the pin, the RVM serves the Stable 23.2.x UI and v24 features silently disappear.
+- Versions: `@openfin/workspace` + `@openfin/workspace-platform` **24.0.24** (HERE Core UI, now the Stable/`latest` npm line), `@openfin/core` + `@openfin/node-adapter` **44.101.7** (exact peer pair), manifest runtime **44.146.101.7**, bundled Notification Center **2.15.3**. Bump all of these in lockstep.
+- The browser/home UI is pinned via Desktop Owner Settings: `dos.json` (per-env) pins the `workspace` and `notification-center` system apps; `npm run dos` sets the HKCU pointer (backs up any prior value), `npm run dos:restore` undoes it. The pin dates from 24.x's Beta-channel days (unpinned RVMs then served the 23.2.x UI); it's retained to guarantee the exact UI version the platform was tested against.
 - Config is **environment-scoped** under `apps/macro-workspace/public/{local,openshift}/`, selected by the `?env=` query param on the provider URL (default `local`). Local uses `http://localhost:42xx/...`; OpenShift uses `https://{{OPENSHIFT_*_HOST}}/...` tokens substituted at deploy time.
 - Platform manifest: `apps/macro-workspace/public/{local,openshift}/manifest.fin.json` (runtime/platform only — does **not** contain the app registry).
 - **App registry: `apps/macro-workspace/public/{local,openshift}/apps.json`** — the source of truth for store + dock + home. Each entry: `{appId, name, title, description, manifest, manifestType, icons, tags, category}`; the `category` field drives storefront navigation. (There is no `customSettings.apps` array.)
@@ -235,7 +235,7 @@ An **nx-mcp** server (NX workspace commands) is additionally provided by the NX 
 | `apps/macro-workspace/public/{local,openshift}/manifest.fin.json` | OpenFin platform/runtime manifest (per-env; NOT the app registry) |
 | `apps/macro-workspace/public/{local,openshift}/settings.json` | `platformSettings` + optional `browserSettings` + `storage` block (unified-storage environments: local/dev/uat/prod service URLs, `defaultEnvironment`) |
 | `docs/api/workspace-storage-api.openapi.yaml`    | Workspace Storage API contract (OpenAPI 3.1) — phase-2 Spring Boot + MongoDB implements it; phase-1 reference lives in market-data-server at `/workspace/v1` |
-| `apps/macro-workspace/public/{local,openshift}/dos.json` | Desktop Owner Settings: pins workspace 24.0.19 + notification-center 2.15.0 system apps (applied via `npm run dos`) |
+| `apps/macro-workspace/public/{local,openshift}/dos.json` | Desktop Owner Settings: pins workspace 24.0.24 + notification-center 2.15.3 system apps (applied via `npm run dos`) |
 | `libs/macro-design/src/lib/css/macro-design.css` | All CSS variables (`:root` + `.dark`)        |
 | `libs/macro-design/src/lib/ag-grid-theme.ts`     | AG Grid theme builder                        |
 | `libs/macro-design/src/lib/dark-mode.ts`         | Dark mode utilities                          |
