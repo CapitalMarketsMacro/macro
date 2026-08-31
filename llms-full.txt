@@ -8,8 +8,8 @@
 
 - **Generated:** 2026-07-11
 - **Repo state:** branch `master`, commit `4881206` (post PR #81 "feat(prism): add AMPS Top N and ordering")
-- **Platform:** NX 23 monorepo — Angular 22 (zoneless) + React 19 + Vite 8 + OpenFin Workspace 24.0.19
-  (HERE Core UI, runtime 44.146.101.5) Capital Markets desktop platform with shared `@macro/*` libraries
+- **Platform:** NX 23 monorepo — Angular 22 (zoneless) + React 19 + Vite 8 + OpenFin Workspace 24.0.24
+  (HERE Core UI, runtime 44.146.101.7) Capital Markets desktop platform with shared `@macro/*` libraries
   for real-time market data, enterprise messaging (AMPS / Solace / NATS+JetStream), FDC3 2.0 interop,
   AG Grid 36 Enterprise, and a unified multi-user / multi-environment Workspace Storage API.
 - **Companion docs:** `CLAUDE.md` / `AGENTS.md` (agent instructions), `docs/architecture.md` (Mermaid
@@ -43,7 +43,7 @@
 
 ## Repository Overview & Quick Reference
 
-**macro** (npm package name `@macro/source`, version `0.0.0`, private, `license: MIT`) is an NX 23 monorepo implementing a Capital Markets desktop platform. It combines Angular 22 (all Angular apps zoneless), React 19 + Vite 8, and OpenFin Workspace 24.0.19 (HERE Core UI, runtime 44.146.101.5) into one desktop experience: an OpenFin platform shell (`macro-workspace`) hosts framework-mixed views (FX/Treasury market-data apps, an FDC3 instrument viewer, two "Prism" blotter apps) wired together through FDC3 2.0 context sharing, a Dock 3.0 bar, a Storefront app store, Home search, Snap docking, and a unified Workspace Storage API for all user persistence.
+**macro** (npm package name `@macro/source`, version `0.0.0`, private, `license: MIT`) is an NX 23 monorepo implementing a Capital Markets desktop platform. It combines Angular 22 (all Angular apps zoneless), React 19 + Vite 8, and OpenFin Workspace 24.0.24 (HERE Core UI, runtime 44.146.101.7) into one desktop experience: an OpenFin platform shell (`macro-workspace`) hosts framework-mixed views (FX/Treasury market-data apps, an FDC3 instrument viewer, two "Prism" blotter apps) wired together through FDC3 2.0 context sharing, a Dock 3.0 bar, a Storefront app store, Home search, Snap docking, and a unified Workspace Storage API for all user persistence.
 
 Shared capability lives in `libs/` and is imported via `@macro/*` path aliases from `tsconfig.base.json` (source-level imports — most libs have no build step for app consumption). The libraries cover design tokens/theming (`@macro/macro-design`), structured logging (`@macro/logger`), a unified messaging layer for AMPS / Solace / NATS+JetStream (`@macro/transports` with `/angular` and `/react` adapters), OpenFin platform services + the `WorkspaceStorageClient` (`@macro/openfin`), RxJS conflation (`@macro/utils`), a framework-free blotter core (`@macro/prism-core`), a framework-free column-format engine + AG Grid tool panels (`@macro/macro-grid-format`), AG Grid 36 Enterprise wrappers for both frameworks, and shared MCP server internals (`@macro/mcp-core`).
 
@@ -195,8 +195,8 @@ Gotcha: `apps/capital-markets-themes/` contains BOTH `vite.config.ts` (port 4206
 | PrimeNG | `primeng` / `@primeuix/themes` / `primeicons` | `^21.1.8` / `^2.0.3` / `^7.0.0` |
 | PrimeReact | `primereact` | `^11.0.0-alpha.10` (alpha — expect breaking changes) |
 | Tailwind | `tailwindcss`, `@tailwindcss/vite`, `@tailwindcss/postcss` | `^4.3.0` |
-| OpenFin | `@openfin/workspace`, `@openfin/workspace-platform` | `24.0.19` (exact) |
-| OpenFin | `@openfin/core`, `@openfin/node-adapter` | `44.101.5` (exact peer pair; manifest runtime 44.146.101.5) |
+| OpenFin | `@openfin/workspace`, `@openfin/workspace-platform` | `24.0.24` (exact) |
+| OpenFin | `@openfin/core`, `@openfin/node-adapter` | `44.101.7` (exact peer pair; manifest runtime 44.146.101.7) |
 | OpenFin | `@openfin/snap-sdk` / `@openfin/automation-helpers` | `^1.6.0` / `1.3.1` |
 | FDC3 | `@finos/fdc3` | `2.2.3` |
 | Messaging | `amps` | `^5.3.4-0.378635.60b2fcc` |
@@ -1154,7 +1154,7 @@ All are static markdown docs (`mimeType: 'text/markdown'`) served under `macro:/
 | `react-template` | `macro://templates/react` | Full React LOB app pattern |
 | `theming` | `macro://theming` | `@macro/macro-design` single-source-of-truth theming architecture |
 | `data-connectivity` | `macro://data-connectivity` | Unified `@macro/transports` (AMPS/Solace/NATS) + WebSocket + conflation patterns |
-| `openfin` | `macro://openfin` | OpenFin Workspace 24.0.19 integration, FDC3, manifests |
+| `openfin` | `macro://openfin` | OpenFin Workspace 24.0.24 integration, FDC3, manifests |
 | `libraries` | `macro://libraries` | `@macro/*` library catalog |
 | `market-data-server` | `macro://market-data-server` | Port-3000 WS server endpoints and message shapes |
 | `testing` | `macro://testing` | Jest/Vitest split, commands |
@@ -2439,7 +2439,7 @@ Key contents (local):
 {
   "devtools_port": 9090,
   "licenseKey": "openfin-demo-license-key",
-  "runtime": { "arguments": "--v=1 --inspect --enable-mesh --security-realm=macro-workspace", "version": "44.146.101.5" },
+  "runtime": { "arguments": "--v=1 --inspect --enable-mesh --security-realm=macro-workspace", "version": "44.146.101.7" },
   "platform": {
     "uuid": "macro-workspace-platform",
     "name": "Macro Workspace",
@@ -2556,11 +2556,11 @@ Identical in both envs: `{ "enabled": true, "serverOptions": { "showDebug": fals
 
 ```json
 { "desktopSettings": { "systemApps": {
-    "workspace": { "version": "24.0.19" },
-    "notification-center": { "version": "2.15.0" } } } }
+    "workspace": { "version": "24.0.24" },
+    "notification-center": { "version": "2.15.3" } } } }
 ```
 
-Why: Workspace 24.0.19 (HERE Core UI) is on the **Beta** channel; without the pin the RVM serves the Stable 23.2.x browser/home UI and v24 features (tab search, page pinning) silently disappear. `scripts/dos.mjs` (Windows-only; exits 0 with a message elsewhere) writes registry value `DesktopOwnerSettings` under `HKCU\Software\OpenFin\RVM\Settings` pointing at `http://localhost:4202/local/dos.json`, backing up any prior value to `scripts/.dos-backup.json`; `--restore` re-applies the backup or deletes the value if none existed. All OpenFin processes must be restarted for the RVM to re-read it.
+Why: the pin dates from Workspace 24.x's **Beta**-channel days (unpinned RVMs then served the Stable 23.2.x browser/home UI, hiding the v24 features like tab search and page pinning); now that 24.x is Stable it's retained to guarantee the exact UI version (24.0.24) the platform was tested against. `scripts/dos.mjs` (Windows-only; exits 0 with a message elsewhere) writes registry value `DesktopOwnerSettings` under `HKCU\Software\OpenFin\RVM\Settings` pointing at `http://localhost:4202/local/dos.json`, backing up any prior value to `scripts/.dos-backup.json`; `--restore` re-applies the backup or deletes the value if none existed. All OpenFin processes must be restarted for the RVM to re-read it.
 
 ### View manifests (`<name>.fin.json`)
 
@@ -2860,7 +2860,7 @@ TypeScript 6 is ahead of `@angular/build`'s declared peer range; legacy peer res
 | `scripts/build-ci.mjs` | `npm run build` | CI build wrapper (above) |
 | `scripts/test-ci.mjs` | `npm run test` | CI test runner + report merger (above) |
 | `scripts/stop.mjs` | `npm run stop` / `npm run stop:all` | Stops dev servers via two strategies: (1) kill whatever LISTENs on ports discovered from `apps/<app>/project.json` + vite configs; (2) process-tree sweep of this repo's `nx serve`/`concurrently`/`vite`/`run-executor` node processes (critical on Windows where servers drift ports and orphan worker trees). Scoped to this repo; explicitly excludes MCP server processes so it never kills editor/agent tooling. `--with-openfin` (`stop:all`) also kills OpenFin. Node stdlib + `netstat`/`taskkill` or `lsof`/`ps`/`kill` only. |
-| `scripts/dos.mjs` | `npm run dos` / `npm run dos:restore` | Windows-only (no-ops elsewhere). Sets/restores registry value `DesktopOwnerSettings` under `HKCU\Software\OpenFin\RVM\Settings` to `http://localhost:4202/local/dos.json`, backing up any prior value to `scripts/.dos-backup.json`. Needed while Workspace 24.0.19 is on the Beta channel — without the pin the RVM serves the Stable 23.2.x UI. OpenFin processes must be restarted after changing it. |
+| `scripts/dos.mjs` | `npm run dos` / `npm run dos:restore` | Windows-only (no-ops elsewhere). Sets/restores registry value `DesktopOwnerSettings` under `HKCU\Software\OpenFin\RVM\Settings` to `http://localhost:4202/local/dos.json`, backing up any prior value to `scripts/.dos-backup.json`. Introduced while Workspace 24.x was on the Beta channel (unpinned RVMs served the Stable 23.2.x UI); retained to guarantee the exact UI version (24.0.24). OpenFin processes must be restarted after changing it. |
 | `scripts/list-npm-packages.mjs` | — | Writes a package inventory report (from `package.json` + `package-lock.json`) into `reports/` |
 | `scripts/amps-query-executions.ts` | — | Ad-hoc AMPS SOW query utility (`npx tsx scripts/amps-query-executions.ts`); queries topic `rates/executions` on `ws://MontyUbuntu2604:9008/amps/json` with `TOP_N = 10` |
 | `scripts/amps-sow-query.ts` | — | Empty (0-byte) stub |

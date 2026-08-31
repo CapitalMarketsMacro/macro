@@ -2,7 +2,7 @@ import type { ThemePalette } from '@macro/macro-design';
 import { ColorSchemeOptionType, type ThemeOptions } from '@openfin/workspace-platform';
 
 /**
- * HERE Core UI "Granular Color Theming" (Workspace 24.0.19 / Notifications 2.15.0).
+ * HERE Core UI "Granular Color Theming" (Workspace 24.0.24 / Notifications 2.15.3).
  *
  * Builds a token-based {@link ThemeOptions} from a macro {@link ThemePalette}, replacing the
  * legacy fully-enumerated `palettes` (CustomPaletteSet) approach. A single brand `seed` drives
