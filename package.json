@@ -225,7 +225,7 @@
     "vitest": "^4.1.7"
   },
   "overrides": {
-    "shell-quote": "1.8.4",
+    "shell-quote": "^1.10.0",
     "esbuild": "^0.28.1",
     "vite": "$vite",
     "form-data": "^4.0.6",
