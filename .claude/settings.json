@@ -12,5 +12,14 @@
         "repo": "nrwl/nx-ai-agents-config"
       }
     }
+  },
+  "sandbox": {
+    "filesystem": {
+      "allowRead": ["/tmp/.nx", "~/.nx"],
+      "allowWrite": ["/tmp/.nx", "~/.nx"]
+    },
+    "network": {
+      "allowUnixSockets": ["/tmp/.nx", "~/.nx"]
+    }
   }
 }
