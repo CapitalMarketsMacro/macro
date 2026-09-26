@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rates e-trading desktop — production architecture</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f4f5f7; --panel:#ffffff; --ink:#1a222d; --muted:#5b6674; --faint:#8a94a3; --line:#dde1e7; --line2:#c9cfd8;
+  --et-fill:#eff1f4; --et-stroke:#828d9c; --et-text:#343e4b;
+  --store-fill:#e3f2ec; --store-stroke:#1c8f6c; --store-text:#0a4a3a;
+  --dc1-fill:#e9f1fa; --dc1-stroke:#3273bd; --dc1-text:#123f6d;
+  --dc2-fill:#eeecfa; --dc2-stroke:#6f65d2; --dc2-text:#372f82;
+  --cfg-fill:#f9f0dd; --cfg-stroke:#b8821f; --cfg-text:#5c390a;
+  --edge:#78828f; --dashc:#98a1ae; --boundary:#c2502a; --sel:#c2502a;
+  --callout:#faf3ef;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11151b; --panel:#191f27; --ink:#e7ebf1; --muted:#9aa4b2; --faint:#78828f; --line:#2a323e; --line2:#38414e;
+    --et-fill:#222932; --et-stroke:#77828f; --et-text:#ccd3dc;
+    --store-fill:#0d3a2d; --store-stroke:#3cb691; --store-text:#a5e3cd;
+    --dc1-fill:#132c46; --dc1-stroke:#5f9fe3; --dc1-text:#bcd8f4;
+    --dc2-fill:#252246; --dc2-stroke:#968dec; --dc2-text:#d1cef7;
+    --cfg-fill:#392b12; --cfg-stroke:#cf9834; --cfg-text:#f8ca79;
+    --edge:#8b95a3; --dashc:#69737f; --boundary:#ee9776; --sel:#ee9776;
+    --callout:#241d19;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11151b; --panel:#191f27; --ink:#e7ebf1; --muted:#9aa4b2; --faint:#78828f; --line:#2a323e; --line2:#38414e;
+  --et-fill:#222932; --et-stroke:#77828f; --et-text:#ccd3dc;
+  --store-fill:#0d3a2d; --store-stroke:#3cb691; --store-text:#a5e3cd;
+  --dc1-fill:#132c46; --dc1-stroke:#5f9fe3; --dc1-text:#bcd8f4;
+  --dc2-fill:#252246; --dc2-stroke:#968dec; --dc2-text:#d1cef7;
+  --cfg-fill:#392b12; --cfg-stroke:#cf9834; --cfg-text:#f8ca79;
+  --edge:#8b95a3; --dashc:#69737f; --boundary:#ee9776; --sel:#ee9776;
+  --callout:#241d19;
+}
+*{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+.shell{max-width:1500px;margin:0 auto;padding:0 26px 48px}
+header{padding:40px 0 8px;border-bottom:1px solid var(--line2);margin-bottom:22px}
+.masthead{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.masthead .org{font-family:var(--mono);font-size:12px;color:var(--muted)}
+header h1{margin:0 0 8px;font-size:27px;font-weight:600;letter-spacing:-.015em}
+header .sub{margin:0 0 26px;color:var(--muted);font-size:15px;max-width:88ch}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:0 0 26px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px 14px}
+.stat b{display:block;font-size:15px;font-weight:600;margin-bottom:5px;letter-spacing:-.01em}
+.stat span{font-size:13px;color:var(--muted);line-height:1.5;display:block}
+.stat i{display:block;width:26px;height:3px;border-radius:2px;margin-bottom:12px;font-style:normal}
+.s1 i{background:var(--dc1-stroke)} .s2 i{background:var(--dc2-stroke)} .s3 i{background:var(--boundary)} .s4 i{background:var(--store-stroke)}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+@media(min-width:1080px){.wrap{grid-template-columns:minmax(0,1.55fr) minmax(360px,1fr);align-items:start}}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 12px 10px;overflow-x:auto}
+.stage svg{display:block;min-width:720px;width:100%;height:auto}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 24px 26px;position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto}
+@media(max-width:1079px){aside{position:static;max-height:none}}
+aside .kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;color:var(--muted);margin:0 0 7px}
+aside h2{margin:0 0 12px;font-size:19px;font-weight:600;letter-spacing:-.01em}
+.exec{background:var(--callout);border-left:3px solid var(--boundary);border-radius:0 8px 8px 0;padding:10px 14px;margin:0 0 14px;font-size:14px;line-height:1.55}
+aside .role{margin:0 0 4px;font-size:14px}
+aside h3{margin:18px 0 7px;font-size:12.5px;font-weight:600;color:var(--muted);letter-spacing:.03em}
+aside ul{margin:0 0 4px;padding-left:18px}
+aside li{margin:0 0 7px;font-size:13.5px}
+aside .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+aside .chip{font-family:var(--mono);font-size:11.5px;padding:3px 10px;border:1px solid var(--line2);border-radius:999px;color:var(--muted)}
+.hint{margin-top:18px;padding-top:13px;border-top:1px solid var(--line);color:var(--faint);font-size:12.5px}
+.principles{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:22px}
+.pr{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.pr b{display:block;font-size:14px;font-weight:600;margin-bottom:5px}
+.pr span{font-size:13px;color:var(--muted);line-height:1.55}
+footer{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+/* svg */
+text{font-family:var(--sans)}
+.tt{font-size:14px;font-weight:600}
+.ts{font-size:11.5px;font-weight:400}
+.tz{font-size:12px;font-weight:600;letter-spacing:.02em}
+.tm{font-family:var(--mono);font-size:11px}
+.n-et rect{fill:var(--et-fill);stroke:var(--et-stroke)}   .n-et .tt{fill:var(--et-text)}   .n-et .ts{fill:var(--et-stroke)}
+.n-st rect{fill:var(--store-fill);stroke:var(--store-stroke)} .n-st .tt{fill:var(--store-text)} .n-st .ts{fill:var(--store-stroke)}
+.n-d1 rect{fill:var(--dc1-fill);stroke:var(--dc1-stroke)} .n-d1 .tt{fill:var(--dc1-text)} .n-d1 .ts{fill:var(--dc1-stroke)}
+.n-d2 rect{fill:var(--dc2-fill);stroke:var(--dc2-stroke)} .n-d2 .tt{fill:var(--dc2-text)} .n-d2 .ts{fill:var(--dc2-stroke)}
+.n-cf rect{fill:var(--cfg-fill);stroke:var(--cfg-stroke)} .n-cf .tt{fill:var(--cfg-text)} .n-cf .ts{fill:var(--cfg-stroke)}
+.node{cursor:pointer}
+.node rect{stroke-width:1.1;transition:stroke-width .12s ease}
+.node:hover rect{stroke-width:2.1}
+.node:focus-visible{outline:none}
+.node:focus-visible rect{stroke:var(--sel);stroke-width:2.5}
+.node.sel rect{stroke:var(--sel);stroke-width:2.5}
+.zone{fill:none;stroke:var(--line2);stroke-dasharray:5 5;stroke-width:1}
+.cont{fill:none;stroke-width:1.2}
+.cont-d1{stroke:var(--dc1-stroke)} .cont-d2{stroke:var(--dc2-stroke)} .cont-ws1{stroke:var(--dc1-stroke)}
+.edge{stroke:var(--edge);stroke-width:1.4;fill:none}
+.edge-f{stroke:var(--dashc);stroke-width:1.3;stroke-dasharray:6 5;fill:none}
+.edge-c{stroke:var(--cfg-stroke);stroke-width:1.3;fill:none}
+.bnd{stroke:var(--boundary);stroke-width:1.4;stroke-dasharray:9 6}
+.lbl{fill:var(--muted)} .lbl-b{fill:var(--boundary)}
+.leg{fill:var(--muted);font-size:11.5px}
+@media print{
+  body{background:#fff}
+  .stage{overflow:visible}
+  .stage svg{min-width:0}
+  aside{position:static;max-height:none}
+  .hint{display:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+  <div class="masthead">
+    <span class="org">Macro Desktop · Rubicon UI engineering</span>
+    <span class="org">Architecture review · September 2026</span>
+  </div>
+  <h1>Rates e-trading desktop — production architecture</h1>
+  <p class="sub">A live/live distribution platform across two data centers, projecting the E-Trading system of record onto the OpenFin trading desktop. Both sites serve traders every day, each carries the full desk, and every component below the shared cache can be rebuilt from it. Select any component — including the team boundary — for its design rationale.</p>
+  <div class="stats">
+    <div class="stat s1"><i></i><b>Live/live, not active/standby</b><span>Both data centers serve real users daily — failover is a routinely exercised path, never an untested hope.</span></div>
+    <div class="stat s2"><i></i><b>Each DC carries the full desk</b><span>Every site is sized for 100% of users, so losing one is a capacity non-event.</span></div>
+    <div class="stat s3"><i></i><b>Failover in seconds, client-driven</b><span>Desktops reconnect to the surviving site automatically and resynchronize a clean snapshot.</span></div>
+    <div class="stat s4"><i></i><b>One source of truth</b><span>Coherence remains the system of record; the AMPS layers are rebuildable projections of it.</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="stage">
+<svg viewBox="0 0 1000 1240" role="img" aria-label="Live/live architecture: E-Trading stack through Coherence, dual data-center adapters and AMPS, to OpenFin workstations">
+<defs>
+<marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+
+<rect class="zone" x="20" y="26" width="960" height="374" rx="14"/>
+<text class="tz lbl" x="40" y="52">E-Trading — PICO and core infrastructure</text>
+
+<g class="node n-et" id="etStack" tabindex="0" role="button" aria-label="E-trading stack details">
+  <rect x="360" y="66" width="280" height="60" rx="8"/>
+  <text class="tt" x="500" y="90" text-anchor="middle">E-trading stack</text>
+  <text class="ts" x="500" y="110" text-anchor="middle">pricing + order management · PICO DC</text>
+</g>
+<line class="edge" x1="500" y1="126" x2="500" y2="150" marker-end="url(#ar)"/>
+
+<g class="node n-et" id="solace" tabindex="0" role="button" aria-label="Solace bridge details">
+  <rect x="360" y="156" width="280" height="56" rx="8"/>
+  <text class="tt" x="500" y="179" text-anchor="middle">Solace bridge</text>
+  <text class="ts" x="500" y="198" text-anchor="middle">cross-DC transport out of PICO</text>
+</g>
+<line class="edge" x1="500" y1="212" x2="500" y2="236" marker-end="url(#ar)"/>
+
+<g class="node n-et" id="bridges" tabindex="0" role="button" aria-label="Java bridges details">
+  <rect x="360" y="242" width="280" height="56" rx="8"/>
+  <text class="tt" x="500" y="265" text-anchor="middle">Java bridges</text>
+  <text class="ts" x="500" y="284" text-anchor="middle">market data · orders · refdata</text>
+</g>
+<line class="edge" x1="500" y1="298" x2="500" y2="322" marker-end="url(#ar)"/>
+
+<g class="node n-st" id="coherence" tabindex="0" role="button" aria-label="Coherence cluster details">
+  <rect x="340" y="328" width="320" height="64" rx="8"/>
+  <text class="tt" x="500" y="353" text-anchor="middle">Coherence cluster</text>
+  <text class="ts" x="500" y="373" text-anchor="middle">system of record · inter-team contract</text>
+</g>
+
+<g class="node" id="boundary" tabindex="0" role="button" aria-label="Ownership boundary details">
+  <rect x="20" y="408" width="960" height="30" rx="6" fill="transparent" stroke="none"/>
+  <line class="bnd" x1="24" y1="423" x2="976" y2="423"/>
+  <text class="tz lbl-b" x="40" y="418">▲ E-Trading team</text>
+  <text class="tz lbl-b" x="40" y="440">▼ Rubicon (UI engineering)</text>
+  <text class="ts lbl-b" x="960" y="418" text-anchor="end">team ownership boundary — select</text>
+</g>
+
+<path class="edge" d="M470 392 V446 H380 V500" marker-end="url(#ar)"/>
+<path class="edge" d="M530 392 V446 H820 V500" marker-end="url(#ar)"/>
+<text class="tm lbl" x="500" y="470" text-anchor="middle">Extend TCP ×2</text>
+
+<rect class="cont cont-d1" x="210" y="478" width="340" height="290" rx="14"/>
+<text class="tz" x="230" y="502" fill="var(--dc1-stroke)">Data center 1</text>
+<rect class="cont cont-d2" x="650" y="478" width="340" height="290" rx="14"/>
+<text class="tz" x="670" y="502" fill="var(--dc2-stroke)">Data center 2</text>
+
+<g class="node n-d1" id="adapter" tabindex="0" role="button" aria-label="ET-Trading adapter details">
+  <rect x="240" y="512" width="280" height="60" rx="8"/>
+  <text class="tt" x="380" y="536" text-anchor="middle">ET-Trading adapter</text>
+  <text class="ts" x="380" y="556" text-anchor="middle">Spring Boot BFF · Extend client</text>
+</g>
+<line class="edge" x1="380" y1="572" x2="380" y2="600" marker-end="url(#ar)"/>
+<g class="node n-st" id="amps" tabindex="0" role="button" aria-label="AMPS DC1 details">
+  <rect x="240" y="606" width="280" height="72" rx="8"/>
+  <text class="tt" x="380" y="632" text-anchor="middle">AMPS · DC1</text>
+  <text class="ts" x="380" y="651" text-anchor="middle">SOW projection + filtered fanout</text>
+  <text class="ts" x="380" y="667" text-anchor="middle">delta_publish · sow_and_subscribe</text>
+</g>
+
+<g class="node n-d2" id="adapter2" tabindex="0" role="button" aria-label="ET-Trading adapter DC2 details">
+  <rect x="680" y="512" width="280" height="60" rx="8"/>
+  <text class="tt" x="820" y="536" text-anchor="middle">ET-Trading adapter</text>
+  <text class="ts" x="820" y="556" text-anchor="middle">identical deterministic projection</text>
+</g>
+<line class="edge" x1="820" y1="572" x2="820" y2="600" marker-end="url(#ar)"/>
+<g class="node n-st" id="amps2" tabindex="0" role="button" aria-label="AMPS DC2 details">
+  <rect x="680" y="606" width="280" height="72" rx="8"/>
+  <text class="tt" x="820" y="632" text-anchor="middle">AMPS · DC2</text>
+  <text class="ts" x="820" y="651" text-anchor="middle">independent materialized view</text>
+  <text class="ts" x="820" y="667" text-anchor="middle">disposable · re-primed from Coherence</text>
+</g>
+
+<text class="tm lbl" x="600" y="636" text-anchor="middle">no AMPS</text>
+<text class="tm lbl" x="600" y="652" text-anchor="middle">replication</text>
+
+<g class="node n-cf" id="config" tabindex="0" role="button" aria-label="Affinity config service details">
+  <rect x="30" y="548" width="160" height="84" rx="8"/>
+  <text class="tt" x="110" y="576" text-anchor="middle">Affinity config</text>
+  <text class="ts" x="110" y="596" text-anchor="middle">versioned JSON</text>
+  <text class="ts" x="110" y="612" text-anchor="middle">read at launch</text>
+</g>
+<line class="edge-c" x1="110" y1="632" x2="110" y2="876" marker-end="url(#ar)"/>
+
+<line class="edge" x1="380" y1="678" x2="380" y2="876" marker-end="url(#ar)"/>
+<line class="edge" x1="820" y1="678" x2="820" y2="876" marker-end="url(#ar)"/>
+<path class="edge-f" d="M480 678 L690 876" marker-end="url(#ar)"/>
+<path class="edge-f" d="M720 678 L500 876" marker-end="url(#ar)"/>
+<text class="tm lbl" x="600" y="742" text-anchor="middle">failover</text>
+<text class="tm lbl" x="352" y="790" text-anchor="end">primary</text>
+<text class="tm lbl" x="848" y="790" text-anchor="start">primary</text>
+
+<rect class="cont cont-ws1" x="50" y="880" width="540" height="262" rx="14"/>
+<text class="tz" x="70" y="906" fill="var(--dc1-stroke)">DC1-homed workstations</text>
+<g class="node n-d1" id="provider" tabindex="0" role="button" aria-label="OpenFin platform provider details">
+  <rect x="66" y="920" width="508" height="54" rx="8"/>
+  <text class="tt" x="320" y="942" text-anchor="middle">OpenFin platform provider</text>
+  <text class="ts" x="320" y="961" text-anchor="middle">resolves affinity once · hands MFEs ordered server list</text>
+</g>
+<g class="node n-d1" id="ladders" tabindex="0" role="button" aria-label="Ladders details">
+  <rect x="64" y="994" width="122" height="56" rx="8"/>
+  <text class="tt" x="125" y="1017" text-anchor="middle">Ladders ×40</text>
+  <text class="ts" x="125" y="1036" text-anchor="middle">1 instrument each</text>
+</g>
+<g class="node n-d1" id="orderBlotter" tabindex="0" role="button" aria-label="Order blotter details">
+  <rect x="194" y="994" width="122" height="56" rx="8"/>
+  <text class="tt" x="255" y="1017" text-anchor="middle">Order blotter</text>
+  <text class="ts" x="255" y="1036" text-anchor="middle">orders + fills</text>
+</g>
+<g class="node n-d1" id="marketBlotter" tabindex="0" role="button" aria-label="Market blotter details">
+  <rect x="324" y="994" width="122" height="56" rx="8"/>
+  <text class="tt" x="385" y="1017" text-anchor="middle">Market blotter</text>
+  <text class="ts" x="385" y="1036" text-anchor="middle">filtered stream</text>
+</g>
+<g class="node n-d1" id="refdata" tabindex="0" role="button" aria-label="Refdata provider details">
+  <rect x="454" y="994" width="122" height="56" rx="8"/>
+  <text class="tt" x="515" y="1017" text-anchor="middle">Refdata provider</text>
+  <text class="ts" x="515" y="1036" text-anchor="middle">shared 5k cache</text>
+</g>
+<text class="tm lbl" x="320" y="1084" text-anchor="middle">each MFE: HAClient · server list [AMPS DC1 → AMPS DC2]</text>
+<text class="tm lbl" x="320" y="1104" text-anchor="middle">own process + JS context · jittered backoff · heartbeat 5s</text>
+
+<g class="node n-d2" id="ws2" tabindex="0" role="button" aria-label="DC2-homed workstations details">
+  <rect x="620" y="880" width="360" height="262" rx="14"/>
+  <text class="tt" x="800" y="922" text-anchor="middle">DC2-homed workstations</text>
+  <text class="ts" x="800" y="952" text-anchor="middle">mirror of DC1-homed topology</text>
+  <text class="tm" x="800" y="982" text-anchor="middle" fill="var(--dc2-text)">server list [AMPS DC2 → AMPS DC1]</text>
+  <text class="ts" x="800" y="1012" text-anchor="middle">same provider · same MFEs</text>
+  <text class="ts" x="800" y="1038" text-anchor="middle">fails over to DC1 on outage</text>
+</g>
+
+<line class="edge" x1="70" y1="1188" x2="106" y2="1188"/>
+<text class="leg" x="114" y="1192">primary data path</text>
+<line class="edge-f" x1="250" y1="1188" x2="286" y2="1188"/>
+<text class="leg" x="294" y="1192">HAClient failover path</text>
+<line class="edge-c" x1="450" y1="1188" x2="486" y2="1188"/>
+<text class="leg" x="494" y="1192">config at launch</text>
+<line class="bnd" x1="640" y1="1188" x2="676" y2="1188"/>
+<text class="leg" x="684" y="1192">team ownership boundary</text>
+<text class="leg" x="70" y="1220">teal components are the only two places state lives — Coherence as source of truth, AMPS as its rebuildable per-DC projection</text>
+</svg>
+</div>
+
+<aside id="panel" aria-live="polite"></aside>
+</div>
+
+<div class="principles">
+  <div class="pr"><b>One-way data flow</b><span>State flows down from the source of truth; order entry crosses back through an explicit, versioned service contract — never through the shared cache.</span></div>
+  <div class="pr"><b>Determinism over coordination</b><span>The two DC projections are equivalent by construction, so nothing has to synchronize them — and clients can switch sites seamlessly.</span></div>
+  <div class="pr"><b>Disposable projections</b><span>AMPS is a rebuildable view of Coherence, never a second system of record. Recovery is always re-projection, not reconciliation.</span></div>
+  <div class="pr"><b>Ownership with clean contracts</b><span>E-Trading to Coherence, Rubicon below it. The cache schema is the versioned contract; accountability is answerable in seconds.</span></div>
+</div>
+
+<footer>
+  <span>Rubicon UI engineering · Macro Desktop platform</span>
+  <span>Rates e-trading · live/live architecture · v1.0</span>
+</footer>
+</div>
+
+<script>
+const D = {
+  overview: {
+    kicker: "system · live/live", title: "How to read this diagram",
+    exec: "Two independent, continuously exercised paths from one source of truth — resilience proven every trading day, not assumed.",
+    role: "One shared source of truth (Coherence) is projected independently into two disposable AMPS materialized views, one per data center. Users are split across sites by a config-driven affinity mapping resolved once at workspace launch, so both paths carry production traffic every day — failover is the same code path, triggered by outage instead of config.",
+    decisions: [
+      "Each DC is sized for 100% of users; the split buys continuous validation, not capacity.",
+      "No AMPS DC1↔DC2 replication — two writers plus replication would fight over the same keys. Recovery is always re-projection from Coherence.",
+      "Solid arrows are steady-state; dashed arrows are the automatic client failover path; the coral dashed line is the team ownership boundary."
+    ],
+    ha: [
+      "Clients never fail back mid-session — users re-home to config at their next workspace launch, avoiding disruption.",
+      "Expected vs actual per-DC user counts are monitored: everyone piling onto one site is the earliest outage signal.",
+      "Two users homed to different sites see the same update milliseconds apart — support is briefed so it never becomes an investigation."
+    ],
+    tech: ["Coherence", "AMPS", "OpenFin", "Angular · ag-Grid · PrimeNG"]
+  },
+  etStack: {
+    kicker: "E-Trading team · PICO DC", title: "E-trading stack",
+    exec: "The trading estate stays untouched — this program only reads from it.",
+    role: "The core pricing and order-management estate, hosted in the PICO data center. Its events are exported over the Solace bridge; everything downstream is a read-side projection of it.",
+    decisions: [
+      "Per-key sequence/version fields originate as close to here as possible, so staleness and reordering are detectable end to end.",
+      "Order entry terminates here: whatever path an order takes down from the desktop, this side validates and owns it after acceptance."
+    ],
+    ha: ["Its DR posture is inherited by everything below — a PICO event gap surfaces as a stale feed heartbeat in Coherence, giving instant attribution."],
+    tech: ["PICO hosted", "upstream feeds"]
+  },
+  solace: {
+    kicker: "E-Trading team · transport", title: "Solace bridge",
+    exec: "Reliable transport out of PICO; downstream versioning absorbs its failover quirks.",
+    role: "Guaranteed-delivery transport carrying e-trading events out of PICO into the bank's data centers, where the Java bridges consume them.",
+    decisions: [
+      "Bridge failover can reorder or replay messages — the reason every record carries a per-key version, so consumers discard stale updates instead of repainting backwards."
+    ],
+    ha: ["Feed-level heartbeats published through this path let Coherence show per-feed freshness."],
+    tech: ["Solace PubSub+", "guaranteed delivery"]
+  },
+  bridges: {
+    kicker: "E-Trading team · ingestion", title: "Java bridges",
+    exec: "Translate upstream feeds once, so every consumer speaks one domain model.",
+    role: "One bridge per domain — market data, orders, refdata — translating upstream formats and writing normalized, keyed state into the Coherence cluster.",
+    decisions: [
+      "Domain separation means a refdata bridge restart never perturbs the order feed.",
+      "These are the last components that speak the upstream's language; Coherence and below speak the shared domain model."
+    ],
+    ha: ["Per-feed heartbeat and sequence records written by each bridge give instant 'which side is broken' attribution across the team boundary."],
+    tech: ["Java", "per-domain processes"]
+  },
+  coherence: {
+    kicker: "E-Trading team · shared state", title: "Coherence cluster",
+    exec: "The single system of record — and the formal contract between the two teams.",
+    role: "System of record cache. Because the ownership boundary sits directly below it, cache names, key schemes, and serialized domain classes are the working contract between E-Trading and Rubicon.",
+    decisions: [
+      "The contract is a shared, versioned schema artifact (domain-model jar / IDL); additive-only changes by default, with a deprecation process for anything else.",
+      "Both DC adapters extend into this one cluster, making it the platform's true single point of failure — its own DR story matters more than anything downstream.",
+      "Extend proxy endpoints exist in both DCs and appear in both adapters' address providers."
+    ],
+    ha: [
+      "The cluster's cross-DC failover posture is a standing agenda item with E-Trading, not an assumption.",
+      "Fresh heartbeat here + stale AMPS = Rubicon issue; stale here = E-Trading issue. Attribution in seconds, not meetings."
+    ],
+    tech: ["Oracle Coherence", "POF domain model", "Extend proxies"]
+  },
+  boundary: {
+    kicker: "organizational seam", title: "Team ownership boundary",
+    exec: "Accountability is structural: each team owns a complete, independently deployable half.",
+    role: "E-Trading owns everything up to and including Coherence; Rubicon owns the adapter, AMPS, and the desktop. The adapter is a backend-for-frontend — a projection layer shaped for the trading UI, owned by the team that owns the UI.",
+    decisions: [
+      "Rubicon owning the whole projection path means adding a field to a blotter never needs an E-Trading ticket if the data already exists in Coherence — feature velocity without cross-team dependencies.",
+      "Trading business logic stays out of the adapter — logic that computes trading semantics belongs left of this line.",
+      "Order entry crosses this boundary through an explicit versioned service contract (API or order-entry topic that E-Trading owns), never by writing into the shared cache."
+    ],
+    ha: [
+      "Non-prod Coherence access (or a contract-test fake) is part of the boundary agreement — it is the day-to-day dependency this split creates.",
+      "Rubicon operates server-side services here: JVM deployments, on-call, runbooks, capacity — an explicit, budgeted responsibility."
+    ],
+    tech: ["versioned contract", "BFF pattern"]
+  },
+  adapter: {
+    kicker: "Rubicon · DC1", title: "ET-Trading adapter",
+    exec: "Rubicon's projection engine — it can rebuild the desktop's entire view from Coherence at any time.",
+    role: "Spring Boot service that reads Coherence and writes the UI-facing projection into its local AMPS. It is the sole writer of those topics — the one component that could corrupt the desktop's view of the world, and the one that can always repair it.",
+    decisions: [
+      "Joins Coherence as an Extend TCP client, not a cluster member — restarts and deploys never perturb E-Trading's cluster, and their upgrades never force Rubicon's release cadence.",
+      "Primes via CQC / entry listeners: initial snapshot, then live events. Publishes with delta_publish; keys align 1:1 with Coherence keys.",
+      "Idempotent republish: same key + same content is a no-op, so restart and failover look like a quiet resync, never delete-and-reload churn.",
+      "Deterministic output — no wall-clock timestamps or locally minted sequences, so DC1 and DC2 projections are equivalent for the same source state."
+    ],
+    ha: [
+      "Stateless-restartable: crash → reconnect → re-prime → republish. Active/passive per DC available for faster recovery.",
+      "Projects feed heartbeats from Coherence into AMPS so the desktop can surface data freshness to traders."
+    ],
+    tech: ["Java Spring Boot", "Coherence*Extend", "AMPS Java client"]
+  },
+  adapter2: {
+    kicker: "Rubicon · DC2", title: "ET-Trading adapter (DC2)",
+    exec: "Same software, second site — equivalence by construction, not by synchronization.",
+    role: "Identical deployment of the DC1 adapter, independently projecting the same Coherence cluster into AMPS DC2. Nothing coordinates the two — determinism is the coordination.",
+    decisions: [
+      "Byte-equivalent-in-meaning records for the same source state: same keys, same version fields. This is what makes a DC1→DC2 client switch a seamless snapshot replace instead of a flicker of 'different' data.",
+      "Its Extend address provider prefers a DC2-local Coherence proxy where one exists."
+    ],
+    ha: ["Deployed and versioned in lockstep with DC1 — a projection-logic change rolled to one site only would break the equivalence users depend on during failover."],
+    tech: ["Java Spring Boot", "Coherence*Extend"]
+  },
+  amps: {
+    kicker: "Rubicon · DC1 · stateful", title: "AMPS · DC1",
+    exec: "Purpose-built last-mile distribution — absorbs the entire desk's connections with an order of magnitude of headroom.",
+    role: "Last-mile fanout specialist: content-filtered subscriptions per micro-frontend and sow_and_subscribe atomicity (snapshot plus updates, no gap). It absorbs many connections per user so Coherence never sees a browser.",
+    decisions: [
+      "SOW topics are a disposable materialized view — recovery is re-projection from Coherence, which is why no cross-DC replication exists by design.",
+      "Equality filters such as /instrumentId are indexed by subscription analysis; 40 single-instrument ladders are close to AMPS's best case. Desk-scale load (thousands of connections, ~17k subscriptions, 5 msg/s market data) is a small fraction of one instance's capacity.",
+      "Authentication via the bundled RESTful module backed by the Rubicon Spring Boot auth service; entitlement caching absorbs the 40+ logons a workspace restore fires at once."
+    ],
+    ha: [
+      "Slow-client buffers are sized for order-topic bursts, not the market-data average — order flow spikes, market data does not.",
+      "On the shared Linux host, AMPS cores and Solarflare IRQs are pinned via cgroups so a neighboring JVM's GC storm cannot land on the interrupt path.",
+      "Structured client names (user-app-mfe-instance) enable per-window monitoring and targeted disconnects in the admin console."
+    ],
+    tech: ["AMPS SOW", "delta_publish", "REST auth module", "64-core Xeon · Solarflare"]
+  },
+  amps2: {
+    kicker: "Rubicon · DC2 · stateful", title: "AMPS · DC2",
+    exec: "A full-capacity peer, kept honest by serving real users every day.",
+    role: "Independent peer of AMPS DC1 — primary for DC2-homed users, failover target for DC1-homed users. Serves identical topics because its adapter projects the same source deterministically.",
+    decisions: [
+      "Configured identically to DC1 (topics, filters, auth, slow-client policies) and change-managed together — configuration drift between sites would surface as 'half the desk sees it'.",
+      "Sized for 100% of users, so a DC1 outage moving everyone here is a non-event."
+    ],
+    ha: ["During DC1 maintenance, the config kill switch (active:false) drains new sessions here as traders launch; surviving DC1 sessions fail over automatically when DC1 is taken down."],
+    tech: ["AMPS SOW", "identical topology"]
+  },
+  config: {
+    kicker: "Rubicon · control plane", title: "Affinity config service",
+    exec: "One audited document decides who connects where — changed like code, applied at launch.",
+    role: "A central versioned JSON document served over HTTPS from Rubicon-owned infrastructure — the single input deciding which data center each user calls primary. Read once at workspace launch; changes apply on restart, by design.",
+    decisions: [
+      "Schema: version and updatedBy audit fields, per-DC server lists with an active flag (the maintenance kill switch), explicit user overrides, and hash-of-userId as the default so onboarding never needs a config edit.",
+      "Git-backed and PR-reviewed — it decides where order flow connects, so it ships with the same rigor as code.",
+      "Fallback chain in the platform provider: override → hash → last-good cached copy → compiled-in defaults. A bad push degrades to yesterday's assignment, never to 'the desk can't connect'.",
+      "Deliberately not a per-desktop file, and not the local endpoint pattern previously flagged by security review."
+    ],
+    ha: ["Maintenance flow: flip a site inactive at end of day, traders re-home naturally at next launch, service that site freely, flip back — maintenance windows become non-events."],
+    tech: ["versioned JSON", "HTTPS config endpoint", "git + PR"]
+  },
+  provider: {
+    kicker: "Rubicon · workstation", title: "OpenFin platform provider",
+    exec: "One decision per workstation guarantees every window sees the same world.",
+    role: "Resolves data-center affinity exactly once at workspace bootstrap — before any micro-frontend launches — and distributes the resolved, ordered server list (never the raw config) to every window.",
+    decisions: [
+      "A single resolution per session guarantees the invariant: all ~45 connections on a workstation share one primary DC, so no window ever mixes DC1 and DC2 views of the world.",
+      "Short fetch timeout (~2s); workspace launch never blocks on the config endpoint.",
+      "Logs {userId, configVersion, resolvedDC, reason} at every launch — combined with AMPS connection counts, expected-vs-actual split monitoring falls out for free."
+    ],
+    ha: ["Validates defensively: zero active sites or malformed endpoints → use the cached copy."],
+    tech: ["OpenFin Workspace", "Channel API", "@macro/transports"]
+  },
+  ladders: {
+    kicker: "Rubicon · micro-frontend", title: "Ladders ×40",
+    exec: "Forty isolated windows per trader, each impossible to take down by its neighbor.",
+    role: "Up to 40 per user, each in its own OpenFin process and JS context, each with its own HA client and two narrow subscriptions: market data for one instrument, and orders for that instrument.",
+    decisions: [
+      "Per-ladder processes are affordable on the trader workstation specification and buy maximum fault isolation — one wedged ladder never affects another.",
+      "At 5 updates per second, no conflation or paint throttling is required; rendering every tick gives traders the lowest-latency view.",
+      "Single-instrument equality filters are AMPS's indexed best case."
+    ],
+    ha: ["On failover, sow_and_subscribe delivers a fresh snapshot from the new site; the grid replaces state rather than merging, with version fields discarding anything stale."],
+    tech: ["AMPS JS HAClient", "Angular", "per-process isolation"]
+  },
+  orderBlotter: {
+    kicker: "Rubicon · micro-frontend", title: "Order blotter",
+    exec: "Snapshot-plus-updates atomicity, with failover engineered to never duplicate an order.",
+    role: "sow_and_subscribe over the user's orders and fills — current state plus live updates, atomically. ag-Grid row transactions keyed on the SOW key with a version check keep updates ordered.",
+    decisions: [
+      "Resubscription (failover or reconnect) is treated as replace-snapshot, never merge: clear-and-load keyed rows, version field guards against regression.",
+      "Where order entry rides AMPS: the HA client republishes in-flight messages after failover — correct for delivery, dangerous for orders. Every order carries a client-generated order ID and the upstream deduplicates on it."
+    ],
+    ha: ["Order topics are the bursty ones — buffers and any conflation decisions are sized to their spikes, not market-data averages."],
+    tech: ["sow_and_subscribe", "ag-Grid transactions"]
+  },
+  marketBlotter: {
+    kicker: "Rubicon · micro-frontend", title: "Market blotter",
+    exec: "The wide view of the market, on the same consistency guarantees as everything else.",
+    role: "Broad filtered subscription across the instruments the desk watches — the wide-view counterpart to the ladders' narrow filters.",
+    decisions: [
+      "Filter overlap with ladders is delivered per-socket by AMPS — acceptable duplication at these message rates.",
+      "Same version-field discipline: a replayed or reordered update never repaints a row backwards."
+    ],
+    ha: ["Same replace-snapshot failover behavior as every grid on the platform."],
+    tech: ["content filters", "ag-Grid"]
+  },
+  refdata: {
+    kicker: "Rubicon · micro-frontend · shared", title: "Refdata provider",
+    exec: "One 10MB reference load per workstation instead of forty-five — the platform's single deliberate exception to isolation.",
+    role: "A hidden window holds the single sow_and_subscribe for product (5,000 instruments × 2KB ≈ 10MB) and account data, serving the other windows over the Channel API — because the data is large, static, and identical for everyone.",
+    decisions: [
+      "Windows make query-shaped calls (one instrument by ID, join fields) — never a 10MB transfer that would just move load from AMPS to the message bus.",
+      "Intraday changes propagate as per-record deltas broadcast on a channel topic; consumers patch local copies.",
+      "One subscription per workstation instead of ~45 independent 10MB pulls at every workspace restore — protecting both the network and desk-wide restart times."
+    ],
+    ha: ["Stateless-restartable: on crash it resubscribes and re-announces readiness; consumers use last-known data and re-sync on reconnect — fault isolation stays intact despite the shared dependency."],
+    tech: ["hidden OpenFin window", "Channel API", "sow_and_subscribe"]
+  },
+  ws2: {
+    kicker: "Rubicon · workstation", title: "DC2-homed workstations",
+    exec: "Half the desk lives here by design — daily proof that the second site works.",
+    role: "Identical topology to the DC1-homed group — same platform provider, same micro-frontends, same refdata provider — with the server list reversed: AMPS DC2 first, AMPS DC1 as failover.",
+    decisions: [
+      "Assignment comes from the same affinity config (override or hash), so the split is deterministic, centrally visible, and stable across restarts.",
+      "Roughly half the desk exercising this path daily is what keeps DC2 from decaying into an untested cold standby."
+    ],
+    ha: [
+      "On a DC2 outage these users fail over to DC1 automatically with jittered backoff; they remain there until their next workspace launch re-homes them to config.",
+      "Periodically flipping a pilot group's ordering proves re-homing end to end — disaster-recovery drills at near-zero cost."
+    ],
+    tech: ["mirror topology", "HAClient [DC2 → DC1]"]
+  }
+};
+
+const panel = document.getElementById('panel');
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function render(id){
+  const d = D[id] || D.overview;
+  panel.innerHTML =
+    '<p class="kicker">' + esc(d.kicker) + '</p>' +
+    '<h2>' + esc(d.title) + '</h2>' +
+    '<div class="exec">' + esc(d.exec) + '</div>' +
+    '<p class="role">' + esc(d.role) + '</p>' +
+    '<h3>Key design decisions</h3><ul>' + d.decisions.map(x=>'<li>'+esc(x)+'</li>').join('') + '</ul>' +
+    '<h3>Failure &amp; availability</h3><ul>' + d.ha.map(x=>'<li>'+esc(x)+'</li>').join('') + '</ul>' +
+    '<div class="chips">' + d.tech.map(x=>'<span class="chip">'+esc(x)+'</span>').join('') + '</div>' +
+    '<p class="hint">' + (id==='overview'
+      ? 'Select any component in the diagram — including the ownership boundary — for its design rationale.'
+      : 'Select another component, or press Esc to return to the overview.') + '</p>';
+}
+let current = null;
+function select(id){
+  document.querySelectorAll('.node.sel').forEach(n=>n.classList.remove('sel'));
+  current = id;
+  if(id){
+    const el = document.getElementById(id);
+    if(el) el.classList.add('sel');
+  }
+  render(id || 'overview');
+  if(window.matchMedia('(max-width: 1079px)').matches && id){
+    panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+}
+document.querySelectorAll('.node').forEach(n=>{
+  n.addEventListener('click', ()=>select(n.id));
+  n.addEventListener('keydown', e=>{
+    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); select(n.id); }
+  });
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') select(null); });
+render('overview');
+</script>
+</body>
+</html>

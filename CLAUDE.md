@@ -6,17 +6,17 @@ NX 23 monorepo for **Capital Markets desktop applications**. Combines Angular 22
 
 ## Quick Reference
 
-| App                    | Port | Framework             | Command                                  |
-| ---------------------- | ---- | --------------------- | ---------------------------------------- |
-| macro-angular          | 4200 | Angular 22 (zoneless) | `npm run start:angular`                  |
-| macro-react            | 4201 | React 19 + Vite 8     | `npm run start:react`                    |
-| macro-workspace        | 4202 | Angular 22 (zoneless) | `npm run start:workspace`                |
-| macro-angular-fdc3     | 4203 | Angular 22 (zoneless) | `npm run start:fdc3`                     |
-| prism                  | 4204 | Angular 22 (zoneless) | `npm run start:prism`                    |
-| prism-react            | 4205 | React 19 + Vite 8     | `npm run start:prism-react`              |
-| capital-markets-themes | 4206 | React 19 + Vite 8     | `npm run start:capital-markets-themes`   |
-| market-data-server     | 3000 | Node.js WebSocket + REST | `npm run start:market-data-server`    |
-| Core four apps         | -    | -                     | `npm start` (workspace, angular, react, fdc3) |
+| App                    | Port | Framework                | Command                                       |
+| ---------------------- | ---- | ------------------------ | --------------------------------------------- |
+| macro-angular          | 4200 | Angular 22 (zoneless)    | `npm run start:angular`                       |
+| macro-react            | 4201 | React 19 + Vite 8        | `npm run start:react`                         |
+| macro-workspace        | 4202 | Angular 22 (zoneless)    | `npm run start:workspace`                     |
+| macro-angular-fdc3     | 4203 | Angular 22 (zoneless)    | `npm run start:fdc3`                          |
+| prism                  | 4204 | Angular 22 (zoneless)    | `npm run start:prism`                         |
+| prism-react            | 4205 | React 19 + Vite 8        | `npm run start:prism-react`                   |
+| capital-markets-themes | 4206 | React 19 + Vite 8        | `npm run start:capital-markets-themes`        |
+| market-data-server     | 3000 | Node.js WebSocket + REST | `npm run start:market-data-server`            |
+| Core four apps         | -    | -                        | `npm start` (workspace, angular, react, fdc3) |
 
 Launch OpenFin: `npm run launch` (after workspace is serving on 4202)
 
@@ -223,29 +223,29 @@ An **nx-mcp** server (NX workspace commands) is additionally provided by the NX 
 
 ## Key Files to Know
 
-| File                                             | Purpose                                      |
-| ------------------------------------------------ | -------------------------------------------- |
-| `tsconfig.base.json`                             | All `@macro/*` path aliases                  |
-| `nx.json`                                        | Build targets, caching, plugins, generators  |
-| `apps/macro-workspace/public/{local,openshift}/apps.json` | OpenFin app registry (per-env; source of truth for store + dock + home) |
-| `apps/macro-workspace/public/{local,openshift}/dock-config.json` | Dock favorites + content menu (per-env)      |
-| `apps/macro-workspace/public/{local,openshift}/storefront-config.json` | Storefront nav (Capital Markets LOB categories + Desk & Library), landing, footer, `cardClickBehavior` (per-env) |
-| `apps/macro-workspace/public/{local,openshift}/manifest.fin.json` | OpenFin platform/runtime manifest (per-env; NOT the app registry) |
-| `apps/macro-workspace/public/{local,openshift}/settings.json` | `platformSettings` + optional `browserSettings` + `storage` block (unified-storage environments: local/dev/uat/prod service URLs, `defaultEnvironment`) |
-| `docs/api/workspace-storage-api.openapi.yaml`    | Workspace Storage API contract (OpenAPI 3.1) — phase-2 Spring Boot + MongoDB implements it; phase-1 reference lives in market-data-server at `/workspace/v1` |
-| `apps/macro-workspace/public/{local,openshift}/dos.json` | Desktop Owner Settings: pins workspace 24.0.24 + notification-center 2.15.3 system apps (applied via `npm run dos`) |
-| `libs/macro-design/src/lib/css/macro-design.css` | All CSS variables (`:root` + `.dark`)        |
-| `libs/macro-design/src/lib/ag-grid-theme.ts`     | AG Grid theme builder                        |
-| `libs/macro-design/src/lib/dark-mode.ts`         | Dark mode utilities                          |
-| `libs/macro-design/src/lib/theme.config.ts`      | Theme palettes for OpenFin                   |
-| `libs/openfin/src/index.ts`                      | All OpenFin service exports                  |
-| `apps/macro-angular/src/app/app.config.ts`       | Angular app providers (PrimeNG, zoneless CD) |
-| `apps/macro-react/src/main.tsx`                  | React entry (PrimeReact provider config)     |
-| `apps/macro-workspace/src/app/app.config.ts`     | Workspace app config (zoneless)              |
-| `.github/workflows/ci.yml`                       | CI workflow: `npm ci` → `npm run build` → `npm run test` on master pushes + PRs; uploads `test-reports` artifact |
-| `scripts/test-ci.mjs`                            | `npm run test` runner — Jest/Vitest split, merges LCOV → `coverage/lcov.info` and JUnit → root `junit.xml` |
-| `.github/copilot-instructions.md`                | Condensed AG Grid 36 / format-panel / calc / Show-Values-As rules + gotchas (auto-loaded by Copilot) |
-| `docs/copilot/ag-grid-36-format-panel-port.md`   | Full verbatim port guide for the above (engine, tool panel, persistence side-channels) |
+| File                                                                   | Purpose                                                                                                                                                      |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tsconfig.base.json`                                                   | All `@macro/*` path aliases                                                                                                                                  |
+| `nx.json`                                                              | Build targets, caching, plugins, generators                                                                                                                  |
+| `apps/macro-workspace/public/{local,openshift}/apps.json`              | OpenFin app registry (per-env; source of truth for store + dock + home)                                                                                      |
+| `apps/macro-workspace/public/{local,openshift}/dock-config.json`       | Dock favorites + content menu (per-env)                                                                                                                      |
+| `apps/macro-workspace/public/{local,openshift}/storefront-config.json` | Storefront nav (Capital Markets LOB categories + Desk & Library), landing, footer, `cardClickBehavior` (per-env)                                             |
+| `apps/macro-workspace/public/{local,openshift}/manifest.fin.json`      | OpenFin platform/runtime manifest (per-env; NOT the app registry)                                                                                            |
+| `apps/macro-workspace/public/{local,openshift}/settings.json`          | `platformSettings` + optional `browserSettings` + `storage` block (unified-storage environments: local/dev/uat/prod service URLs, `defaultEnvironment`)      |
+| `docs/api/workspace-storage-api.openapi.yaml`                          | Workspace Storage API contract (OpenAPI 3.1) — phase-2 Spring Boot + MongoDB implements it; phase-1 reference lives in market-data-server at `/workspace/v1` |
+| `apps/macro-workspace/public/{local,openshift}/dos.json`               | Desktop Owner Settings: pins workspace 24.0.24 + notification-center 2.15.3 system apps (applied via `npm run dos`)                                          |
+| `libs/macro-design/src/lib/css/macro-design.css`                       | All CSS variables (`:root` + `.dark`)                                                                                                                        |
+| `libs/macro-design/src/lib/ag-grid-theme.ts`                           | AG Grid theme builder                                                                                                                                        |
+| `libs/macro-design/src/lib/dark-mode.ts`                               | Dark mode utilities                                                                                                                                          |
+| `libs/macro-design/src/lib/theme.config.ts`                            | Theme palettes for OpenFin                                                                                                                                   |
+| `libs/openfin/src/index.ts`                                            | All OpenFin service exports                                                                                                                                  |
+| `apps/macro-angular/src/app/app.config.ts`                             | Angular app providers (PrimeNG, zoneless CD)                                                                                                                 |
+| `apps/macro-react/src/main.tsx`                                        | React entry (PrimeReact provider config)                                                                                                                     |
+| `apps/macro-workspace/src/app/app.config.ts`                           | Workspace app config (zoneless)                                                                                                                              |
+| `.github/workflows/ci.yml`                                             | CI workflow: `npm ci` → `npm run build` → `npm run test` on master pushes + PRs; uploads `test-reports` artifact                                             |
+| `scripts/test-ci.mjs`                                                  | `npm run test` runner — Jest/Vitest split, merges LCOV → `coverage/lcov.info` and JUnit → root `junit.xml`                                                   |
+| `.github/copilot-instructions.md`                                      | Condensed AG Grid 36 / format-panel / calc / Show-Values-As rules + gotchas (auto-loaded by Copilot)                                                         |
+| `docs/copilot/ag-grid-36-format-panel-port.md`                         | Full verbatim port guide for the above (engine, tool panel, persistence side-channels)                                                                       |
 
 ## Common Pitfalls
 
@@ -268,7 +268,7 @@ An **nx-mcp** server (NX workspace commands) is additionally provided by the NX 
 ## General Guidelines for working with Nx
 
 - For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies
-- When running tasks (for example build, lint, test, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
+- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
 - Prefix nx commands with the workspace's package manager (e.g., `pnpm nx build`, `npm exec nx test`) - avoids using globally installed CLI
 - You have access to the Nx MCP server and its tools, use them to help the user
 - For Nx plugin best practices, check `node_modules/@nx/<plugin>/PLUGIN.md`. Not all plugins have this file - proceed without it if unavailable.
