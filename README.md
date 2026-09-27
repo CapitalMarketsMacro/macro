@@ -2,7 +2,7 @@
 
 
 
-NX 23 monorepo for **Capital Markets desktop applications**. Combines Angular 22, React 19, and OpenFin Workspace (HERE Core UI 24.0.24) into a unified platform with shared libraries for real-time market data, enterprise messaging, analytics, and FDC3 interoperability.
+NX 23 monorepo for **Capital Markets desktop applications**. Combines Angular 22, React 19, and OpenFin Workspace (HERE Core UI 45.2.6) into a unified platform with shared libraries for real-time market data, enterprise messaging, analytics, and FDC3 interoperability.
 
 
 
@@ -470,11 +470,11 @@ Configured via the optional `browserSettings` block in `settings.json` (per-env)
 
 - **Page pinning & locking** -- end-users pin favourite pages to the front of the tab strip via the built-in **Pin/Unpin** page-tab context-menu items (no platform code involved). Developers can platform-lock a page (non-closeable, fixed first position, locked layout) by setting `pinned: 'platform'` on any `Page` object passed to `Browser.createWindow` / page storage APIs.
 
-- **Transient / sticky toasts (Notification Center 2.15)** -- per-notification `toast: 'sticky' | 'transient' | 'none'` on `NotificationOptions` (default `transient`): sticky toasts stay on the desktop until interacted with, `none` lands in the Center only -- honored whether or not the Center is open. `NotificationsService.info/success/warning/error/critical(title, body, { toast })` pass it through; try the **Sticky / Transient / Silent** pills in the provider window's Expand panel. The Center itself is pinned to 2.15.3 in `dos.json` (`systemApps["notification-center"]`).
+- **Transient / sticky toasts (Notification Center 2.15+, now 45.2.5)** -- per-notification `toast: 'sticky' | 'transient' | 'none'` on `NotificationOptions` (default `transient`): sticky toasts stay on the desktop until interacted with, `none` lands in the Center only -- honored whether or not the Center is open. `NotificationsService.info/success/warning/error/critical(title, body, { toast })` pass it through; try the **Sticky / Transient / Silent** pills in the provider window's Expand panel. The Center itself is pinned to 45.2.5 in `dos.json` (`systemApps["notification-center"]`).
 
-> **DOS pin note:** 24.x is now the Stable/`latest` npm line (the pin dates from its Beta-channel days, when unpinned RVMs served the 23.2.x browser UI and silently hid these features). Run `npm run dos` once (Windows, HKCU only) to pin the HERE Core UI system app to 24.0.24 via Desktop Owner Settings (`public/{local,openshift}/dos.json`), then restart OpenFin (`npm run stop:all`); the pin guarantees the exact UI version the platform was tested against. Undo with `npm run dos:restore`.
+> **DOS pin note:** the platform tracks the 45.x line (npm `beta`; the Stable runtime channel already ships runtime 45.150.101.1, while npm `latest` remains 24.0.24). The pin dates from 24.x's Beta-channel days, when unpinned RVMs served the 23.2.x browser UI and silently hid newer features. Run `npm run dos` once (Windows, HKCU only) to pin the HERE Core UI system app to 45.2.6 via Desktop Owner Settings (`public/{local,openshift}/dos.json`), then restart OpenFin (`npm run stop:all`); the pin guarantees the exact UI version the platform was tested against. Undo with `npm run dos:restore`.
 
-> Supertab Windows and the AI Center remain preview-only in 24.0.24 (`@openfin/here-supertabs` is not on public npm and `aiPanelOptions` is internal); they are intentionally not wired up here yet.
+> Supertab Windows and the AI Center remain preview-only in 45.2.6 (`@openfin/here-supertabs` is not on public npm and `aiPanelOptions` is internal); they are intentionally not wired up here yet.
 
 
 
@@ -946,13 +946,13 @@ npm run build:<app>          # Build individual app
 
 | PrimeNG | 21.1.3 |
 
-| @openfin/workspace-platform | 24.0.24 |
+| @openfin/workspace-platform | 45.2.6 |
 
 | @openfin/snap-sdk | 1.6.0 |
 
 | @nats-io/nats-core | 3.3.1 |
 
-| Runtime | 44.146.101.7 |
+| Runtime | 45.150.101.1 |
 
 | NX | 22.5 |
 
