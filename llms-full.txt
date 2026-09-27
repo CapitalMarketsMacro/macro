@@ -105,7 +105,7 @@ macro/
 | `macro-mcp` | — (stdio) | Node.js + `@modelcontextprotocol/sdk` | `npm run build:mcp` then run from `dist/` | MCP server for repo scaffolding / Figma import; thin entrypoint over `@macro/mcp-core` |
 | `macro-mcp-agent` | 3100 (`MCP_PORT` env) | Node.js + express (Streamable HTTP + SSE transports) | `npm run start:mcp-agent` | Same `@macro/mcp-core` tools exposed remotely for deployment |
 
-`npm start` runs the core four concurrently (workspace, angular, react, fdc3 via `concurrently -n workspace,angular,react,fdc3`). Launch OpenFin afterwards with `npm run launch` (runs `node apps/macro-workspace/launch.mjs http://localhost:4202/local/manifest.fin.json`).
+`npm start` runs all core apps + data concurrently (workspace, angular, react, fdc3, prism, prism-react, market-data-server via `concurrently -n workspace,angular,react,fdc3,prism,prism-react,mds`). Launch OpenFin afterwards with `npm run launch` (runs `node apps/macro-workspace/launch.mjs http://localhost:4202/local/manifest.fin.json`).
 
 Gotcha: `apps/capital-markets-themes/` contains BOTH `vite.config.ts` (port 4206, base `/capital-markets-themes/`) and a leftover `vite.config.mts` (port 4200). Vite's config resolution picks `vite.config.ts` first, so 4206 is the effective port; its `project.json` declares no explicit targets (all inferred by the `@nx/vite` plugin).
 
