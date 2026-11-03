@@ -18,7 +18,7 @@ NX 23 monorepo for **Capital Markets desktop applications**. Combines Angular 22
 | prism-react            | 4205 | React 19 + Vite 8        | `npm run start:prism-react`                   |
 | capital-markets-themes | 4206 | React 19 + Vite 8        | `npm run start:capital-markets-themes`        |
 | market-data-server     | 3000 | Node.js WebSocket + REST | `npm run start:market-data-server`            |
-| Core four apps         | -    | -                        | `npm start` (workspace, angular, react, fdc3) |
+| All core apps + data   | -    | -                        | `npm start` (workspace, angular, react, fdc3, prism, prism-react, market-data-server) |
 
 Launch OpenFin: `npm run launch` (after workspace is serving on 4202)
 

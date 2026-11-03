@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "start": "concurrently -n workspace,angular,react,fdc3 -c blue,green,yellow,magenta \"nx serve macro-workspace\" \"nx serve macro-angular\" \"nx serve macro-react\" \"nx serve macro-angular-fdc3\"",
+    "start": "concurrently -n workspace,angular,react,fdc3,prism,prism-react,mds -c blue,green,yellow,magenta,cyan,white,gray \"nx serve macro-workspace\" \"nx serve macro-angular\" \"nx serve macro-react\" \"nx serve macro-angular-fdc3\" \"nx serve prism\" \"nx serve prism-react\" \"nx serve market-data-server\"",
     "stop": "node scripts/stop.mjs",
     "stop:all": "node scripts/stop.mjs --with-openfin",
     "dos": "node scripts/dos.mjs",
