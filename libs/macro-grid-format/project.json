@@ -15,18 +15,16 @@
         "assets": ["libs/macro-grid-format/*.md"]
       }
     },
-    "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/{projectRoot}",
-        "{workspaceRoot}/reports/{projectName}-junit.xml"
-      ],
-      "options": {
-        "jestConfig": "libs/macro-grid-format/jest.config.ts"
-      }
-    },
     "lint": {
-      "executor": "@nx/eslint:lint"
+      "inputs": [
+        "default",
+        "{workspaceRoot}/.eslintrc.json",
+        "{workspaceRoot}/.eslintignore",
+        "{workspaceRoot}/eslint.config.mjs",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
     }
   }
 }

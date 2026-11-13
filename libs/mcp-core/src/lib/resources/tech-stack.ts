@@ -6,9 +6,9 @@ const TECH_STACK_DOC = `# Technology Stack
 
 | Technology | Version | Purpose |
 |-----------|---------|---------|
-| **NX** | 22.7.5 | Monorepo build system |
-| **Angular** | 21.2.0 | Frontend framework (macro-angular, macro-workspace) |
-| **React** | 19.2.7 | Frontend framework (macro-react) |
+| **NX** | 24.0.6 | Monorepo build system |
+| **Angular** | 22.2.6 | Frontend framework (macro-angular, macro-workspace) |
+| **React** | 19.3.1 | Frontend framework (macro-react) |
 | **TypeScript** | 6.0.3 | Type safety |
 | **Node.js** | 18+ (v20 recommended) | Runtime |
 
@@ -16,10 +16,10 @@ const TECH_STACK_DOC = `# Technology Stack
 
 | Technology | Version | Purpose |
 |-----------|---------|---------|
-| **AG Grid Enterprise** | 35.3.0 | Data grids (both Angular and React) |
-| **AG Charts Enterprise** | 13.3.0 | Charts (Angular microstructure component) |
+| **AG Grid Enterprise** | 36.3.0 | Data grids (both Angular and React) |
+| **AG Charts Enterprise** | 14.3.0 | Charts (Angular microstructure component) |
 | **Recharts** | 3.4.1 | Charts (React commodities dashboard) |
-| **PrimeNG** | 21.1.8 | Angular UI components (Menubar, theme) |
+| **PrimeNG** | 21.1.10 | Angular UI components (Menubar, theme) |
 | **PrimeReact** | 11.0.0-alpha.10 | React UI components (Aura theme) |
 | **PrimeIcons** | 7.0.0 | Icon set for PrimeNG / PrimeReact |
 | **Shadcn UI / Radix** | latest | React UI components (Menubar, Switch, Label) |
@@ -42,7 +42,7 @@ const TECH_STACK_DOC = `# Technology Stack
 |-----------|---------|---------|
 | **RxJS** | 7.8.2 | Reactive programming |
 | **Pino** | 10.1.0 | Structured logging |
-| **Vite** | 8.0.14 | React build tool |
+| **Vite** | 8.0.16 | React build tool |
 | **esbuild** | 0.19.2 | Node.js build tool |
 | **Jest** | 30.3.0 | Unit testing (Angular, libs) |
 | **Vitest** | 4.1.7 | Unit testing (React) |

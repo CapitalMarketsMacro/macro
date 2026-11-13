@@ -1,9 +1,28 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
-import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
+
 import path from 'path';
+import { copyFileSync, readdirSync } from 'fs';
+import { nxReadySignal } from '@nx/vite/plugins/nx-ready-signal.plugin';
+
+// nxCopyAssetsPlugin(['*.md']) replacement — its behavior was removed in Nx 24.
+// Copies project-root *.md files (README.md) into the build output, as before.
+function copyMdAssets() {
+  let outDir = '';
+  return {
+    name: 'copy-md-assets',
+    apply: 'build' as const,
+    configResolved(config: { build: { outDir: string } }) {
+      outDir = config.build.outDir;
+    },
+    closeBundle() {
+      for (const f of readdirSync(import.meta.dirname).filter((n) => n.endsWith('.md'))) {
+        copyFileSync(path.join(import.meta.dirname, f), path.join(outDir, f));
+      }
+    },
+  };
+}
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -11,19 +30,47 @@ export default defineConfig(() => ({
   cacheDir: '../../node_modules/.vite/apps/prism-react',
   server: { port: 4205, host: 'localhost' },
   preview: { port: 4205, host: 'localhost' },
-  plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
+  plugins: [react(), copyMdAssets(), nxReadySignal()],
   resolve: {
+    tsconfigPaths: true,
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
-      '@macro/logger': path.resolve(import.meta.dirname, '../../libs/logger/src/index.ts'),
-      '@macro/prism-core': path.resolve(import.meta.dirname, '../../libs/prism-core/src/index.ts'),
-      '@macro/macro-react-grid': path.resolve(import.meta.dirname, '../../libs/macro-react-grid/src/index.ts'),
-      '@macro/macro-grid-format/react': path.resolve(import.meta.dirname, '../../libs/macro-grid-format/src/lib/react/index.ts'),
-      '@macro/macro-grid-format': path.resolve(import.meta.dirname, '../../libs/macro-grid-format/src/index.ts'),
-      '@macro/macro-design/react': path.resolve(import.meta.dirname, '../../libs/macro-design/src/lib/react/index.ts'),
-      '@macro/macro-design': path.resolve(import.meta.dirname, '../../libs/macro-design/src/index.ts'),
-      '@macro/transports': path.resolve(import.meta.dirname, '../../libs/transports/src/index.ts'),
-      '@macro/utils': path.resolve(import.meta.dirname, '../../libs/utils/src/index.ts'),
+      '@macro/logger': path.resolve(
+        import.meta.dirname,
+        '../../libs/logger/src/index.ts',
+      ),
+      '@macro/prism-core': path.resolve(
+        import.meta.dirname,
+        '../../libs/prism-core/src/index.ts',
+      ),
+      '@macro/macro-react-grid': path.resolve(
+        import.meta.dirname,
+        '../../libs/macro-react-grid/src/index.ts',
+      ),
+      '@macro/macro-grid-format/react': path.resolve(
+        import.meta.dirname,
+        '../../libs/macro-grid-format/src/lib/react/index.ts',
+      ),
+      '@macro/macro-grid-format': path.resolve(
+        import.meta.dirname,
+        '../../libs/macro-grid-format/src/index.ts',
+      ),
+      '@macro/macro-design/react': path.resolve(
+        import.meta.dirname,
+        '../../libs/macro-design/src/lib/react/index.ts',
+      ),
+      '@macro/macro-design': path.resolve(
+        import.meta.dirname,
+        '../../libs/macro-design/src/index.ts',
+      ),
+      '@macro/transports': path.resolve(
+        import.meta.dirname,
+        '../../libs/transports/src/index.ts',
+      ),
+      '@macro/utils': path.resolve(
+        import.meta.dirname,
+        '../../libs/utils/src/index.ts',
+      ),
     },
   },
   build: {
@@ -38,7 +85,10 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    reporters: ['default', ['junit', { outputFile: '../../reports/prism-react-junit.xml' }]],
+    reporters: [
+      'default',
+      ['junit', { outputFile: '../../reports/prism-react-junit.xml' }],
+    ],
     coverage: {
       reportsDirectory: '../../coverage/apps/prism-react',
       provider: 'v8' as const,

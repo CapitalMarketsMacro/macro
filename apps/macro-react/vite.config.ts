@@ -1,9 +1,9 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
-import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
+
 import path from 'path';
+import { nxReadySignal } from '@nx/vite/plugins/nx-ready-signal.plugin';
 
 export default defineConfig(() => ({
   root: __dirname,
@@ -17,17 +17,39 @@ export default defineConfig(() => ({
     port: 4201,
     host: 'localhost',
   },
-  plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
+  plugins: [react(), nxReadySignal()],
   resolve: {
+    tsconfigPaths: true,
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@macro/logger': path.resolve(__dirname, '../../libs/logger/src/index.ts'),
-      '@macro/macro-react-grid': path.resolve(__dirname, '../../libs/macro-react-grid/src/index.ts'),
-      '@macro/macro-design/react': path.resolve(__dirname, '../../libs/macro-design/src/lib/react/index.ts'),
-      '@macro/macro-design': path.resolve(__dirname, '../../libs/macro-design/src/index.ts'),
-      '@macro/openfin/theme-sync': path.resolve(__dirname, '../../libs/openfin/src/lib/theme-sync.ts'),
-      '@macro/openfin/react': path.resolve(__dirname, '../../libs/openfin/src/lib/react.ts'),
-      '@macro/openfin': path.resolve(__dirname, '../../libs/openfin/src/index.ts'),
+      '@macro/logger': path.resolve(
+        __dirname,
+        '../../libs/logger/src/index.ts',
+      ),
+      '@macro/macro-react-grid': path.resolve(
+        __dirname,
+        '../../libs/macro-react-grid/src/index.ts',
+      ),
+      '@macro/macro-design/react': path.resolve(
+        __dirname,
+        '../../libs/macro-design/src/lib/react/index.ts',
+      ),
+      '@macro/macro-design': path.resolve(
+        __dirname,
+        '../../libs/macro-design/src/index.ts',
+      ),
+      '@macro/openfin/theme-sync': path.resolve(
+        __dirname,
+        '../../libs/openfin/src/lib/theme-sync.ts',
+      ),
+      '@macro/openfin/react': path.resolve(
+        __dirname,
+        '../../libs/openfin/src/lib/react.ts',
+      ),
+      '@macro/openfin': path.resolve(
+        __dirname,
+        '../../libs/openfin/src/index.ts',
+      ),
     },
   },
   // Uncomment this if you are using workers.
