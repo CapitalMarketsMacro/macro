@@ -30,8 +30,8 @@ const TECH_STACK_DOC = `# Technology Stack
 
 | Technology | Version | Purpose |
 |-----------|---------|---------|
-| **OpenFin Core** | 45.101.1 | Desktop application container |
-| **OpenFin Workspace** | 45.2.6 | Home, Dock, Store, Notifications |
+| **OpenFin Core** | 45.102.10 | Desktop application container |
+| **OpenFin Workspace** | 45.2.12 | Home, Dock, Store, Notifications |
 | **FDC3** | 2.2.3 | Financial Desktop Connectivity standard |
 | **AMPS** | 5.3.4 | High-performance message broker client |
 | **Solace (solclientjs)** | 10.18.2 | Enterprise PubSub+ message broker client |
