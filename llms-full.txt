@@ -8,7 +8,7 @@
 
 - **Generated:** 2026-07-11
 - **Repo state:** branch `master`, commit `4881206` (post PR #81 "feat(prism): add AMPS Top N and ordering")
-- **Platform:** NX 23 monorepo — Angular 22 (zoneless) + React 19 + Vite 8 + OpenFin Workspace 45.2.12
+- **Platform:** NX 24 monorepo — Angular 22 (zoneless) + React 19 + Vite 8 + OpenFin Workspace 45.2.12
   (HERE Core UI, runtime 45.150.102.10) Capital Markets desktop platform with shared `@macro/*` libraries
   for real-time market data, enterprise messaging (AMPS / Solace / NATS+JetStream), FDC3 2.0 interop,
   AG Grid 36 Enterprise, and a unified multi-user / multi-environment Workspace Storage API.
@@ -43,7 +43,7 @@
 
 ## Repository Overview & Quick Reference
 
-**macro** (npm package name `@macro/source`, version `0.0.0`, private, `license: MIT`) is an NX 23 monorepo implementing a Capital Markets desktop platform. It combines Angular 22 (all Angular apps zoneless), React 19 + Vite 8, and OpenFin Workspace 45.2.12 (HERE Core UI, runtime 45.150.102.10) into one desktop experience: an OpenFin platform shell (`macro-workspace`) hosts framework-mixed views (FX/Treasury market-data apps, an FDC3 instrument viewer, two "Prism" blotter apps) wired together through FDC3 2.0 context sharing, a Dock 3.0 bar, a Storefront app store, Home search, Snap docking, and a unified Workspace Storage API for all user persistence.
+**macro** (npm package name `@macro/source`, version `0.0.0`, private, `license: MIT`) is an NX 24 monorepo implementing a Capital Markets desktop platform. It combines Angular 22 (all Angular apps zoneless), React 19 + Vite 8, and OpenFin Workspace 45.2.12 (HERE Core UI, runtime 45.150.102.10) into one desktop experience: an OpenFin platform shell (`macro-workspace`) hosts framework-mixed views (FX/Treasury market-data apps, an FDC3 instrument viewer, two "Prism" blotter apps) wired together through FDC3 2.0 context sharing, a Dock 3.0 bar, a Storefront app store, Home search, Snap docking, and a unified Workspace Storage API for all user persistence.
 
 Shared capability lives in `libs/` and is imported via `@macro/*` path aliases from `tsconfig.base.json` (source-level imports — most libs have no build step for app consumption). The libraries cover design tokens/theming (`@macro/macro-design`), structured logging (`@macro/logger`), a unified messaging layer for AMPS / Solace / NATS+JetStream (`@macro/transports` with `/angular` and `/react` adapters), OpenFin platform services + the `WorkspaceStorageClient` (`@macro/openfin`), RxJS conflation (`@macro/utils`), a framework-free blotter core (`@macro/prism-core`), a framework-free column-format engine + AG Grid tool panels (`@macro/macro-grid-format`), AG Grid 36 Enterprise wrappers for both frameworks, and shared MCP server internals (`@macro/mcp-core`).
 
@@ -227,7 +227,7 @@ Install note: root `.npmrc` sets `legacy-peer-deps=true` because TypeScript 6 is
 - `docs/api/workspace-storage-api.openapi.yaml` (OpenAPI 3.1, v1.2.0) + `docs/api/workspace-storage-api.postman_collection.json` — the Workspace Storage API contract.
 - `CLAUDE.md` / `AGENTS.md` — agent instructions, maintained byte-identical.
 - `.github/copilot-instructions.md` + `docs/copilot/ag-grid-36-format-panel-port.md` — condensed vs. full AG Grid 36 / format-panel porting rules.
-- `README.md` — human quick start; partially stale (claims "NX 22.5" and "Vite 7" against actual NX 23.0.0 / Vite 8).
+- `README.md` — human quick start; partially stale (claims "NX 22.5" and "Vite 7" against actual NX 24.0.6 / Vite 8).
 
 ---
 
@@ -2804,7 +2804,7 @@ NX cache replays restore only declared outputs. Since `test-ci.mjs` deletes `rep
 
 ### NX configuration — `nx.json`
 
-NX 23 (`nx` 23.0.0, all `@nx/*` plugins 23.0.0). Key settings:
+NX 24 (`nx` 24.0.6, all `@nx/*` plugins 24.0.6). Key settings:
 
 - `defaultBase: "master"`; `workspaceLayout: { appsDir: "apps", libsDir: "libs" }`; `analytics: false`.
 - `namedInputs`: `production` excludes eslint configs, `*(spec|test).*` files, `tsconfig.spec.json`, `jest.config.*`, `test-setup.*` from cache inputs.
