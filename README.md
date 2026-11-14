@@ -22,7 +22,7 @@ NX 24 monorepo for **Capital Markets desktop applications**. Combines Angular 22
 
 npm install
 
-npm start                    # Start all apps (Angular :4200, React :4201, Workspace :4202)
+npm start                    # Start all core apps + data (workspace, angular, react, fdc3, prism, prism-react, market-data-server)
 
 npm run launch               # Launch OpenFin (after workspace is serving)
 
@@ -38,17 +38,25 @@ npm run launch               # Launch OpenFin (after workspace is serving)
 
 |-----|------|-----------|-------------|
 
-| **macro-angular** | 4200 | Angular 22, PrimeNG 21 | FX Market Data, Treasury Microstructure charts |
+| **macro-angular** | 4200 | Angular 22, PrimeNG 21 | FX Market Data, Treasury Microstructure charts, Risk / PnL |
 
-| **macro-react** | 4201 | React 19, Vite 7, Tailwind 4, Shadcn | Treasury Market Data, Commodities Dashboard |
+| **macro-react** | 4201 | React 19, Vite 8, Tailwind 4, Shadcn | Treasury Market Data, Commodities Dashboard |
 
 | **macro-workspace** | 4202 | Angular 22 (zoneless) | OpenFin platform shell, Analytics Dashboard, Provider window |
 
 | **macro-angular-fdc3** | 4203 | Angular 22 | FDC3 Instrument Viewer |
 
-| **market-data-server** | 3000 | Node.js WebSocket | Simulated FX + Treasury tick data |
+| **prism** | 4204 | Angular 22, PrimeNG 21 | Prism — Blotter as a Service |
 
-| **macro-mcp** | - | Node.js | Custom MCP server for scaffolding, Figma import |
+| **prism-react** | 4205 | React 19, Vite 8, Shadcn | Prism Blotter (React) |
+
+| **capital-markets-themes** | 4206 | React 19, Vite 8 | Theme showcase app |
+
+| **market-data-server** | 3000 | Node.js WebSocket + REST | Simulated FX + Treasury + Prism tables, Workspace Storage API (reference) |
+
+| **macro-mcp** | - | Node.js | MCP server (stdio) for scaffolding, Figma import — thin entrypoint over `@macro/mcp-core` |
+
+| **macro-mcp-agent** | - | Node.js | Same MCP tools over HTTP/SSE for remote clients |
 
 
 
@@ -402,6 +410,8 @@ import { AmpsTransport, SolaceTransport, NatsTransport } from '@macro/transports
 
 | macro-angular-treasury-microstructure | Treasury Microstructure | view |
 
+| macro-angular-risk-pnl | Risk / PnL | view |
+
 | macro-react-treasury-market-data | Treasury Market Data | view |
 
 | macro-react-commodities-dashboard | Commodities Dashboard | view |
@@ -410,7 +420,13 @@ import { AmpsTransport, SolaceTransport, NatsTransport } from '@macro/transports
 
 | macro-analytics-dashboard | Analytics Dashboard | view |
 
+| macro-angular-view / macro-react-view | Macro Angular / React App | view |
+
 | macro-workspace-view1 / view2 | FDC3 Broadcaster / Listener | view |
+
+| capital-markets-themes | Capital Markets Theme | view |
+
+| prism-blotter / prism-react-blotter | Prism — Blotter as a Service (Angular / React) | view |
 
 | rates-desktop | Rates E-Trading Desktop | manifest |
 
@@ -456,7 +472,7 @@ ShowHideTabs, ColorLinking, PresetLayouts, LockUnlockPage, SaveMenu, Toggle Page
 
 
 
-### Workspace v24 Browser Features
+### Workspace Browser Features (v24+)
 
 
 
@@ -586,7 +602,7 @@ Angular view (`/analytics`) with real-time NATS subscription, user filtering, so
 
 
 
-## AG Grid 35 Features
+## AG Grid 36 Features
 
 
 
@@ -599,6 +615,8 @@ Both Angular and React grid wrappers include:
 - **Column Formatting** -- user-toggled Fx popover (Number, %, bps, $, K/M/B + decimals)
 
 - **Integrated Charts** -- AG Charts Enterprise
+
+- **Auto columns** -- v36 `autoGenerateColumnDefs` passthrough (used by Prism's "Auto" column mode)
 
 - Grid state save/restore (including user column formats)
 
@@ -632,9 +650,15 @@ Both Angular and React grid wrappers include:
 
 | `@macro/utils` | RxJS conflation (high-frequency data) |
 
-| `@macro/macro-angular-grid` | AG Grid 35 Angular wrapper |
+| `@macro/macro-angular-grid` | AG Grid 36 Enterprise Angular wrapper |
 
-| `@macro/macro-react-grid` | AG Grid 35 React wrapper |
+| `@macro/macro-react-grid` | AG Grid 36 Enterprise React wrapper |
+
+| `@macro/macro-grid-format` | Capital-markets column-format engine + Format tool panel |
+
+| `@macro/prism-core` | Framework-free blotter core (sources, feeds, column inference, roll-ups) |
+
+| `@macro/mcp-core` | Shared MCP tools/resources/prompts (used by both MCP servers) |
 
 
 
@@ -670,7 +694,7 @@ FDC3 2.0 with `currentContextGroup: "green"`. `ContextService` provides `current
 
 
 
-7 MCP servers configured in `.mcp.json`:
+5 MCP servers configured in `.mcp.json` (plus **nx-mcp**, provided by the NX Claude Code plugin):
 
 
 
@@ -688,9 +712,7 @@ FDC3 2.0 with `currentContextGroup: "green"`. `ContextService` provides `current
 
 | **tailwindcss** | Tailwind CSS utilities |
 
-| **nx-mcp** | NX workspace commands |
-
-| **figma-remote-mcp** | Figma design fetch (optional, needs API key) |
+| **nx-mcp** | NX workspace commands (via the NX Claude Code plugin, not `.mcp.json`) |
 
 
 
@@ -936,23 +958,31 @@ npm run build:<app>          # Build individual app
 
 |---------|---------|
 
-| Angular | 21 |
+| NX | 24.0.6 |
 
-| React | 19 |
+| Angular | 22.2.6 |
 
-| AG Grid Enterprise | 35.1.0 |
+| React | 19.3.1 |
 
-| AG Charts Enterprise | 13.1.0 |
+| TypeScript | 6.0.3 |
 
-| PrimeNG | 21.1.3 |
+| Vite | 8.0.16 |
+
+| AG Grid Enterprise | 36.3.0 |
+
+| AG Charts Enterprise | 14.3.0 |
+
+| PrimeNG | 21.1.10 |
 
 | @openfin/workspace-platform | 45.2.12 |
 
+| @openfin/core | 45.102.10 |
+
+| OpenFin Runtime | 45.150.102.10 |
+
+| Notification Center | 45.2.6 |
+
 | @openfin/snap-sdk | 1.6.0 |
 
-| @nats-io/nats-core | 3.3.1 |
-
-| Runtime | 45.150.102.10 |
-
-| NX | 22.5 |
+| @nats-io/nats-core | 3.4.0 |
 

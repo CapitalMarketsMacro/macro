@@ -8,7 +8,9 @@ A wrapper component for ag-Grid that supports JSON column configuration.
 - **ag-Grid Enterprise Support**: Full support for Enterprise features (requires license)
 - **Flexible Configuration**: Supports both JSON strings and TypeScript arrays
 - **Default Grid Options**: Includes sensible defaults for pagination, sorting, filtering, etc.
-- **Custom Theme**: Configured with Alpine theme, dark blue color scheme, and custom fonts
+- **Shared Theme**: Applies `buildAgGridTheme(isDark)` from `@macro/macro-design` (Theming API) and follows the app's `.dark` class automatically
+- **Column Formatting**: Registers the **Format** sideBar tool panel from `@macro/macro-grid-format`
+- **Reactive updates**: `addRows$` / `updateRows$` / `deleteRows$` subjects exposed via ref
 
 ## Installation
 
@@ -140,6 +142,35 @@ function MyComponent() {
 | `columns` | `string \| ColDef[]` | Column definitions as JSON string or array | `[]` |
 | `rowData` | `unknown[]` | Row data for the grid | `[]` |
 | `gridOptions` | `GridOptions` | Additional grid options (merged with defaults) | `{}` |
+| `getRowId` | `(params: GetRowIdParams) => string` | Function to get row ID for each row (needed for keyed updates/deletes) | `undefined` |
+| `columnFormats` | `ColumnFormatMap` | Initial capital-markets column formats (`colId -> ColumnFormatSpec` from `@macro/macro-grid-format`), applied on grid ready; users can change them via the **Format** tool panel, and saved view state overrides them on restore | `undefined` |
+
+## Ref API (`MacroReactGridRef`)
+
+The component is a `forwardRef`. Attach a ref to drive the grid imperatively or reactively:
+
+```typescript
+import { MacroReactGrid, MacroReactGridRef } from '@macro/macro-react-grid';
+import { useRef } from 'react';
+
+function MyComponent() {
+  const gridRef = useRef<MacroReactGridRef>(null);
+
+  // Real-time updates (e.g. from a WebSocket handler):
+  // gridRef.current?.updateRows$.next([{ id: 1, price: 101.25 }]);
+  // gridRef.current?.addRows$.next([{ id: 3, price: 99.5 }]);
+  // gridRef.current?.deleteRows$.next([{ id: 2 }]);
+
+  return <MacroReactGrid ref={gridRef} columns={...} rowData={...} getRowId={...} />;
+}
+```
+
+| Member | Description |
+|--------|-------------|
+| `applyTransaction(transaction)` | Apply an AG Grid `RowNodeTransaction` (`add` / `update` / `remove`) |
+| `getGridApi()` | The underlying `GridApi` (or `undefined` before ready) |
+| `getGridState()` / `applyGridState(state)` | Save/restore grid state, including user column formats (`columnFormats` key) |
+| `addRows$` / `updateRows$` / `deleteRows$` | RxJS `Subject<unknown[]>`s — publish row arrays for reactive add/update/delete (provide `getRowId` for update/delete) |
 
 ## Default Grid Options
 
@@ -169,14 +200,14 @@ All ag-Grid modules (Community and Enterprise) are automatically registered in t
 
 ## Theme Configuration
 
-The component is configured with:
-- **Theme**: Alpine
-- **Color Scheme**: Dark Blue
-- **Icon Set**: Alpine
-- **Fonts**:
-  - Default: Noto Sans
-  - Header: Roboto
-  - Cell: Ubuntu
+The component builds its theme with `buildAgGridTheme(isDark)` from `@macro/macro-design`
+(single source of truth, shared with the Angular wrapper) and re-applies it when the app's
+`.dark` class toggles:
+
+- **Base theme**: Quartz (AG Grid v36 Theming API)
+- **Icon set**: Material
+- **Color scheme**: Dark Blue (dark) / Light, plus Macro E-Trading dark tokens
+- **Fonts**: Roboto for chrome/headers, IBM Plex Mono for data cells (aligned digits)
 
 ## Column Definition Examples
 
@@ -217,15 +248,11 @@ The component is configured with:
 
 ## Styling
 
-The component uses the `ag-theme-quartz` theme. Make sure ag-Grid styles are imported in your application's global styles:
-
-```css
-@import "ag-grid-community/styles/ag-grid.css";
-@import "ag-grid-community/styles/ag-theme-quartz.css";
-```
+The theme is applied via AG Grid's **Theming API** — no ag-Grid CSS imports are needed (and the
+legacy `ag-grid.css` / `ag-theme-*.css` files must **not** be imported alongside it).
 
 ## Requirements
 
 - React 19+
-- ag-grid-react 34+
-- ag-grid-enterprise 34+ (optional, for Enterprise features)
+- ag-grid-react 36+
+- ag-grid-enterprise 36+ (license required; the component registers `AllEnterpriseModule`)
