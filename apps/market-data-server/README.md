@@ -7,7 +7,7 @@ A WebSocket server that publishes real-time market data for FX and US Treasury s
 This Node.js application hosts WebSocket servers that stream:
 1. **FX Market Data** for G10 currencies
 2. **US Treasury Market Data** for various maturities
-3. **Prism tables** — a JSON *table protocol* endpoint (`/prism`) for the Prism blotters' plain-WebSocket source
+3. **Prism tables** — a JSON *table protocol* endpoint (`/prism`) for the Prism blotters' plain-WebSocket source (UST top-of-book, UST trades, and an IRS Risk & PnL desk book)
 
 It also hosts the **Workspace Storage API (reference)** — a REST service at `/workspace/v1` used to verify the OpenFin workspace storage client before the phase-2 Java service exists.
 
@@ -63,13 +63,14 @@ GET http://localhost:3000/prism/tables            -> { "tables": [ ...catalog...
 GET http://localhost:3000/prism/tables/<name>     -> [ ...rows ]        (404 for unknown tables)
 ```
 
-Two tables over a shared US-rates universe — 7 cash **OTR Treasuries** (2Y–30Y) + 8 **CME
-Treasury futures** (ZT/Z3N/ZF/ZN/TN/TWE/ZB/UB, Sep-26):
+Three tables — two over a shared US-rates universe (7 cash **OTR Treasuries** (2Y–30Y) + 8 **CME
+Treasury futures** (ZT/Z3N/ZF/ZN/TN/TWE/ZB/UB, Sep-26)) plus a simulated **IR-swaps desk book**:
 
 | Table | Mode | Key | Contents |
 | --- | --- | --- | --- |
 | `ust_market_data` | snapshot-update | `symbol` | Top-of-book: bid/ask/mid/last (decimals + dealer 32nds displays), sizes, yields (cash), open interest (futures) — ticks every 500ms |
 | `ust_trades` | append | `tradeId` | Trade prints: side, price, size ($MM cash / contracts futures), yield, venue (BrokerTec / Dealerweb / Fenics UST / CME Globex), counterparty — a print every 0.6–1.8s, occasional bursts as arrays |
+| `irs_risk_pnl` | snapshot-update | `tradeId` | Simulated IR-swaps desk book: one row per OIS position (SOFR/€STR/SONIA/TONA) booked desk → book → trader, with DV01 (USD/bp, bond-style sign), KR01 key-rate buckets that sum to DV01, and a P&L explain that ties out (`dayPnl = carry + rollDown + curve + newTrade + fees + residual`). A par-curve random walk reprices positions per (ccy, tenor), with an accelerated ~20-min day roll. Sum `notionalUsd`, never per-currency `notional` |
 
 ## Workspace Storage API (reference)
 
@@ -352,6 +353,8 @@ The server will respond with:
 - **main.ts**: WebSocket server setup and connection handling for both FX and Treasury endpoints
 - **fx-market-data.service.ts**: Service that generates realistic FX market data with random walk price movements
 - **tsy-market-data.service.ts**: Service that generates realistic US Treasury market data with prices, yields, duration, and convexity
+- **prism-table-hub.ts**: The `/prism` table-protocol hub (WebSocket + REST) serving the three Prism tables
+- **irs-risk-pnl.service.ts**: Simulated IR-swaps desk book behind the `irs_risk_pnl` table (DV01/KR01, P&L explain)
 - **workspace-storage-api.service.ts**: Reference Workspace Storage API (`/workspace/v1`) — per-user in-memory store with debounced JSON-file persistence
 
 ## FX Currency Pairs

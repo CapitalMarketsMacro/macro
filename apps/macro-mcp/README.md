@@ -32,7 +32,7 @@ Already done in this repo's root `.mcp.json`:
   "mcpServers": {
     "macro-mcp": {
       "command": "node",
-      "args": ["E:/MacroDesktopMFE/macro/dist/apps/macro-mcp/main.js"]
+      "args": ["dist/apps/macro-mcp/main.js"]
     }
   }
 }
@@ -72,7 +72,7 @@ comes back as a structured error instead of a hung request.
 
 | Tool | What it does |
 |------|--------------|
-| `scaffold_angular_app` | Generate an Angular 21 LOB app (standalone components, PrimeNG, AG Grid wiring, `@macro/*` imports). Returns the shell commands + file contents to apply. |
+| `scaffold_angular_app` | Generate an Angular 22 LOB app (standalone components, zoneless, PrimeNG, AG Grid wiring, `@macro/*` imports). Returns the shell commands + file contents to apply. |
 | `scaffold_react_app` | Same, for React 19 + Vite + Tailwind 4 + PrimeReact + Shadcn. |
 | `scaffold_library` | Generate a new `@macro/<name>` shared library, including `tsconfig.base.json` path alias. |
 | `register_openfin_app` | Add the `manifest.fin.json` / `settings.json` entries needed to surface an app in Home, Dock, and Store. |
@@ -122,7 +122,7 @@ code. Every URI uses the `macro://` scheme.
 | URI | Content |
 |-----|---------|
 | `macro://architecture` | High-level monorepo architecture, app/lib layout, data flow |
-| `macro://tech-stack` | Versions: NX 22, Angular 21, React 19, PrimeNG/PrimeReact, AG Grid 35, Vite 8, OpenFin Workspace 22.3.29 |
+| `macro://tech-stack` | Versions: NX 24, Angular 22, React 19, PrimeNG/PrimeReact, AG Grid 36, AG Charts 14, Vite 8, OpenFin Workspace 45.2.12 |
 | `macro://libraries` | Catalog of `@macro/*` libraries with responsibilities |
 | `macro://theming` | Single-source-of-truth theming rules (`@macro/macro-design`) |
 | `macro://openfin` | OpenFin Workspace conventions, manifest structure, FDC3 setup |
@@ -162,9 +162,10 @@ your AI client  (Claude Code, Cursor, VS Code Copilot, …)
     ▼
 dist/apps/macro-mcp/main.js   ← bundled by @nx/esbuild
     │
-    ├── tools/          → actions that read or mutate the monorepo
-    ├── resources/      → read-only reference docs (macro://…)
-    └── prompts/        → canned prompt templates
+    └── @macro/mcp-core  (libs/mcp-core — shared with macro-mcp-agent)
+        ├── tools/          → actions that read or mutate the monorepo
+        ├── resources/      → read-only reference docs (macro://…)
+        └── prompts/        → canned prompt templates
 ```
 
 The server is a single bundled CJS file — no external runtime deps at invoke
@@ -177,20 +178,26 @@ time. It reads/writes the monorepo directly using `fs` and `execSync` (for
 
 ### Project layout
 
+All tools/resources/prompts live in the shared **`@macro/mcp-core`** library so the
+stdio server (this app) and the HTTP/SSE server (`macro-mcp-agent`) register the
+same implementations. This app is a thin entry point.
+
 ```
 apps/macro-mcp/
 ├── src/
-│   ├── main.ts          # stdio transport entry point
-│   ├── tools/           # one file per MCP tool + index.ts registry
-│   ├── resources/       # one file per macro:// resource + index.ts
-│   └── prompts/         # one file per prompt + index.ts
+│   └── main.ts          # stdio transport entry point — registers @macro/mcp-core
 ├── project.json         # NX build (esbuild, CJS, bundle=true)
 └── tsconfig.app.json
+
+libs/mcp-core/src/lib/
+├── tools/               # one file per MCP tool + index.ts registry
+├── resources/           # one file per macro:// resource + index.ts
+└── prompts/             # one file per prompt + index.ts
 ```
 
 ### Adding a new tool
 
-1. Create `src/tools/my-tool.ts`:
+1. Create `libs/mcp-core/src/lib/tools/my-tool.ts`:
 
    ```ts
    import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -208,13 +215,13 @@ apps/macro-mcp/
    }
    ```
 
-2. Register it in `src/tools/index.ts`.
+2. Register it in `libs/mcp-core/src/lib/tools/index.ts`.
 
 3. `npx nx build macro-mcp` and restart your MCP client.
 
 ### Adding a new resource
 
-1. Create `src/resources/my-topic.ts`:
+1. Create `libs/mcp-core/src/lib/resources/my-topic.ts`:
 
    ```ts
    import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -235,7 +242,7 @@ apps/macro-mcp/
    }
    ```
 
-2. Register it in `src/resources/index.ts`.
+2. Register it in `libs/mcp-core/src/lib/resources/index.ts`.
 
 ### Build output
 

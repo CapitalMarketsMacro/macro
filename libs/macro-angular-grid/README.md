@@ -132,6 +132,7 @@ export class ExampleComponent {
 | `rowData` | `unknown[]` | Row data for the grid | `[]` |
 | `gridOptions` | `GridOptions` | Additional grid options (merged with defaults) | `{}` |
 | `getRowId` | `(params: GetRowIdParams) => string` | Function to get row ID for each row (useful for tracking rows when data changes) | `undefined` |
+| `columnFormats` | `ColumnFormatMap` | Initial capital-markets column formats (`colId -> ColumnFormatSpec` from `@macro/macro-grid-format`), applied on grid ready; users can change them via the **Format** tool panel, and saved view state overrides them on restore | `undefined` |
 
 ## Default Grid Options
 
@@ -282,6 +283,8 @@ export class ExampleComponent implements AfterViewInit {
 |--------|-------------|------------|---------|
 | `applyTransaction(transaction: RowNodeTransaction)` | Apply a transaction to update grid data (add, update, or remove rows) | `transaction` - Object with `add`, `update`, and/or `remove` arrays | `void` |
 | `getGridApi()` | Get the underlying GridApi instance | None | `GridApi \| undefined` |
+| `getGridState()` | Serialize grid state (columns, filters, user column formats under `columnFormats`) for persistence | None | `any` |
+| `applyGridState(state)` | Restore previously saved grid state (rebuilds `valueFormatter`s from the stored format specs) | `state` from `getGridState()` | `void` |
 
 **Note**: `applyTransaction` requires the grid to be ready. Make sure to call it after the grid has been initialized (e.g., in `ngAfterViewInit` or after the `gridReady` event).
 
@@ -486,15 +489,20 @@ All ag-Grid modules (Community and Enterprise) are automatically registered in t
 
 ## Styling
 
-The component uses the `ag-theme-quartz` theme. Make sure ag-Grid styles are imported in your application's global styles:
+The component uses AG Grid's **Theming API** — it applies `buildAgGridTheme(isDark)` from
+`@macro/macro-design` automatically and follows the app's `.dark` class, so dark/light mode
+stays in sync with the rest of the platform. No ag-Grid CSS imports are needed (and the legacy
+`ag-grid.css` / `ag-theme-*.css` files must **not** be imported alongside the Theming API).
 
-```css
-@import "ag-grid-community/styles/ag-grid.css";
-@import "ag-grid-community/styles/ag-theme-quartz.css";
-```
+## Column formatting
+
+The grid registers the **Format** sideBar tool panel from `@macro/macro-grid-format`: users can
+apply capital-markets formats (decimal, %, bps, currency, K/MM/BN, Treasury 32nds/64ths, FX pip,
+date, colour-by-sign, …) per column at runtime. Formats persist through
+`getGridState()` / `applyGridState()` and can be seeded via the `columnFormats` input.
 
 ## Requirements
 
-- Angular 20+
-- ag-grid-angular 34+
-- ag-grid-enterprise 34+ (optional, for Enterprise features)
+- Angular 22+ (standalone, zoneless-compatible)
+- ag-grid-angular 36+
+- ag-grid-enterprise 36+ (license required; the component registers `AllEnterpriseModule`)
